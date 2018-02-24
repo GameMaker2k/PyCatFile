@@ -49,7 +49,7 @@ def ListDir(dirpath):
 def PyCatFile(infiles, outfile):
  catfp = open(outfile, "wb+");
  fileheaderver = "00";
- fileheader = "PyCatFile"+fileheaderver;
+ fileheader = "CatFile"+fileheaderver;
  catfp.write(fileheader.encode());
  GetDirList = ListDir(infiles);
  for curfname in GetDirList:
@@ -133,8 +133,8 @@ def PyCatFile(infiles, outfile):
    fcontents = fpc.read(int(fstatinfo.st_size));
    fpc.close();
   if(ftype=="2"):
-   fcontents = os.readlink(fname).encode();
-  catfileout = str(ftype+fileheaderintsizehex+fnameintsizehexout+fname+fsizeintsizehexout+str(fsize)+fctimeintsizehexout+str(fctime)+fatimeintsizehexout+str(fatime)+fmtimeintsizehexout+str(fmtime)+fmodeintsizehexout+str(fmode)+fuidintsizehexout+str(fuid)+fgidintsizehexout+str(fgid)).encode();
+   fcontents = str(os.readlink(fname)).encode();
+  catfileout = str("\0"+ftype+fileheaderintsizehex+"\0"+fnameintsizehexout+fname+"\0"+fsizeintsizehexout+str(fsize)+"\0"+fctimeintsizehexout+str(fctime)+"\0"+fatimeintsizehexout+str(fatime)+"\0"+fmtimeintsizehexout+str(fmtime)+"\0"+fmodeintsizehexout+str(fmode)+"\0"+fuidintsizehexout+str(fuid)+"\0"+fgidintsizehexout+str(fgid)+"\0").encode();
   catfileout = catfileout+fcontents;
   catfp.write(catfileout);
  catfp.close();
@@ -146,29 +146,40 @@ def PyUnCatFile(infile, outfiles=None):
  CatSize = catfp.tell();
  CatSizeEnd = CatSize;
  catfp.seek(0, 0);
- pycatstring = catfp.read(9).decode('ascii');
+ pycatstring = catfp.read(7).decode('ascii');
  pycatver = int(catfp.read(2).decode('ascii'), 16);
+ catfp.seek(1, 1);
  while(catfp.tell()<CatSizeEnd):
   pycatftype = int(catfp.read(1).decode('ascii'), 16);
   pycatfmsize = int(catfp.read(2).decode('ascii'), 16);
+  catfp.seek(1, 1);
   pycatfnamesize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
   pycatfname = catfp.read(pycatfnamesize).decode('ascii');
+  catfp.seek(1, 1);
   pycatfsizesize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
   pycatfsize = int(catfp.read(pycatfsizesize).decode('ascii'), 16);
+  catfp.seek(1, 1);
   pycatfctimesize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
   pycatfctime = int(catfp.read(pycatfctimesize).decode('ascii'), 16);
+  catfp.seek(1, 1);
   pycatfatimesize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
   pycatfatime = int(catfp.read(pycatfatimesize).decode('ascii'), 16);
+  catfp.seek(1, 1);
   pycatfmtimesize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
   pycatfmtime = int(catfp.read(pycatfmtimesize).decode('ascii'), 16);
+  catfp.seek(1, 1);
   pycatfmodesize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
   pycatfmode = int(catfp.read(pycatfmodesize).decode('ascii'), 16);
+  catfp.seek(1, 1);
   pycatfmodeoct = oct(pycatfmode);
   pycatfuidsize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
   pycatfuid = int(catfp.read(pycatfuidsize).decode('ascii'), 16);
+  catfp.seek(1, 1);
   pycatfgidsize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
   pycatfgid = int(catfp.read(pycatfgidsize).decode('ascii'), 16);
+  catfp.seek(1, 1);
   pycatfcontents = catfp.read(pycatfsize);
+  catfp.seek(1, 1);
   if(pycatftype==0):
    print(pycatfname);
    os.mkdir(pycatfname);
