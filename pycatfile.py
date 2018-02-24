@@ -32,7 +32,7 @@ if(__version_info__[3] is None):
 import os, glob;
 
 def ListDir(dirpath):
- retlist = [dirpath];
+ retlist = [];
  for path, subdirs, files in os.walk(dirpath):
   for name in subdirs:
    fpath = os.path.join(path, name);
