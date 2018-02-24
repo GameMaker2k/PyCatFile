@@ -27,7 +27,7 @@ if(__version_info__[4] is None):
 if(__version_info__[3] is not None):
  __version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2])+" "+str(__version_info__[3]);
 if(__version_info__[3] is None):
-__version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2]);
+ __version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2]);
 
 import os, glob;
 
@@ -46,12 +46,12 @@ def ListDir(dirpath):
    retlist.append(fpath);
  return retlist;
 
-def PyCatFile(infile, outfile):
+def PyCatFile(infiles, outfile):
  catfp = open(outfile, "wb+");
  fileheaderver = "00";
  fileheader = "PyCatFile"+fileheaderver;
  catfp.write(fileheader.encode());
- GetDirList = ListDir(infile);
+ GetDirList = ListDir(infiles);
  for curfname in GetDirList:
   fname = curfname;
   fstatinfo = os.stat(fname);
@@ -115,6 +115,10 @@ def PyCatFile(infile, outfile):
   fmaxintsizehex = format(fmaxintsize, 'x').upper();
   fileheaderintsize = len(fmaxintsizehex);
   fileheaderintsizehex = format(fileheaderintsize, 'x').upper();
+  fileheaderintsizehex = fileheaderintsizehex.rjust(2, "0");
+  if(len(fileheaderintsizehex)>2):
+   fileheaderintsizehex = mystr[-2:];
+   fileheaderintsize = int(fileheaderintsizehex, 16);
   fnameintsizehexout = fnameintsizehex.rjust(fileheaderintsize, "0");
   fsizeintsizehexout = fsizeintsizehex.rjust(fileheaderintsize, "0");
   fctimeintsizehexout = fctimeintsizehex.rjust(fileheaderintsize, "0");
@@ -136,7 +140,7 @@ def PyCatFile(infile, outfile):
  catfp.close();
  return True;
 
-def PyUnCatFile(infile, outfile):
+def PyUnCatFile(infile, outfiles=None):
  catfp = open(infile, "rb");
  catfp.seek(0, 2);
  CatSize = catfp.tell();
@@ -146,7 +150,7 @@ def PyUnCatFile(infile, outfile):
  pycatver = int(catfp.read(2).decode('ascii'), 16);
  while(catfp.tell()<CatSizeEnd):
   pycatftype = int(catfp.read(1).decode('ascii'), 16);
-  pycatfmsize = int(catfp.read(1).decode('ascii'), 16);
+  pycatfmsize = int(catfp.read(2).decode('ascii'), 16);
   pycatfnamesize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
   pycatfname = catfp.read(pycatfnamesize).decode('ascii');
   pycatfsizesize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
