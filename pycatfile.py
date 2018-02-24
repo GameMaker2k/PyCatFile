@@ -148,8 +148,8 @@ def PyUnCatFile(infile, outfiles=None):
  catfp.seek(0, 0);
  pycatstring = catfp.read(7).decode('ascii');
  pycatver = int(catfp.read(2).decode('ascii'), 16);
- catfp.seek(1, 1);
  while(catfp.tell()<CatSizeEnd):
+  catfp.seek(1, 1);
   pycatftype = int(catfp.read(1).decode('ascii'), 16);
   pycatfmsize = int(catfp.read(2).decode('ascii'), 16);
   catfp.seek(1, 1);
@@ -179,7 +179,6 @@ def PyUnCatFile(infile, outfiles=None):
   pycatfgid = int(catfp.read(pycatfgidsize).decode('ascii'), 16);
   catfp.seek(1, 1);
   pycatfcontents = catfp.read(pycatfsize);
-  catfp.seek(1, 1);
   if(pycatftype==0):
    print(pycatfname);
    os.mkdir(pycatfname);
