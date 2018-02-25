@@ -61,6 +61,8 @@ def ListDir(dirpath):
 def PyCatFile(infiles, outfile, verbose=False):
  if(verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+ if(os.path.exists(outfile)):
+  os.remove(outfile);
  catfp = open(outfile, "wb");
  fileheaderver = "00";
  fileheader = "CatFile"+fileheaderver+"\0";
@@ -165,7 +167,7 @@ def PyCatFile(infiles, outfile, verbose=False):
    fpc = open(fname, "rb");
    fcontents = fpc.read(int(fstatinfo.st_size));
    fpc.close();
-  ftypeoutstr = str(str(ftype).rjust(2, "0"));
+  ftypeoutstr = str(ftype).rjust(2, "0");
   catfileoutstr = ftypeoutstr+fileheaderintsizehex+"\0";
   catfileoutstr = catfileoutstr+fnameoutstr+"\0";
   catfileoutstr = catfileoutstr+fsizeoutstr+"\0";
@@ -176,7 +178,9 @@ def PyCatFile(infiles, outfile, verbose=False):
   catfileoutstr = catfileoutstr+fmodeoutstr+"\0";
   catfileoutstr = catfileoutstr+fuidoutstr+"\0";
   catfileoutstr = catfileoutstr+fgidoutstr+"\0";
-  catfileout = bytes(str(catfileoutstr).encode())+fcontents+bytes(str("\0"));
+  catfileoutstrecd = catfileoutstr.encode();
+  nullstrecd = "\0".encode();
+  catfileout = catfileoutstrecd+fcontents+nullstrecd;
   catfp.write(catfileout);
  catfp.close();
  return True;
@@ -219,6 +223,7 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
   pycatfmodesize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
   pycatfmode = int(catfp.read(pycatfmodesize).decode('ascii'), 16);
   pycatfmodeoct = oct(pycatfmode);
+  pycatfchmod = int("0"+str(pycatfmode)[-3:]);
   catfp.seek(1, 1);
   pycatfuidsize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
   pycatfuid = int(catfp.read(pycatfuidsize).decode('ascii'), 16);
@@ -230,10 +235,16 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
   if(pycatftype==0):
    print(pycatfname);
    os.mkdir(pycatfname);
+   os.chown(pycatfname, pycatfuid, pycatfgid);
+   os.chmod(pycatfname, pycatfchmod);
+   os.utime(pycatfname, (pycatfatime, pycatfmtime));
   if(pycatftype==1):
    fpc = open(pycatfname, "wb");
    fcontents = fpc.write(pycatfcontents);
    fpc.close();
+   os.chown(pycatfname, pycatfuid, pycatfgid);
+   os.chmod(pycatfname, pycatfchmod);
+   os.utime(pycatfname, (pycatfatime, pycatfmtime));
   if(pycatftype==2):
    os.symlink(pycatflinkname, pycatfname);
   if(pycatftype==3):
