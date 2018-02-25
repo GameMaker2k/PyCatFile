@@ -29,7 +29,7 @@ if(__version_info__[3] is not None):
 if(__version_info__[3] is None):
  __version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2]);
 
-import os, logging;
+import os, sys, logging;
 if __name__ == '__main__':
  import argparse;
 
@@ -60,7 +60,7 @@ def ListDir(dirpath):
 
 def PyCatFile(infiles, outfile, verbose=False):
  if(verbose is True):
-  logging.basicConfig(format="%(message)s", level=logging.DEBUG);
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  catfp = open(outfile, "wb");
  fileheaderver = "00";
  fileheader = "CatFile"+fileheaderver;
@@ -163,7 +163,7 @@ def PyCatFile(infiles, outfile, verbose=False):
 
 def PyUnCatFile(infile, outdir=None, verbose=False):
  if(verbose is True):
-  logging.basicConfig(format="%(message)s", level=logging.DEBUG);
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  catfp = open(infile, "rb");
  catfp.seek(0, 2);
  CatSize = catfp.tell();
