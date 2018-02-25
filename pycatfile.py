@@ -160,8 +160,9 @@ def PyCatFile(infiles, outfile, verbose=False):
    fpc = open(fname, "rb");
    fcontents = fpc.read(int(fstatinfo.st_size));
    fpc.close();
-  ftypeoutstr = str(ftype).rjust(2, "0");
-  catfileoutstr = ftypeoutstr+fileheaderintsizehex+"\0";
+  ftypehex = format(ftype, 'x').upper();
+  ftypeoutstr = str(ftypehex).rjust(2, "0");
+  catfileoutstr = ftypeoutstr+"\0"+fileheaderintsizehex+"\0";
   catfileoutstr = catfileoutstr+fnameoutstr+"\0";
   catfileoutstr = catfileoutstr+fsizeoutstr+"\0";
   catfileoutstr = catfileoutstr+flinknameoutstr+"\0";
@@ -195,6 +196,7 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
  catfp.seek(1, 1);
  while(catfp.tell()<CatSizeEnd):
   pycatftype = int(catfp.read(2).decode('ascii'), 16);
+  catfp.seek(1, 1);
   pycatfmsize = int(catfp.read(2).decode('ascii'), 16);
   catfp.seek(1, 1);
   pycatfnamesize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
