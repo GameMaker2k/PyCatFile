@@ -156,7 +156,7 @@ def PyCatFile(infiles, outfile, verbose=False):
    fpc = open(fname, "rb");
    fcontents = fpc.read(int(fstatinfo.st_size));
    fpc.close();
-  catfileout = bytes(str(str(str(ftype).rjust(2, "0"))+"\0"+fileheaderintsizehex+"\0"+fnameintsizehexout+"\0"+fname+"\0"+fsizeintsizehexout+"\0"+str(fsize)+"\0"+flinknameintsizehexout+"\0"+flinkname+"\0"+fctimeintsizehexout+"\0"+str(fctime)+"\0"+fatimeintsizehexout+"\0"+str(fatime)+"\0"+fmtimeintsizehexout+"\0"+str(fmtime)+"\0"+fmodeintsizehexout+"\0"+str(fmode)+"\0"+fuidintsizehexout+"\0"+str(fuid)+"\0"+fgidintsizehexout+"\0"+str(fgid)+"\0").encode())+fcontents+bytes(str("\0");
+  catfileout = bytes(str(str(str(ftype).rjust(2, "0"))+"\0"+fileheaderintsizehex+"\0"+fnameintsizehexout+"\0"+fname+"\0"+fsizeintsizehexout+"\0"+str(fsize)+"\0"+flinknameintsizehexout+"\0"+flinkname+"\0"+fctimeintsizehexout+"\0"+str(fctime)+"\0"+fatimeintsizehexout+"\0"+str(fatime)+"\0"+fmtimeintsizehexout+"\0"+str(fmtime)+"\0"+fmodeintsizehexout+"\0"+str(fmode)+"\0"+fuidintsizehexout+"\0"+str(fuid)+"\0"+fgidintsizehexout+"\0"+str(fgid)+"\0").encode())+fcontents+bytes(str("\0"));
   catfp.write(catfileout);
  catfp.close();
  return True;
