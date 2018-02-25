@@ -29,7 +29,7 @@ if(__version_info__[3] is not None):
 if(__version_info__[3] is None):
  __version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2]);
 
-import os, sys, logging;
+import os, sys, logging, zlib;
 if __name__ == '__main__':
  import argparse;
 
@@ -107,11 +107,6 @@ def PyCatFile(infiles, outfile, verbose=False):
    fmaxintsize = flinknameintsize;
   if(fsizeintsize>fmaxintsize):
    fmaxintsize = fsizeintsize;
-  fctime = format(int(fstatinfo.st_ctime), 'x').upper();
-  fctimeintsize = len(fctime);
-  fctimeintsizehex = format(fctimeintsize, 'x').upper();
-  if(fctimeintsize>fmaxintsize):
-   fmaxintsize = fctimeintsize;
   fatime = format(int(fstatinfo.st_atime), 'x').upper();
   fatimeintsize = len(fatime);
   fatimeintsizehex = format(fatimeintsize, 'x').upper();
@@ -150,8 +145,6 @@ def PyCatFile(infiles, outfile, verbose=False):
   fsizeoutstr = fsizeintsizehexout+str(fsize);
   flinknameintsizehexout = flinknameintsizehex.rjust(fileheaderintsize, "0");
   flinknameoutstr = flinknameintsizehexout+flinkname;
-  fctimeintsizehexout = fctimeintsizehex.rjust(fileheaderintsize, "0");
-  fctimeoutstr = fctimeintsizehexout+str(fctime);
   fatimeintsizehexout = fatimeintsizehex.rjust(fileheaderintsize, "0");
   fatimeoutstr = fatimeintsizehexout+str(fatime);
   fmtimeintsizehexout = fmtimeintsizehex.rjust(fileheaderintsize, "0");
@@ -172,12 +165,16 @@ def PyCatFile(infiles, outfile, verbose=False):
   catfileoutstr = catfileoutstr+fnameoutstr+"\0";
   catfileoutstr = catfileoutstr+fsizeoutstr+"\0";
   catfileoutstr = catfileoutstr+flinknameoutstr+"\0";
-  catfileoutstr = catfileoutstr+fctimeoutstr+"\0";
   catfileoutstr = catfileoutstr+fatimeoutstr+"\0";
   catfileoutstr = catfileoutstr+fmtimeoutstr+"\0";
   catfileoutstr = catfileoutstr+fmodeoutstr+"\0";
   catfileoutstr = catfileoutstr+fuidoutstr+"\0";
   catfileoutstr = catfileoutstr+fgidoutstr+"\0";
+  catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()), 'x').upper();
+  catfileheadercshexintsize = len(catfileheadercshex);
+  catfileheadercshexintsizehex = format(catfileheadercshexintsize, 'x').upper();
+  catfileheadercshexintsizehex = catfileheadercshexintsizehex.rjust(fileheaderintsize, "0");
+  catfileoutstr = catfileoutstr+catfileheadercshexintsizehex+catfileheadercshex+"\0";
   catfileoutstrecd = catfileoutstr.encode();
   nullstrecd = "\0".encode();
   catfileout = catfileoutstrecd+fcontents+nullstrecd;
@@ -211,9 +208,6 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
   pycatflinknamesize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
   pycatflinkname = catfp.read(pycatflinknamesize).decode('ascii');
   catfp.seek(1, 1);
-  pycatfctimesize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
-  pycatfctime = int(catfp.read(pycatfctimesize).decode('ascii'), 16);
-  catfp.seek(1, 1);
   pycatfatimesize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
   pycatfatime = int(catfp.read(pycatfatimesize).decode('ascii'), 16);
   catfp.seek(1, 1);
@@ -230,6 +224,9 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
   catfp.seek(1, 1);
   pycatfgidsize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
   pycatfgid = int(catfp.read(pycatfgidsize).decode('ascii'), 16);
+  catfp.seek(1, 1);
+  pycatfcssize = int(catfp.read(pycatfmsize).decode('ascii'), 16);
+  pycatfcs = int(catfp.read(pycatfcssize).decode('ascii'), 16);
   catfp.seek(1, 1);
   pycatfcontents = catfp.read(pycatfsize);
   if(pycatftype==0):
