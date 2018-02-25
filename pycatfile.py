@@ -86,16 +86,12 @@ def PyCatFile(infiles, outfile, verbose=False):
   fnameintsizehex = format(fnameintsize, 'x').upper();
   if(fnameintsize>fmaxintsize):
    fmaxintsize = fnameintsize;
-  if(ftype==0):
+  if(ftype==0 or ftype==2 or ftype==3):
    fsize = format(int("0"), 'x').upper();
    fsizeintsize = len(fsize);
    fsizeintsizehex = format(fsizeintsize, 'x').upper();
   if(ftype==1):
    fsize = format(int(fstatinfo.st_size), 'x').upper();
-   fsizeintsize = len(fsize);
-   fsizeintsizehex = format(fsizeintsize, 'x').upper();
-  if(ftype==2 or ftype=="3"):
-   fsize = format(int("0"), 'x').upper();
    fsizeintsize = len(fsize);
    fsizeintsizehex = format(fsizeintsize, 'x').upper();
   flinkname = "";
