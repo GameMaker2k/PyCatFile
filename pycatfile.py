@@ -132,7 +132,7 @@ def PyCatFile(infiles, outfile):
    fpc = open(fname, "rb");
    fcontents = fpc.read(int(fstatinfo.st_size));
    fpc.close();
-  if(ftype=="2"):
+  if(ftype=="2" or ftype=="3"):
    fcontents = str(os.readlink(fname)).encode();
   catfileout = str("\0"+ftype+"\0"+fileheaderintsizehex+"\0"+fnameintsizehexout+"\0"+fname+"\0"+fsizeintsizehexout+"\0"+str(fsize)+"\0"+fctimeintsizehexout+"\0"+str(fctime)+"\0"+fatimeintsizehexout+"\0"+str(fatime)+"\0"+fmtimeintsizehexout+"\0"+str(fmtime)+"\0"+fmodeintsizehexout+"\0"+str(fmode)+"\0"+fuidintsizehexout+str(fuid)+"\0"+fgidintsizehexout+str(fgid)+"\0").encode();
   catfileout = catfileout+fcontents;
@@ -197,5 +197,7 @@ def PyUnCatFile(infile, outfiles=None):
    fpc.close();
   if(pycatftype==2):
    os.symlink(pycatfcontents.decode('ascii'), pycatfname);
+  if(pycatftype==3):
+   os.link(pycatfcontents.decode('ascii'), pycatfname);
  catfp.close();
  return True;
