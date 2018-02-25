@@ -63,7 +63,7 @@ def PyCatFile(infiles, outfile, verbose=False):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  catfp = open(outfile, "wb");
  fileheaderver = "00";
- fileheader = "CatFile"+fileheaderver;
+ fileheader = "CatFile"+fileheaderver+"\0";
  catfp.write(fileheader.encode());
  GetDirList = ListDir(infiles);
  for curfname in GetDirList:
@@ -156,7 +156,7 @@ def PyCatFile(infiles, outfile, verbose=False):
    fpc = open(fname, "rb");
    fcontents = fpc.read(int(fstatinfo.st_size));
    fpc.close();
-  catfileout = bytes(str("\0"+str(str(ftype).rjust(2, "0"))+"\0"+fileheaderintsizehex+"\0"+fnameintsizehexout+"\0"+fname+"\0"+fsizeintsizehexout+"\0"+str(fsize)+"\0"+flinknameintsizehexout+"\0"+flinkname+"\0"+fctimeintsizehexout+"\0"+str(fctime)+"\0"+fatimeintsizehexout+"\0"+str(fatime)+"\0"+fmtimeintsizehexout+"\0"+str(fmtime)+"\0"+fmodeintsizehexout+"\0"+str(fmode)+"\0"+fuidintsizehexout+"\0"+str(fuid)+"\0"+fgidintsizehexout+"\0"+str(fgid)+"\0").encode())+fcontents;
+  catfileout = bytes(str(str(str(ftype).rjust(2, "0"))+"\0"+fileheaderintsizehex+"\0"+fnameintsizehexout+"\0"+fname+"\0"+fsizeintsizehexout+"\0"+str(fsize)+"\0"+flinknameintsizehexout+"\0"+flinkname+"\0"+fctimeintsizehexout+"\0"+str(fctime)+"\0"+fatimeintsizehexout+"\0"+str(fatime)+"\0"+fmtimeintsizehexout+"\0"+str(fmtime)+"\0"+fmodeintsizehexout+"\0"+str(fmode)+"\0"+fuidintsizehexout+"\0"+str(fuid)+"\0"+fgidintsizehexout+"\0"+str(fgid)+"\0").encode())+fcontents+bytes(str("\0");
   catfp.write(catfileout);
  catfp.close();
  return True;
@@ -171,8 +171,8 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
  catfp.seek(0, 0);
  pycatstring = catfp.read(7).decode('ascii');
  pycatver = int(catfp.read(2).decode('ascii'), 16);
+ catfp.seek(1, 1);
  while(catfp.tell()<CatSizeEnd):
-  catfp.seek(1, 1);
   pycatftype = int(catfp.read(2).decode('ascii'), 16);
   catfp.seek(1, 1);
   pycatfmsize = int(catfp.read(2).decode('ascii'), 16);
@@ -228,6 +228,7 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
    os.symlink(pycatflinkname, pycatfname);
   if(pycatftype==3):
    os.link(pycatflinkname, pycatfname);
+  catfp.seek(1, 1);
  catfp.close();
  return True;
 
