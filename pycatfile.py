@@ -235,14 +235,16 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
   if(pycatftype==0):
    print(pycatfname);
    os.mkdir(pycatfname);
-   os.chown(pycatfname, pycatfuid, pycatfgid);
+   if(hasattr(os, "chown")):
+    os.chown(pycatfname, pycatfuid, pycatfgid);
    os.chmod(pycatfname, pycatfchmod);
    os.utime(pycatfname, (pycatfatime, pycatfmtime));
   if(pycatftype==1):
    fpc = open(pycatfname, "wb");
    fcontents = fpc.write(pycatfcontents);
    fpc.close();
-   os.chown(pycatfname, pycatfuid, pycatfgid);
+   if(hasattr(os, "chown")):
+    os.chown(pycatfname, pycatfuid, pycatfgid);
    os.chmod(pycatfname, pycatfchmod);
    os.utime(pycatfname, (pycatfatime, pycatfmtime));
   if(pycatftype==2):
