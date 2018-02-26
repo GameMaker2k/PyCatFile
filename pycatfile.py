@@ -229,7 +229,7 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
   pycatfcontents = catfp.read(pycatfsize);
   if(pycatftype==0):
    print(pycatfname);
-   os.mkdir(pycatfname);
+   os.mkdir(pycatfname, pycatfchmod);
    if(hasattr(os, "chown")):
     os.chown(pycatfname, pycatfuid, pycatfgid);
    os.chmod(pycatfname, pycatfchmod);
