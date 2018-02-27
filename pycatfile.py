@@ -44,6 +44,7 @@ if __name__ == '__main__':
  argparser.add_argument("-v", "--verbose", action="store_true", help="print various debugging information");
  argparser.add_argument("-c", "--create", action="store_true", help="concatenate files only");
  argparser.add_argument("-x", "--extract", action="store_true", help="extract files only");
+ argparser.add_argument("-t", "--list", action="store_true", help="list files only");
  argparser.add_argument("-o", "--output", default="./", help="extract concatenate files to or concatenate output name");
  getargs = argparser.parse_args();
 
@@ -224,25 +225,28 @@ def PyCatToArray(infile):
 def PHPCatToArray(infile):
  return PyCatToArray(infile);
 
-def PyCatListFiles(infile):
+def PyCatListFiles(infile, verbose=False):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  listcatfiles = PyCatToArray(infile);
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
-  permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
-  permissionstr = "";
-  for fmodval in str(listcatfiles[lcfi]['fchmod']):
-   permissionstr =  permissions['access'][fmodval] + permissionstr;
-  if(listcatfiles[lcfi]['ftype']==0):
-   permissionstr = "d"+permissionstr;
-  if(listcatfiles[lcfi]['ftype']==1):
-   permissionstr = "-"+permissionstr;
-  if(listcatfiles[lcfi]['ftype']==2):
-   permissionstr = "s"+permissionstr;
-  if(listcatfiles[lcfi]['ftype']==3):
-   permissionstr = "l"+permissionstr;
-  logging.info(permissionstr+" "+str(str(listcatfiles[lcfi]['fuid'])+"/"+str(listcatfiles[lcfi]['fgid'])+" "+str(listcatfiles[lcfi]['fsize']).rjust(15)+" "+datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M')+" "+listcatfiles[lcfi]['fname']));
+  if(verbose is False):
+   logging.info(listcatfiles[lcfi]['fname']);
+  if(verbose is True):
+   permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
+   permissionstr = "";
+   for fmodval in str(listcatfiles[lcfi]['fchmod']):
+    permissionstr =  permissions['access'][fmodval] + permissionstr;
+   if(listcatfiles[lcfi]['ftype']==0):
+    permissionstr = "d"+permissionstr;
+   if(listcatfiles[lcfi]['ftype']==1):
+    permissionstr = "-"+permissionstr;
+   if(listcatfiles[lcfi]['ftype']==2):
+    permissionstr = "s"+permissionstr;
+   if(listcatfiles[lcfi]['ftype']==3):
+    permissionstr = "l"+permissionstr;
+   logging.info(permissionstr+" "+str(str(listcatfiles[lcfi]['fuid'])+"/"+str(listcatfiles[lcfi]['fgid'])+" "+str(listcatfiles[lcfi]['fsize']).rjust(15)+" "+datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M')+" "+listcatfiles[lcfi]['fname']));
   lcfi = lcfi + 1;
  return True;
 
@@ -252,19 +256,45 @@ def PHPCatListFiles(infile):
 if __name__ == '__main__':
  should_extract = False;
  should_create = True;
- if(getargs.extract is False and getargs.create is True):
+ should_list = False;
+ if(getargs.extract is False and getargs.create is True and getargs.list is False):
   should_create = True;
   should_extract = False;
- if(getargs.extract is True and getargs.create is False):
+  should_list = False;
+ if(getargs.extract is True and getargs.create is False and getargs.list is False):
   should_create = False;
   should_extract = True;
- if(getargs.extract is True and getargs.create is True):
+  should_list = False;
+ if(getargs.extract is True and getargs.create is True and getargs.list is False):
   should_create = True;
   should_extract = False;
- if(getargs.extract is False and getargs.create is False):
+  should_list = False;
+ if(getargs.extract is False and getargs.create is False and getargs.list is False):
   should_create = True;
   should_extract = False;
- if(should_create is True and should_extract is False):
+  should_list = False;
+ if(getargs.extract is False and getargs.create is True and getargs.list is True):
+  should_create = True;
+  should_extract = False;
+  should_list = False;
+ if(getargs.extract is True and getargs.create is False and getargs.list is True):
+  should_create = False;
+  should_extract = True;
+  should_list = False;
+ if(getargs.extract is True and getargs.create is True and getargs.list is True):
+  should_create = True;
+  should_extract = False;
+  should_list = False;
+ if(getargs.extract is False and getargs.create is False and getargs.list is True):
+  should_create = False;
+  should_extract = False;
+  should_list = True;
+
+ if(should_create is True and should_extract is False and should_list is False):
   PyCatFile(getargs.input, getargs.output, getargs.verbose);
- if(should_create is False and should_extract is True):
+ if(should_create is False and should_extract is True and should_list is False):
   PyUnCatFile(getargs.input, getargs.output, getargs.verbose);
+ if(should_create is False and should_extract is False and should_list is True):
+  PyCatListFiles(getargs.input, getargs.verbose);
+
+

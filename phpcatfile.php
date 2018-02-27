@@ -194,36 +194,39 @@ function PHPCatToArray($infile) {
 function PyCatToArray($infile) {
  return PHPCatToArray($infile); }
 
-function PHPCatListFiles($infile) {
+function PHPCatListFiles($infile, $verbose=false) {
  $listcatfiles = PHPCatToArray($infile);
  $lcfi = 0;
  $lcfx = count($listcatfiles);
  while($lcfi<$lcfx) {
-  $permissionstr = "";
-  if($listcatfiles[$lcfi]['ftype']==0) {
-   $permissionstr = "d"; }
-  if($listcatfiles[$lcfi]['ftype']==1) {
-   $permissionstr = "-"; }
-  if($listcatfiles[$lcfi]['ftype']==2) {
-   $permissionstr = "s"; }
-  if($listcatfiles[$lcfi]['ftype']==3) {
-   $permissionstr = "l"; }
-  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0100) ? 'r' : '-');
-  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0080) ? 'w' : '-');
-  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0040) ?
-                    (($listcatfiles[$lcfi]['fchmod'] & 0x0800) ? 's' : 'x' ) :
-                    (($listcatfiles[$lcfi]['fchmod'] & 0x0800) ? 'S' : '-'));
-  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0020) ? 'r' : '-');
-  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0010) ? 'w' : '-');
-  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0008) ?
-                    (($listcatfiles[$lcfi]['fchmod'] & 0x0400) ? 's' : 'x' ) :
-                    (($listcatfiles[$lcfi]['fchmod'] & 0x0400) ? 'S' : '-'));
-  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0004) ? 'r' : '-');
-  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0002) ? 'w' : '-');
-  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0001) ?
-                    (($listcatfiles[$lcfi]['fchmod'] & 0x0200) ? 't' : 'x' ) :
-                    (($listcatfiles[$lcfi]['fchmod'] & 0x0200) ? 'T' : '-'));
-  print($permissionstr." ".$listcatfiles[$lcfi]['fuid']."/".$listcatfiles[$lcfi]['fgid']." ".str_pad($listcatfiles[$lcfi]['fsize'], 15, " ", STR_PAD_LEFT)." ".gmdate('Y-m-d H:i', $listcatfiles[$lcfi]['fmtime'])." ".$listcatfiles[$lcfi]['fname']."\n");
+  if($verbose===false) {
+   print($listcatfiles[$lcfi]['fname']."\n");
+  if($verbose===true) {
+   $permissionstr = "";
+   if($listcatfiles[$lcfi]['ftype']==0) {
+    $permissionstr = "d"; }
+   if($listcatfiles[$lcfi]['ftype']==1) {
+    $permissionstr = "-"; }
+   if($listcatfiles[$lcfi]['ftype']==2) {
+    $permissionstr = "s"; }
+   if($listcatfiles[$lcfi]['ftype']==3) {
+    $permissionstr = "l"; }
+   $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0100) ? 'r' : '-');
+   $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0080) ? 'w' : '-');
+   $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0040) ?
+                     (($listcatfiles[$lcfi]['fchmod'] & 0x0800) ? 's' : 'x' ) :
+                     (($listcatfiles[$lcfi]['fchmod'] & 0x0800) ? 'S' : '-'));
+   $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0020) ? 'r' : '-');
+   $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0010) ? 'w' : '-');
+   $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0008) ?
+                     (($listcatfiles[$lcfi]['fchmod'] & 0x0400) ? 's' : 'x' ) :
+                     (($listcatfiles[$lcfi]['fchmod'] & 0x0400) ? 'S' : '-'));
+   $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0004) ? 'r' : '-');
+   $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0002) ? 'w' : '-');
+   $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0001) ?
+                     (($listcatfiles[$lcfi]['fchmod'] & 0x0200) ? 't' : 'x' ) :
+                     (($listcatfiles[$lcfi]['fchmod'] & 0x0200) ? 'T' : '-'));
+   print($permissionstr." ".$listcatfiles[$lcfi]['fuid']."/".$listcatfiles[$lcfi]['fgid']." ".str_pad($listcatfiles[$lcfi]['fsize'], 15, " ", STR_PAD_LEFT)." ".gmdate('Y-m-d H:i', $listcatfiles[$lcfi]['fmtime'])." ".$listcatfiles[$lcfi]['fname']."\n"); }
   $lcfi = $lcfi + 1; }
  return true; }
 
