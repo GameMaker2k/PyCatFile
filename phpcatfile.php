@@ -110,7 +110,7 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
  return true; }
 
 function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
- $catfp = open(infile, "rb");
+ $catfp = fopen($infile, "rb");
  fseek($catfp, 0, SEEK_END);
  $CatSize = ftell($catfp);
  $CatSizeEnd = $CatSize;
