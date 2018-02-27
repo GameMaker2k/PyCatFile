@@ -188,6 +188,9 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
  catfp.close();
  return True;
 
+def PHPUnCatFile(infile, outdir=None, verbose=False):
+ return PyUnCatFile(infile, outdir, verbose);
+
 def PyCatToArray(infile):
  catfp = open(infile, "rb");
  catfp.seek(0, 2);
@@ -225,6 +228,9 @@ def PyCatToArray(infile):
  catfp.close();
  return pycatlist;
 
+def PHPCatToArray(infile):
+ return PyCatToArray(infile);
+
 def PyCatListFiles(infile):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  listcatfiles = PyCatToArray(infile);
@@ -247,8 +253,8 @@ def PyCatListFiles(infile):
   lcfi = lcfi + 1;
  return True;
 
-def PHPUnCatFile(infile, outdir=None, verbose=False):
- return PyUnCatFile(infile, outdir, verbose);
+def PHPCatListFiles(infile):
+ def PyCatListFiles(infile);
 
 if __name__ == '__main__':
  should_extract = False;
