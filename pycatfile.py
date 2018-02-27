@@ -82,7 +82,7 @@ def PyCatFile(infiles, outfile, verbose=False):
  if(os.path.exists(outfile)):
   os.remove(outfile);
  catfp = open(outfile, "wb");
- fileheaderver = "00";
+ fileheaderver = str(int(__version__.replace(".", "")));
  fileheader = "CatFile"+fileheaderver+"\0";
  catfp.write(fileheader.encode());
  GetDirList = ListDir(infiles);
@@ -145,8 +145,7 @@ def PyCatToArray(infile):
  CatSize = catfp.tell();
  CatSizeEnd = CatSize;
  catfp.seek(0, 0);
- pycatstring = catfp.read(7).decode('ascii');
- pycatver = int(ReadTillNullByte(catfp), 16);
+ pycatstring = str(ReadTillNullByte(catfp), 16);
  pycatlist = [];
  while(catfp.tell()<CatSizeEnd):
   pycatftype = int(ReadTillNullByte(catfp), 16);

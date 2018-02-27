@@ -17,6 +17,8 @@
 
 date_default_timezone_set('UTC');
 
+$phpcatver = "0.0.1";
+
 function ListDir($dirname) {
  if(DIRECTORY_SEPARATOR=="\\") {
   $dirname = str_replace(DIRECTORY_SEPARATOR, "/", $dirname); }
@@ -48,10 +50,11 @@ function ReadUntilNullByte($fp) {
  return ReadTillNullByte($fp); }
 
 function PHPCatFile($infiles, $outfile, $verbose=false) {
+ global $phpcatver;
  if(file_exists($outfile)) {
   unlink($outfile); }
  $catfp = fopen($outfile, "wb");
- $fileheaderver = "00";
+ $fileheaderver = intval(str_replace(".", "", $phpcatver));
  $fileheader = "CatFile".$fileheaderver."\0";
  fwrite($catfp, $fileheader);
  $GetDirList = ListDir($infiles);
@@ -114,8 +117,7 @@ function PHPCatToArray($infile) {
  $CatSize = ftell($catfp);
  $CatSizeEnd = $CatSize;
  fseek($catfp, 0, SEEK_SET);
- $phpcatstring = fread($catfp, 7);
- $phpcatver = hexdec(ReadTillNullByte($catfp));
+ $phpcatstring = ReadTillNullByte($catfp);
  $pycatlist = array();
  while(ftell($catfp)<$CatSizeEnd) {
   $phpcatftype = hexdec(ReadTillNullByte($catfp));
