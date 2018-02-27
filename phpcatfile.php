@@ -157,6 +157,4 @@ function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
  fclose($catfp);
  return True; }
 
-PHPUnCatFile("./iDB.cat", "./iDB", True);
-
 ?>
