@@ -87,7 +87,7 @@ def PyCatFile(infiles, outfile, verbose=False):
   fname = curfname;
   if(verbose is True):
    logging.info(fname);
-  fstatinfo = os.stat(fname);
+  fstatinfo = os.lstat(fname);
   ftype = 0;
   if(os.path.isdir(fname)):
    ftype = 0;
