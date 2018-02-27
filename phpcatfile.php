@@ -142,7 +142,7 @@ function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
    chmod($phpcatfname, $phpcatfchmod);
    touch($phpcatfname, $phpcatfmtime, $phpcatfatime); }
   if($phpcatftype==1) {
-   $fpc = fopen($fpc, $phpcatfname, "wb");
+   $fpc = fopen($phpcatfname, "wb");
    fwrite($fpc, $phpcatfcontents);
    fclose($fpc);
    chown($phpcatfname, $phpcatfuid);
