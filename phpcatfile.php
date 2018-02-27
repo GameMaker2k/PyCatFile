@@ -138,7 +138,8 @@ function PHPCatToArray($infile) {
   $phpcatfcontents = "";
   if($phpcatfsize>1) {
    $phpcatfcontents = fread($catfp, $phpcatfsize); }
-  $pycatlist[] = array('fstart' => $pycatfstart, 'ftype' => $phpcatftype, 'fname' => $phpcatfname, 'fsize' => $phpcatfsize, 'flinkname' => $phpcatflinkname, 'fatime' => $phpcatfatime, 'fmtime' => $phpcatfmtime, 'fmode' => $phpcatfmode, 'fchmod' => $phpcatfchmod, 'fuid' => $phpcatfuid, 'fgid' => $phpcatfgid, 'fchecksum' => $phpcatfcs, 'fcontentstart' => $pycatfcontentstart, 'fcontents' => $phpcatfcontents);
+  $pycatfcontentend = ftell($catfp);
+  $pycatlist[] = array('fstart' => $pycatfstart, 'ftype' => $phpcatftype, 'fname' => $phpcatfname, 'fsize' => $phpcatfsize, 'flinkname' => $phpcatflinkname, 'fatime' => $phpcatfatime, 'fmtime' => $phpcatfmtime, 'fmode' => $phpcatfmode, 'fchmod' => $phpcatfchmod, 'fuid' => $phpcatfuid, 'fgid' => $phpcatfgid, 'fchecksum' => $phpcatfcs, 'fcontentstart' => $pycatfcontentstart, 'fcontentend' => $pycatfcontentend, 'fcontents' => $phpcatfcontents);
   fseek($catfp, 1, SEEK_CUR); }
  fclose($catfp);
  return $pycatlist; }
