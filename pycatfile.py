@@ -166,7 +166,8 @@ def PyCatToArray(infile):
   pycatfcontents = "";
   if(pycatfsize>1):
    pycatfcontents = catfp.read(pycatfsize);
-  pycatlist.append({'fstart': pycatfstart, 'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fcontentstart': pycatfcontentstart, 'fcontents': pycatfcontents});
+  pycatfcontentend = catfp.tell();
+  pycatlist.append({'fstart': pycatfstart, 'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fcontentstart': pycatfcontentstart, 'fcontentend': pycatfcontentend, 'fcontents': pycatfcontents});
   catfp.seek(1, 1);
  catfp.close();
  return pycatlist;
