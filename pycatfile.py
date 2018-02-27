@@ -158,7 +158,9 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
   pycatfuid = int(ReadTillNullByte(catfp), 16);
   pycatfgid = int(ReadTillNullByte(catfp), 16);
   pycatfcs = int(ReadTillNullByte(catfp), 16);
-  pycatfcontents = catfp.read(pycatfsize);
+  pycatfcontents = "";
+  if(pycatfsize>1):
+   pycatfcontents = catfp.read(pycatfsize);
   if(pycatftype==0):
    os.mkdir(pycatfname, pycatfchmod);
    if(hasattr(os, "chown")):
