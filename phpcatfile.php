@@ -108,57 +108,6 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
 function PyCatFile($infiles, $outfile, $verbose=false) {
  return PHPCatFile($infiles, $outfile, $verbose); }
 
-function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
- $catfp = fopen($infile, "rb");
- fseek($catfp, 0, SEEK_END);
- $CatSize = ftell($catfp);
- $CatSizeEnd = $CatSize;
- fseek($catfp, 0, SEEK_SET);
- $phpcatstring = fread($catfp, 7);
- $phpcatver = hexdec(ReadTillNullByte($catfp));
- while(ftell($catfp)<$CatSizeEnd) {
-  $phpcatftype = hexdec(ReadTillNullByte($catfp));
-  $phpcatfname = ReadTillNullByte($catfp);
-  if($verbose===true) {
-   print($phpcatfname."\n"); }
-  $phpcatfsize = hexdec(ReadTillNullByte($catfp));
-  $phpcatflinkname = ReadTillNullByte($catfp);
-  $phpcatfatime = hexdec(ReadTillNullByte($catfp));
-  $phpcatfmtime = hexdec(ReadTillNullByte($catfp));
-  $phpcatfmode = hexdec(ReadTillNullByte($catfp));
-  $phpcatfmodeoct = decoct($phpcatfmode);
-  $phpcatfchmod = hexdec("0".substr($phpcatfmode,-3));
-  $phpcatfuid = hexdec(ReadTillNullByte($catfp));
-  $phpcatfgid = hexdec(ReadTillNullByte($catfp));
-  $phpcatfcs = hexdec(ReadTillNullByte($catfp));
-  $phpcatfcontents = "";
-  if($phpcatfsize>1) {
-   $phpcatfcontents = fread($catfp, $phpcatfsize); }
-  if($phpcatftype==0) {
-   mkdir($phpcatfname, $phpcatfchmod);
-   chown($phpcatfname, $phpcatfuid);
-   chgrp($phpcatfname, $phpcatfgid);
-   chmod($phpcatfname, $phpcatfchmod);
-   touch($phpcatfname, $phpcatfmtime, $phpcatfatime); }
-  if($phpcatftype==1) {
-   $fpc = fopen($phpcatfname, "wb");
-   fwrite($fpc, $phpcatfcontents);
-   fclose($fpc);
-   chown($phpcatfname, $phpcatfuid);
-   chgrp($phpcatfname, $phpcatfgid);
-   chmod($phpcatfname, $phpcatfchmod);
-   touch($phpcatfname, $phpcatfmtime, $phpcatfatime); }
-  if($phpcatftype==2) {
-   symlink($phpcatflinkname, $phpcatfname); }
-  if($phpcatftype==3) {
-   link($phpcatflinkname, $phpcatfname); }
-  fseek($catfp, 1, SEEK_CUR); }
- fclose($catfp);
- return True; }
-
-function PyUnCatFile($infile, $outdir=null, $verbose=False) {
- return PHPUnCatFile($infile, $outdir, $verbose); }
-
 function PHPCatToArray($infile) {
  $catfp = fopen($infile, "rb");
  fseek($catfp, 0, SEEK_END);
@@ -194,13 +143,44 @@ function PHPCatToArray($infile) {
 function PyCatToArray($infile) {
  return PHPCatToArray($infile); }
 
+function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
+ $listcatfiles = PHPCatToArray($infile);
+ $lcfi = 0;
+ $lcfx = count($listcatfiles);
+ while($lcfi<$lcfx) {
+  if($verbose===true) {
+   print($listcatfiles[$lcfi]['fname']."\n"); }
+  if($listcatfiles[$lcfi]['ftype']==0) {
+   mkdir($listcatfiles[$lcfi]['fname'], $listcatfiles[$lcfi]['fchmod']);
+   chown($listcatfiles[$lcfi]['fname'], $listcatfiles[$lcfi]['fuid']);
+   chgrp($listcatfiles[$lcfi]['fname'], $listcatfiles[$lcfi]['fgid']);
+   chmod($listcatfiles[$lcfi]['fname'], $listcatfiles[$lcfi]['fchmod']);
+   touch($listcatfiles[$lcfi]['fname'], $listcatfiles[$lcfi]['fmtime'], $listcatfiles[$lcfi]['fatime']); }
+  if($listcatfiles[$lcfi]['ftype']==1) {
+   $fpc = fopen($listcatfiles[$lcfi]['fname'], "wb");
+   fwrite($fpc, $listcatfiles[$lcfi]['fcontents']);
+   fclose($fpc);
+   chown($listcatfiles[$lcfi]['fname'], $listcatfiles[$lcfi]['fuid']);
+   chgrp($listcatfiles[$lcfi]['fname'], $listcatfiles[$lcfi]['fgid']);
+   chmod($listcatfiles[$lcfi]['fname'], $listcatfiles[$lcfi]['fchmod']);
+   touch($listcatfiles[$lcfi]['fname'], $listcatfiles[$lcfi]['fmtime'], $listcatfiles[$lcfi]['fatime']); }
+  if($listcatfiles[$lcfi]['ftype']==2) {
+   symlink($listcatfiles[$lcfi]['flinkname'], $listcatfiles[$lcfi]['fname']); }
+  if($listcatfiles[$lcfi]['ftype']==3) {
+   link($listcatfiles[$lcfi]['flinkname'], $listcatfiles[$lcfi]['fname']); }
+  $lcfi = $lcfi + 1; }
+ return true; }
+
+function PyUnCatFile($infile, $outdir=null, $verbose=False) {
+ return PHPUnCatFile($infile, $outdir, $verbose); }
+
 function PHPCatListFiles($infile, $verbose=false) {
  $listcatfiles = PHPCatToArray($infile);
  $lcfi = 0;
  $lcfx = count($listcatfiles);
  while($lcfi<$lcfx) {
   if($verbose===false) {
-   print($listcatfiles[$lcfi]['fname']."\n");
+   print($listcatfiles[$lcfi]['fname']."\n"); }
   if($verbose===true) {
    $permissionstr = "";
    if($listcatfiles[$lcfi]['ftype']==0) {
@@ -232,5 +212,4 @@ function PHPCatListFiles($infile, $verbose=false) {
 
 function PyCatListFiles($infile) {
  return PHPCatListFiles($infile); }
-
 ?>

@@ -139,59 +139,6 @@ def PyCatFile(infiles, outfile, verbose=False):
 def PHPCatFile(infiles, outfile, verbose=False):
  return PyCatFile(infiles, outfile, verbose);
 
-def PyUnCatFile(infile, outdir=None, verbose=False):
- if(verbose is True):
-  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
- catfp = open(infile, "rb");
- catfp.seek(0, 2);
- CatSize = catfp.tell();
- CatSizeEnd = CatSize;
- catfp.seek(0, 0);
- pycatstring = catfp.read(7).decode('ascii');
- pycatver = int(ReadTillNullByte(catfp), 16);
- while(catfp.tell()<CatSizeEnd):
-  pycatftype = int(ReadTillNullByte(catfp), 16);
-  pycatfname = ReadTillNullByte(catfp);
-  if(verbose is True):
-   logging.info(pycatfname);
-  pycatfsize = int(ReadTillNullByte(catfp), 16);
-  pycatflinkname = ReadTillNullByte(catfp);
-  pycatfatime = int(ReadTillNullByte(catfp), 16);
-  pycatfmtime = int(ReadTillNullByte(catfp), 16);
-  pycatfmode = int(ReadTillNullByte(catfp), 16);
-  pycatfmodeoct = oct(pycatfmode);
-  pycatfchmod = int("0"+str(pycatfmode)[-3:]);
-  pycatfuid = int(ReadTillNullByte(catfp), 16);
-  pycatfgid = int(ReadTillNullByte(catfp), 16);
-  pycatfcs = int(ReadTillNullByte(catfp), 16);
-  pycatfcontents = "";
-  if(pycatfsize>1):
-   pycatfcontents = catfp.read(pycatfsize);
-  if(pycatftype==0):
-   os.mkdir(pycatfname, pycatfchmod);
-   if(hasattr(os, "chown")):
-    os.chown(pycatfname, pycatfuid, pycatfgid);
-   os.chmod(pycatfname, pycatfchmod);
-   os.utime(pycatfname, (pycatfatime, pycatfmtime));
-  if(pycatftype==1):
-   fpc = open(pycatfname, "wb");
-   fpc.write(pycatfcontents);
-   fpc.close();
-   if(hasattr(os, "chown")):
-    os.chown(pycatfname, pycatfuid, pycatfgid);
-   os.chmod(pycatfname, pycatfchmod);
-   os.utime(pycatfname, (pycatfatime, pycatfmtime));
-  if(pycatftype==2):
-   os.symlink(pycatflinkname, pycatfname);
-  if(pycatftype==3):
-   os.link(pycatflinkname, pycatfname);
-  catfp.seek(1, 1);
- catfp.close();
- return True;
-
-def PHPUnCatFile(infile, outdir=None, verbose=False):
- return PyUnCatFile(infile, outdir, verbose);
-
 def PyCatToArray(infile):
  catfp = open(infile, "rb");
  catfp.seek(0, 2);
@@ -224,6 +171,39 @@ def PyCatToArray(infile):
 
 def PHPCatToArray(infile):
  return PyCatToArray(infile);
+
+def PyUnCatFile(infile, outdir=None, verbose=False):
+ if(verbose is True):
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+ listcatfiles = PyCatToArray(infile);
+ lcfi = 0;
+ lcfx = len(listcatfiles);
+ while(lcfi < lcfx):
+  if(verbose is True):
+   logging.info(listcatfiles[lcfi]['fname']);
+  if(listcatfiles[lcfi]['ftype']==0):
+   os.mkdir(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fchmod']);
+   if(hasattr(os, "chown")):
+    os.chown(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fuid'], listcatfiles[lcfi]['fgid']);
+   os.chmod(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fchmod']);
+   os.utime(listcatfiles[lcfi]['fname'], (listcatfiles[lcfi]['fatime'], listcatfiles[lcfi]['fmtime']));
+  if(listcatfiles[lcfi]['ftype']==1):
+   fpc = open(listcatfiles[lcfi]['fname'], "wb");
+   fpc.write(listcatfiles[lcfi]['fcontents']);
+   fpc.close();
+   if(hasattr(os, "chown")):
+    os.chown(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fuid'], listcatfiles[lcfi]['fgid']);
+   os.chmod(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fchmod']);
+   os.utime(listcatfiles[lcfi]['fname'], (listcatfiles[lcfi]['fatime'], listcatfiles[lcfi]['fmtime']));
+  if(listcatfiles[lcfi]['ftype']==2):
+   os.symlink(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
+  if(listcatfiles[lcfi]['ftype']==3):
+   os.link(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
+  lcfi = lcfi + 1;
+ return True;
+
+def PHPUnCatFile(infile, outdir=None, verbose=False):
+ return PyUnCatFile(infile, outdir, verbose);
 
 def PyCatListFiles(infile, verbose=False):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
