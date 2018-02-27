@@ -127,7 +127,7 @@ function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
   $phpcatfatime = hexdec(ReadTillNullByte($catfp));
   $phpcatfmtime = hexdec(ReadTillNullByte($catfp));
   $phpcatfmode = hexdec(ReadTillNullByte($catfp));
-  $phpcatfmodeoct = decoct(phpcatfmode);
+  $phpcatfmodeoct = decoct($phpcatfmode);
   $phpcatfchmod = hexdec("0".substr($phpcatfmode,-3));
   $phpcatfuid = hexdec(ReadTillNullByte($catfp));
   $phpcatfgid = hexdec(ReadTillNullByte($catfp));
