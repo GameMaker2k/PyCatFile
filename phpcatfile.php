@@ -132,7 +132,9 @@ function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
   $phpcatfuid = hexdec(ReadTillNullByte($catfp));
   $phpcatfgid = hexdec(ReadTillNullByte($catfp));
   $phpcatfcs = hexdec(ReadTillNullByte($catfp));
-  $phpcatfcontents = fread($catfp, $phpcatfsize);
+  $phpcatfcontents = "";
+  if($phpcatfsize<1) {
+   $phpcatfcontents = fread($catfp, $phpcatfsize); }
   if($phpcatftype==0) {
    mkdir($phpcatfname, $phpcatfchmod);
    chown($phpcatfname, $phpcatfuid);
