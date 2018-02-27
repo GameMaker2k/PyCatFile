@@ -62,7 +62,7 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
  foreach ($curfid as $curfname => $GetDirList) {
   $fname = $curfname;
   if($verbose===true) {
-   print($fname); }
+   print($fname."\n"); }
   $fstatinfo = lstat($fname);
   $ftype = 0;
   if(is_dir($fname)) {
@@ -121,7 +121,7 @@ function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
   $phpcatftype = hexdec(ReadTillNullByte($catfp));
   $phpcatfname = ReadTillNullByte($catfp);
   if($verbose===true) {
-   print($phpcatfname); }
+   print($phpcatfname."\n"); }
   $phpcatfsize = hexdec(ReadTillNullByte($catfp));
   $phpcatflinkname = ReadTillNullByte($catfp);
   $phpcatfatime = hexdec(ReadTillNullByte($catfp));
