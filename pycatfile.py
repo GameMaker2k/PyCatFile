@@ -145,7 +145,7 @@ def PyCatToArray(infile):
  CatSize = catfp.tell();
  CatSizeEnd = CatSize;
  catfp.seek(0, 0);
- pycatstring = str(ReadTillNullByte(catfp), 16);
+ pycatstring = ReadTillNullByte(catfp);
  pycatlist = [];
  while(catfp.tell()<CatSizeEnd):
   pycatftype = int(ReadTillNullByte(catfp), 16);
