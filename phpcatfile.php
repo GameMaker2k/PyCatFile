@@ -13,27 +13,19 @@
 */
 
 function ListDir($dirname) {
- if($handle = opendir($dirname)) {
-  while (false !== ($file = readdir($handle))) {
-   if($dirnum==null) {
-    $dirnum = 0; }
-   if($file != "." && $file != ".." && $file != ".htaccess" && $file != null) {
-    if(filetype($dirname.$file)=="file") {
-     $srcfile[$dirnum] = $file; }
-    if(filetype($dirname.$file)=="dir") {
-     $srcdir[$dirnum] = $file; }
-    ++$dirnum; } }
-  if($srcdir!=null) {
-   asort($srcdir); }
-  if($srcfile!=null) {
-   asort($srcfile); }
-  if($srcdir!=null&&$srcfile!=null) {
-   $fulllist = array_merge($srcdir, $srcfile); }
-  if($srcdir!=null&&$srcfile==null) {
-   $fulllist = $srcdir; }
-  if($srcdir==null&&$srcfile!=null) {
-   $fulllist = $srcfile; }
-  closedir($handle); }
+ if(DIRECTORY_SEPARATOR=="\\") {
+  $dirname = str_replace(DIRECTORY_SEPARATOR, "/", $dirname); }
+ $fulllist[] = $dirname;
+ if(is_dir($dirname)) {
+  if($dh = opendir($dirname)) {
+   while(($file = readdir($dh)) !== false) {
+    if($file!="." && $file!=".." && is_dir($dirname."/".$file)) {
+     $fulllistnew = ListDir($dirname."/".$file);
+	 foreach($fulllistnew as $fulllistary) {
+	  $fulllist[] = $fulllistary; } }
+    if(!is_dir($dirname."/".$file)) {
+     $fulllist[] = $dirname."/".$file; } } }
+	closedir($dh); }
  return $fulllist; }
 
 function ReadTillNullByte($fp) {
@@ -57,9 +49,8 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
  $fileheaderver = "00";
  $fileheader = "CatFile".$fileheaderver."\0";
  fwrite($catfp, $fileheader);
- fclose($catfp);
  $GetDirList = ListDir($infiles);
- foreach ($curfid as $curfname => $GetDirList) {
+ foreach($GetDirList as $curfname) {
   $fname = $curfname;
   if($verbose===true) {
    print($fname."\n"); }
@@ -73,7 +64,7 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
    $ftype = 2; }
   if($ftype==0 || $ftype==2 || $ftype==3) {
    $fsize = strtoupper(dechex(intval("0"))); }
-  if(ftype==1) {
+  if($ftype==1) {
    $fsize = strtoupper(dechex(intval($fstatinfo['size']))); }
   $flinkname = "";
   if($ftype==2 || $ftype==3) {
@@ -108,6 +99,8 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
   fwrite($catfp, $catfileout); }
  fclose($catfp);
  return true; }
+
+PHPCatFile("./iDB", "iDB.cat", true);
 
 function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
  $catfp = fopen($infile, "rb");
