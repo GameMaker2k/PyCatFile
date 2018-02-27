@@ -56,7 +56,7 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
  $catfp = fopen($outfile, "wb");
  $fileheaderver = "00";
  $fileheader = "CatFile".$fileheaderver."\0";
- fwrite($fileheader);
+ fwrite($catfp, $fileheader);
  fclose($catfp);
  $GetDirList = ListDir($infiles);
  foreach ($curfid as $curfname => $GetDirList) {
