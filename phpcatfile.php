@@ -87,7 +87,7 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
   $fcontents = "";
   if($ftype==1) {
    $fpc = fopen($fname, "rb");
-   $fcontents = fread($fpc, intval($fstatinfo['st_size']));
+   $fcontents = fread($fpc, intval($fstatinfo['size']));
    fclose($fpc); }
   $ftypehex = strtoupper(dechex($ftype));
   $ftypeoutstr = $ftypehex;
@@ -132,7 +132,7 @@ function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
   $phpcatfuid = hexdec(ReadTillNullByte($catfp));
   $phpcatfgid = hexdec(ReadTillNullByte($catfp));
   $phpcatfcs = hexdec(ReadTillNullByte($catfp));
-  $phpcatfcontents = $catfp.fread($phpcatfsize);
+  $phpcatfcontents = fread($catfp, $phpcatfsize);
   if($phpcatftype==0) {
    mkdir($phpcatfname, $phpcatfchmod);
    chown($phpcatfname, $phpcatfuid);
@@ -154,5 +154,7 @@ function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
   fseek($catfp, 1, SEEK_CUR); }
  fclose($catfp);
  return True; }
+
+PHPUnCatFile("./iDB.cat", "./iDB", True);
 
 ?>
