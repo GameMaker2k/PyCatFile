@@ -12,23 +12,6 @@
     $FileInfo: phpcatfile.php - Last Update: 2/26/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 */
 
-/*
-def ListDir(dirpath):
- retlist = [dirpath];
- for path, subdirs, files in os.walk(dirpath):
-  for name in subdirs:
-   fpath = os.path.join(path, name);
-   if(os.sep!="/"):
-    fpath = fpath.replace(os.path.sep, "/");
-   retlist.append(fpath);
-  for name in files:
-   fpath = os.path.join(path, name);
-   if(os.sep!="/"):
-    fpath = fpath.replace(os.path.sep, "/");
-   retlist.append(fpath);
- return retlist;
-*/
-
 function ListDir($dirname) {
  if($handle = opendir($dirname)) {
   while (false !== ($file = readdir($handle))) {
@@ -171,4 +154,5 @@ function PyUnCatFile($infile, $outdir=null, $verbose=False) {
   fseek($catfp, 1, SEEK_CUR); }
  fclose($catfp);
  return True; }
+
 ?>
