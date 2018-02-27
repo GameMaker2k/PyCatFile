@@ -82,7 +82,8 @@ def PyCatFile(infiles, outfile, verbose=False):
  if(os.path.exists(outfile)):
   os.remove(outfile);
  catfp = open(outfile, "wb");
- fileheaderver = str(int(__version__.replace(".", "")));
+ pycatver = str(__version_info__[0])+str(__version_info__[1])+str(__version_info__[2]);
+ fileheaderver = str(int(pycatver.replace(".", "")));
  fileheader = "CatFile"+fileheaderver+"\0";
  catfp.write(fileheader.encode());
  GetDirList = ListDir(infiles);
