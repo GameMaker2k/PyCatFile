@@ -149,6 +149,7 @@ def PyCatToArray(infile):
  pycatstring = ReadTillNullByte(catfp);
  pycatlist = [];
  while(catfp.tell()<CatSizeEnd):
+  pycatfstart = catfp.tell();
   pycatftype = int(ReadTillNullByte(catfp), 16);
   pycatfname = ReadTillNullByte(catfp);
   pycatfsize = int(ReadTillNullByte(catfp), 16);
@@ -161,10 +162,11 @@ def PyCatToArray(infile):
   pycatfuid = int(ReadTillNullByte(catfp), 16);
   pycatfgid = int(ReadTillNullByte(catfp), 16);
   pycatfcs = int(ReadTillNullByte(catfp), 16);
+  pycatfcontentstart = catfp.tell();
   pycatfcontents = "";
   if(pycatfsize>1):
    pycatfcontents = catfp.read(pycatfsize);
-  pycatlist.append({'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fcontents': pycatfcontents});
+  pycatlist.append({'fstart': pycatfstart, 'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fcontentstart': pycatfcontentstart, 'fcontents': pycatfcontents});
   catfp.seek(1, 1);
  catfp.close();
  return pycatlist;

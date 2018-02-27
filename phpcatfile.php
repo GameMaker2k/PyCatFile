@@ -120,6 +120,7 @@ function PHPCatToArray($infile) {
  $phpcatstring = ReadTillNullByte($catfp);
  $pycatlist = array();
  while(ftell($catfp)<$CatSizeEnd) {
+  $pycatfstart = ftell($catfp);
   $phpcatftype = hexdec(ReadTillNullByte($catfp));
   $phpcatfname = ReadTillNullByte($catfp);
   if($verbose===true) {
@@ -133,10 +134,11 @@ function PHPCatToArray($infile) {
   $phpcatfuid = hexdec(ReadTillNullByte($catfp));
   $phpcatfgid = hexdec(ReadTillNullByte($catfp));
   $phpcatfcs = hexdec(ReadTillNullByte($catfp));
+  $pycatfcontentstart = ftell($catfp);
   $phpcatfcontents = "";
   if($phpcatfsize>1) {
    $phpcatfcontents = fread($catfp, $phpcatfsize); }
-  $pycatlist[] = array('ftype' => $phpcatftype, 'fname' => $phpcatfname, 'fsize' => $phpcatfsize, 'flinkname' => $phpcatflinkname, 'fatime' => $phpcatfatime, 'fmtime' => $phpcatfmtime, 'fmode' => $phpcatfmode, 'fchmod' => $phpcatfchmod, 'fuid' => $phpcatfuid, 'fgid' => $phpcatfgid, 'fchecksum' => $phpcatfcs, 'fcontents' => $phpcatfcontents);
+  $pycatlist[] = array('fstart' => $pycatfstart, 'ftype' => $phpcatftype, 'fname' => $phpcatfname, 'fsize' => $phpcatfsize, 'flinkname' => $phpcatflinkname, 'fatime' => $phpcatfatime, 'fmtime' => $phpcatfmtime, 'fmode' => $phpcatfmode, 'fchmod' => $phpcatfchmod, 'fuid' => $phpcatfuid, 'fgid' => $phpcatfgid, 'fchecksum' => $phpcatfcs, 'fcontentstart' => $pycatfcontentstart, 'fcontents' => $phpcatfcontents);
   fseek($catfp, 1, SEEK_CUR); }
  fclose($catfp);
  return $pycatlist; }
