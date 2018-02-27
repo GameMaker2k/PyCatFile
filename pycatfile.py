@@ -272,7 +272,6 @@ if __name__ == '__main__':
   should_create = False;
   should_extract = False;
   should_list = True;
-
  if(should_create is True and should_extract is False and should_list is False):
   PyCatFile(getargs.input, getargs.output, getargs.verbose);
  if(should_create is False and should_extract is True and should_list is False):
