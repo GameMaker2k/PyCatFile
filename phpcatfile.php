@@ -74,10 +74,10 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
   if($ftype==0 || $ftype==2 || $ftype==3) {
    $fsize = strtoupper(dechex(intval("0"))); }
   if(ftype==1) {
-   $fsize = strtoupper(dechex(intval(fstatinfo.st_size))); }
+   $fsize = strtoupper(dechex(intval($fstatinfo['size']))); }
   $flinkname = "";
-  if($ftype==2 or $ftype==3) {
-   $flinkname = os.readlink(fname); }
+  if($ftype==2 || $ftype==3) {
+   $flinkname = os.readlink($fname); }
   $flinknameintsize = strlen($flinkname);
   $fatime = strtoupper(dechex(intval($fstatinfo['atime'])));
   $fmtime = strtoupper(dechex(intval($fstatinfo['mtime'])));
@@ -86,27 +86,27 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
   $fgid = strtoupper(dechex(intval($fstatinfo['gid'])));
   $fcontents = "";
   if($ftype==1) {
-   $fpc = fopen(fname, "rb");
-   $fcontents = read($fpc, intval($fstatinfo['st_size']));
+   $fpc = fopen($fname, "rb");
+   $fcontents = fread($fpc, intval($fstatinfo['st_size']));
    fclose($fpc); }
   $ftypehex = strtoupper(dechex($ftype));
   $ftypeoutstr = $ftypehex;
   $catfileoutstr = $ftypeoutstr."\0";
-  $catfileoutstr = $catfileoutstr.fname."\0";
-  $catfileoutstr = $catfileoutstr.fsize."\0";
-  $catfileoutstr = $catfileoutstr.flinkname."\0";
-  $catfileoutstr = $catfileoutstr.fatime."\0";
-  $catfileoutstr = $catfileoutstr.fmtime."\0";
-  $catfileoutstr = $catfileoutstr.fmode."\0";
-  $catfileoutstr = $catfileoutstr.fuid."\0";
-  $catfileoutstr = $catfileoutstr.fgid."\0";
-  $catfileheadercshex = strtoupper(dechex(crc32(catfileoutstr)));
+  $catfileoutstr = $catfileoutstr.$fname."\0";
+  $catfileoutstr = $catfileoutstr.$fsize."\0";
+  $catfileoutstr = $catfileoutstr.$flinkname."\0";
+  $catfileoutstr = $catfileoutstr.$fatime."\0";
+  $catfileoutstr = $catfileoutstr.$fmtime."\0";
+  $catfileoutstr = $catfileoutstr.$fmode."\0";
+  $catfileoutstr = $catfileoutstr.$fuid."\0";
+  $catfileoutstr = $catfileoutstr.$fgid."\0";
+  $catfileheadercshex = strtoupper(dechex(crc32($catfileoutstr)));
   $catfileoutstr = $catfileoutstr.$catfileheadercshex."\0";
   $catfileoutstrecd = $catfileoutstr;
   $nullstrecd = "\0";
   $catfileout = $catfileoutstrecd.$fcontents.$nullstrecd;
   fwrite($catfp, $catfileout); }
- fclose(catfp);
+ fclose($catfp);
  return true; }
 
 function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
