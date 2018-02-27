@@ -109,7 +109,7 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
  fclose(catfp);
  return true; }
 
-function PyUnCatFile($infile, $outdir=null, $verbose=False) {
+function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
  $catfp = open(infile, "rb");
  fseek($catfp, 0, SEEK_END);
  $CatSize = ftell($catfp);
