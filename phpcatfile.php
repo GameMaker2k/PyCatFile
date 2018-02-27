@@ -100,6 +100,9 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
  fclose($catfp);
  return true; }
 
+function PyCatFile($infiles, $outfile, $verbose=false) {
+ return PHPCatFile($infiles, $outfile, $verbose); }
+
 function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
  $catfp = fopen($infile, "rb");
  fseek($catfp, 0, SEEK_END);
@@ -147,5 +150,8 @@ function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
   fseek($catfp, 1, SEEK_CUR); }
  fclose($catfp);
  return True; }
+
+function PyUnCatFile($infile, $outdir=null, $verbose=False) {
+ return PHPUnCatFile($infile, $outdir, $verbose); }
 
 ?>

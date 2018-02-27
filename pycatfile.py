@@ -132,6 +132,9 @@ def PyCatFile(infiles, outfile, verbose=False):
  catfp.close();
  return True;
 
+def PHPCatFile(infiles, outfile, verbose=False):
+ return PyCatFile(infiles, outfile, verbose);
+
 def PyUnCatFile(infile, outdir=None, verbose=False):
  if(verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
@@ -181,6 +184,9 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
   catfp.seek(1, 1);
  catfp.close();
  return True;
+
+def PHPUnCatFile(infile, outdir=None, verbose=False):
+ return PyUnCatFile(infile, outdir, verbose);
 
 if __name__ == '__main__':
  should_extract = False;
