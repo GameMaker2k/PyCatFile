@@ -14,14 +14,14 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-	$FileInfo: pycatfile.py - Last Update: 2/26/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+	$FileInfo: pycatfile.py - Last Update: 2/27/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 __program_name__ = "PyCatFile";
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 0, 1, "RC 1", 1);
-__version_date_info__ = (2018, 2, 26, "RC 1", 1);
+__version_date_info__ = (2018, 2, 27, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0])+"."+str(__version_date_info__[1]).zfill(2)+"."+str(__version_date_info__[2]).zfill(2);
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__+"-"+str(__version_date_info__[4]);
@@ -32,8 +32,9 @@ if(__version_info__[3] is not None):
 if(__version_info__[3] is None):
  __version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2]);
 
-import os, sys, logging, zlib;
+import os, sys, logging, zlib, datetime;
 
+'''
 if __name__ == '__main__':
  import argparse;
 
@@ -46,6 +47,7 @@ if __name__ == '__main__':
  argparser.add_argument("-x", "--extract", action="store_true", help="extract files only");
  argparser.add_argument("-o", "--output", default="./", help="extract concatenate files to or concatenate output name");
  getargs = argparser.parse_args();
+'''
 
 def ListDir(dirpath):
  retlist = [];
@@ -188,9 +190,71 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
  catfp.close();
  return True;
 
+def PyCatToArray(infile):
+ catfp = open(infile, "rb");
+ catfp.seek(0, 2);
+ CatSize = catfp.tell();
+ CatSizeEnd = CatSize;
+ catfp.seek(0, 0);
+ pycatstring = catfp.read(7).decode('ascii');
+ pycatver = int(ReadTillNullByte(catfp), 16);
+ pycatlist = [];
+ while(catfp.tell()<CatSizeEnd):
+  pycatftype = int(ReadTillNullByte(catfp), 16);
+  pycatfname = ReadTillNullByte(catfp);
+  pycatfsize = int(ReadTillNullByte(catfp), 16);
+  pycatflinkname = ReadTillNullByte(catfp);
+  pycatfatime = int(ReadTillNullByte(catfp), 16);
+  pycatfmtime = int(ReadTillNullByte(catfp), 16);
+  pycatfmode = int(ReadTillNullByte(catfp), 16);
+  pycatfmodeoct = oct(pycatfmode);
+  pycatfchmod = int("0"+str(pycatfmode)[-3:]);
+  pycatfuid = int(ReadTillNullByte(catfp), 16);
+  pycatfgid = int(ReadTillNullByte(catfp), 16);
+  pycatfcs = int(ReadTillNullByte(catfp), 16);
+  pycatfcontents = "";
+  if(pycatfsize>1):
+   pycatfcontents = catfp.read(pycatfsize);
+  if(pycatftype==0):
+   pycatlist.append({'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fcontents': pycatfcontents});
+  if(pycatftype==1):
+   pycatlist.append({'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fcontents': pycatfcontents});
+  if(pycatftype==2):
+   pycatlist.append({'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fcontents': pycatfcontents});
+  if(pycatftype==3):
+   pycatlist.append({'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fcontents': pycatfcontents});
+  catfp.seek(1, 1);
+ catfp.close();
+ return pycatlist;
+
+def PyCatListFiles(infile):
+ logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+ listcatfiles = PyCatToArray(infile);
+ lcfi = 0;
+ lcfx = len(listcatfiles);
+ while(lcfi < lcfx):
+  permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
+  permissionstr = "";
+  for fmodval in str(listcatfiles[lcfi]['fchmod']):
+   permissionstr =  permissions['access'][fmodval] + permissionstr;
+  if(listcatfiles[lcfi]['ftype']==1):
+   permissionstr = "-"+permissionstr;
+  if(listcatfiles[lcfi]['ftype']==3):
+   permissionstr = "l"+permissionstr;
+  if(listcatfiles[lcfi]['ftype']==2):
+   permissionstr = "s"+permissionstr;
+  if(listcatfiles[lcfi]['ftype']==0):
+   permissionstr = "d"+permissionstr;
+  logging.info(permissionstr+" "+str(str(listcatfiles[lcfi]['fuid'])+"/"+str(listcatfiles[lcfi]['fgid'])+" "+str(listcatfiles[lcfi]['fsize']).rjust(15)+" "+datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M')+" "+listcatfiles[lcfi]['fname']));
+  lcfi = lcfi + 1;
+ return True;
+
+PyCatListFiles("./Python-3.6.4.cat");
+
 def PHPUnCatFile(infile, outdir=None, verbose=False):
  return PyUnCatFile(infile, outdir, verbose);
 
+'''
 if __name__ == '__main__':
  should_extract = False;
  should_create = True;
@@ -210,3 +274,4 @@ if __name__ == '__main__':
   PyCatFile(getargs.input, getargs.output, getargs.verbose);
  if(should_create is False and should_extract is True):
   PyUnCatFile(getargs.input, getargs.output, getargs.verbose);
+'''
