@@ -45,15 +45,14 @@ if __name__ == '__main__':
  getargs = argparser.parse_args();
 
 def ListDir(dirpath):
- retlist = [dirpath];
- for path, subdirs, files in os.walk(dirpath):
-  for name in subdirs:
-   fpath = os.path.join(path, name);
-   if(os.sep!="/"):
-    fpath = fpath.replace(os.path.sep, "/");
-   retlist.append(fpath);
-  for name in files:
-   fpath = os.path.join(path, name);
+ retlist = [];
+ for root, dirs, filenames in os.walk(dirpath):
+  dpath = root;
+  if(os.sep!="/"):
+   dpath = dpath.replace(os.path.sep, "/");
+  retlist.append(dpath);
+  for file in filenames:
+   fpath = os.path.join(root, file);
    if(os.sep!="/"):
     fpath = fpath.replace(os.path.sep, "/");
    retlist.append(fpath);
