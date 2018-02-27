@@ -156,8 +156,8 @@ def PyCatToArray(infile):
   pycatfatime = int(ReadTillNullByte(catfp), 16);
   pycatfmtime = int(ReadTillNullByte(catfp), 16);
   pycatfmode = int(ReadTillNullByte(catfp), 16);
-  pycatfmodeoct = oct(pycatfmode);
-  pycatfchmod = int("0"+str(pycatfmode)[-3:]);
+  pycatprefchmod = str(pycatfmode)[-3:];
+  pycatfchmod = int("0"+str(pycatprefchmod));
   pycatfuid = int(ReadTillNullByte(catfp), 16);
   pycatfgid = int(ReadTillNullByte(catfp), 16);
   pycatfcs = int(ReadTillNullByte(catfp), 16);
@@ -217,7 +217,10 @@ def PyCatListFiles(infile, verbose=False):
    permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
    permissionstr = "";
    for fmodval in str(listcatfiles[lcfi]['fchmod']):
-    permissionstr =  permissions['access'][fmodval] + permissionstr;
+    try:
+     permissionstr = permissions['access'][fmodval]+permissionstr;
+    except KeyError:
+     permissionstr = "---"+permissionstr;
    if(listcatfiles[lcfi]['ftype']==0):
     permissionstr = "d"+permissionstr;
    if(listcatfiles[lcfi]['ftype']==1):

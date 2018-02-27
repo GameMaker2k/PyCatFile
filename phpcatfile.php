@@ -127,8 +127,7 @@ function PHPCatToArray($infile) {
   $phpcatfatime = hexdec(ReadTillNullByte($catfp));
   $phpcatfmtime = hexdec(ReadTillNullByte($catfp));
   $phpcatfmode = hexdec(ReadTillNullByte($catfp));
-  $phpcatfmodeoct = decoct($phpcatfmode);
-  $phpcatfchmod = hexdec("0".substr($phpcatfmode,-3));
+  $phpcatfchmod = hexdec("0".substr($phpcatfmode, -3));
   $phpcatfuid = hexdec(ReadTillNullByte($catfp));
   $phpcatfgid = hexdec(ReadTillNullByte($catfp));
   $phpcatfcs = hexdec(ReadTillNullByte($catfp));
