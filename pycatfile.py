@@ -34,7 +34,6 @@ if(__version_info__[3] is None):
 
 import os, sys, logging, zlib, datetime;
 
-'''
 if __name__ == '__main__':
  import argparse;
 
@@ -47,7 +46,6 @@ if __name__ == '__main__':
  argparser.add_argument("-x", "--extract", action="store_true", help="extract files only");
  argparser.add_argument("-o", "--output", default="./", help="extract concatenate files to or concatenate output name");
  getargs = argparser.parse_args();
-'''
 
 def ListDir(dirpath):
  retlist = [];
@@ -249,12 +247,9 @@ def PyCatListFiles(infile):
   lcfi = lcfi + 1;
  return True;
 
-PyCatListFiles("./Python-3.6.4.cat");
-
 def PHPUnCatFile(infile, outdir=None, verbose=False):
  return PyUnCatFile(infile, outdir, verbose);
 
-'''
 if __name__ == '__main__':
  should_extract = False;
  should_create = True;
@@ -274,4 +269,3 @@ if __name__ == '__main__':
   PyCatFile(getargs.input, getargs.output, getargs.verbose);
  if(should_create is False and should_extract is True):
   PyUnCatFile(getargs.input, getargs.output, getargs.verbose);
-'''
