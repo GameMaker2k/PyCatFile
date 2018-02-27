@@ -167,7 +167,7 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
    os.utime(pycatfname, (pycatfatime, pycatfmtime));
   if(pycatftype==1):
    fpc = open(pycatfname, "wb");
-   fcontents = fpc.write(pycatfcontents);
+   fpc.write(pycatfcontents);
    fpc.close();
    if(hasattr(os, "chown")):
     os.chown(pycatfname, pycatfuid, pycatfgid);
