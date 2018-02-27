@@ -100,8 +100,6 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
  fclose($catfp);
  return true; }
 
-PHPCatFile("./iDB", "iDB.cat", true);
-
 function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
  $catfp = fopen($infile, "rb");
  fseek($catfp, 0, SEEK_END);
