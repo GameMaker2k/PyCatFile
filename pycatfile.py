@@ -30,7 +30,7 @@ if(__version_info__[3] is None):
  __version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2]);
 
 import os, sys, logging, zlib;
-'''
+
 if __name__ == '__main__':
  import argparse;
 
@@ -43,7 +43,7 @@ if __name__ == '__main__':
  argparser.add_argument("-x", "--extract", action="store_true", help="extract files only");
  argparser.add_argument("-o", "--output", default="./", help="extract concatenate files to or concatenate output name");
  getargs = argparser.parse_args();
-'''
+
 def ListDir(dirpath):
  retlist = [dirpath];
  for path, subdirs, files in os.walk(dirpath):
@@ -181,7 +181,7 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
   catfp.seek(1, 1);
  catfp.close();
  return True;
-'''
+
 if __name__ == '__main__':
  should_extract = False;
  should_create = True;
@@ -201,5 +201,3 @@ if __name__ == '__main__':
   PyCatFile(getargs.input, getargs.output, getargs.verbose);
  if(should_create is False and should_extract is True):
   PyUnCatFile(getargs.input, getargs.output, getargs.verbose);
-'''
-PyUnCatFile("./iDB.cat", "./iDB", True);
