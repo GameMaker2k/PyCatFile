@@ -15,6 +15,8 @@
 	$FileInfo: phpcatfile.php - Last Update: 2/26/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 */
 
+date_default_timezone_set('UTC');
+
 function ListDir($dirname) {
  if(DIRECTORY_SEPARATOR=="\\") {
   $dirname = str_replace(DIRECTORY_SEPARATOR, "/", $dirname); }
@@ -156,5 +158,76 @@ function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
 
 function PyUnCatFile($infile, $outdir=null, $verbose=False) {
  return PHPUnCatFile($infile, $outdir, $verbose); }
+
+function PHPCatToArray($infile) {
+ $catfp = fopen($infile, "rb");
+ fseek($catfp, 0, SEEK_END);
+ $CatSize = ftell($catfp);
+ $CatSizeEnd = $CatSize;
+ fseek($catfp, 0, SEEK_SET);
+ $phpcatstring = fread($catfp, 7);
+ $phpcatver = hexdec(ReadTillNullByte($catfp));
+ $pycatlist = array();
+ while(ftell($catfp)<$CatSizeEnd) {
+  $phpcatftype = hexdec(ReadTillNullByte($catfp));
+  $phpcatfname = ReadTillNullByte($catfp);
+  if($verbose===true) {
+   print($phpcatfname."\n"); }
+  $phpcatfsize = hexdec(ReadTillNullByte($catfp));
+  $phpcatflinkname = ReadTillNullByte($catfp);
+  $phpcatfatime = hexdec(ReadTillNullByte($catfp));
+  $phpcatfmtime = hexdec(ReadTillNullByte($catfp));
+  $phpcatfmode = hexdec(ReadTillNullByte($catfp));
+  $phpcatfmodeoct = decoct($phpcatfmode);
+  $phpcatfchmod = hexdec("0".substr($phpcatfmode,-3));
+  $phpcatfuid = hexdec(ReadTillNullByte($catfp));
+  $phpcatfgid = hexdec(ReadTillNullByte($catfp));
+  $phpcatfcs = hexdec(ReadTillNullByte($catfp));
+  $phpcatfcontents = "";
+  if($phpcatfsize>1) {
+   $phpcatfcontents = fread($catfp, $phpcatfsize); }
+  $pycatlist[] = array('ftype' => $phpcatftype, 'fname' => $phpcatfname, 'fsize' => $phpcatfsize, 'flinkname' => $phpcatflinkname, 'fatime' => $phpcatfatime, 'fmtime' => $phpcatfmtime, 'fmode' => $phpcatfmode, 'fchmod' => $phpcatfchmod, 'fuid' => $phpcatfuid, 'fgid' => $phpcatfgid, 'fchecksum' => $phpcatfcs, 'fcontents' => $phpcatfcontents);
+  fseek($catfp, 1, SEEK_CUR); }
+ fclose($catfp);
+ return $pycatlist; }
+
+function PyCatToArray($infile) {
+ return PHPCatToArray($infile); }
+
+function PHPCatListFiles($infile) {
+ $listcatfiles = PHPCatToArray($infile);
+ $lcfi = 0;
+ $lcfx = count($listcatfiles);
+ while($lcfi<$lcfx) {
+  $permissionstr = "";
+  if($listcatfiles[$lcfi]['ftype']==0) {
+   $permissionstr = "d"; }
+  if($listcatfiles[$lcfi]['ftype']==1) {
+   $permissionstr = "-"; }
+  if($listcatfiles[$lcfi]['ftype']==2) {
+   $permissionstr = "s"; }
+  if($listcatfiles[$lcfi]['ftype']==3) {
+   $permissionstr = "l"; }
+  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0100) ? 'r' : '-');
+  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0080) ? 'w' : '-');
+  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0040) ?
+                    (($listcatfiles[$lcfi]['fchmod'] & 0x0800) ? 's' : 'x' ) :
+                    (($listcatfiles[$lcfi]['fchmod'] & 0x0800) ? 'S' : '-'));
+  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0020) ? 'r' : '-');
+  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0010) ? 'w' : '-');
+  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0008) ?
+                    (($listcatfiles[$lcfi]['fchmod'] & 0x0400) ? 's' : 'x' ) :
+                    (($listcatfiles[$lcfi]['fchmod'] & 0x0400) ? 'S' : '-'));
+  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0004) ? 'r' : '-');
+  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0002) ? 'w' : '-');
+  $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0001) ?
+                    (($listcatfiles[$lcfi]['fchmod'] & 0x0200) ? 't' : 'x' ) :
+                    (($listcatfiles[$lcfi]['fchmod'] & 0x0200) ? 'T' : '-'));
+  print($permissionstr." ".$listcatfiles[$lcfi]['fuid']."/".$listcatfiles[$lcfi]['fgid']." ".str_pad($listcatfiles[$lcfi]['fsize'], 15, " ", STR_PAD_LEFT)." ".gmdate('Y-m-d H:i', $listcatfiles[$lcfi]['fmtime'])." ".$listcatfiles[$lcfi]['fname']."\n");
+  $lcfi = $lcfi + 1; }
+ return true; }
+
+function PyCatListFiles($infile) {
+ return PHPCatListFiles($infile); }
 
 ?>

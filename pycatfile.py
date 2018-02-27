@@ -216,14 +216,7 @@ def PyCatToArray(infile):
   pycatfcontents = "";
   if(pycatfsize>1):
    pycatfcontents = catfp.read(pycatfsize);
-  if(pycatftype==0):
-   pycatlist.append({'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fcontents': pycatfcontents});
-  if(pycatftype==1):
-   pycatlist.append({'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fcontents': pycatfcontents});
-  if(pycatftype==2):
-   pycatlist.append({'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fcontents': pycatfcontents});
-  if(pycatftype==3):
-   pycatlist.append({'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fcontents': pycatfcontents});
+  pycatlist.append({'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fcontents': pycatfcontents});
   catfp.seek(1, 1);
  catfp.close();
  return pycatlist;
@@ -241,20 +234,20 @@ def PyCatListFiles(infile):
   permissionstr = "";
   for fmodval in str(listcatfiles[lcfi]['fchmod']):
    permissionstr =  permissions['access'][fmodval] + permissionstr;
-  if(listcatfiles[lcfi]['ftype']==1):
-   permissionstr = "-"+permissionstr;
-  if(listcatfiles[lcfi]['ftype']==3):
-   permissionstr = "l"+permissionstr;
-  if(listcatfiles[lcfi]['ftype']==2):
-   permissionstr = "s"+permissionstr;
   if(listcatfiles[lcfi]['ftype']==0):
    permissionstr = "d"+permissionstr;
+  if(listcatfiles[lcfi]['ftype']==1):
+   permissionstr = "-"+permissionstr;
+  if(listcatfiles[lcfi]['ftype']==2):
+   permissionstr = "s"+permissionstr;
+  if(listcatfiles[lcfi]['ftype']==3):
+   permissionstr = "l"+permissionstr;
   logging.info(permissionstr+" "+str(str(listcatfiles[lcfi]['fuid'])+"/"+str(listcatfiles[lcfi]['fgid'])+" "+str(listcatfiles[lcfi]['fsize']).rjust(15)+" "+datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M')+" "+listcatfiles[lcfi]['fname']));
   lcfi = lcfi + 1;
  return True;
 
 def PHPCatListFiles(infile):
- def PyCatListFiles(infile);
+ return PyCatListFiles(infile);
 
 if __name__ == '__main__':
  should_extract = False;
