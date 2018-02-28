@@ -106,7 +106,6 @@ def PyCatFile(infiles, outfile, verbose=False):
   flinkname = "";
   if(ftype==2 or ftype==3):
    flinkname = os.readlink(fname);
-  flinknameintsize = len(flinkname);
   fatime = format(int(fstatinfo.st_atime), 'x').upper();
   fmtime = format(int(fstatinfo.st_mtime), 'x').upper();
   fmode = format(int(fstatinfo.st_mode), 'x').upper();

@@ -76,8 +76,7 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
    $fsize = strtoupper(dechex(intval($fstatinfo['size']))); }
   $flinkname = "";
   if($ftype==2 || $ftype==3) {
-   $flinkname = os.readlink($fname); }
-  $flinknameintsize = strlen($flinkname);
+   $flinkname = readlink($fname); }
   $fatime = strtoupper(dechex(intval($fstatinfo['atime'])));
   $fmtime = strtoupper(dechex(intval($fstatinfo['mtime'])));
   $fmode = strtoupper(dechex(intval($fstatinfo['mode'])));
