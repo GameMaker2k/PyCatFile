@@ -140,7 +140,7 @@ def PyCatFile(infiles, outfile, verbose=False):
 def PHPCatFile(infiles, outfile, verbose=False):
  return PyCatFile(infiles, outfile, verbose);
 
-def PyCatToArray(infile, listonly=False):
+def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
  catfp = open(infile, "rb");
  catfp.seek(0, 2);
  CatSize = catfp.tell();
@@ -148,7 +148,13 @@ def PyCatToArray(infile, listonly=False):
  catfp.seek(0, 0);
  pycatstring = ReadTillNullByte(catfp);
  pycatlist = [];
- while(catfp.tell()<CatSizeEnd):
+ if(seekstart!=0):
+  catfp.seek(seekstart, 0);
+ if(seekstart==0):
+  seekstart = catfp.tell();
+ if(seekend==0):
+  seekend = CatSizeEnd;
+ while(seekstart<seekend):
   pycatfstart = catfp.tell();
   pycatftype = int(ReadTillNullByte(catfp), 16);
   pycatfname = ReadTillNullByte(catfp);
@@ -171,16 +177,17 @@ def PyCatToArray(infile, listonly=False):
   pycatfcontentend = catfp.tell();
   pycatlist.append({'fstart': pycatfstart, 'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fcontentstart': pycatfcontentstart, 'fcontentend': pycatfcontentend, 'fcontents': pycatfcontents});
   catfp.seek(1, 1);
+  seekstart = catfp.tell();
  catfp.close();
  return pycatlist;
 
-def PHPCatToArray(infile, listonly=False):
- return PyCatToArray(infile, listonly);
+def PHPCatToArray(infile, seekstart=0, seekend=0, listonly=False):
+ return PyCatToArray(infile, seekstart, seekend, listonly);
 
 def PyUnCatFile(infile, outdir=None, verbose=False):
  if(verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
- listcatfiles = PyCatToArray(infile, False);
+ listcatfiles = PyCatToArray(infile, 0, 0, False);
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
@@ -210,9 +217,9 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
 def PHPUnCatFile(infile, outdir=None, verbose=False):
  return PyUnCatFile(infile, outdir, verbose);
 
-def PyCatListFiles(infile, verbose=False):
+def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
- listcatfiles = PyCatToArray(infile, True);
+ listcatfiles = PyCatToArray(infile, seekstart, seekend, True);
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
@@ -238,8 +245,8 @@ def PyCatListFiles(infile, verbose=False):
   lcfi = lcfi + 1;
  return True;
 
-def PHPCatListFiles(infile):
- return PyCatListFiles(infile);
+def PHPCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
+ return PyCatListFiles(infile, seekstart, seekend, verbose);
 
 if __name__ == '__main__':
  should_extract = False;
@@ -282,6 +289,6 @@ if __name__ == '__main__':
  if(should_create is False and should_extract is True and should_list is False):
   PyUnCatFile(getargs.input, getargs.output, getargs.verbose);
  if(should_create is False and should_extract is False and should_list is True):
-  PyCatListFiles(getargs.input, getargs.verbose);
+  PyCatListFiles(getargs.input, 0, 0, getargs.verbose);
 
 
