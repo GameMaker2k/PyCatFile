@@ -40,11 +40,11 @@ if __name__ == '__main__':
 if __name__ == '__main__':
  argparser = argparse.ArgumentParser(description="Manipulating concatenate files", conflict_handler="resolve", add_help=True);
  argparser.add_argument("-V", "--version", action="version", version=__program_name__+" "+__version__);
- argparser.add_argument("-i", "--input", help="files to concatenate or concatenate file extract", required=True);
- argparser.add_argument("-v", "--verbose", action="store_true", help="print various debugging information");
+ argparser.add_argument("-i", "-f", "--input", help="files to concatenate or concatenate file extract", required=True);
+ argparser.add_argument("-d", "-v", "--verbose", action="store_true", help="print various debugging information");
  argparser.add_argument("-c", "--create", action="store_true", help="concatenate files only");
- argparser.add_argument("-x", "--extract", action="store_true", help="extract files only");
- argparser.add_argument("-t", "--list", action="store_true", help="list files only");
+ argparser.add_argument("-e", "-x", "--extract", action="store_true", help="extract files only");
+ argparser.add_argument("-l", "-t", "--list", action="store_true", help="list files only");
  argparser.add_argument("-o", "--output", default="./", help="extract concatenate files to or concatenate output name");
  getargs = argparser.parse_args();
 
