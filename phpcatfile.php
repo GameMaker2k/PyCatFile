@@ -12,7 +12,7 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-	$FileInfo: phpcatfile.php - Last Update: 2/26/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+	$FileInfo: phpcatfile.php - Last Update: 2/28/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 */
 
 date_default_timezone_set('UTC');
@@ -111,7 +111,7 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
 function PyCatFile($infiles, $outfile, $verbose=false) {
  return PHPCatFile($infiles, $outfile, $verbose); }
 
-function PHPCatToArray($infile) {
+function PHPCatToArray($infile, $listonly=false) {
  $catfp = fopen($infile, "rb");
  fseek($catfp, 0, SEEK_END);
  $CatSize = ftell($catfp);
@@ -136,19 +136,21 @@ function PHPCatToArray($infile) {
   $phpcatfcs = hexdec(ReadTillNullByte($catfp));
   $pycatfcontentstart = ftell($catfp);
   $phpcatfcontents = "";
-  if($phpcatfsize>1) {
+  if($phpcatfsize>1 && $listonly===false) {
    $phpcatfcontents = fread($catfp, $phpcatfsize); }
+  if($phpcatfsize>1 && $listonly===true) {
+   fseek($catfp, $phpcatfsize, SEEK_CUR); }
   $pycatfcontentend = ftell($catfp);
   $pycatlist[] = array('fstart' => $pycatfstart, 'ftype' => $phpcatftype, 'fname' => $phpcatfname, 'fsize' => $phpcatfsize, 'flinkname' => $phpcatflinkname, 'fatime' => $phpcatfatime, 'fmtime' => $phpcatfmtime, 'fmode' => $phpcatfmode, 'fchmod' => $phpcatfchmod, 'fuid' => $phpcatfuid, 'fgid' => $phpcatfgid, 'fchecksum' => $phpcatfcs, 'fcontentstart' => $pycatfcontentstart, 'fcontentend' => $pycatfcontentend, 'fcontents' => $phpcatfcontents);
   fseek($catfp, 1, SEEK_CUR); }
  fclose($catfp);
  return $pycatlist; }
 
-function PyCatToArray($infile) {
- return PHPCatToArray($infile); }
+function PyCatToArray($infile, $listonly=false) {
+ return PHPCatToArray($infile, $listonly); }
 
 function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
- $listcatfiles = PHPCatToArray($infile);
+ $listcatfiles = PHPCatToArray($infile, false);
  $lcfi = 0;
  $lcfx = count($listcatfiles);
  while($lcfi<$lcfx) {
@@ -179,7 +181,7 @@ function PyUnCatFile($infile, $outdir=null, $verbose=False) {
  return PHPUnCatFile($infile, $outdir, $verbose); }
 
 function PHPCatListFiles($infile, $verbose=false) {
- $listcatfiles = PHPCatToArray($infile);
+ $listcatfiles = PHPCatToArray($infile, true);
  $lcfi = 0;
  $lcfx = count($listcatfiles);
  while($lcfi<$lcfx) {

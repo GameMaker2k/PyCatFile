@@ -14,14 +14,14 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-	$FileInfo: pycatfile.py - Last Update: 2/27/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+	$FileInfo: pycatfile.py - Last Update: 2/28/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 __program_name__ = "PyCatFile";
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 0, 1, "RC 1", 1);
-__version_date_info__ = (2018, 2, 27, "RC 1", 1);
+__version_date_info__ = (2018, 2, 28, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0])+"."+str(__version_date_info__[1]).zfill(2)+"."+str(__version_date_info__[2]).zfill(2);
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__+"-"+str(__version_date_info__[4]);
@@ -140,7 +140,7 @@ def PyCatFile(infiles, outfile, verbose=False):
 def PHPCatFile(infiles, outfile, verbose=False):
  return PyCatFile(infiles, outfile, verbose);
 
-def PyCatToArray(infile):
+def PyCatToArray(infile, listonly=False):
  catfp = open(infile, "rb");
  catfp.seek(0, 2);
  CatSize = catfp.tell();
@@ -164,21 +164,23 @@ def PyCatToArray(infile):
   pycatfcs = int(ReadTillNullByte(catfp), 16);
   pycatfcontentstart = catfp.tell();
   pycatfcontents = "";
-  if(pycatfsize>1):
+  if(pycatfsize>1 and listonly is False):
    pycatfcontents = catfp.read(pycatfsize);
+  if(pycatfsize>1 and listonly is True):
+   catfp.seek(pycatfsize, 1);
   pycatfcontentend = catfp.tell();
   pycatlist.append({'fstart': pycatfstart, 'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fcontentstart': pycatfcontentstart, 'fcontentend': pycatfcontentend, 'fcontents': pycatfcontents});
   catfp.seek(1, 1);
  catfp.close();
  return pycatlist;
 
-def PHPCatToArray(infile):
- return PyCatToArray(infile);
+def PHPCatToArray(infile, listonly=False):
+ return PyCatToArray(infile, listonly);
 
 def PyUnCatFile(infile, outdir=None, verbose=False):
  if(verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
- listcatfiles = PyCatToArray(infile);
+ listcatfiles = PyCatToArray(infile, False);
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
@@ -210,7 +212,7 @@ def PHPUnCatFile(infile, outdir=None, verbose=False):
 
 def PyCatListFiles(infile, verbose=False):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
- listcatfiles = PyCatToArray(infile);
+ listcatfiles = PyCatToArray(infile, True);
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
