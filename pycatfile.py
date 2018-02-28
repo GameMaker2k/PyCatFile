@@ -147,6 +147,7 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
  catfp.seek(0, 0);
  pycatstring = ReadTillNullByte(catfp);
  pycatlist = [];
+ fileidnum = 0;
  if(seekstart!=0):
   catfp.seek(seekstart, 0);
  if(seekstart==0):
@@ -154,7 +155,7 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
  if(seekend==0):
   seekend = CatSizeEnd;
  while(seekstart<seekend):
-  pycatfstart = catfp.tell();
+  pycatfhstart = catfp.tell();
   pycatftype = int(ReadTillNullByte(catfp), 16);
   pycatfname = ReadTillNullByte(catfp);
   pycatfsize = int(ReadTillNullByte(catfp), 16);
@@ -163,20 +164,25 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
   pycatfmtime = int(ReadTillNullByte(catfp), 16);
   pycatfmode = int(ReadTillNullByte(catfp), 16);
   pycatprefchmod = str(pycatfmode)[-3:];
-  pycatfchmod = int("0"+str(pycatprefchmod));
+  pycatfchmod = oct(pycatprefchmod);
   pycatfuid = int(ReadTillNullByte(catfp), 16);
   pycatfgid = int(ReadTillNullByte(catfp), 16);
   pycatfcs = int(ReadTillNullByte(catfp), 16);
+  pycatfhend = catfp.tell() - 1;
   pycatfcontentstart = catfp.tell();
   pycatfcontents = "";
+  pyhascontents = False;
   if(pycatfsize>1 and listonly is False):
    pycatfcontents = catfp.read(pycatfsize);
+   pyhascontents = True;
   if(pycatfsize>1 and listonly is True):
    catfp.seek(pycatfsize, 1);
+   pyhascontents = False;
   pycatfcontentend = catfp.tell();
-  pycatlist.append({'fstart': pycatfstart, 'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fcontentstart': pycatfcontentstart, 'fcontentend': pycatfcontentend, 'fcontents': pycatfcontents});
+  pycatlist.append({'fid': fileidnum, 'fhstart': pycatfhstart, 'fhend': pycatfhend, 'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fhascontents': pyhascontents, 'fcontentstart': pycatfcontentstart, 'fcontentend': pycatfcontentend, 'fcontents': pycatfcontents});
   catfp.seek(1, 1);
   seekstart = catfp.tell();
+  fileidnum = fileidnum + 1;
  catfp.close();
  return pycatlist;
 
