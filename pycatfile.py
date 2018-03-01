@@ -54,20 +54,26 @@ if __name__ == '__main__':
   argparser.add_argument("-tar", "--tar", action="store_true", help="convert from tar file");
  argparser.add_argument("-e", "-x", "--extract", action="store_true", help="extract files only");
  argparser.add_argument("-l", "-t", "--list", action="store_true", help="list files only");
- argparser.add_argument("-o", "--output", default="./", help="extract concatenate files to or concatenate output name");
+ argparser.add_argument("-o", "--output", default=None, help="extract concatenate files to or concatenate output name");
  getargs = argparser.parse_args();
+
+def RemoveWindowsPath(dpath):
+ if(os.sep!="/"):
+  dpath = dpath.replace(os.path.sep, "/");
+ dpath = dpath.rstrip("/");
+ if(dpath=="." or dpath==".."):
+  dpath = dpath+"/";
+ return dpath;
 
 def ListDir(dirpath):
  retlist = [];
  for root, dirs, filenames in os.walk(dirpath):
   dpath = root;
-  if(os.sep!="/"):
-   dpath = dpath.replace(os.path.sep, "/");
+  dpath = RemoveWindowsPath(dpath);
   retlist.append(dpath);
   for file in filenames:
    fpath = os.path.join(root, file);
-   if(os.sep!="/"):
-    fpath = fpath.replace(os.path.sep, "/");
+   fpath = RemoveWindowsPath(fpath);
    retlist.append(fpath);
  return retlist;
 
@@ -86,6 +92,8 @@ def ReadUntilNullByte(fp):
  return ReadTillNullByte(fp);
 
 def PyCatFile(infiles, outfile, verbose=False):
+ infiles = RemoveWindowsPath(infiles);
+ outfile = RemoveWindowsPath(outfile);
  if(verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(os.path.exists(outfile)):
@@ -150,6 +158,8 @@ def PHPCatFile(infiles, outfile, verbose=False):
 
 if(tarsupport is True):
  def PyCatFromTarFile(infile, outfile, verbose=False):
+  infile = RemoveWindowsPath(infile);
+  outfile = RemoveWindowsPath(outfile);
   tarinput = tarfile.open(infile, "r");
   tarfiles = tarinput.getmembers();
   if(verbose is True):
@@ -217,13 +227,14 @@ if(tarsupport is True):
   return PyCatFromTarFile(infile, outfile, verbose);
 
 def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
+ infile = RemoveWindowsPath(infile);
  catfp = open(infile, "rb");
  catfp.seek(0, 2);
  CatSize = catfp.tell();
  CatSizeEnd = CatSize;
  catfp.seek(0, 0);
  pycatstring = ReadTillNullByte(catfp);
- pycatlist = [];
+ pycatlist = {};
  fileidnum = 0;
  if(seekstart!=0):
   catfp.seek(seekstart, 0);
@@ -256,7 +267,7 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
    catfp.seek(pycatfsize, 1);
    pyhascontents = False;
   pycatfcontentend = catfp.tell();
-  pycatlist.append({'fid': fileidnum, 'fhstart': pycatfhstart, 'fhend': pycatfhend, 'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fhascontents': pyhascontents, 'fcontentstart': pycatfcontentstart, 'fcontentend': pycatfcontentend, 'fcontents': pycatfcontents});
+  pycatlist.update({fileidnum: {'fid': fileidnum, 'fhstart': pycatfhstart, 'fhend': pycatfhend, 'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fhascontents': pyhascontents, 'fcontentstart': pycatfcontentstart, 'fcontentend': pycatfcontentend, 'fcontents': pycatfcontents} });
   catfp.seek(1, 1);
   seekstart = catfp.tell();
   fileidnum = fileidnum + 1;
@@ -267,6 +278,7 @@ def PHPCatToArray(infile, seekstart=0, seekend=0, listonly=False):
  return PyCatToArray(infile, seekstart, seekend, listonly);
 
 def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
+ infile = RemoveWindowsPath(infile);
  listcatfiles = PyCatToArray(infile, seekstart, seekend, listonly);
  pycatarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'filesalt': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}}};
  lcfi = 0;
@@ -301,6 +313,9 @@ def PHPCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
  return PyCatArrayIndex(infile, seekstart, seekend, listonly);
 
 def PyUnCatFile(infile, outdir=None, verbose=False):
+ infile = RemoveWindowsPath(infile);
+ if(outdir is not None):
+  outdir = RemoveWindowsPath(outdir);
  if(verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  listcatfiles = PyCatToArray(infile, 0, 0, False);
@@ -334,6 +349,7 @@ def PHPUnCatFile(infile, outdir=None, verbose=False):
  return PyUnCatFile(infile, outdir, verbose);
 
 def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
+ infile = RemoveWindowsPath(infile);
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  listcatfiles = PyCatToArray(infile, seekstart, seekend, True);
  lcfi = 0;

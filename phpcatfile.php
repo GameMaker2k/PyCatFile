@@ -19,6 +19,14 @@ date_default_timezone_set('UTC');
 
 $phpcatver = "0.0.1";
 
+function RemoveWindowsPath($dpath) {
+ if(DIRECTORY_SEPARATOR=="\\") {
+  $dpath = str_replace(DIRECTORY_SEPARATOR, "/", $dpath); }
+ $dpath = rtrim($dpath, '/');
+ if($dpath=="." or $dpath==".."):
+  $dpath = $dpath."/";
+ return $dpath; }
+
 function ListDir($dirname) {
  if(DIRECTORY_SEPARATOR=="\\") {
   $dirname = str_replace(DIRECTORY_SEPARATOR, "/", $dirname); }
@@ -50,6 +58,8 @@ function ReadUntilNullByte($fp) {
  return ReadTillNullByte($fp); }
 
 function PHPCatFile($infiles, $outfile, $verbose=false) {
+ $infiles = RemoveWindowsPath($infiles);
+ $outfile = RemoveWindowsPath($outfile);
  global $phpcatver;
  if(file_exists($outfile)) {
   unlink($outfile); }
@@ -111,6 +121,7 @@ function PyCatFile($infiles, $outfile, $verbose=false) {
  return PHPCatFile($infiles, $outfile, $verbose); }
 
 function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
+ $infile = RemoveWindowsPath($infile);
  $catfp = fopen($infile, "rb");
  fseek($catfp, 0, SEEK_END);
  $CatSize = ftell($catfp);
@@ -151,7 +162,7 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
    fseek($catfp, $phpcatfsize, SEEK_CUR); 
    $phphascontents = false; }
   $pycatfcontentend = ftell($catfp);
-  $pycatlist[] = array('fid' => $fileidnum, 'fhstart' => $pycatfhstart, 'fhend' => $pycatfhend, 'ftype' => $phpcatftype, 'fname' => $phpcatfname, 'fsize' => $phpcatfsize, 'flinkname' => $phpcatflinkname, 'fatime' => $phpcatfatime, 'fmtime' => $phpcatfmtime, 'fmode' => $phpcatfmode, 'fchmod' => $phpcatfchmod, 'fuid' => $phpcatfuid, 'fgid' => $phpcatfgid, 'fchecksum' => $phpcatfcs, 'fhascontents' => $phphascontents, 'fcontentstart' => $pycatfcontentstart, 'fcontentend' => $pycatfcontentend, 'fcontents' => $phpcatfcontents);
+  $pycatlist[$fileidnum] = array('fid' => $fileidnum, 'fhstart' => $pycatfhstart, 'fhend' => $pycatfhend, 'ftype' => $phpcatftype, 'fname' => $phpcatfname, 'fsize' => $phpcatfsize, 'flinkname' => $phpcatflinkname, 'fatime' => $phpcatfatime, 'fmtime' => $phpcatfmtime, 'fmode' => $phpcatfmode, 'fchmod' => $phpcatfchmod, 'fuid' => $phpcatfuid, 'fgid' => $phpcatfgid, 'fchecksum' => $phpcatfcs, 'fhascontents' => $phphascontents, 'fcontentstart' => $pycatfcontentstart, 'fcontentend' => $pycatfcontentend, 'fcontents' => $phpcatfcontents);
   fseek($catfp, 1, SEEK_CUR);
   $seekstart = ftell($catfp);
   $fileidnum = $fileidnum + 1; }
@@ -162,6 +173,7 @@ function PyCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
  return PHPCatToArray($infile, $seekstart, $seekend, $listonly); }
 
 function PHPCatArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false) {
+ $infile = RemoveWindowsPath($infile);
  $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, false);
  $phpcatarray = array('list': $listcatfiles, 'filetoid' => array(), 'idtofile' => array(), 'filetypes' => array('directories' => array('filetoid' => array(), 'idtofile' => array()), 'files' => array('filetoid' => array(), 'idtofile' => array()), 'filesalt' => array('filetoid' => array(), 'idtofile' => array()), 'symlinks' => array('filetoid' => array(), 'idtofile' => array()), 'hardlinks' => array('filetoid' => array(), 'idtofile' => array())));
  $lcfi = 0;
@@ -196,6 +208,9 @@ function PyCatArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false) {
  return PHPCatArrayIndex($infile, $seekstart, $seekend, $listonly); }
 
 function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
+ $infile = RemoveWindowsPath($infile);
+ if($outdir!==null) {
+  $outdir = RemoveWindowsPath($outdir); }
  $listcatfiles = PHPCatToArray($infile, 0, 0, false);
  $lcfi = 0;
  $lcfx = count($listcatfiles);
@@ -227,6 +242,7 @@ function PyUnCatFile($infile, $outdir=null, $verbose=False) {
  return PHPUnCatFile($infile, $outdir, $verbose); }
 
 function PHPCatListFiles($infile, $seekstart=0, $seekend=0, $verbose=false) {
+ $infile = RemoveWindowsPath($infile);
  $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, true);
  $lcfi = 0;
  $lcfx = count($listcatfiles);
