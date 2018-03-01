@@ -32,7 +32,7 @@ if(__version_info__[3] is not None):
 if(__version_info__[3] is None):
  __version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2]);
 
-import os, sys, logging, zlib, datetime;
+import os, sys, logging, zlib, datetime, tarfile;
 
 if __name__ == '__main__':
  import argparse;
@@ -138,6 +138,72 @@ def PyCatFile(infiles, outfile, verbose=False):
 
 def PHPCatFile(infiles, outfile, verbose=False):
  return PyCatFile(infiles, outfile, verbose);
+
+def PyCatFromTarFile(infile, outfile, verbose=False):
+ tarinput = tarfile.open(infile, "r");
+ tarfiles = tarinput.getmembers();
+ if(verbose is True):
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+ if(os.path.exists(outfile)):
+  os.remove(outfile);
+ catfp = open(outfile, "wb");
+ pycatver = str(__version_info__[0])+str(__version_info__[1])+str(__version_info__[2]);
+ fileheaderver = str(int(pycatver.replace(".", "")));
+ fileheader = "CatFile"+fileheaderver+"\0";
+ catfp.write(fileheader.encode());
+ for curfname in tarfiles:
+  fname = curfname.name;
+  if(verbose is True):
+   logging.info(fname);
+  ftype = 0;
+  if(curfname.isdir()):
+   ftype = 0;
+  if(curfname.isfile()):
+   ftype = 1;
+  if(curfname.issym()):
+   ftype = 2;
+  if(curfname.islnk()):
+   ftype = 3;
+  if(ftype==0 or ftype==2 or ftype==3):
+   fsize = format(int("0"), 'x').upper();
+  if(ftype==1):
+   fsize = format(int(curfname.size), 'x').upper();
+  flinkname = "";
+  if(ftype==2 or ftype==3):
+   flinkname = curfname.linkname;
+  fatime = format(int(curfname.mtime), 'x').upper();
+  fmtime = format(int(curfname.mtime), 'x').upper();
+  fmode = format(int(curfname.mode), 'x').upper();
+  fuid = format(int(curfname.uid), 'x').upper();
+  fgid = format(int(curfname.gid), 'x').upper();
+  fcontents = "".encode();
+  if(ftype==1):
+   fpc = tarinput.extractfile(curfname);
+   fcontents = fpc.read(int(curfname.size));
+   fpc.close();
+  ftypehex = format(ftype, 'x').upper();
+  ftypeoutstr = ftypehex;
+  catfileoutstr = ftypeoutstr+"\0";
+  catfileoutstr = catfileoutstr+str(fname)+"\0";
+  catfileoutstr = catfileoutstr+str(fsize)+"\0";
+  catfileoutstr = catfileoutstr+str(flinkname)+"\0";
+  catfileoutstr = catfileoutstr+str(fatime)+"\0";
+  catfileoutstr = catfileoutstr+str(fmtime)+"\0";
+  catfileoutstr = catfileoutstr+str(fmode)+"\0";
+  catfileoutstr = catfileoutstr+str(fuid)+"\0";
+  catfileoutstr = catfileoutstr+str(fgid)+"\0";
+  catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()), 'x').upper();
+  catfileoutstr = catfileoutstr+catfileheadercshex+"\0";
+  catfileoutstrecd = catfileoutstr.encode();
+  nullstrecd = "\0".encode();
+  catfileout = catfileoutstrecd+fcontents+nullstrecd;
+  catfp.write(catfileout);
+ catfp.close();
+ tarinput.close();
+ return True;
+
+def PHPCatFromTarFile(infile, outfile, verbose=False):
+return PyCatFromTarFile(infile, outfile, verbose);
 
 def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
  catfp = open(infile, "rb");
