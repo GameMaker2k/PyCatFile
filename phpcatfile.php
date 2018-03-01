@@ -317,7 +317,12 @@ function PHPCatListFiles($infile, $seekstart=0, $seekend=0, $verbose=false) {
    $permissionstr .= (($listcatfiles[$lcfi]['fchmod'] & 0x0001) ?
                      (($listcatfiles[$lcfi]['fchmod'] & 0x0200) ? 't' : 'x' ) :
                      (($listcatfiles[$lcfi]['fchmod'] & 0x0200) ? 'T' : '-'));
-   print($permissionstr." ".$listcatfiles[$lcfi]['fuid']."/".$listcatfiles[$lcfi]['fgid']." ".str_pad($listcatfiles[$lcfi]['fsize'], 15, " ", STR_PAD_LEFT)." ".gmdate('Y-m-d H:i', $listcatfiles[$lcfi]['fmtime'])." ".$listcatfiles[$lcfi]['fname']."\n"); }
+   $printfname = $listcatfiles[$lcfi]['fname'];
+   if($listcatfiles[$lcfi]['ftype']==1):
+    $printfname = $listcatfiles[$lcfi]['fname']." link to "+$listcatfiles[$lcfi]['flinkname'];
+   if($listcatfiles[$lcfi]['ftype']==2):
+    $printfname = $listcatfiles[$lcfi]['fname']." -> "+$listcatfiles[$lcfi]['flinkname'];
+   print($permissionstr." ".$listcatfiles[$lcfi]['fuid']."/".$listcatfiles[$lcfi]['fgid']." ".str_pad($listcatfiles[$lcfi]['fsize'], 15, " ", STR_PAD_LEFT)." ".gmdate('Y-m-d H:i', $listcatfiles[$lcfi]['fmtime'])." ".$printfname."\n"); }
   $lcfi = $lcfi + 1; }
  return true; }
 

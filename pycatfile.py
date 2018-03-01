@@ -455,7 +455,12 @@ def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
     permissionstr = "d"+permissionstr;
    if(listcatfiles[lcfi]['ftype']==6):
     permissionstr = "f"+permissionstr;
-   logging.info(permissionstr+" "+str(str(listcatfiles[lcfi]['fuid'])+"/"+str(listcatfiles[lcfi]['fgid'])+" "+str(listcatfiles[lcfi]['fsize']).rjust(15)+" "+datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M')+" "+listcatfiles[lcfi]['fname']));
+   printfname = listcatfiles[lcfi]['fname'];
+   if(listcatfiles[lcfi]['ftype']==1):
+    printfname = listcatfiles[lcfi]['fname']+" link to "+listcatfiles[lcfi]['flinkname'];
+   if(listcatfiles[lcfi]['ftype']==2):
+    printfname = listcatfiles[lcfi]['fname']+" -> "+listcatfiles[lcfi]['flinkname'];
+   logging.info(permissionstr+" "+str(str(listcatfiles[lcfi]['fuid'])+"/"+str(listcatfiles[lcfi]['fgid'])+" "+str(listcatfiles[lcfi]['fsize']).rjust(15)+" "+datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M')+" "+printfname));
   lcfi = lcfi + 1;
  return True;
 
