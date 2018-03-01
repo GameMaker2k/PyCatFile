@@ -162,9 +162,9 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
   pycatflinkname = ReadTillNullByte(catfp);
   pycatfatime = int(ReadTillNullByte(catfp), 16);
   pycatfmtime = int(ReadTillNullByte(catfp), 16);
-  pycatfmode = int(ReadTillNullByte(catfp), 16);
+  pycatfmode = oct(int(ReadTillNullByte(catfp), 16));
   pycatprefchmod = int(str(pycatfmode)[-3:]);
-  pycatfchmod = oct(pycatprefchmod);
+  pycatfchmod = pycatprefchmod;
   pycatfuid = int(ReadTillNullByte(catfp), 16);
   pycatfgid = int(ReadTillNullByte(catfp), 16);
   pycatfcs = int(ReadTillNullByte(catfp), 16);

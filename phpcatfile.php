@@ -135,8 +135,8 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
   $phpcatflinkname = ReadTillNullByte($catfp);
   $phpcatfatime = hexdec(ReadTillNullByte($catfp));
   $phpcatfmtime = hexdec(ReadTillNullByte($catfp));
-  $phpcatfmode = hexdec(ReadTillNullByte($catfp));
-  $phpcatfchmod = decoct(substr($phpcatfmode, -3));
+  $phpcatfmode = decoct(hexdec(ReadTillNullByte($catfp)));
+  $phpcatfchmod = substr($phpcatfmode, -3);
   $phpcatfuid = hexdec(ReadTillNullByte($catfp));
   $phpcatfgid = hexdec(ReadTillNullByte($catfp));
   $phpcatfcs = hexdec(ReadTillNullByte($catfp));
