@@ -123,14 +123,8 @@ def PyCatFile(infiles, outfile, verbose=False):
   fstatinfo = os.lstat(fname);
   fpremode = fstatinfo.st_mode;
   ftype = 0;
-  if(stat.S_ISDIR(fpremode)):
-   ftype = 0;
-   fdev = fstatinfo.st_dev;
-   getfdev = GetDevMajorMinor(fdev);
-   fdev_minor = getfdev[0];
-   fdev_major = getfdev[1];
   if(stat.S_ISREG(fpremode)):
-   ftype = 1;
+   ftype = 0;
    fdev = fstatinfo.st_dev;
    getfdev = GetDevMajorMinor(fdev);
    fdev_minor = getfdev[0];
@@ -153,18 +147,24 @@ def PyCatFile(infiles, outfile, verbose=False):
    getfdev = GetDevMajorMinor(fdev);
    fdev_minor = getfdev[0];
    fdev_major = getfdev[1];
-  if(stat.S_ISFIFO(fpremode)):
+  if(stat.S_ISDIR(fpremode)):
    ftype = 5;
    fdev = fstatinfo.st_dev;
    getfdev = GetDevMajorMinor(fdev);
    fdev_minor = getfdev[0];
    fdev_major = getfdev[1];
-  if(ftype==0 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
+  if(stat.S_ISFIFO(fpremode)):
+   ftype = 6;
+   fdev = fstatinfo.st_dev;
+   getfdev = GetDevMajorMinor(fdev);
+   fdev_minor = getfdev[0];
+   fdev_major = getfdev[1];
+  if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
    fsize = format(int("0"), 'x').upper();
-  if(ftype==1):
+  if(ftype==0):
    fsize = format(int(fstatinfo.st_size), 'x').upper();
   flinkname = "";
-  if(ftype==2 or ftype==3):
+  if(ftype==1 or ftype==2):
    flinkname = os.readlink(fname);
   fatime = format(int(fstatinfo.st_atime), 'x').upper();
   fmtime = format(int(fstatinfo.st_mtime), 'x').upper();
@@ -174,7 +174,7 @@ def PyCatFile(infiles, outfile, verbose=False):
   fdev_minor = format(int(fdev_minor), 'x').upper();
   fdev_major = format(int(fdev_major), 'x').upper();
   fcontents = "".encode();
-  if(ftype==1):
+  if(ftype==0):
    fpc = open(fname, "rb");
    fcontents = fpc.read(int(fstatinfo.st_size));
    fpc.close();
@@ -223,26 +223,26 @@ if(tarsupport is True):
    if(verbose is True):
     logging.info(fname);
    ftype = 0;
-   if(curfname.isdir()):
-    ftype = 0;
    if(curfname.isfile()):
+    ftype = 0;
+   if(curfname.islnk()):
     ftype = 1;
    if(curfname.issym()):
     ftype = 2;
-   if(curfname.islnk()):
-    ftype = 3;
    if(curfname.ischr()):
-    ftype = 4;
+    ftype = 3;
    if(curfname.isblk()):
+    ftype = 4;
+   if(curfname.isdir()):
     ftype = 5;
    if(curfname.isfifo()):
     ftype = 6;
-   if(ftype==0 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
+   if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
     fsize = format(int("0"), 'x').upper();
-   if(ftype==1):
+   if(ftype==0):
     fsize = format(int(curfname.size), 'x').upper();
    flinkname = "";
-   if(ftype==2 or ftype==3):
+   if(ftype==1 or ftype==2):
     flinkname = curfname.linkname;
    fatime = format(int(curfname.mtime), 'x').upper();
    fmtime = format(int(curfname.mtime), 'x').upper();
@@ -252,7 +252,7 @@ if(tarsupport is True):
    fdev_minor = format(int(curfname.devminor), 'x').upper();
    fdev_major = format(int(curfname.devmajor), 'x').upper();
    fcontents = "".encode();
-   if(ftype==1):
+   if(ftype==0):
     fpc = tarinput.extractfile(curfname);
     fcontents = fpc.read(int(curfname.size));
     fpc.close();
@@ -348,11 +348,13 @@ def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
   pycatarray['filetoid'].update(filetoidarray);
   pycatarray['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==0):
-   pycatarray['filetypes']['directories']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['directories']['idtofile'].update(idtofilearray);
-  if(listcatfiles[lcfi]['ftype']==1):
    pycatarray['filetypes']['files']['filetoid'].update(filetoidarray);
    pycatarray['filetypes']['files']['idtofile'].update(idtofilearray);
+   pycatarray['filetypes']['filesalt']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['filesalt']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==1):
+   pycatarray['filetypes']['hardlinks']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['hardlinks']['idtofile'].update(idtofilearray);
    pycatarray['filetypes']['filesalt']['filetoid'].update(filetoidarray);
    pycatarray['filetypes']['filesalt']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==2):
@@ -360,11 +362,9 @@ def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
    pycatarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
    pycatarray['filetypes']['filesalt']['filetoid'].update(filetoidarray);
    pycatarray['filetypes']['filesalt']['idtofile'].update(idtofilearray);
-  if(listcatfiles[lcfi]['ftype']==3):
-   pycatarray['filetypes']['hardlinks']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['hardlinks']['idtofile'].update(idtofilearray);
-   pycatarray['filetypes']['filesalt']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['filesalt']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==5):
+   pycatarray['filetypes']['directories']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['directories']['idtofile'].update(idtofilearray);
   lcfi = lcfi + 1;
  return pycatarray;
 
@@ -384,12 +384,6 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
   if(verbose is True):
    logging.info(listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==0):
-   os.mkdir(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
-   if(hasattr(os, "chown")):
-    os.chown(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fuid'], listcatfiles[lcfi]['fgid']);
-   os.chmod(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
-   os.utime(listcatfiles[lcfi]['fname'], (listcatfiles[lcfi]['fatime'], listcatfiles[lcfi]['fmtime']));
-  if(listcatfiles[lcfi]['ftype']==1):
    fpc = open(listcatfiles[lcfi]['fname'], "wb");
    fpc.write(listcatfiles[lcfi]['fcontents']);
    fpc.close();
@@ -397,10 +391,16 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
     os.chown(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fuid'], listcatfiles[lcfi]['fgid']);
    os.chmod(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
    os.utime(listcatfiles[lcfi]['fname'], (listcatfiles[lcfi]['fatime'], listcatfiles[lcfi]['fmtime']));
+  if(listcatfiles[lcfi]['ftype']==1):
+   os.link(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==2):
    os.symlink(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
-  if(listcatfiles[lcfi]['ftype']==3):
-   os.link(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
+  if(listcatfiles[lcfi]['ftype']==5):
+   os.mkdir(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
+   if(hasattr(os, "chown")):
+    os.chown(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fuid'], listcatfiles[lcfi]['fgid']);
+   os.chmod(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
+   os.utime(listcatfiles[lcfi]['fname'], (listcatfiles[lcfi]['fatime'], listcatfiles[lcfi]['fmtime']));
   if(listcatfiles[lcfi]['ftype']==6 and hasattr(os, "mkfifo")):
    os.mkfifo(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
   lcfi = lcfi + 1;
@@ -427,13 +427,19 @@ def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
     except KeyError:
      permissionstr = permissionstr+"---";
    if(listcatfiles[lcfi]['ftype']==0):
-    permissionstr = "d"+permissionstr;
-   if(listcatfiles[lcfi]['ftype']==1):
     permissionstr = "-"+permissionstr;
+   if(listcatfiles[lcfi]['ftype']==1):
+    permissionstr = "l"+permissionstr;
    if(listcatfiles[lcfi]['ftype']==2):
     permissionstr = "s"+permissionstr;
    if(listcatfiles[lcfi]['ftype']==3):
-    permissionstr = "l"+permissionstr;
+    permissionstr = "c"+permissionstr;
+   if(listcatfiles[lcfi]['ftype']==4):
+    permissionstr = "b"+permissionstr;
+   if(listcatfiles[lcfi]['ftype']==5):
+    permissionstr = "d"+permissionstr;
+   if(listcatfiles[lcfi]['ftype']==6):
+    permissionstr = "f"+permissionstr;
    logging.info(permissionstr+" "+str(str(listcatfiles[lcfi]['fuid'])+"/"+str(listcatfiles[lcfi]['fgid'])+" "+str(listcatfiles[lcfi]['fsize']).rjust(15)+" "+datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M')+" "+listcatfiles[lcfi]['fname']));
   lcfi = lcfi + 1;
  return True;
