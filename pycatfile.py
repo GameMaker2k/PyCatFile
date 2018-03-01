@@ -379,10 +379,10 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
   if(verbose is True):
    logging.info(listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==0):
-   os.mkdir(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fchmod']);
+   os.mkdir(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
    if(hasattr(os, "chown")):
     os.chown(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fuid'], listcatfiles[lcfi]['fgid']);
-   os.chmod(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fchmod']);
+   os.chmod(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
    os.utime(listcatfiles[lcfi]['fname'], (listcatfiles[lcfi]['fatime'], listcatfiles[lcfi]['fmtime']));
   if(listcatfiles[lcfi]['ftype']==1):
    fpc = open(listcatfiles[lcfi]['fname'], "wb");
@@ -390,14 +390,14 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
    fpc.close();
    if(hasattr(os, "chown")):
     os.chown(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fuid'], listcatfiles[lcfi]['fgid']);
-   os.chmod(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fchmod']);
+   os.chmod(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
    os.utime(listcatfiles[lcfi]['fname'], (listcatfiles[lcfi]['fatime'], listcatfiles[lcfi]['fmtime']));
   if(listcatfiles[lcfi]['ftype']==2):
    os.symlink(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==3):
    os.link(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==6 and hasattr(os, "mkfifo")):
-   os.mkfifo(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fchmod']);
+   os.mkfifo(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
   lcfi = lcfi + 1;
  return True;
 
