@@ -132,26 +132,31 @@ def PyCatFile(infiles, outfile, verbose=False):
   if(stat.S_ISREG(fpremode)):
    ftype = 1;
    fdev = fstatinfo.st_dev;
+   getfdev = GetDevMajorMinor(fdev);
    fdev_minor = getfdev[0];
    fdev_major = getfdev[1];
   if(stat.S_ISLNK(fpremode)):
    ftype = 2;
    fdev = fstatinfo.st_dev;
+   getfdev = GetDevMajorMinor(fdev);
    fdev_minor = getfdev[0];
    fdev_major = getfdev[1];
   if(stat.S_ISCHR(fpremode)):
    ftype = 3;
-   fdev = fstatinfo.st_dev;
+   fdev = fstatinfo.st_rdev;
+   getfdev = GetDevMajorMinor(fdev);
    fdev_minor = getfdev[0];
    fdev_major = getfdev[1];
   if(stat.S_ISBLK(fpremode)):
    ftype = 4;
-   fdev = fstatinfo.st_dev;
+   fdev = fstatinfo.st_rdev;
+   getfdev = GetDevMajorMinor(fdev);
    fdev_minor = getfdev[0];
    fdev_major = getfdev[1];
   if(stat.S_ISFIFO(fpremode)):
    ftype = 5;
    fdev = fstatinfo.st_dev;
+   getfdev = GetDevMajorMinor(fdev);
    fdev_minor = getfdev[0];
    fdev_major = getfdev[1];
   if(ftype==0 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
