@@ -286,7 +286,7 @@ def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
    pycatarray['filetypes']['filesalt']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==2):
    pycatarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['symlinks'].update(idtofilearray);
+   pycatarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
    pycatarray['filetypes']['filesalt']['filetoid'].update(filetoidarray);
    pycatarray['filetypes']['filesalt']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==3):
