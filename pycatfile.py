@@ -418,9 +418,9 @@ def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
    permissionstr = "";
    for fmodval in str(listcatfiles[lcfi]['fchmod'])[-3:]:
     try:
-     permissionstr = permissions['access'][fmodval]+permissionstr;
+     permissionstr = permissionstr+permissions['access'][fmodval];
     except KeyError:
-     permissionstr = "---"+permissionstr;
+     permissionstr = permissionstr+"---";
    if(listcatfiles[lcfi]['ftype']==0):
     permissionstr = "d"+permissionstr;
    if(listcatfiles[lcfi]['ftype']==1):
