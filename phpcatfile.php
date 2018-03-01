@@ -157,6 +157,8 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
  while($seekstart<$seekend) {
   $pycatfhstart = ftell($catfp);
   $phpcatftype = hexdec(ReadTillNullByte($catfp));
+  if($phpcatftype=="") {
+   $phpcatftype = 0; }
   $phpcatfname = ReadTillNullByte($catfp);
   if($verbose===true) {
    print($phpcatfname."\n"); }

@@ -303,7 +303,8 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
   pycatfatime = int(ReadTillNullByte(catfp), 16);
   pycatfmtime = int(ReadTillNullByte(catfp), 16);
   pycatfmode = oct(int(ReadTillNullByte(catfp), 16));
-  pycatprefchmod = int(str(pycatfmode)[-3:]);
+  pycatprefchmod = pycatfmode[-3:];
+  print(pycatfmode[-3:]);
   pycatfchmod = pycatprefchmod;
   pycatfuid = int(ReadTillNullByte(catfp), 16);
   pycatfgid = int(ReadTillNullByte(catfp), 16);
@@ -376,13 +377,17 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
+  if(sys.version[0]=="2"):
+   fmodval = "0"+str(listcatfiles[lcfi]['fchmod']));
+  if(sys.version[0]>="3"):
+   fmodval = "0o"+str(listcatfiles[lcfi]['fchmod']));
   if(verbose is True):
    logging.info(listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==0):
-   os.mkdir(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fchmod']);
+   os.mkdir(listcatfiles[lcfi]['fname'], fmodval);
    if(hasattr(os, "chown")):
     os.chown(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fuid'], listcatfiles[lcfi]['fgid']);
-   os.chmod(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fchmod']);
+   os.chmod(listcatfiles[lcfi]['fname'], fmodval);
    os.utime(listcatfiles[lcfi]['fname'], (listcatfiles[lcfi]['fatime'], listcatfiles[lcfi]['fmtime']));
   if(listcatfiles[lcfi]['ftype']==1):
    fpc = open(listcatfiles[lcfi]['fname'], "wb");
@@ -390,14 +395,14 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
    fpc.close();
    if(hasattr(os, "chown")):
     os.chown(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fuid'], listcatfiles[lcfi]['fgid']);
-   os.chmod(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fchmod']);
+   os.chmod(listcatfiles[lcfi]['fname'], fmodval);
    os.utime(listcatfiles[lcfi]['fname'], (listcatfiles[lcfi]['fatime'], listcatfiles[lcfi]['fmtime']));
   if(listcatfiles[lcfi]['ftype']==2):
    os.symlink(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==3):
    os.link(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==6 and hasattr(os, "mkfifo")):
-   os.mkfifo(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fchmod']);
+   os.mkfifo(listcatfiles[lcfi]['fname'], fmodval);
   lcfi = lcfi + 1;
  return True;
 
