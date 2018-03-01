@@ -161,8 +161,8 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
 function PyCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
  return PHPCatToArray($infile, $seekstart, $seekend, $listonly); }
 
-function PHPCatArrayIndex($infile, $listonly=false) {
- $listcatfiles = PHPCatToArray($infile, 0, 0, false);
+function PHPCatArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false) {
+ $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, false);
  $phpcatarray = array('list': $listcatfiles, 'filetoid' => array(), 'idtofile' => array(), 'filetypes' => array('directories' => array('filetoid' => array(), 'idtofile' => array()), 'files' => array('filetoid' => array(), 'idtofile' => array()), 'filesalt' => array('filetoid' => array(), 'idtofile' => array()), 'symlinks' => array('filetoid' => array(), 'idtofile' => array()), 'hardlinks' => array('filetoid' => array(), 'idtofile' => array())));
  $lcfi = 0;
  $lcfx = count($listcatfiles);
@@ -192,8 +192,8 @@ function PHPCatArrayIndex($infile, $listonly=false) {
   $lcfi = $lcfi + 1; }
  return $phpcatarray; }
 
-function PyCatArrayIndex($infile, $listonly=false) {
- return PHPCatArrayIndex($infile, $listonly); }
+function PyCatArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false) {
+ return PHPCatArrayIndex($infile, $seekstart, $seekend, $listonly); }
 
 function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
  $listcatfiles = PHPCatToArray($infile, 0, 0, false);

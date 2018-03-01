@@ -189,8 +189,8 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
 def PHPCatToArray(infile, seekstart=0, seekend=0, listonly=False):
  return PyCatToArray(infile, seekstart, seekend, listonly);
 
-def PyCatArrayIndex(infile, listonly=False):
- listcatfiles = PyCatToArray(infile, 0, 0, listonly);
+def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
+ listcatfiles = PyCatToArray(infile, seekstart, seekend, listonly);
  pycatarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'filesalt': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}}};
  lcfi = 0;
  lcfx = len(listcatfiles);
@@ -220,8 +220,8 @@ def PyCatArrayIndex(infile, listonly=False):
   lcfi = lcfi + 1;
  return pycatarray;
 
-def PHPCatArrayIndex(infile, listonly=False):
- return PyCatArrayIndex(infile, listonly);
+def PHPCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
+ return PyCatArrayIndex(infile, seekstart, seekend, listonly);
 
 def PyUnCatFile(infile, outdir=None, verbose=False):
  if(verbose is True):
