@@ -303,8 +303,7 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
   pycatfatime = int(ReadTillNullByte(catfp), 16);
   pycatfmtime = int(ReadTillNullByte(catfp), 16);
   pycatfmode = oct(int(ReadTillNullByte(catfp), 16));
-  pycatprefchmod = pycatfmode[-3:];
-  print(pycatfmode[-3:]);
+  pycatprefchmod = oct(int(pycatfmode[-3:], 8));
   pycatfchmod = pycatprefchmod;
   pycatfuid = int(ReadTillNullByte(catfp), 16);
   pycatfgid = int(ReadTillNullByte(catfp), 16);
@@ -377,17 +376,13 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
-  if(sys.version[0]=="2"):
-   fmodval = "0"+str(listcatfiles[lcfi]['fchmod']));
-  if(sys.version[0]>="3"):
-   fmodval = "0o"+str(listcatfiles[lcfi]['fchmod']));
   if(verbose is True):
    logging.info(listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==0):
-   os.mkdir(listcatfiles[lcfi]['fname'], fmodval);
+   os.mkdir(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fchmod']);
    if(hasattr(os, "chown")):
     os.chown(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fuid'], listcatfiles[lcfi]['fgid']);
-   os.chmod(listcatfiles[lcfi]['fname'], fmodval);
+   os.chmod(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fchmod']);
    os.utime(listcatfiles[lcfi]['fname'], (listcatfiles[lcfi]['fatime'], listcatfiles[lcfi]['fmtime']));
   if(listcatfiles[lcfi]['ftype']==1):
    fpc = open(listcatfiles[lcfi]['fname'], "wb");
@@ -395,14 +390,14 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
    fpc.close();
    if(hasattr(os, "chown")):
     os.chown(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fuid'], listcatfiles[lcfi]['fgid']);
-   os.chmod(listcatfiles[lcfi]['fname'], fmodval);
+   os.chmod(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fchmod']);
    os.utime(listcatfiles[lcfi]['fname'], (listcatfiles[lcfi]['fatime'], listcatfiles[lcfi]['fmtime']));
   if(listcatfiles[lcfi]['ftype']==2):
    os.symlink(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==3):
    os.link(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==6 and hasattr(os, "mkfifo")):
-   os.mkfifo(listcatfiles[lcfi]['fname'], fmodval);
+   os.mkfifo(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fchmod']);
   lcfi = lcfi + 1;
  return True;
 
@@ -421,7 +416,7 @@ def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
   if(verbose is True):
    permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
    permissionstr = "";
-   for fmodval in str(listcatfiles[lcfi]['fchmod']):
+   for fmodval in str(listcatfiles[lcfi]['fchmod'])[-3:]:
     try:
      permissionstr = permissions['access'][fmodval]+permissionstr;
     except KeyError:
