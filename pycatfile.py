@@ -43,6 +43,7 @@ if __name__ == '__main__':
  argparser.add_argument("-i", "-f", "--input", help="files to concatenate or concatenate file extract", required=True);
  argparser.add_argument("-d", "-v", "--verbose", action="store_true", help="print various debugging information");
  argparser.add_argument("-c", "--create", action="store_true", help="concatenate files only");
+ argparser.add_argument("-tar", "--tar", action="store_true", help="convert from tar file");
  argparser.add_argument("-e", "-x", "--extract", action="store_true", help="extract files only");
  argparser.add_argument("-l", "-t", "--list", action="store_true", help="list files only");
  argparser.add_argument("-o", "--output", default="./", help="extract concatenate files to or concatenate output name");
@@ -389,8 +390,13 @@ if __name__ == '__main__':
   should_create = False;
   should_extract = False;
   should_list = True;
- if(should_create is True and should_extract is False and should_list is False):
+ should_convert = False;
+ if(should_create is and getargs.tar is True):
+  should_convert = True;
+ if(should_create is True and should_extract is False and should_list is False and should_convert is False):
   PyCatFile(getargs.input, getargs.output, getargs.verbose);
+ if(should_create is True and should_extract is False and should_list is False and should_convert is True):
+  PyCatFromTarFile(getargs.input, getargs.output, getargs.verbose);
  if(should_create is False and should_extract is True and should_list is False):
   PyUnCatFile(getargs.input, getargs.output, getargs.verbose);
  if(should_create is False and should_extract is False and should_list is True):
