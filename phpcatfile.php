@@ -172,23 +172,23 @@ function PHPCatArrayIndex($infile, $listonly=false) {
   $phpcatarray['filetoid'][$fname] = $fid;
   $phpcatarray['idtofile'][$fid] = $fname;
   if($listcatfiles[$lcfi]['ftype']==0):
-   $phpcatarray['filetypes']['directories'][$fname] = $fid;
-   $phpcatarray['filetypes']['directories'][$fid] = $fname;
+   $phpcatarray['filetypes']['directories']['filetoid'][$fname] = $fid;
+   $phpcatarray['filetypes']['directories']['idtofile'][$fid] = $fname;
   if($listcatfiles[$lcfi]['ftype']==1):
-   $phpcatarray['filetypes']['files'][$fname] = $fid;
-   $phpcatarray['filetypes']['files'][$fid] = $fname;
-   $phpcatarray['filetypes']['filesalt'][$fname] = $fid;
-   $phpcatarray['filetypes']['filesalt'][$fid] = $fname;
+   $phpcatarray['filetypes']['files']['filetoid'][$fname] = $fid;
+   $phpcatarray['filetypes']['files']['idtofile'][$fid] = $fname;
+   $phpcatarray['filetypes']['filesalt']['filetoid'][$fname] = $fid;
+   $phpcatarray['filetypes']['filesalt']['idtofile'][$fid] = $fname;
   if($listcatfiles[$lcfi]['ftype']==2):
-   $phpcatarray['filetypes']['symlinks'][$fname] = $fid;
-   $phpcatarray['filetypes']['symlinks'][$fid] = $fname;
-   $phpcatarray['filetypes']['filesalt'][$fname] = $fid;
-   $phpcatarray['filetypes']['filesalt'][$fid] = $fname;
+   $phpcatarray['filetypes']['symlinks']['filetoid'][$fname] = $fid;
+   $phpcatarray['filetypes']['symlinks']['idtofile'][$fid] = $fname;
+   $phpcatarray['filetypes']['filesalt']['filetoid'][$fname] = $fid;
+   $phpcatarray['filetypes']['filesalt']['idtofile'][$fid] = $fname;
   if($listcatfiles[$lcfi]['ftype']==3):
-   $phpcatarray['filetypes']['hardlinks'][$fname] = $fid;
-   $phpcatarray['filetypes']['hardlinks'][$fid] = $fname;
-   $phpcatarray['filetypes']['filesalt'][$fname] = $fid;
-   $phpcatarray['filetypes']['filesalt'][$fid] = $fname;
+   $phpcatarray['filetypes']['hardlinks']['filetoid'][$fname] = $fid;
+   $phpcatarray['filetypes']['hardlinks']['idtofile'][$fid] = $fname;
+   $phpcatarray['filetypes']['filesalt']['filetoid'][$fname] = $fid;
+   $phpcatarray['filetypes']['filesalt']['idtofile'][$fid] = $fname;
   $lcfi = $lcfi + 1; }
  return $phpcatarray; }
 

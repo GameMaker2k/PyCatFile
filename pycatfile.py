@@ -200,23 +200,23 @@ def PyCatArrayIndex(infile, listonly=False):
   pycatarray['filetoid'].update(filetoidarray);
   pycatarray['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==0):
-   pycatarray['filetypes']['directories'].update(filetoidarray);
-   pycatarray['filetypes']['directories'].update(idtofilearray);
+   pycatarray['filetypes']['directories']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['directories']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==1):
-   pycatarray['filetypes']['files'].update(filetoidarray);
-   pycatarray['filetypes']['files'].update(idtofilearray);
-   pycatarray['filetypes']['filesalt'].update(filetoidarray);
-   pycatarray['filetypes']['filesalt'].update(idtofilearray);
+   pycatarray['filetypes']['files']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['files']['idtofile'].update(idtofilearray);
+   pycatarray['filetypes']['filesalt']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['filesalt']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==2):
-   pycatarray['filetypes']['symlinks'].update(filetoidarray);
+   pycatarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
    pycatarray['filetypes']['symlinks'].update(idtofilearray);
-   pycatarray['filetypes']['filesalt'].update(filetoidarray);
-   pycatarray['filetypes']['filesalt'].update(idtofilearray);
+   pycatarray['filetypes']['filesalt']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['filesalt']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==3):
-   pycatarray['filetypes']['hardlinks'].update(filetoidarray);
-   pycatarray['filetypes']['hardlinks'].update(idtofilearray);
-   pycatarray['filetypes']['filesalt'].update(filetoidarray);
-   pycatarray['filetypes']['filesalt'].update(idtofilearray);
+   pycatarray['filetypes']['hardlinks']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['hardlinks']['idtofile'].update(idtofilearray);
+   pycatarray['filetypes']['filesalt']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['filesalt']['idtofile'].update(idtofilearray);
   lcfi = lcfi + 1;
  return pycatarray;
 
