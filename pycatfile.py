@@ -329,5 +329,3 @@ if __name__ == '__main__':
   PyUnCatFile(getargs.input, getargs.output, getargs.verbose);
  if(should_create is False and should_extract is False and should_list is True):
   PyCatListFiles(getargs.input, 0, 0, getargs.verbose);
-
-
