@@ -229,11 +229,11 @@ if(tarsupport is True):
     ftype = 1;
    if(curfname.issym()):
     ftype = 2;
-   if(curfname.ischr()):
+   if(curfname.ischr() and curfname.isdev()):
     ftype = 3;
    if(curfname.isblk() and curfname.isdev()):
     ftype = 4;
-   if(curfname.isdir() and curfname.isdev()):
+   if(curfname.isdir()):
     ftype = 5;
    if(curfname.isfifo() and curfname.isdev()):
     ftype = 6;
