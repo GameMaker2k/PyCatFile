@@ -220,8 +220,6 @@ def PyCatArrayIndex(infile, listonly=False):
   lcfi = lcfi + 1;
  return pycatarray;
 
-print(PyCatArrayIndex('./iDB.cat', True));
-
 def PHPCatArrayIndex(infile, listonly=False):
  return PyCatArrayIndex(infile, listonly);
 
