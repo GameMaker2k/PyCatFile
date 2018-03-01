@@ -197,7 +197,7 @@ function PyCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
 function PHPCatArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false) {
  $infile = RemoveWindowsPath($infile);
  $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, false);
- $phpcatarray = array('list': $listcatfiles, 'filetoid' => array(), 'idtofile' => array(), 'filetypes' => array('directories' => array('filetoid' => array(), 'idtofile' => array()), 'files' => array('filetoid' => array(), 'idtofile' => array()), 'filesalt' => array('filetoid' => array(), 'idtofile' => array()), 'symlinks' => array('filetoid' => array(), 'idtofile' => array()), 'hardlinks' => array('filetoid' => array(), 'idtofile' => array()), 'character' => array('filetoid' => array(), 'idtofile' => array()), 'block' => array('filetoid' => array(), 'idtofile' => array()), 'fifo' => array('filetoid' => array(), 'idtofile' => array()), 'devices' => array('filetoid' => array(), 'idtofile' => array())));
+ $phpcatarray = array('list': $listcatfiles, 'filetoid' => array(), 'idtofile' => array(), 'filetypes' => array('directories' => array('filetoid' => array(), 'idtofile' => array()), 'files' => array('filetoid' => array(), 'idtofile' => array()), 'links' => array('filetoid' => array(), 'idtofile' => array()), 'symlinks' => array('filetoid' => array(), 'idtofile' => array()), 'hardlinks' => array('filetoid' => array(), 'idtofile' => array()), 'character' => array('filetoid' => array(), 'idtofile' => array()), 'block' => array('filetoid' => array(), 'idtofile' => array()), 'fifo' => array('filetoid' => array(), 'idtofile' => array()), 'devices' => array('filetoid' => array(), 'idtofile' => array())));
  $lcfi = 0;
  $lcfx = count($listcatfiles);
  while($lcfi<$lcfx) {
@@ -208,18 +208,16 @@ function PHPCatArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false) {
   if($listcatfiles[$lcfi]['ftype']==0):
    $phpcatarray['filetypes']['files']['filetoid'][$fname] = $fid;
    $phpcatarray['filetypes']['files']['idtofile'][$fid] = $fname;
-   $phpcatarray['filetypes']['filesalt']['filetoid'][$fname] = $fid;
-   $phpcatarray['filetypes']['filesalt']['idtofile'][$fid] = $fname;
   if($listcatfiles[$lcfi]['ftype']==1):
    $phpcatarray['filetypes']['hardlinks']['filetoid'][$fname] = $fid;
    $phpcatarray['filetypes']['hardlinks']['idtofile'][$fid] = $fname;
-   $phpcatarray['filetypes']['filesalt']['filetoid'][$fname] = $fid;
-   $phpcatarray['filetypes']['filesalt']['idtofile'][$fid] = $fname;
+   $phpcatarray['filetypes']['links']['filetoid'][$fname] = $fid;
+   $phpcatarray['filetypes']['links']['idtofile'][$fid] = $fname;
   if($listcatfiles[$lcfi]['ftype']==2):
    $phpcatarray['filetypes']['symlinks']['filetoid'][$fname] = $fid;
    $phpcatarray['filetypes']['symlinks']['idtofile'][$fid] = $fname;
-   $phpcatarray['filetypes']['filesalt']['filetoid'][$fname] = $fid;
-   $phpcatarray['filetypes']['filesalt']['idtofile'][$fid] = $fname;
+   $phpcatarray['filetypes']['links']['filetoid'][$fname] = $fid;
+   $phpcatarray['filetypes']['links']['idtofile'][$fid] = $fname;
   if($listcatfiles[$lcfi]['ftype']==3):
    $phpcatarray['filetypes']['character']['filetoid'][$fname] = $fid;
    $phpcatarray['filetypes']['character']['idtofile'][$fid] = $fname;

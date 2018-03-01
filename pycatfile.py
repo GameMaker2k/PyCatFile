@@ -339,7 +339,7 @@ def PHPCatToArray(infile, seekstart=0, seekend=0, listonly=False):
 def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
  infile = RemoveWindowsPath(infile);
  listcatfiles = PyCatToArray(infile, seekstart, seekend, listonly);
- pycatarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'filesalt': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
+ pycatarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
@@ -350,18 +350,16 @@ def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
   if(listcatfiles[lcfi]['ftype']==0):
    pycatarray['filetypes']['files']['filetoid'].update(filetoidarray);
    pycatarray['filetypes']['files']['idtofile'].update(idtofilearray);
-   pycatarray['filetypes']['filesalt']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['filesalt']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==1):
    pycatarray['filetypes']['hardlinks']['filetoid'].update(filetoidarray);
    pycatarray['filetypes']['hardlinks']['idtofile'].update(idtofilearray);
-   pycatarray['filetypes']['filesalt']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['filesalt']['idtofile'].update(idtofilearray);
+   pycatarray['filetypes']['links']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['links']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==2):
    pycatarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
    pycatarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
-   pycatarray['filetypes']['filesalt']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['filesalt']['idtofile'].update(idtofilearray);
+   pycatarray['filetypes']['links']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['links']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==3):
    pycatarray['filetypes']['character']['filetoid'].update(filetoidarray);
    pycatarray['filetypes']['character']['idtofile'].update(idtofilearray);
