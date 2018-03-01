@@ -163,7 +163,7 @@ function PyCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
 
 function PHPCatArrayIndex($infile, $listonly=false) {
  $listcatfiles = PHPCatToArray($infile, 0, 0, false);
- $phpcatarray = array('list': $listcatfiles, 'filetoid' => array(), 'idtofile' => array(), 'filetypes' => array('directories' => array('idtofile' => array(), 'filetypes'), 'files' => array('idtofile' => array(), 'filetypes'), 'filesalt' => array('idtofile' => array(), 'filetypes'), 'symlinks' => array('idtofile' => array(), 'filetypes'), 'hardlinks' => array('idtofile' => array(), 'filetypes')));
+ $phpcatarray = array('list': $listcatfiles, 'filetoid' => array(), 'idtofile' => array(), 'filetypes' => array('directories' => array('filetoid' => array(), 'idtofile' => array()), 'files' => array('filetoid' => array(), 'idtofile' => array()), 'filesalt' => array('filetoid' => array(), 'idtofile' => array()), 'symlinks' => array('filetoid' => array(), 'idtofile' => array()), 'hardlinks' => array('filetoid' => array(), 'idtofile' => array())));
  $lcfi = 0;
  $lcfx = count($listcatfiles);
  while($lcfi<$lcfx) {

@@ -191,7 +191,7 @@ def PHPCatToArray(infile, seekstart=0, seekend=0, listonly=False):
 
 def PyCatArrayIndex(infile, listonly=False):
  listcatfiles = PyCatToArray(infile, 0, 0, listonly);
- pycatarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'idtofile': {}, 'filetypes'}, 'files': {'idtofile': {}, 'filetypes'}, 'filesalt': {'idtofile': {}, 'filetypes'}, 'symlinks': {'idtofile': {}, 'filetypes'}, 'hardlinks': {'idtofile': {}, 'filetypes'}}};
+ pycatarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'filesalt': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}}};
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
