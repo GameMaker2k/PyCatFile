@@ -203,7 +203,7 @@ def PyCatFromTarFile(infile, outfile, verbose=False):
  return True;
 
 def PHPCatFromTarFile(infile, outfile, verbose=False):
-return PyCatFromTarFile(infile, outfile, verbose);
+ return PyCatFromTarFile(infile, outfile, verbose);
 
 def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
  catfp = open(infile, "rb");
