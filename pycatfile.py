@@ -231,11 +231,11 @@ if(tarsupport is True):
     ftype = 2;
    if(curfname.ischr()):
     ftype = 3;
-   if(curfname.isblk()):
+   if(curfname.isblk() and curfname.isdev()):
     ftype = 4;
-   if(curfname.isdir()):
+   if(curfname.isdir() and curfname.isdev()):
     ftype = 5;
-   if(curfname.isfifo()):
+   if(curfname.isfifo() and curfname.isdev()):
     ftype = 6;
    if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
     fsize = format(int("0"), 'x').upper();
