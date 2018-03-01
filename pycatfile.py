@@ -5,16 +5,16 @@
     This program is free software; you can redistribute it and/or modify
     it under the terms of the Revised BSD License.
 
-	This program is distributed in the hope that it will be useful,
+    This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     Revised BSD License for more details.
 
-	Copyright 2018 Cool Dude 2k - http://idb.berlios.de/
+    Copyright 2018 Cool Dude 2k - http://idb.berlios.de/
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-	$FileInfo: pycatfile.py - Last Update: 3/1/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 3/1/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 __program_name__ = "PyCatFile";
@@ -339,7 +339,7 @@ def PHPCatToArray(infile, seekstart=0, seekend=0, listonly=False):
 def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
  infile = RemoveWindowsPath(infile);
  listcatfiles = PyCatToArray(infile, seekstart, seekend, listonly);
- pycatarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'filesalt': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}}};
+ pycatarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'filesalt': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
@@ -362,9 +362,24 @@ def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
    pycatarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
    pycatarray['filetypes']['filesalt']['filetoid'].update(filetoidarray);
    pycatarray['filetypes']['filesalt']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==3):
+   pycatarray['filetypes']['character']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['character']['idtofile'].update(idtofilearray);
+   pycatarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==4):
+   pycatarray['filetypes']['block']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['block']['idtofile'].update(idtofilearray);
+   pycatarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['devices']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==5):
    pycatarray['filetypes']['directories']['filetoid'].update(filetoidarray);
    pycatarray['filetypes']['directories']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==6):
+   pycatarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
+   pycatarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   pycatarray['filetypes']['devices']['idtofile'].update(idtofilearray);
   lcfi = lcfi + 1;
  return pycatarray;
 
