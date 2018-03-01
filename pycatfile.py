@@ -391,7 +391,7 @@ if __name__ == '__main__':
   should_extract = False;
   should_list = True;
  should_convert = False;
- if(should_create is and getargs.tar is True):
+ if(should_create is True and getargs.tar is True):
   should_convert = True;
  if(should_create is True and should_extract is False and should_list is False and should_convert is False):
   PyCatFile(getargs.input, getargs.output, getargs.verbose);
