@@ -444,9 +444,9 @@ def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
    if(listcatfiles[lcfi]['ftype']==0):
     permissionstr = "-"+permissionstr;
    if(listcatfiles[lcfi]['ftype']==1):
-    permissionstr = "l"+permissionstr;
+    permissionstr = "h"+permissionstr;
    if(listcatfiles[lcfi]['ftype']==2):
-    permissionstr = "s"+permissionstr;
+    permissionstr = "l"+permissionstr;
    if(listcatfiles[lcfi]['ftype']==3):
     permissionstr = "c"+permissionstr;
    if(listcatfiles[lcfi]['ftype']==4):

@@ -291,9 +291,9 @@ function PHPCatListFiles($infile, $seekstart=0, $seekend=0, $verbose=false) {
    if($listcatfiles[$lcfi]['ftype']==0) {
     $permissionstr = "-"; }
    if($listcatfiles[$lcfi]['ftype']==1) {
-    $permissionstr = "l"; }
+    $permissionstr = "h"; }
    if($listcatfiles[$lcfi]['ftype']==2) {
-    $permissionstr = "s"; }
+    $permissionstr = "l"; }
    if($listcatfiles[$lcfi]['ftype']==3) {
     $permissionstr = "c"; }
    if($listcatfiles[$lcfi]['ftype']==4) {
