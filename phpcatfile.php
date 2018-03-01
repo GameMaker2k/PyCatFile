@@ -161,6 +161,40 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
 function PyCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
  return PHPCatToArray($infile, $seekstart, $seekend, $listonly); }
 
+function PHPCatArrayIndex($infile, $listonly=false) {
+ $listcatfiles = PHPCatToArray($infile, 0, 0, false);
+ $phpcatarray = array('list': $listcatfiles, 'filetoid' => array(), 'idtofile' => array(), 'filetypes' => array('directories' => array('idtofile' => array(), 'filetypes'), 'files' => array('idtofile' => array(), 'filetypes'), 'filesalt' => array('idtofile' => array(), 'filetypes'), 'symlinks' => array('idtofile' => array(), 'filetypes'), 'hardlinks' => array('idtofile' => array(), 'filetypes')));
+ $lcfi = 0;
+ $lcfx = count($listcatfiles);
+ while($lcfi<$lcfx) {
+  $fname = $listcatfiles[$lcfi]['fname'];
+  $fid = $listcatfiles[$lcfi]['fid'];
+  $phpcatarray['filetoid'][$fname] = $fid;
+  $phpcatarray['idtofile'][$fid] = $fname;
+  if($listcatfiles[$lcfi]['ftype']==0):
+   $phpcatarray['filetoid']['filetypes']['directories'][$fname] = $fid;
+   $phpcatarray['idtofile']['filetypes']['directories'][$fid] = $fname;
+  if($listcatfiles[$lcfi]['ftype']==1):
+   $phpcatarray['filetoid']['filetypes']['files'][$fname] = $fid;
+   $phpcatarray['idtofile']['filetypes']['files'][$fid] = $fname;
+   $phpcatarray['filetoid']['filetypes']['filesalt'][$fname] = $fid;
+   $phpcatarray['idtofile']['filetypes']['filesalt'][$fid] = $fname;
+  if($listcatfiles[$lcfi]['ftype']==2):
+   $phpcatarray['filetoid']['filetypes']['symlinks'][$fname] = $fid;
+   $phpcatarray['idtofile']['filetypes']['symlinks'][$fid] = $fname;
+   $phpcatarray['filetoid']['filetypes']['filesalt'][$fname] = $fid;
+   $phpcatarray['idtofile']['filetypes']['filesalt'][$fid] = $fname;
+  if($listcatfiles[$lcfi]['ftype']==3):
+   $phpcatarray['filetoid']['filetypes']['hardlinks'][$fname] = $fid;
+   $phpcatarray['idtofile']['filetypes']['hardlinks'][$fid] = $fname;
+   $phpcatarray['filetoid']['filetypes']['filesalt'][$fname] = $fid;
+   $phpcatarray['idtofile']['filetypes']['filesalt'][$fid] = $fname;
+  $lcfi = $lcfi + 1; }
+ return $phpcatarray; }
+
+function PyCatArrayIndex($infile, $listonly=false) {
+ return PHPCatArrayIndex($infile, $listonly); }
+
 function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
  $listcatfiles = PHPCatToArray($infile, 0, 0, false);
  $lcfi = 0;

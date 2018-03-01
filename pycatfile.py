@@ -189,6 +189,40 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
 def PHPCatToArray(infile, seekstart=0, seekend=0, listonly=False):
  return PyCatToArray(infile, seekstart, seekend, listonly);
 
+def PyCatArrayIndex(infile, listonly=False):
+ listcatfiles = PyCatToArray(infile, 0, 0, listonly);
+ pycatarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'idtofile': {}, 'filetypes'}, 'files': {'idtofile': {}, 'filetypes'}, 'filesalt': {'idtofile': {}, 'filetypes'}, 'symlinks': {'idtofile': {}, 'filetypes'}, 'hardlinks': {'idtofile': {}, 'filetypes'}}};
+ lcfi = 0;
+ lcfx = len(listcatfiles);
+ while(lcfi < lcfx):
+  filetoidarray = {listcatfiles[lcfi]['fname']: listcatfiles[lcfi]['fid']};
+  idtofilearray = {listcatfiles[lcfi]['fid']: listcatfiles[lcfi]['fname']};
+  pycatarray['filetoid'].update(filetoidarray);
+  pycatarray['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==0):
+   pycatarray['filetoid']['filetypes']['directories'].update(filetoidarray);
+   pycatarray['idtofile']['filetypes']['directories'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==1):
+   pycatarray['filetoid']['filetypes']['files'].update(filetoidarray);
+   pycatarray['idtofile']['filetypes']['files'].update(idtofilearray);
+   pycatarray['filetoid']['filetypes']['filesalt'].update(filetoidarray);
+   pycatarray['idtofile']['filetypes']['filesalt'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==2):
+   pycatarray['filetoid']['filetypes']['symlinks'].update(filetoidarray);
+   pycatarray['idtofile']['filetypes']['symlinks'].update(idtofilearray);
+   pycatarray['filetoid']['filetypes']['filesalt'].update(filetoidarray);
+   pycatarray['idtofile']['filetypes']['filesalt'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==3):
+   pycatarray['filetoid']['filetypes']['hardlinks'].update(filetoidarray);
+   pycatarray['idtofile']['filetypes']['hardlinks'].update(idtofilearray);
+   pycatarray['filetoid']['filetypes']['filesalt'].update(filetoidarray);
+   pycatarray['idtofile']['filetypes']['filesalt'].update(idtofilearray);
+  lcfi = lcfi + 1;
+ return pycatarray;
+
+def PHPCatArrayIndex(infile, listonly=False):
+ return PyCatArrayIndex(infile, listonly);
+
 def PyUnCatFile(infile, outdir=None, verbose=False):
  if(verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
