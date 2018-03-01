@@ -12,12 +12,25 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-	$FileInfo: phpcatfile.php - Last Update: 2/28/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+	$FileInfo: phpcatfile.php - Last Update: 3/1/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 */
 
 date_default_timezone_set('UTC');
 
-$phpcatver = "0.0.1";
+$info['program_name'] = "PHPCatFile";
+$info['project'] = $info['program_name'];
+$info['project_url'] = "https://github.com/GameMaker2k/PyCatFile";
+$info['version_info'] = array(0 => 0, 1 => 0, 2 => 1, 3 => "RC 1", 4 => 1);
+$info['version_date_info'] = array(0 => 2018, 1 => 3, 2 => 1, 3 => "RC 1", 1);
+$info['version_date'] = $info['version_date_info'][0].".".str_pad($info['version_date_info'][1], 2, "-=", STR_PAD_LEFT).".".str_pad($info['version_date_info'][2], 2, "-=", STR_PAD_LEFT);
+if($info['version_info'][4]!==null):
+ $info['version_date_plusrc'] = $info['version_date']."-".$info['version_date_info'][4];
+if($info['version_info'][4]===null):
+ $info['version_date_plusrc'] = $info['version_date'];
+if($info['version_info'][3]!==null):
+ $info['version'] = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2]." ".$info['version_info'][3];
+if($info['version_info'][3]===null):
+ $info['version'] = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2];
 
 function RemoveWindowsPath($dpath) {
  if(DIRECTORY_SEPARATOR=="\\") {
@@ -58,13 +71,14 @@ function ReadUntilNullByte($fp) {
  return ReadTillNullByte($fp); }
 
 function PHPCatFile($infiles, $outfile, $verbose=false) {
+ global $info;
+ $pycatver = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2];
  $infiles = RemoveWindowsPath($infiles);
  $outfile = RemoveWindowsPath($outfile);
- global $phpcatver;
  if(file_exists($outfile)) {
   unlink($outfile); }
  $catfp = fopen($outfile, "wb");
- $fileheaderver = intval(str_replace(".", "", $phpcatver));
+ $fileheaderver = intval(str_replace(".", "", $pycatver));
  $fileheader = "CatFile".$fileheaderver."\0";
  fwrite($catfp, $fileheader);
  $GetDirList = ListDir($infiles);
@@ -92,6 +106,8 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
   $fmode = strtoupper(dechex(intval($fstatinfo['mode'])));
   $fuid = strtoupper(dechex(intval($fstatinfo['uid'])));
   $fgid = strtoupper(dechex(intval($fstatinfo['gid'])));
+  $fdev_minor = strtoupper(dechex(intval(0)));
+  $fdev_major = strtoupper(dechex(intval(0)));
   $fcontents = "";
   if($ftype==1) {
    $fpc = fopen($fname, "rb");
@@ -108,6 +124,8 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
   $catfileoutstr = $catfileoutstr.$fmode."\0";
   $catfileoutstr = $catfileoutstr.$fuid."\0";
   $catfileoutstr = $catfileoutstr.$fgid."\0";
+  $catfileoutstr = $catfileoutstr.$fdev_minor."\0";
+  $catfileoutstr = $catfileoutstr.$fdev_major."\0";
   $catfileheadercshex = strtoupper(dechex(crc32($catfileoutstr)));
   $catfileoutstr = $catfileoutstr.$catfileheadercshex."\0";
   $catfileoutstrecd = $catfileoutstr;
@@ -150,6 +168,8 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
   $phpcatfchmod = substr($phpcatfmode, -3);
   $phpcatfuid = hexdec(ReadTillNullByte($catfp));
   $phpcatfgid = hexdec(ReadTillNullByte($catfp));
+  $phpcatfdev_minor = hexdec(ReadTillNullByte($catfp));
+  $phpcatfdev_major = hexdec(ReadTillNullByte($catfp));
   $phpcatfcs = hexdec(ReadTillNullByte($catfp));
   $pycatfhend = ftell($catfp) - 1;
   $pycatfcontentstart = ftell($catfp);
@@ -162,7 +182,7 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
    fseek($catfp, $phpcatfsize, SEEK_CUR); 
    $phphascontents = false; }
   $pycatfcontentend = ftell($catfp);
-  $pycatlist[$fileidnum] = array('fid' => $fileidnum, 'fhstart' => $pycatfhstart, 'fhend' => $pycatfhend, 'ftype' => $phpcatftype, 'fname' => $phpcatfname, 'fsize' => $phpcatfsize, 'flinkname' => $phpcatflinkname, 'fatime' => $phpcatfatime, 'fmtime' => $phpcatfmtime, 'fmode' => $phpcatfmode, 'fchmod' => $phpcatfchmod, 'fuid' => $phpcatfuid, 'fgid' => $phpcatfgid, 'fchecksum' => $phpcatfcs, 'fhascontents' => $phphascontents, 'fcontentstart' => $pycatfcontentstart, 'fcontentend' => $pycatfcontentend, 'fcontents' => $phpcatfcontents);
+  $pycatlist[$fileidnum] = array('fid' => $fileidnum, 'fhstart' => $pycatfhstart, 'fhend' => $pycatfhend, 'ftype' => $phpcatftype, 'fname' => $phpcatfname, 'fsize' => $phpcatfsize, 'flinkname' => $phpcatflinkname, 'fatime' => $phpcatfatime, 'fmtime' => $phpcatfmtime, 'fmode' => $phpcatfmode, 'fchmod' => $phpcatfchmod, 'fuid' => $phpcatfuid, 'fgid' => $phpcatfgid, 'fminor' => $phpcatfdev_minor, 'fmajor' => $phpcatfdev_major, 'fchecksum' => $phpcatfcs, 'fhascontents' => $phphascontents, 'fcontentstart' => $pycatfcontentstart, 'fcontentend' => $pycatfcontentend, 'fcontents' => $phpcatfcontents);
   fseek($catfp, 1, SEEK_CUR);
   $seekstart = ftell($catfp);
   $fileidnum = $fileidnum + 1; }

@@ -14,14 +14,14 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-	$FileInfo: pycatfile.py - Last Update: 2/28/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+	$FileInfo: pycatfile.py - Last Update: 3/1/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 __program_name__ = "PyCatFile";
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 0, 1, "RC 1", 1);
-__version_date_info__ = (2018, 2, 28, "RC 1", 1);
+__version_date_info__ = (2018, 3, 1, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0])+"."+str(__version_date_info__[1]).zfill(2)+"."+str(__version_date_info__[2]).zfill(2);
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__+"-"+str(__version_date_info__[4]);
@@ -32,7 +32,7 @@ if(__version_info__[3] is not None):
 if(__version_info__[3] is None):
  __version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2]);
 
-import os, sys, logging, zlib, datetime;
+import os, sys, stat, logging, zlib, datetime;
 
 tarsupport = False;
 try:
@@ -91,6 +91,18 @@ def ReadTillNullByte(fp):
 def ReadUntilNullByte(fp):
  return ReadTillNullByte(fp);
 
+def GetDevMajorMinor(fdev):
+ retdev = [];
+ if(hasattr(os, "minor")):
+  retdev.append(os.minor(fdev));
+ else:
+  retdev.append(0);
+ if(hasattr(os, "major")):
+  retdev.append(os.major(fdev));
+ else:
+  retdev.append(0);
+ return retdev;
+
 def PyCatFile(infiles, outfile, verbose=False):
  infiles = RemoveWindowsPath(infiles);
  outfile = RemoveWindowsPath(outfile);
@@ -109,14 +121,40 @@ def PyCatFile(infiles, outfile, verbose=False):
   if(verbose is True):
    logging.info(fname);
   fstatinfo = os.lstat(fname);
+  fpremode = fstatinfo.st_mode;
   ftype = 0;
-  if(os.path.isdir(fname)):
+  if(stat.S_ISDIR(fpremode)):
    ftype = 0;
-  if(os.path.isfile(fname)):
+   fdev = fstatinfo.st_dev;
+   getfdev = GetDevMajorMinor(fdev);
+   fdev_minor = getfdev[0];
+   fdev_major = getfdev[1];
+  if(stat.S_ISREG(fpremode)):
    ftype = 1;
-  if(os.path.islink(fname)):
+   fdev = fstatinfo.st_dev;
+   fdev_minor = getfdev[0];
+   fdev_major = getfdev[1];
+  if(stat.S_ISLNK(fpremode)):
    ftype = 2;
-  if(ftype==0 or ftype==2 or ftype==3):
+   fdev = fstatinfo.st_dev;
+   fdev_minor = getfdev[0];
+   fdev_major = getfdev[1];
+  if(stat.S_ISCHR(fpremode)):
+   ftype = 3;
+   fdev = fstatinfo.st_dev;
+   fdev_minor = getfdev[0];
+   fdev_major = getfdev[1];
+  if(stat.S_ISBLK(fpremode)):
+   ftype = 4;
+   fdev = fstatinfo.st_dev;
+   fdev_minor = getfdev[0];
+   fdev_major = getfdev[1];
+  if(stat.S_ISFIFO(fpremode)):
+   ftype = 5;
+   fdev = fstatinfo.st_dev;
+   fdev_minor = getfdev[0];
+   fdev_major = getfdev[1];
+  if(ftype==0 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
    fsize = format(int("0"), 'x').upper();
   if(ftype==1):
    fsize = format(int(fstatinfo.st_size), 'x').upper();
@@ -128,6 +166,8 @@ def PyCatFile(infiles, outfile, verbose=False):
   fmode = format(int(fstatinfo.st_mode), 'x').upper();
   fuid = format(int(fstatinfo.st_uid), 'x').upper();
   fgid = format(int(fstatinfo.st_gid), 'x').upper();
+  fdev_minor = format(int(fdev_minor), 'x').upper();
+  fdev_major = format(int(fdev_major), 'x').upper();
   fcontents = "".encode();
   if(ftype==1):
    fpc = open(fname, "rb");
@@ -144,6 +184,8 @@ def PyCatFile(infiles, outfile, verbose=False):
   catfileoutstr = catfileoutstr+str(fmode)+"\0";
   catfileoutstr = catfileoutstr+str(fuid)+"\0";
   catfileoutstr = catfileoutstr+str(fgid)+"\0";
+  catfileoutstr = catfileoutstr+str(fdev_minor)+"\0";
+  catfileoutstr = catfileoutstr+str(fdev_major)+"\0";
   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()), 'x').upper();
   catfileoutstr = catfileoutstr+catfileheadercshex+"\0";
   catfileoutstrecd = catfileoutstr.encode();
@@ -184,7 +226,13 @@ if(tarsupport is True):
     ftype = 2;
    if(curfname.islnk()):
     ftype = 3;
-   if(ftype==0 or ftype==2 or ftype==3):
+   if(curfname.ischr()):
+    ftype = 4;
+   if(curfname.isblk()):
+    ftype = 5;
+   if(curfname.isfifo()):
+    ftype = 6;
+   if(ftype==0 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
     fsize = format(int("0"), 'x').upper();
    if(ftype==1):
     fsize = format(int(curfname.size), 'x').upper();
@@ -196,6 +244,8 @@ if(tarsupport is True):
    fmode = format(int(curfname.mode), 'x').upper();
    fuid = format(int(curfname.uid), 'x').upper();
    fgid = format(int(curfname.gid), 'x').upper();
+   fdev_minor = format(int(curfname.devminor), 'x').upper();
+   fdev_major = format(int(curfname.devmajor), 'x').upper();
    fcontents = "".encode();
    if(ftype==1):
     fpc = tarinput.extractfile(curfname);
@@ -212,6 +262,8 @@ if(tarsupport is True):
    catfileoutstr = catfileoutstr+str(fmode)+"\0";
    catfileoutstr = catfileoutstr+str(fuid)+"\0";
    catfileoutstr = catfileoutstr+str(fgid)+"\0";
+   catfileoutstr = catfileoutstr+str(fdev_minor)+"\0";
+   catfileoutstr = catfileoutstr+str(fdev_major)+"\0";
    catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()), 'x').upper();
    catfileoutstr = catfileoutstr+catfileheadercshex+"\0";
    catfileoutstrecd = catfileoutstr.encode();
@@ -255,6 +307,8 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
   pycatfchmod = pycatprefchmod;
   pycatfuid = int(ReadTillNullByte(catfp), 16);
   pycatfgid = int(ReadTillNullByte(catfp), 16);
+  pycatfdev_minor = int(ReadTillNullByte(catfp), 16);
+  pycatfdev_major = int(ReadTillNullByte(catfp), 16);
   pycatfcs = int(ReadTillNullByte(catfp), 16);
   pycatfhend = catfp.tell() - 1;
   pycatfcontentstart = catfp.tell();
@@ -267,7 +321,7 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
    catfp.seek(pycatfsize, 1);
    pyhascontents = False;
   pycatfcontentend = catfp.tell();
-  pycatlist.update({fileidnum: {'fid': fileidnum, 'fhstart': pycatfhstart, 'fhend': pycatfhend, 'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fchecksum': pycatfcs, 'fhascontents': pyhascontents, 'fcontentstart': pycatfcontentstart, 'fcontentend': pycatfcontentend, 'fcontents': pycatfcontents} });
+  pycatlist.update({fileidnum: {'fid': fileidnum, 'fhstart': pycatfhstart, 'fhend': pycatfhend, 'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fminor': pycatfdev_minor, 'fmajor': pycatfdev_major, 'fchecksum': pycatfcs, 'fhascontents': pyhascontents, 'fcontentstart': pycatfcontentstart, 'fcontentend': pycatfcontentend, 'fcontents': pycatfcontents} });
   catfp.seek(1, 1);
   seekstart = catfp.tell();
   fileidnum = fileidnum + 1;
@@ -342,6 +396,8 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
    os.symlink(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==3):
    os.link(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
+  if(listcatfiles[lcfi]['ftype']==6 and hasattr(os, "mkfifo")):
+   os.mkfifo(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fchmod']);
   lcfi = lcfi + 1;
  return True;
 
