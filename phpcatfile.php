@@ -152,9 +152,6 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
  fclose($catfp);
  return true; }
 
-function PyCatFile($infiles, $outfile, $verbose=false) {
- return PHPCatFile($infiles, $outfile, $verbose); }
-
 function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
  $infile = RemoveWindowsPath($infile);
  $catfp = fopen($infile, "rb");
@@ -217,9 +214,6 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
  fclose($catfp);
  return $phpcatlist; }
 
-function PyCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
- return PHPCatToArray($infile, $seekstart, $seekend, $listonly); }
-
 function PHPCatArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false) {
  $infile = RemoveWindowsPath($infile);
  $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, false);
@@ -265,9 +259,6 @@ function PHPCatArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false) {
   $lcfi = $lcfi + 1; }
  return $phpcatarray; }
 
-function PyCatArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false) {
- return PHPCatArrayIndex($infile, $seekstart, $seekend, $listonly); }
-
 function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
  $infile = RemoveWindowsPath($infile);
  if($outdir!==null) {
@@ -300,9 +291,6 @@ function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
    touch($listcatfiles[$lcfi]['fname'], $listcatfiles[$lcfi]['fmtime'], $listcatfiles[$lcfi]['fatime']); }
   $lcfi = $lcfi + 1; }
  return true; }
-
-function PyUnCatFile($infile, $outdir=null, $verbose=False) {
- return PHPUnCatFile($infile, $outdir, $verbose); }
 
 function PHPCatListFiles($infile, $seekstart=0, $seekend=0, $verbose=false) {
  $infile = RemoveWindowsPath($infile);
@@ -353,7 +341,4 @@ function PHPCatListFiles($infile, $seekstart=0, $seekend=0, $verbose=false) {
    print($permissionstr." ".$listcatfiles[$lcfi]['fuid']."/".$listcatfiles[$lcfi]['fgid']." ".str_pad($listcatfiles[$lcfi]['fsize'], 15, " ", STR_PAD_LEFT)." ".gmdate('Y-m-d H:i', $listcatfiles[$lcfi]['fmtime'])." ".$printfname."\n"); }
   $lcfi = $lcfi + 1; }
  return true; }
-
-function PyCatListFiles($infile, $seekstart=0, $seekend=0, $verbose=false) {
- return PHPCatListFiles($infile, $seekstart, $seekend, $verbose); }
 ?>

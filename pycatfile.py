@@ -205,9 +205,6 @@ def PyCatFile(infiles, outfile, verbose=False):
  catfp.close();
  return True;
 
-def PHPCatFile(infiles, outfile, verbose=False):
- return PyCatFile(infiles, outfile, verbose);
-
 if(tarsupport is True):
  def PyCatFromTarFile(infile, outfile, verbose=False):
   infile = RemoveWindowsPath(infile);
@@ -288,10 +285,6 @@ if(tarsupport is True):
   tarinput.close();
   return True;
 
-if(tarsupport is True):
- def PHPCatFromTarFile(infile, outfile, verbose=False):
-  return PyCatFromTarFile(infile, outfile, verbose);
-
 def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
  infile = RemoveWindowsPath(infile);
  catfp = open(infile, "rb");
@@ -355,9 +348,6 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
  catfp.close();
  return pycatlist;
 
-def PHPCatToArray(infile, seekstart=0, seekend=0, listonly=False):
- return PyCatToArray(infile, seekstart, seekend, listonly);
-
 def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
  infile = RemoveWindowsPath(infile);
  listcatfiles = PyCatToArray(infile, seekstart, seekend, listonly);
@@ -405,9 +395,6 @@ def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
   lcfi = lcfi + 1;
  return pycatarray;
 
-def PHPCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
- return PyCatArrayIndex(infile, seekstart, seekend, listonly);
-
 def PyUnCatFile(infile, outdir=None, verbose=False):
  infile = RemoveWindowsPath(infile);
  if(outdir is not None):
@@ -444,9 +431,6 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
    os.mkfifo(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
   lcfi = lcfi + 1;
  return True;
-
-def PHPUnCatFile(infile, outdir=None, verbose=False):
- return PyUnCatFile(infile, outdir, verbose);
 
 def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
  infile = RemoveWindowsPath(infile);
@@ -489,9 +473,6 @@ def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
    logging.info(permissionstr+" "+str(str(listcatfiles[lcfi]['fuid'])+"/"+str(listcatfiles[lcfi]['fgid'])+" "+str(listcatfiles[lcfi]['fsize']).rjust(15)+" "+datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M')+" "+printfname));
   lcfi = lcfi + 1;
  return True;
-
-def PHPCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
- return PyCatListFiles(infile, seekstart, seekend, verbose);
 
 if __name__ == '__main__':
  should_extract = False;
