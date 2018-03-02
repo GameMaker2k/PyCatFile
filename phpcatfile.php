@@ -67,6 +67,9 @@ function ReadTillNullByte($fp) {
    $curfullbyte = $curfullbyte.$curbyted; } }
  return $curfullbyte; }
 
+function ReadUntilNullByte($fp) {
+ return ReadTillNullByte($fp); }
+
 function ReadFileHeaderData($fp, $rounds=0) {
  $rocount = 0;
  $roend = intval($rounds);
@@ -75,9 +78,6 @@ function ReadFileHeaderData($fp, $rounds=0) {
   $HeaderOut[$rocount] = ReadTillNullByte($fp);
   $roundcount = $roundcount + 1; }
  return $HeaderOut; }
-
-function ReadUntilNullByte($fp) {
- return ReadTillNullByte($fp); }
 
 function PHPCatFile($infiles, $outfile, $verbose=false) {
  global $info;
