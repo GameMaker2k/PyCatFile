@@ -85,13 +85,13 @@ function AppendNullByte($indata):
 
 function PHPCatFile($infiles, $outfile, $verbose=false) {
  global $info;
- $pycatver = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2];
+ $phpcatver = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2];
  $infiles = RemoveWindowsPath($infiles);
  $outfile = RemoveWindowsPath($outfile);
  if(file_exists($outfile)) {
   unlink($outfile); }
  $catfp = fopen($outfile, "wb");
- $fileheaderver = intval(str_replace(".", "", $pycatver));
+ $fileheaderver = intval(str_replace(".", "", $phpcatver));
  $fileheader = AppendNullByte("CatFile".$fileheaderver);
  fwrite($catfp, $fileheader);
  $GetDirList = ListDir($infiles);
@@ -163,7 +163,7 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
  $CatSizeEnd = $CatSize;
  fseek($catfp, 0, SEEK_SET);
  $phpcatstring = ReadFileHeaderData($catfp, 1)[0];
- $pycatlist = array();
+ $phpcatlist = array();
  $fileidnum = 0;
  if($seekstart!=0) {
   fseek($catfp, $seekstart, SEEK_SET); }
@@ -172,25 +172,34 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
  if($seekend==0) {
   $seekend = $CatSizeEnd; }
  while($seekstart<$seekend) {
-  $pycatfhstart = ftell($catfp);
-  $pycatheaderdata = ReadFileHeaderData($catfp, 14);
-  $phpcatftype = hexdec($pycatheaderdata[0]);
-  $phpcatfname = $pycatheaderdata[1];
-  $phpcatfsize = hexdec($pycatheaderdata[2]);
-  $phpcatflinkname = $pycatheaderdata[3];
-  $phpcatfatime = hexdec($pycatheaderdata[4]);
-  $phpcatfmtime = hexdec($pycatheaderdata[5]);
-  $phpcatfmode = decoct(hexdec($pycatheaderdata[6]));
+  $phpcatfhstart = ftell($catfp);
+  $phpcatheaderdata = ReadFileHeaderData($catfp, 14);
+  $phpcatftype = hexdec($phpcatheaderdata[0]);
+  $phpcatfname = $phpcatheaderdata[1];
+  $phpcatfsize = hexdec($phpcatheaderdata[2]);
+  $phpcatflinkname = $phpcatheaderdata[3];
+  $phpcatfatime = hexdec($phpcatheaderdata[4]);
+  $phpcatfmtime = hexdec($phpcatheaderdata[5]);
+  $phpcatfmode = decoct(hexdec($phpcatheaderdata[6]));
   $phpcatfchmod = substr($phpcatfmode, -3);
-  $phpcatfuid = hexdec($pycatheaderdata[7]);
-  $phpcatfgid = hexdec($pycatheaderdata[8]);
-  $phpcatfdev_minor = hexdec($pycatheaderdata[9]);
-  $phpcatfdev_major = hexdec($pycatheaderdata[10]);
-  $phpcatfrdev_minor = hexdec($pycatheaderdata[11]);
-  $phpcatfrdev_major = hexdec($pycatheaderdata[12]);
-  $phpcatfcs = hexdec($pycatheaderdata[13]);
-  $pycatfhend = ftell($catfp) - 1;
-  $pycatfcontentstart = ftell($catfp);
+  $phpcatfuid = hexdec($phpcatheaderdata[7]);
+  $phpcatfgid = hexdec($phpcatheaderdata[8]);
+  $phpcatfdev_minor = hexdec($phpcatheaderdata[9]);
+  $phpcatfdev_major = hexdec($phpcatheaderdata[10]);
+  $phpcatfrdev_minor = hexdec($phpcatheaderdata[11]);
+  $phpcatfrdev_major = hexdec($phpcatheaderdata[12]);
+  $phpcatfcs = hexdec($phpcatheaderdata[13]);
+  $hc = 0;
+  $hcmax = strlen($phpcatheaderdata) - 1;
+  $hout = "";
+  while($hc<$hcmax) {
+   $hout = $hout.AppendNullByte($phpcatheaderdata[$hc]);
+   $hc = $hc + 1; }
+  $phpcatnewfcs = crc32(hout);
+  if($phpcatfcs!=$phpcatnewfcs):
+   return false;
+  $phpcatfhend = ftell($catfp) - 1;
+  $phpcatfcontentstart = ftell($catfp);
   $phpcatfcontents = "";
   $phphascontents = false;
   if($phpcatfsize>1 && $listonly===false) {
@@ -199,13 +208,13 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
   if($phpcatfsize>1 && $listonly===true) {
    fseek($catfp, $phpcatfsize, SEEK_CUR); 
    $phphascontents = false; }
-  $pycatfcontentend = ftell($catfp);
-  $pycatlist[$fileidnum] = array('fid' => $fileidnum, 'fhstart' => $pycatfhstart, 'fhend' => $pycatfhend, 'ftype' => $phpcatftype, 'fname' => $phpcatfname, 'fsize' => $phpcatfsize, 'flinkname' => $phpcatflinkname, 'fatime' => $phpcatfatime, 'fmtime' => $phpcatfmtime, 'fmode' => $phpcatfmode, 'fchmod' => $phpcatfchmod, 'fuid' => $phpcatfuid, 'fgid' => $phpcatfgid, 'fminor' => $phpcatfdev_minor, 'fmajor' => $phpcatfdev_major, 'fchecksum' => $phpcatfcs, 'fhascontents' => $phphascontents, 'fcontentstart' => $pycatfcontentstart, 'fcontentend' => $pycatfcontentend, 'fcontents' => $phpcatfcontents);
+  $phpcatfcontentend = ftell($catfp);
+  $phpcatlist[$fileidnum] = array('fid' => $fileidnum, 'fhstart' => $phpcatfhstart, 'fhend' => $phpcatfhend, 'ftype' => $phpcatftype, 'fname' => $phpcatfname, 'fsize' => $phpcatfsize, 'flinkname' => $phpcatflinkname, 'fatime' => $phpcatfatime, 'fmtime' => $phpcatfmtime, 'fmode' => $phpcatfmode, 'fchmod' => $phpcatfchmod, 'fuid' => $phpcatfuid, 'fgid' => $phpcatfgid, 'fminor' => $phpcatfdev_minor, 'fmajor' => $phpcatfdev_major, 'fchecksum' => $phpcatfcs, 'fhascontents' => $phphascontents, 'fcontentstart' => $phpcatfcontentstart, 'fcontentend' => $phpcatfcontentend, 'fcontents' => $phpcatfcontents);
   fseek($catfp, 1, SEEK_CUR);
   $seekstart = ftell($catfp);
   $fileidnum = $fileidnum + 1; }
  fclose($catfp);
- return $pycatlist; }
+ return $phpcatlist; }
 
 function PyCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
  return PHPCatToArray($infile, $seekstart, $seekend, $listonly); }

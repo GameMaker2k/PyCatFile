@@ -327,6 +327,15 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
   pycatfrdev_minor = int(pycatheaderdata[11], 16);
   pycatfrdev_major = int(pycatheaderdata[12], 16);
   pycatfcs = int(pycatheaderdata[13], 16);
+  hc = 0;
+  hcmax = len(pycatheaderdata) - 1;
+  hout = "";
+  while(hc<hcmax):
+   hout = hout+AppendNullByte(pycatheaderdata[hc]);
+   hc = hc + 1;
+  pycatnewfcs = zlib.crc32(hout.encode());
+  if(pycatfcs!=pycatnewfcs):
+   return False;
   pycatfhend = catfp.tell() - 1;
   pycatfcontentstart = catfp.tell();
   pycatfcontents = "";
