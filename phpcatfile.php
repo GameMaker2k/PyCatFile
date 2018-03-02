@@ -67,6 +67,15 @@ function ReadTillNullByte($fp) {
    $curfullbyte = $curfullbyte.$curbyted; } }
  return $curfullbyte; }
 
+function ReadFileHeaderData($fp, $rounds=0) {
+ $rocount = 0;
+ $roend = intval($rounds);
+ $HeaderOut = array();
+ while($rocount<$roend) {
+  $HeaderOut[$rocount] = ReadTillNullByte($fp);
+  $roundcount = $roundcount + 1; }
+ return $HeaderOut; }
+
 function ReadUntilNullByte($fp) {
  return ReadTillNullByte($fp); }
 
