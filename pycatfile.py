@@ -91,6 +91,16 @@ def ReadTillNullByte(fp):
 def ReadUntilNullByte(fp):
  return ReadTillNullByte(fp);
 
+def ReadFileHeaderData(fp, rounds=0):
+ rocount = 0;
+ roend = int(rounds);
+ HeaderOut = {};
+ while(rocount<roend):
+  RoundArray = {rocount: ReadTillNullByte(fp)};
+  HeaderOut.update(RoundArray);
+  roundcount = roundcount + 1;
+ return HeaderOut;
+
 def GetDevMajorMinor(fdev):
  retdev = [];
  if(hasattr(os, "minor")):
