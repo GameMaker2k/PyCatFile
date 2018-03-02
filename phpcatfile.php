@@ -79,6 +79,10 @@ function ReadFileHeaderData($fp, $rounds=0) {
   $rocount = $rocount + 1; }
  return $HeaderOut; }
 
+function AppendNullByte($indata):
+ $outdata = $indata."\0";
+ return $outdata;
+
 function PHPCatFile($infiles, $outfile, $verbose=false) {
  global $info;
  $pycatver = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2];
@@ -88,7 +92,7 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
   unlink($outfile); }
  $catfp = fopen($outfile, "wb");
  $fileheaderver = intval(str_replace(".", "", $pycatver));
- $fileheader = "CatFile".$fileheaderver."\0";
+ $fileheader = AppendNullByte("CatFile".$fileheaderver);
  fwrite($catfp, $fileheader);
  $GetDirList = ListDir($infiles);
  foreach($GetDirList as $curfname) {
@@ -126,21 +130,21 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
    fclose($fpc); }
   $ftypehex = strtoupper(dechex($ftype));
   $ftypeoutstr = $ftypehex;
-  $catfileoutstr = $ftypeoutstr."\0";
-  $catfileoutstr = $catfileoutstr.$fname."\0";
-  $catfileoutstr = $catfileoutstr.$fsize."\0";
-  $catfileoutstr = $catfileoutstr.$flinkname."\0";
-  $catfileoutstr = $catfileoutstr.$fatime."\0";
-  $catfileoutstr = $catfileoutstr.$fmtime."\0";
-  $catfileoutstr = $catfileoutstr.$fmode."\0";
-  $catfileoutstr = $catfileoutstr.$fuid."\0";
-  $catfileoutstr = $catfileoutstr.$fgid."\0";
-  $catfileoutstr = $catfileoutstr.$fdev_minor."\0";
-  $catfileoutstr = $catfileoutstr.$fdev_major."\0";
-  $catfileoutstr = $catfileoutstr.$frdev_minor."\0";
-  $catfileoutstr = $catfileoutstr.$frdev_major."\0";
+  $catfileoutstr = AppendNullByte($ftypeoutstr);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fname);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fsize);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($flinkname);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fatime);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fmtime);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fmode);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fuid);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fgid);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fdev_minor);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fdev_major);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($frdev_minor);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($frdev_major);
   $catfileheadercshex = strtoupper(dechex(crc32($catfileoutstr)));
-  $catfileoutstr = $catfileoutstr.$catfileheadercshex."\0";
+  $catfileoutstr = $catfileoutstr.AppendNullByte($catfileheadercshex);
   $catfileoutstrecd = $catfileoutstr;
   $nullstrecd = "\0";
   $catfileout = $catfileoutstrecd.$fcontents.$nullstrecd;

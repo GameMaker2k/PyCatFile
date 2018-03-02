@@ -101,6 +101,10 @@ def ReadFileHeaderData(fp, rounds=0):
   rocount = rocount + 1;
  return HeaderOut;
 
+def AppendNullByte(indata):
+ outdata = str(indata)+"\0";
+ return outdata;
+
 def GetDevMajorMinor(fdev):
  retdev = [];
  if(hasattr(os, "minor")):
@@ -123,7 +127,7 @@ def PyCatFile(infiles, outfile, verbose=False):
  catfp = open(outfile, "wb");
  pycatver = str(__version_info__[0])+str(__version_info__[1])+str(__version_info__[2]);
  fileheaderver = str(int(pycatver.replace(".", "")));
- fileheader = "CatFile"+fileheaderver+"\0";
+ fileheader = AppendNullByte("CatFile"+fileheaderver);
  catfp.write(fileheader.encode());
  GetDirList = ListDir(infiles);
  for curfname in GetDirList:
@@ -179,21 +183,21 @@ def PyCatFile(infiles, outfile, verbose=False):
    fpc.close();
   ftypehex = format(ftype, 'x').upper();
   ftypeoutstr = ftypehex;
-  catfileoutstr = ftypeoutstr+"\0";
-  catfileoutstr = catfileoutstr+str(fname)+"\0";
-  catfileoutstr = catfileoutstr+str(fsize)+"\0";
-  catfileoutstr = catfileoutstr+str(flinkname)+"\0";
-  catfileoutstr = catfileoutstr+str(fatime)+"\0";
-  catfileoutstr = catfileoutstr+str(fmtime)+"\0";
-  catfileoutstr = catfileoutstr+str(fmode)+"\0";
-  catfileoutstr = catfileoutstr+str(fuid)+"\0";
-  catfileoutstr = catfileoutstr+str(fgid)+"\0";
-  catfileoutstr = catfileoutstr+str(fdev_minor)+"\0";
-  catfileoutstr = catfileoutstr+str(fdev_major)+"\0";
-  catfileoutstr = catfileoutstr+str(frdev_minor)+"\0";
-  catfileoutstr = catfileoutstr+str(frdev_major)+"\0";
+  catfileoutstr = AppendNullByte(ftypeoutstr);
+  catfileoutstr = catfileoutstr+AppendNullByte(fname);
+  catfileoutstr = catfileoutstr+AppendNullByte(fsize);
+  catfileoutstr = catfileoutstr+AppendNullByte(flinkname);
+  catfileoutstr = catfileoutstr+AppendNullByte(fatime);
+  catfileoutstr = catfileoutstr+AppendNullByte(fmtime);
+  catfileoutstr = catfileoutstr+AppendNullByte(fmode);
+  catfileoutstr = catfileoutstr+AppendNullByte(fuid);
+  catfileoutstr = catfileoutstr+AppendNullByte(fgid);
+  catfileoutstr = catfileoutstr+AppendNullByte(fdev_minor);
+  catfileoutstr = catfileoutstr+AppendNullByte(fdev_major);
+  catfileoutstr = catfileoutstr+AppendNullByte(frdev_minor);
+  catfileoutstr = catfileoutstr+AppendNullByte(frdev_major);
   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()), 'x').upper();
-  catfileoutstr = catfileoutstr+catfileheadercshex+"\0";
+  catfileoutstr = catfileoutstr+AppendNullByte(catfileheadercshex);
   catfileoutstrecd = catfileoutstr.encode();
   nullstrecd = "\0".encode();
   catfileout = catfileoutstrecd+fcontents+nullstrecd;
@@ -217,7 +221,7 @@ if(tarsupport is True):
   catfp = open(outfile, "wb");
   pycatver = str(__version_info__[0])+str(__version_info__[1])+str(__version_info__[2]);
   fileheaderver = str(int(pycatver.replace(".", "")));
-  fileheader = "CatFile"+fileheaderver+"\0";
+  fileheader = AppendNullByte("CatFile"+fileheaderver);
   catfp.write(fileheader.encode());
   for curfname in tarfiles:
    fname = curfname.name;
@@ -261,21 +265,21 @@ if(tarsupport is True):
     fpc.close();
    ftypehex = format(ftype, 'x').upper();
    ftypeoutstr = ftypehex;
-   catfileoutstr = ftypeoutstr+"\0";
-   catfileoutstr = catfileoutstr+str(fname)+"\0";
-   catfileoutstr = catfileoutstr+str(fsize)+"\0";
-   catfileoutstr = catfileoutstr+str(flinkname)+"\0";
-   catfileoutstr = catfileoutstr+str(fatime)+"\0";
-   catfileoutstr = catfileoutstr+str(fmtime)+"\0";
-   catfileoutstr = catfileoutstr+str(fmode)+"\0";
-   catfileoutstr = catfileoutstr+str(fuid)+"\0";
-   catfileoutstr = catfileoutstr+str(fgid)+"\0";
-   catfileoutstr = catfileoutstr+str(fdev_minor)+"\0";
-   catfileoutstr = catfileoutstr+str(fdev_major)+"\0";
-   catfileoutstr = catfileoutstr+str(frdev_minor)+"\0";
-   catfileoutstr = catfileoutstr+str(frdev_major)+"\0";
+   catfileoutstr = AppendNullByte(ftypeoutstr);
+   catfileoutstr = catfileoutstr+AppendNullByte(fname);
+   catfileoutstr = catfileoutstr+AppendNullByte(fsize);
+   catfileoutstr = catfileoutstr+AppendNullByte(flinkname);
+   catfileoutstr = catfileoutstr+AppendNullByte(fatime);
+   catfileoutstr = catfileoutstr+AppendNullByte(fmtime);
+   catfileoutstr = catfileoutstr+AppendNullByte(fmode);
+   catfileoutstr = catfileoutstr+AppendNullByte(fuid);
+   catfileoutstr = catfileoutstr+AppendNullByte(fgid);
+   catfileoutstr = catfileoutstr+AppendNullByte(fdev_minor);
+   catfileoutstr = catfileoutstr+AppendNullByte(fdev_major);
+   catfileoutstr = catfileoutstr+AppendNullByte(frdev_minor);
+   catfileoutstr = catfileoutstr+AppendNullByte(frdev_major);
    catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()), 'x').upper();
-   catfileoutstr = catfileoutstr+catfileheadercshex+"\0";
+   catfileoutstr = catfileoutstr+AppendNullByte(catfileheadercshex);
    catfileoutstrecd = catfileoutstr.encode();
    nullstrecd = "\0".encode();
    catfileout = catfileoutstrecd+fcontents+nullstrecd;
