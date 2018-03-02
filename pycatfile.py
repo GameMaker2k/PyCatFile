@@ -335,6 +335,7 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
    hc = hc + 1;
   pycatnewfcs = zlib.crc32(hout.encode());
   if(pycatfcs!=pycatnewfcs):
+   logging.info("Checksum Error with file "+pycatfname+" at offset "+str(pycatfhstart));
    return False;
   pycatfhend = catfp.tell() - 1;
   pycatfcontentstart = catfp.tell();
@@ -360,6 +361,8 @@ def PHPCatToArray(infile, seekstart=0, seekend=0, listonly=False):
 def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
  infile = RemoveWindowsPath(infile);
  listcatfiles = PyCatToArray(infile, seekstart, seekend, listonly);
+ if(listcatfiles is False):
+  return False;
  pycatarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
  lcfi = 0;
  lcfx = len(listcatfiles);
@@ -412,6 +415,8 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
  if(verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  listcatfiles = PyCatToArray(infile, 0, 0, False);
+ if(listcatfiles is False):
+  return False;
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
@@ -447,6 +452,8 @@ def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
  infile = RemoveWindowsPath(infile);
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  listcatfiles = PyCatToArray(infile, seekstart, seekend, True);
+ if(listcatfiles is False):
+  return False;
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):

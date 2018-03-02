@@ -197,6 +197,7 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
    $hc = $hc + 1; }
   $phpcatnewfcs = crc32(hout);
   if($phpcatfcs!=$phpcatnewfcs):
+   print("Checksum Error with file "+$phpcatfname+" at offset "+$phpcatfhstart);
    return false;
   $phpcatfhend = ftell($catfp) - 1;
   $phpcatfcontentstart = ftell($catfp);
@@ -272,6 +273,8 @@ function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
  if($outdir!==null) {
   $outdir = RemoveWindowsPath($outdir); }
  $listcatfiles = PHPCatToArray($infile, 0, 0, false);
+ if($listcatfiles==false) {
+  return false; }
  $lcfi = 0;
  $lcfx = count($listcatfiles);
  while($lcfi<$lcfx) {
@@ -304,6 +307,8 @@ function PyUnCatFile($infile, $outdir=null, $verbose=False) {
 function PHPCatListFiles($infile, $seekstart=0, $seekend=0, $verbose=false) {
  $infile = RemoveWindowsPath($infile);
  $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, true);
+ if($listcatfiles==false) {
+  return false; }
  $lcfi = 0;
  $lcfx = count($listcatfiles);
  while($lcfi<$lcfx) {
