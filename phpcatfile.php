@@ -117,6 +117,8 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
   $fgid = strtoupper(dechex(intval($fstatinfo['gid'])));
   $fdev_minor = strtoupper(dechex(intval(0)));
   $fdev_major = strtoupper(dechex(intval(0)));
+  $frdev_minor = strtoupper(dechex(intval(0)));
+  $frdev_major = strtoupper(dechex(intval(0)));
   $fcontents = "";
   if($ftype==0) {
    $fpc = fopen($fname, "rb");
@@ -135,6 +137,8 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
   $catfileoutstr = $catfileoutstr.$fgid."\0";
   $catfileoutstr = $catfileoutstr.$fdev_minor."\0";
   $catfileoutstr = $catfileoutstr.$fdev_major."\0";
+  $catfileoutstr = $catfileoutstr.$frdev_minor."\0";
+  $catfileoutstr = $catfileoutstr.$frdev_major."\0";
   $catfileheadercshex = strtoupper(dechex(crc32($catfileoutstr)));
   $catfileoutstr = $catfileoutstr.$catfileheadercshex."\0";
   $catfileoutstrecd = $catfileoutstr;
@@ -181,6 +185,8 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
   $phpcatfgid = hexdec(ReadTillNullByte($catfp));
   $phpcatfdev_minor = hexdec(ReadTillNullByte($catfp));
   $phpcatfdev_major = hexdec(ReadTillNullByte($catfp));
+  $phpcatfrdev_minor = hexdec(ReadTillNullByte($catfp));
+  $phpcatfrdev_major = hexdec(ReadTillNullByte($catfp));
   $phpcatfcs = hexdec(ReadTillNullByte($catfp));
   $pycatfhend = ftell($catfp) - 1;
   $pycatfcontentstart = ftell($catfp);
