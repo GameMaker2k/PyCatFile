@@ -98,7 +98,7 @@ def ReadFileHeaderData(fp, rounds=0):
  while(rocount<roend):
   RoundArray = {rocount: ReadTillNullByte(fp)};
   HeaderOut.update(RoundArray);
-  roundcount = roundcount + 1;
+  rocount = rocount + 1;
  return HeaderOut;
 
 def GetDevMajorMinor(fdev):
@@ -149,7 +149,10 @@ def PyCatFile(infiles, outfile, verbose=False):
   getfdev = GetDevMajorMinor(fdev);
   fdev_minor = getfdev[0];
   fdev_major = getfdev[1];
-  frdev = fstatinfo.st_rdev;
+  try:
+   frdev = fstatinfo.st_rdev;
+  except AttributeError:
+   frdev = fstatinfo.st_dev;
   getfrdev = GetDevMajorMinor(frdev);
   frdev_minor = getfrdev[0];
   frdev_major = getfrdev[1];
@@ -292,7 +295,7 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
  CatSize = catfp.tell();
  CatSizeEnd = CatSize;
  catfp.seek(0, 0);
- pycatstring = ReadTillNullByte(catfp);
+ pycatstring = ReadFileHeaderData(catfp, 1)[0];
  pycatlist = {};
  fileidnum = 0;
  if(seekstart!=0):
@@ -303,22 +306,23 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
   seekend = CatSizeEnd;
  while(seekstart<seekend):
   pycatfhstart = catfp.tell();
-  pycatftype = int(ReadTillNullByte(catfp), 16);
-  pycatfname = ReadTillNullByte(catfp);
-  pycatfsize = int(ReadTillNullByte(catfp), 16);
-  pycatflinkname = ReadTillNullByte(catfp);
-  pycatfatime = int(ReadTillNullByte(catfp), 16);
-  pycatfmtime = int(ReadTillNullByte(catfp), 16);
-  pycatfmode = oct(int(ReadTillNullByte(catfp), 16));
+  pycatheaderdata = ReadFileHeaderData(catfp, 14);
+  pycatftype = int(pycatheaderdata[0], 16);
+  pycatfname = pycatheaderdata[1];
+  pycatfsize = int(pycatheaderdata[2], 16);
+  pycatflinkname = pycatheaderdata[3];
+  pycatfatime = int(pycatheaderdata[4], 16);
+  pycatfmtime = int(pycatheaderdata[5], 16);
+  pycatfmode = oct(int(pycatheaderdata[6], 16));
   pycatprefchmod = oct(int(pycatfmode[-3:], 8));
   pycatfchmod = pycatprefchmod;
-  pycatfuid = int(ReadTillNullByte(catfp), 16);
-  pycatfgid = int(ReadTillNullByte(catfp), 16);
-  pycatfdev_minor = int(ReadTillNullByte(catfp), 16);
-  pycatfdev_major = int(ReadTillNullByte(catfp), 16);
-  pycatfrdev_minor = int(ReadTillNullByte(catfp), 16);
-  pycatfrdev_major = int(ReadTillNullByte(catfp), 16);
-  pycatfcs = int(ReadTillNullByte(catfp), 16);
+  pycatfuid = int(pycatheaderdata[7], 16);
+  pycatfgid = int(pycatheaderdata[8], 16);
+  pycatfdev_minor = int(pycatheaderdata[9], 16);
+  pycatfdev_major = int(pycatheaderdata[10], 16);
+  pycatfrdev_minor = int(pycatheaderdata[11], 16);
+  pycatfrdev_major = int(pycatheaderdata[12], 16);
+  pycatfcs = int(pycatheaderdata[13], 16);
   pycatfhend = catfp.tell() - 1;
   pycatfcontentstart = catfp.tell();
   pycatfcontents = "";

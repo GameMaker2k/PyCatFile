@@ -76,7 +76,7 @@ function ReadFileHeaderData($fp, $rounds=0) {
  $HeaderOut = array();
  while($rocount<$roend) {
   $HeaderOut[$rocount] = ReadTillNullByte($fp);
-  $roundcount = $roundcount + 1; }
+  $rocount = $rocount + 1; }
  return $HeaderOut; }
 
 function PHPCatFile($infiles, $outfile, $verbose=false) {
@@ -158,7 +158,7 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
  $CatSize = ftell($catfp);
  $CatSizeEnd = $CatSize;
  fseek($catfp, 0, SEEK_SET);
- $phpcatstring = ReadTillNullByte($catfp);
+ $phpcatstring = ReadFileHeaderData($catfp, 1)[0];
  $pycatlist = array();
  $fileidnum = 0;
  if($seekstart!=0) {
@@ -169,25 +169,22 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
   $seekend = $CatSizeEnd; }
  while($seekstart<$seekend) {
   $pycatfhstart = ftell($catfp);
-  $phpcatftype = hexdec(ReadTillNullByte($catfp));
-  if($phpcatftype=="") {
-   $phpcatftype = 0; }
-  $phpcatfname = ReadTillNullByte($catfp);
-  if($verbose===true) {
-   print($phpcatfname."\n"); }
-  $phpcatfsize = hexdec(ReadTillNullByte($catfp));
-  $phpcatflinkname = ReadTillNullByte($catfp);
-  $phpcatfatime = hexdec(ReadTillNullByte($catfp));
-  $phpcatfmtime = hexdec(ReadTillNullByte($catfp));
-  $phpcatfmode = decoct(hexdec(ReadTillNullByte($catfp)));
+  $pycatheaderdata = ReadFileHeaderData($catfp, 14);
+  $phpcatftype = hexdec($pycatheaderdata[0]);
+  $phpcatfname = $pycatheaderdata[1];
+  $phpcatfsize = hexdec($pycatheaderdata[2]);
+  $phpcatflinkname = $pycatheaderdata[3];
+  $phpcatfatime = hexdec($pycatheaderdata[4]);
+  $phpcatfmtime = hexdec($pycatheaderdata[5]);
+  $phpcatfmode = decoct(hexdec($pycatheaderdata[6]));
   $phpcatfchmod = substr($phpcatfmode, -3);
-  $phpcatfuid = hexdec(ReadTillNullByte($catfp));
-  $phpcatfgid = hexdec(ReadTillNullByte($catfp));
-  $phpcatfdev_minor = hexdec(ReadTillNullByte($catfp));
-  $phpcatfdev_major = hexdec(ReadTillNullByte($catfp));
-  $phpcatfrdev_minor = hexdec(ReadTillNullByte($catfp));
-  $phpcatfrdev_major = hexdec(ReadTillNullByte($catfp));
-  $phpcatfcs = hexdec(ReadTillNullByte($catfp));
+  $phpcatfuid = hexdec($pycatheaderdata[7]);
+  $phpcatfgid = hexdec($pycatheaderdata[8]);
+  $phpcatfdev_minor = hexdec($pycatheaderdata[9]);
+  $phpcatfdev_major = hexdec($pycatheaderdata[10]);
+  $phpcatfrdev_minor = hexdec($pycatheaderdata[11]);
+  $phpcatfrdev_major = hexdec($pycatheaderdata[12]);
+  $phpcatfcs = hexdec($pycatheaderdata[13]);
   $pycatfhend = ftell($catfp) - 1;
   $pycatfcontentstart = ftell($catfp);
   $phpcatfcontents = "";
