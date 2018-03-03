@@ -14,14 +14,14 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 3/1/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 3/3/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 __program_name__ = "PyCatFile";
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 0, 1, "RC 1", 1);
-__version_date_info__ = (2018, 3, 1, "RC 1", 1);
+__version_date_info__ = (2018, 3, 3, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0])+"."+str(__version_date_info__[1]).zfill(2)+"."+str(__version_date_info__[2]).zfill(2);
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__+"-"+str(__version_date_info__[4]);
@@ -32,7 +32,7 @@ if(__version_info__[3] is not None):
 if(__version_info__[3] is None):
  __version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2]);
 
-import os, sys, stat, logging, zlib, datetime, binascii;
+import os, sys, re, stat, logging, zlib, datetime, binascii;
 
 tarsupport = False;
 try:
@@ -335,6 +335,7 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
  CatSizeEnd = CatSize;
  catfp.seek(0, 0);
  pycatstring = ReadFileHeaderData(catfp, 1)[0];
+ pycatversion = int(re.findall("([\d]+)$", pycatstring)[0], 16);
  pycatlist = {};
  fileidnum = 0;
  if(seekstart!=0):
@@ -383,7 +384,7 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
    catfp.seek(pycatfsize, 1);
    pyhascontents = False;
   pycatfcontentend = catfp.tell();
-  pycatlist.update({fileidnum: {'fid': fileidnum, 'fhstart': pycatfhstart, 'fhend': pycatfhend, 'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fminor': pycatfdev_minor, 'fmajor': pycatfdev_major, 'frminor': pycatfrdev_minor, 'frmajor': pycatfrdev_major, 'fchecksum': pycatfcs, 'fhascontents': pyhascontents, 'fcontentstart': pycatfcontentstart, 'fcontentend': pycatfcontentend, 'fcontents': pycatfcontents} });
+  pycatlist.update({fileidnum: {'catfileversion': pycatversion, 'fid': fileidnum, 'fhstart': pycatfhstart, 'fhend': pycatfhend, 'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fminor': pycatfdev_minor, 'fmajor': pycatfdev_major, 'frminor': pycatfrdev_minor, 'frmajor': pycatfrdev_major, 'fchecksum': pycatfcs, 'fhascontents': pyhascontents, 'fcontentstart': pycatfcontentstart, 'fcontentend': pycatfcontentend, 'fcontents': pycatfcontents} });
   catfp.seek(1, 1);
   seekstart = catfp.tell();
   fileidnum = fileidnum + 1;

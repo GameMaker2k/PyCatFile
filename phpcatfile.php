@@ -12,7 +12,7 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: phpcatfile.php - Last Update: 3/1/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: phpcatfile.php - Last Update: 3/3/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 */
 
 date_default_timezone_set('UTC');
@@ -21,7 +21,7 @@ $info['program_name'] = "PHPCatFile";
 $info['project'] = $info['program_name'];
 $info['project_url'] = "https://github.com/GameMaker2k/PyCatFile";
 $info['version_info'] = array(0 => 0, 1 => 0, 2 => 1, 3 => "RC 1", 4 => 1);
-$info['version_date_info'] = array(0 => 2018, 1 => 3, 2 => 1, 3 => "RC 1", 1);
+$info['version_date_info'] = array(0 => 2018, 1 => 3, 2 => 3, 3 => "RC 1", 1);
 $info['version_date'] = $info['version_date_info'][0].".".str_pad($info['version_date_info'][1], 2, "-=", STR_PAD_LEFT).".".str_pad($info['version_date_info'][2], 2, "-=", STR_PAD_LEFT);
 if($info['version_info'][4]!==null):
  $info['version_date_plusrc'] = $info['version_date']."-".$info['version_date_info'][4];
@@ -160,6 +160,8 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
  $CatSizeEnd = $CatSize;
  fseek($catfp, 0, SEEK_SET);
  $phpcatstring = ReadFileHeaderData($catfp, 1)[0];
+ preg_match("/([\d]+)$/", $phpcatstring, $phpcatm);
+ $phpcatversion = $phpcatm[0];
  $phpcatlist = array();
  $fileidnum = 0;
  if($seekstart!=0) {
@@ -207,7 +209,7 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
    fseek($catfp, $phpcatfsize, SEEK_CUR); 
    $phphascontents = false; }
   $phpcatfcontentend = ftell($catfp);
-  $phpcatlist[$fileidnum] = array('fid' => $fileidnum, 'fhstart' => $phpcatfhstart, 'fhend' => $phpcatfhend, 'ftype' => $phpcatftype, 'fname' => $phpcatfname, 'fsize' => $phpcatfsize, 'flinkname' => $phpcatflinkname, 'fatime' => $phpcatfatime, 'fmtime' => $phpcatfmtime, 'fmode' => $phpcatfmode, 'fchmod' => $phpcatfchmod, 'fuid' => $phpcatfuid, 'fgid' => $phpcatfgid, 'fminor' => $phpcatfdev_minor, 'fmajor' => $phpcatfdev_major, 'fchecksum' => $phpcatfcs, 'fhascontents' => $phphascontents, 'fcontentstart' => $phpcatfcontentstart, 'fcontentend' => $phpcatfcontentend, 'fcontents' => $phpcatfcontents);
+  $phpcatlist[$fileidnum] = array('catfileversion' => $phpcatversion, 'fid' => $fileidnum, 'fhstart' => $phpcatfhstart, 'fhend' => $phpcatfhend, 'ftype' => $phpcatftype, 'fname' => $phpcatfname, 'fsize' => $phpcatfsize, 'flinkname' => $phpcatflinkname, 'fatime' => $phpcatfatime, 'fmtime' => $phpcatfmtime, 'fmode' => $phpcatfmode, 'fchmod' => $phpcatfchmod, 'fuid' => $phpcatfuid, 'fgid' => $phpcatfgid, 'fminor' => $phpcatfdev_minor, 'fmajor' => $phpcatfdev_major, 'fchecksum' => $phpcatfcs, 'fhascontents' => $phphascontents, 'fcontentstart' => $phpcatfcontentstart, 'fcontentend' => $phpcatfcontentend, 'fcontents' => $phpcatfcontents);
   fseek($catfp, 1, SEEK_CUR);
   $seekstart = ftell($catfp);
   $fileidnum = $fileidnum + 1; }
