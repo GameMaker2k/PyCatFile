@@ -32,7 +32,7 @@ if(__version_info__[3] is not None):
 if(__version_info__[3] is None):
  __version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2]);
 
-import os, sys, stat, logging, zlib, datetime;
+import os, sys, stat, logging, zlib, datetime, binascii;
 
 tarsupport = False;
 try:
@@ -104,6 +104,26 @@ def ReadFileHeaderData(fp, rounds=0):
 def AppendNullByte(indata):
  outdata = str(indata)+"\0";
  return outdata;
+
+def CheckFileType(infile):
+ catfp = open(infile, "rb");
+ catfp.seek(0, 0);
+ prefp = catfp.read(2);
+ filetype = False;
+ if(prefp==binascii.unhexlify("1f8b")):
+  filetype = "gzip";
+ catfp.seek(0, 0);
+ prefp = catfp.read(3);
+ if(prefp==binascii.unhexlify("425a68")):
+  filetype = "bzip2";
+ catfp.seek(0, 0);
+ prefp = catfp.read(7);
+ if(prefp==binascii.unhexlify("fd377a585a0000")):
+  filetype = "lzma";
+ if(prefp==binascii.unhexlify("43617446696c65")):
+  filetype = "catfile";
+ catfp.close();
+ return filetype;
 
 def GetDevMajorMinor(fdev):
  retdev = [];
@@ -287,7 +307,29 @@ if(tarsupport is True):
 
 def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
  infile = RemoveWindowsPath(infile);
- catfp = open(infile, "rb");
+ compresscheck = CheckFileType(infile);
+ if(compresscheck==False):
+  return False;
+ if(compresscheck=="gzip"):
+  try:
+   import gzip;
+  except ImportError:
+   return False;
+  catfp = gzip.open(infile, "rb");
+ if(compresscheck=="bzip2"):
+  try:
+   import bz2;
+  except ImportError:
+   return False;
+  catfp = bz2.BZ2File(infile, "rb");
+ if(compresscheck=="lzma"):
+  try:
+   import lzma;
+  except ImportError:
+   return False;
+  catfp = lzma.open(infile, "rb");
+ if(compresscheck=="catfile"):
+  catfp = open(infile, "rb");
  catfp.seek(0, 2);
  CatSize = catfp.tell();
  CatSizeEnd = CatSize;
