@@ -215,8 +215,11 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
  return $phpcatlist; }
 
 function PHPCatArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false) {
- $infile = RemoveWindowsPath($infile);
- $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, false);
+ if(is_array($infile)) {
+  $listcatfiles = $infile; }
+ else {
+  $infile = RemoveWindowsPath($infile);
+  $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, false); }
  $phpcatarray = array('list': $listcatfiles, 'filetoid' => array(), 'idtofile' => array(), 'filetypes' => array('directories' => array('filetoid' => array(), 'idtofile' => array()), 'files' => array('filetoid' => array(), 'idtofile' => array()), 'links' => array('filetoid' => array(), 'idtofile' => array()), 'symlinks' => array('filetoid' => array(), 'idtofile' => array()), 'hardlinks' => array('filetoid' => array(), 'idtofile' => array()), 'character' => array('filetoid' => array(), 'idtofile' => array()), 'block' => array('filetoid' => array(), 'idtofile' => array()), 'fifo' => array('filetoid' => array(), 'idtofile' => array()), 'devices' => array('filetoid' => array(), 'idtofile' => array())));
  $lcfi = 0;
  $lcfx = count($listcatfiles);
@@ -260,10 +263,13 @@ function PHPCatArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false) {
  return $phpcatarray; }
 
 function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
- $infile = RemoveWindowsPath($infile);
  if($outdir!==null) {
   $outdir = RemoveWindowsPath($outdir); }
- $listcatfiles = PHPCatToArray($infile, 0, 0, false);
+ if(is_array($infile)) {
+  $listcatfiles = $infile; }
+ else {
+  $infile = RemoveWindowsPath($infile);
+  $listcatfiles = PHPCatToArray($infile, 0, 0, false); }
  if($listcatfiles==false) {
   return false; }
  $lcfi = 0;
@@ -293,8 +299,11 @@ function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
  return true; }
 
 function PHPCatListFiles($infile, $seekstart=0, $seekend=0, $verbose=false) {
- $infile = RemoveWindowsPath($infile);
- $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, true);
+ if(is_array($infile)) {
+  $listcatfiles = $infile; }
+ else {
+  $infile = RemoveWindowsPath($infile);
+  $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, true); }
  if($listcatfiles==false) {
   return false; }
  $lcfi = 0;

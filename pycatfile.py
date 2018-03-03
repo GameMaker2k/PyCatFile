@@ -391,8 +391,11 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
  return pycatlist;
 
 def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
- infile = RemoveWindowsPath(infile);
- listcatfiles = PyCatToArray(infile, seekstart, seekend, listonly);
+ if(isinstance(infile, dict)):
+  listcatfiles = infile;
+ else:
+  infile = RemoveWindowsPath(infile);
+  listcatfiles = PyCatToArray(infile, seekstart, seekend, listonly);
  if(listcatfiles is False):
   return False;
  pycatarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
@@ -438,12 +441,15 @@ def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
  return pycatarray;
 
 def PyUnCatFile(infile, outdir=None, verbose=False):
- infile = RemoveWindowsPath(infile);
  if(outdir is not None):
   outdir = RemoveWindowsPath(outdir);
  if(verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
- listcatfiles = PyCatToArray(infile, 0, 0, False);
+ if(isinstance(infile, dict)):
+  listcatfiles = infile;
+ else:
+  infile = RemoveWindowsPath(infile);
+  listcatfiles = PyCatToArray(infile, 0, 0, False);
  if(listcatfiles is False):
   return False;
  lcfi = 0;
@@ -475,9 +481,12 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
  return True;
 
 def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
- infile = RemoveWindowsPath(infile);
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
- listcatfiles = PyCatToArray(infile, seekstart, seekend, True);
+ if(isinstance(infile, dict)):
+  listcatfiles = infile;
+ else:
+  infile = RemoveWindowsPath(infile);
+  listcatfiles = PyCatToArray(infile, seekstart, seekend, True);
  if(listcatfiles is False):
   return False;
  lcfi = 0;
