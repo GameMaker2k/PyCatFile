@@ -491,7 +491,9 @@ def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
   return False;
  lcfi = 0;
  lcfx = len(listcatfiles);
+ returnval = {};
  while(lcfi < lcfx):
+  returnval.update({lcfi: listcatfiles[lcfi]['fname']});
   if(verbose is False):
    logging.info(listcatfiles[lcfi]['fname']);
   if(verbose is True):
@@ -523,7 +525,7 @@ def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
     printfname = listcatfiles[lcfi]['fname']+" -> "+listcatfiles[lcfi]['flinkname'];
    logging.info(permissionstr+" "+str(str(listcatfiles[lcfi]['fuid'])+"/"+str(listcatfiles[lcfi]['fgid'])+" "+str(listcatfiles[lcfi]['fsize']).rjust(15)+" "+datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M')+" "+printfname));
   lcfi = lcfi + 1;
- return True;
+ return returnval;
 
 if __name__ == '__main__':
  should_extract = False;

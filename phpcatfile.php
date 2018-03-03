@@ -308,7 +308,9 @@ function PHPCatListFiles($infile, $seekstart=0, $seekend=0, $verbose=false) {
   return false; }
  $lcfi = 0;
  $lcfx = count($listcatfiles);
+ $returnval = array();
  while($lcfi<$lcfx) {
+  $returnval[$lcfi] = $listcatfiles[$lcfi]['fname'];
   if($verbose===false) {
    print($listcatfiles[$lcfi]['fname']."\n"); }
   if($verbose===true) {
