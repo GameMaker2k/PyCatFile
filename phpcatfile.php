@@ -12,7 +12,7 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: phpcatfile.php - Last Update: 3/3/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: phpcatfile.php - Last Update: 3/4/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 */
 
 date_default_timezone_set('UTC');
@@ -21,7 +21,7 @@ $info['program_name'] = "PHPCatFile";
 $info['project'] = $info['program_name'];
 $info['project_url'] = "https://github.com/GameMaker2k/PyCatFile";
 $info['version_info'] = array(0 => 0, 1 => 0, 2 => 1, 3 => "RC 1", 4 => 1);
-$info['version_date_info'] = array(0 => 2018, 1 => 3, 2 => 3, 3 => "RC 1", 1);
+$info['version_date_info'] = array(0 => 2018, 1 => 3, 2 => 4, 3 => "RC 1", 1);
 $info['version_date'] = $info['version_date_info'][0].".".str_pad($info['version_date_info'][1], 2, "-=", STR_PAD_LEFT).".".str_pad($info['version_date_info'][2], 2, "-=", STR_PAD_LEFT);
 if($info['version_info'][4]!==null):
  $info['version_date_plusrc'] = $info['version_date']."-".$info['version_date_info'][4];
@@ -83,7 +83,7 @@ function AppendNullByte($indata):
  $outdata = $indata."\0";
  return $outdata;
 
-function PHPCatFile($infiles, $outfile, $verbose=false) {
+function PHPCatFile($infiles, $outfile, $followlink=false, $verbose=false) {
  global $info;
  $phpcatver = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2];
  $infiles = RemoveWindowsPath($infiles);
@@ -99,7 +99,10 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
   $fname = $curfname;
   if($verbose===true) {
    print($fname."\n"); }
-  $fstatinfo = lstat($fname);
+  if($followlink===false || $followlink===null) {
+   $fstatinfo = lstat($fname); }
+  else {
+   $fstatinfo = stat($fname); }
   $ftype = 0;
   if(is_file($fname)) {
    $ftype = 0; }
@@ -127,6 +130,11 @@ function PHPCatFile($infiles, $outfile, $verbose=false) {
   if($ftype==0) {
    $fpc = fopen($fname, "rb");
    $fcontents = fread($fpc, intval($fstatinfo['size']));
+   fclose($fpc); }
+  if($followlink===false && ($ftype==1 && $ftype==2)) {
+   $flstatinfo = stat($flinkname);
+   $fpc = fopen($flinkname, "rb");
+   $fcontents = fread($fpc, intval($flstatinfo['size']));
    fclose($fpc); }
   $ftypehex = strtoupper(dechex($ftype));
   $ftypeoutstr = $ftypehex;

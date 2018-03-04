@@ -14,14 +14,14 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 3/3/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 3/4/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 __program_name__ = "PyCatFile";
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 0, 1, "RC 1", 1);
-__version_date_info__ = (2018, 3, 3, "RC 1", 1);
+__version_date_info__ = (2018, 3, 4, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
@@ -137,7 +137,7 @@ def GetDevMajorMinor(fdev):
   retdev.append(0);
  return retdev;
 
-def PyCatFile(infiles, outfile, verbose=False):
+def PyCatFile(infiles, outfile, followlink=False, verbose=False):
  infiles = RemoveWindowsPath(infiles);
  outfile = RemoveWindowsPath(outfile);
  if(verbose is True):
@@ -154,7 +154,10 @@ def PyCatFile(infiles, outfile, verbose=False):
   fname = curfname;
   if(verbose is True):
    logging.info(fname);
-  fstatinfo = os.lstat(fname);
+  if(followlink is False or followlink is None):
+   fstatinfo = os.lstat(fname);
+  else:
+   fstatinfo = os.stat(fname);
   fpremode = fstatinfo.st_mode;
   ftype = 0;
   if(stat.S_ISREG(fpremode)):
@@ -200,6 +203,11 @@ def PyCatFile(infiles, outfile, verbose=False):
   if(ftype==0):
    fpc = open(fname, "rb");
    fcontents = fpc.read(int(fstatinfo.st_size));
+   fpc.close();
+  if(followlink is True and (ftype==1 or ftype==2)):
+   flstatinfo = os.stat(flinkname);
+   fpc = open(flinkname, "rb");
+   fcontents = fpc.read(int(flstatinfo.st_size));
    fpc.close();
   ftypehex = format(ftype, 'x').upper();
   ftypeoutstr = ftypehex;
@@ -308,7 +316,7 @@ if(tarsupport is True):
 def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
  infile = RemoveWindowsPath(infile);
  compresscheck = CheckFileType(infile);
- if(compresscheck==False):
+ if(compresscheck is False):
   return False;
  if(compresscheck=="gzip"):
   try:
@@ -571,7 +579,7 @@ if __name__ == '__main__':
  if(tarsupport is False and should_convert is True):
   should_convert = False;
  if(should_create is True and should_extract is False and should_list is False and should_convert is False):
-  PyCatFile(getargs.input, getargs.output, getargs.verbose);
+  PyCatFile(getargs.input, getargs.output, False, getargs.verbose);
  if(should_create is True and should_extract is False and should_list is False and should_convert is True):
   PyCatFromTarFile(getargs.input, getargs.output, getargs.verbose);
  if(should_create is False and should_extract is True and should_list is False):
