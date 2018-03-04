@@ -205,16 +205,20 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false, $skip
   while($hc<$hcmax) {
    $hout = $hout.AppendNullByte($phpcatheaderdata[$hc]);
    $hc = $hc + 1; }
-  $phpcatnewfcs = crc32(hout);
-  if($phpcatfcs!=$phpcatnewfcs && $skipchecksum===false):
-   print("Checksum Error with file "+$phpcatfname+" at offset "+$phpcatfhstart);
-   return false;
+  $phpcatnewfcs = crc32($hout);
+  if($phpcatfcs!=$phpcatnewfcs && $skipchecksum===false) {
+   print("File Header Checksum Error with file "+$phpcatfname+" at offset "+$phpcatfhstart);
+   return false; }
   $phpcatfhend = ftell($catfp) - 1;
   $phpcatfcontentstart = ftell($catfp);
   $phpcatfcontents = "";
   $phphascontents = false;
   if($phpcatfsize>1 && $listonly===false) {
    $phpcatfcontents = fread($catfp, $phpcatfsize); 
+   $phpcatnewfccs = crc32($phpcatfcontents);
+   if($phpcatfccs!=$phpcatnewfccs && $skipchecksum===false) {
+    print("File Content Checksum Error with file "+$phpcatfname+" at offset "+$phpcatfcontentstart);
+    return false; }
    $phphascontents = true; }
   if($phpcatfsize>1 && $listonly===true) {
    fseek($catfp, $phpcatfsize, SEEK_CUR); 
