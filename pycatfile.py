@@ -228,6 +228,8 @@ def PyCatFile(infiles, outfile, followlink=False, verbose=False):
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
   catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
+  catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').upper();
+  catfileoutstr = catfileoutstr + AppendNullByte(catfilecontentcshex);
   catfileoutstrecd = catfileoutstr.encode();
   nullstrecd = "\0".encode();
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
@@ -307,6 +309,8 @@ if(tarsupport is True):
    catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
    catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
    catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
+   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').upper();
+   catfileoutstr = catfileoutstr + AppendNullByte(catfilecontentcshex);
    catfileoutstrecd = catfileoutstr.encode();
    nullstrecd = "\0".encode();
    catfileout = catfileoutstrecd + fcontents + nullstrecd;
@@ -356,7 +360,7 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
   seekend = CatSizeEnd;
  while(seekstart<seekend):
   pycatfhstart = catfp.tell();
-  pycatheaderdata = ReadFileHeaderData(catfp, 14);
+  pycatheaderdata = ReadFileHeaderData(catfp, 15);
   pycatftype = int(pycatheaderdata[0], 16);
   pycatfname = pycatheaderdata[1];
   pycatflinkname = pycatheaderdata[2];
@@ -373,6 +377,7 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
   pycatfrdev_minor = int(pycatheaderdata[11], 16);
   pycatfrdev_major = int(pycatheaderdata[12], 16);
   pycatfcs = int(pycatheaderdata[13], 16);
+  pycatfccs = int(pycatheaderdata[14], 16);
   hc = 0;
   hcmax = len(pycatheaderdata) - 1;
   hout = "";
@@ -394,7 +399,7 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
    catfp.seek(pycatfsize, 1);
    pyhascontents = False;
   pycatfcontentend = catfp.tell();
-  pycatlist.update({fileidnum: {'catfileversion': pycatversion, 'fid': fileidnum, 'fhstart': pycatfhstart, 'fhend': pycatfhend, 'ftype': pycatftype, 'fname': pycatfname, 'flinkname': pycatflinkname, 'fsize': pycatfsize, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fminor': pycatfdev_minor, 'fmajor': pycatfdev_major, 'frminor': pycatfrdev_minor, 'frmajor': pycatfrdev_major, 'fchecksum': pycatfcs, 'fhascontents': pyhascontents, 'fcontentstart': pycatfcontentstart, 'fcontentend': pycatfcontentend, 'fcontents': pycatfcontents} });
+  pycatlist.update({fileidnum: {'catfileversion': pycatversion, 'fid': fileidnum, 'fhstart': pycatfhstart, 'fhend': pycatfhend, 'ftype': pycatftype, 'fname': pycatfname, 'flinkname': pycatflinkname, 'fsize': pycatfsize, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fminor': pycatfdev_minor, 'fmajor': pycatfdev_major, 'frminor': pycatfrdev_minor, 'frmajor': pycatfrdev_major, 'fheaderchecksum': pycatfcs, 'fcontentchecksum': pycatfccs, 'fhascontents': pyhascontents, 'fcontentstart': pycatfcontentstart, 'fcontentend': pycatfcontentend, 'fcontents': pycatfcontents} });
   catfp.seek(1, 1);
   seekstart = catfp.tell();
   fileidnum = fileidnum + 1;
