@@ -319,7 +319,7 @@ if(tarsupport is True):
   tarinput.close();
   return True;
 
-def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
+def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False):
  infile = RemoveWindowsPath(infile);
  compresscheck = CheckFileType(infile);
  if(compresscheck is False):
@@ -385,10 +385,10 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
    hout = hout + AppendNullByte(pycatheaderdata[hc]);
    hc = hc + 1;
   pycatnewfcs = zlib.crc32(hout.encode()) & 0xffffffff;
-  if(pycatfcs!=pycatnewfcs):
+  if(pycatfcs!=pycatnewfcs and skipchecksum is True):
    logging.info("Checksum Error with file " + pycatfname + " at offset " + str(pycatfhstart));
    return False;
-  pycatfhend = catfp.tell() - 1;
+  pycatfhend = catfp.tell() - 2;
   pycatfcontentstart = catfp.tell();
   pycatfcontents = "";
   pyhascontents = False;
@@ -406,12 +406,12 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
  catfp.close();
  return pycatlist;
 
-def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
+def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False):
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
   infile = RemoveWindowsPath(infile);
-  listcatfiles = PyCatToArray(infile, seekstart, seekend, listonly);
+  listcatfiles = PyCatToArray(infile, seekstart, seekend, listonly, skipchecksum);
  if(listcatfiles is False):
   return False;
  pycatarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
@@ -456,7 +456,7 @@ def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False):
   lcfi = lcfi + 1;
  return pycatarray;
 
-def PyUnCatFile(infile, outdir=None, verbose=False):
+def PyUnCatFile(infile, outdir=None, verbose=False, skipchecksum=False):
  if(outdir is not None):
   outdir = RemoveWindowsPath(outdir);
  if(verbose is True):
@@ -465,7 +465,7 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
   listcatfiles = infile;
  else:
   infile = RemoveWindowsPath(infile);
-  listcatfiles = PyCatToArray(infile, 0, 0, False);
+  listcatfiles = PyCatToArray(infile, 0, 0, False, skipchecksum);
  if(listcatfiles is False):
   return False;
  lcfi = 0;
@@ -496,14 +496,14 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
   lcfi = lcfi + 1;
  return True;
 
-def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
+def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False, skipchecksum=False):
  import datetime;
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
   infile = RemoveWindowsPath(infile);
-  listcatfiles = PyCatToArray(infile, seekstart, seekend, True);
+  listcatfiles = PyCatToArray(infile, seekstart, seekend, True, skipchecksum);
  if(listcatfiles is False):
   return False;
  lcfi = 0;
@@ -590,6 +590,6 @@ if __name__ == '__main__':
  if(should_create is True and should_extract is False and should_list is False and should_convert is True):
   PyCatFromTarFile(getargs.input, getargs.output, getargs.verbose);
  if(should_create is False and should_extract is True and should_list is False):
-  PyUnCatFile(getargs.input, getargs.output, getargs.verbose);
+  PyUnCatFile(getargs.input, getargs.output, getargs.verbose, False);
  if(should_create is False and should_extract is False and should_list is True):
-  PyCatListFiles(getargs.input, 0, 0, getargs.verbose);
+  PyCatListFiles(getargs.input, 0, 0, getargs.verbose, False);
