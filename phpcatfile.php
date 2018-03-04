@@ -162,7 +162,7 @@ function PHPCatFile($infiles, $outfile, $followlink=false, $verbose=false) {
  fclose($catfp);
  return true; }
 
-function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
+function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false, $skipchecksum=false) {
  $infile = RemoveWindowsPath($infile);
  $catfp = fopen($infile, "rb");
  fseek($catfp, 0, SEEK_END);
@@ -206,7 +206,7 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
    $hout = $hout.AppendNullByte($phpcatheaderdata[$hc]);
    $hc = $hc + 1; }
   $phpcatnewfcs = crc32(hout);
-  if($phpcatfcs!=$phpcatnewfcs):
+  if($phpcatfcs!=$phpcatnewfcs && $skipchecksum===false):
    print("Checksum Error with file "+$phpcatfname+" at offset "+$phpcatfhstart);
    return false;
   $phpcatfhend = ftell($catfp) - 1;
@@ -227,12 +227,12 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false) {
  fclose($catfp);
  return $phpcatlist; }
 
-function PHPCatArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false) {
+function PHPCatArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false, $skipchecksum=false) {
  if(is_array($infile)) {
   $listcatfiles = $infile; }
  else {
   $infile = RemoveWindowsPath($infile);
-  $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, false); }
+  $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, $listonly, $skipchecksum); }
  $phpcatarray = array('list': $listcatfiles, 'filetoid' => array(), 'idtofile' => array(), 'filetypes' => array('directories' => array('filetoid' => array(), 'idtofile' => array()), 'files' => array('filetoid' => array(), 'idtofile' => array()), 'links' => array('filetoid' => array(), 'idtofile' => array()), 'symlinks' => array('filetoid' => array(), 'idtofile' => array()), 'hardlinks' => array('filetoid' => array(), 'idtofile' => array()), 'character' => array('filetoid' => array(), 'idtofile' => array()), 'block' => array('filetoid' => array(), 'idtofile' => array()), 'fifo' => array('filetoid' => array(), 'idtofile' => array()), 'devices' => array('filetoid' => array(), 'idtofile' => array())));
  $lcfi = 0;
  $lcfx = count($listcatfiles);
@@ -275,14 +275,14 @@ function PHPCatArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false) {
   $lcfi = $lcfi + 1; }
  return $phpcatarray; }
 
-function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
+function PHPUnCatFile($infile, $outdir=null, $verbose=False, $skipchecksum=false) {
  if($outdir!==null) {
   $outdir = RemoveWindowsPath($outdir); }
  if(is_array($infile)) {
   $listcatfiles = $infile; }
  else {
   $infile = RemoveWindowsPath($infile);
-  $listcatfiles = PHPCatToArray($infile, 0, 0, false); }
+  $listcatfiles = PHPCatToArray($infile, 0, 0, false, $skipchecksum); }
  if($listcatfiles==false) {
   return false; }
  $lcfi = 0;
@@ -311,12 +311,12 @@ function PHPUnCatFile($infile, $outdir=null, $verbose=False) {
   $lcfi = $lcfi + 1; }
  return true; }
 
-function PHPCatListFiles($infile, $seekstart=0, $seekend=0, $verbose=false) {
+function PHPCatListFiles($infile, $seekstart=0, $seekend=0, $verbose=false, $skipchecksum=false) {
  if(is_array($infile)) {
   $listcatfiles = $infile; }
  else {
   $infile = RemoveWindowsPath($infile);
-  $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, true); }
+  $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, true, $skipchecksum); }
  if($listcatfiles==false) {
   return false; }
  $lcfi = 0;
