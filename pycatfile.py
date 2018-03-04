@@ -32,7 +32,7 @@ if(__version_info__[3] is not None):
 if(__version_info__[3] is None):
  __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]);
 
-import os, sys, re, stat, logging, zlib, datetime, binascii;
+import os, sys, re, stat, logging, zlib, binascii;
 
 tarsupport = False;
 try:
@@ -482,6 +482,7 @@ def PyUnCatFile(infile, outdir=None, verbose=False):
  return True;
 
 def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
+ import datetime;
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(isinstance(infile, dict)):
   listcatfiles = infile;
