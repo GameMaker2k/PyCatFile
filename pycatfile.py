@@ -22,15 +22,15 @@ __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 0, 1, "RC 1", 1);
 __version_date_info__ = (2018, 3, 3, "RC 1", 1);
-__version_date__ = str(__version_date_info__[0])+"."+str(__version_date_info__[1]).zfill(2)+"."+str(__version_date_info__[2]).zfill(2);
+__version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 if(__version_info__[4] is not None):
- __version_date_plusrc__ = __version_date__+"-"+str(__version_date_info__[4]);
+ __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
 if(__version_info__[4] is None):
  __version_date_plusrc__ = __version_date__;
 if(__version_info__[3] is not None):
- __version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2])+" "+str(__version_info__[3]);
+ __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]) + " " + str(__version_info__[3]);
 if(__version_info__[3] is None):
- __version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2]);
+ __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]);
 
 import os, sys, re, stat, logging, zlib, datetime, binascii;
 
@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
 if __name__ == '__main__':
  argparser = argparse.ArgumentParser(description="Manipulating concatenate files", conflict_handler="resolve", add_help=True);
- argparser.add_argument("-V", "--version", action="version", version=__program_name__+" "+__version__);
+ argparser.add_argument("-V", "--version", action="version", version=__program_name__ + " " + __version__);
  argparser.add_argument("-i", "-f", "--input", help="files to concatenate or concatenate file extract", required=True);
  argparser.add_argument("-d", "-v", "--verbose", action="store_true", help="print various debugging information");
  argparser.add_argument("-c", "--create", action="store_true", help="concatenate files only");
@@ -62,7 +62,7 @@ def RemoveWindowsPath(dpath):
   dpath = dpath.replace(os.path.sep, "/");
  dpath = dpath.rstrip("/");
  if(dpath=="." or dpath==".."):
-  dpath = dpath+"/";
+  dpath = dpath + "/";
  return dpath;
 
 def ListDir(dirpath):
@@ -85,7 +85,7 @@ def ReadTillNullByte(fp):
   curbyte = fp.read(1);
   if(curbyte!=nullbyte):
    curbyted = curbyte.decode('ascii');
-   curfullbyte = curfullbyte+curbyted;
+   curfullbyte = curfullbyte + curbyted;
  return curfullbyte;
 
 def ReadUntilNullByte(fp):
@@ -102,7 +102,7 @@ def ReadFileHeaderData(fp, rounds=0):
  return HeaderOut;
 
 def AppendNullByte(indata):
- outdata = str(indata)+"\0";
+ outdata = str(indata) + "\0";
  return outdata;
 
 def CheckFileType(infile):
@@ -145,9 +145,9 @@ def PyCatFile(infiles, outfile, verbose=False):
  if(os.path.exists(outfile)):
   os.remove(outfile);
  catfp = open(outfile, "wb");
- pycatver = str(__version_info__[0])+str(__version_info__[1])+str(__version_info__[2]);
+ pycatver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
  fileheaderver = str(int(pycatver.replace(".", "")));
- fileheader = AppendNullByte("CatFile"+fileheaderver);
+ fileheader = AppendNullByte("CatFile" + fileheaderver);
  catfp.write(fileheader.encode());
  GetDirList = ListDir(infiles);
  for curfname in GetDirList:
@@ -204,23 +204,23 @@ def PyCatFile(infiles, outfile, verbose=False):
   ftypehex = format(ftype, 'x').upper();
   ftypeoutstr = ftypehex;
   catfileoutstr = AppendNullByte(ftypeoutstr);
-  catfileoutstr = catfileoutstr+AppendNullByte(fname);
-  catfileoutstr = catfileoutstr+AppendNullByte(fsize);
-  catfileoutstr = catfileoutstr+AppendNullByte(flinkname);
-  catfileoutstr = catfileoutstr+AppendNullByte(fatime);
-  catfileoutstr = catfileoutstr+AppendNullByte(fmtime);
-  catfileoutstr = catfileoutstr+AppendNullByte(fmode);
-  catfileoutstr = catfileoutstr+AppendNullByte(fuid);
-  catfileoutstr = catfileoutstr+AppendNullByte(fgid);
-  catfileoutstr = catfileoutstr+AppendNullByte(fdev_minor);
-  catfileoutstr = catfileoutstr+AppendNullByte(fdev_major);
-  catfileoutstr = catfileoutstr+AppendNullByte(frdev_minor);
-  catfileoutstr = catfileoutstr+AppendNullByte(frdev_major);
+  catfileoutstr = catfileoutstr + AppendNullByte(fname);
+  catfileoutstr = catfileoutstr + AppendNullByte(flinkname);
+  catfileoutstr = catfileoutstr + AppendNullByte(fsize);
+  catfileoutstr = catfileoutstr + AppendNullByte(fatime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fmode);
+  catfileoutstr = catfileoutstr + AppendNullByte(fuid);
+  catfileoutstr = catfileoutstr + AppendNullByte(fgid);
+  catfileoutstr = catfileoutstr + AppendNullByte(fdev_minor);
+  catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
+  catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
+  catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()), 'x').upper();
-  catfileoutstr = catfileoutstr+AppendNullByte(catfileheadercshex);
+  catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
   catfileoutstrecd = catfileoutstr.encode();
   nullstrecd = "\0".encode();
-  catfileout = catfileoutstrecd+fcontents+nullstrecd;
+  catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfp.write(catfileout);
  catfp.close();
  return True;
@@ -236,9 +236,9 @@ if(tarsupport is True):
   if(os.path.exists(outfile)):
    os.remove(outfile);
   catfp = open(outfile, "wb");
-  pycatver = str(__version_info__[0])+str(__version_info__[1])+str(__version_info__[2]);
+  pycatver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
   fileheaderver = str(int(pycatver.replace(".", "")));
-  fileheader = AppendNullByte("CatFile"+fileheaderver);
+  fileheader = AppendNullByte("CatFile" + fileheaderver);
   catfp.write(fileheader.encode());
   for curfname in tarfiles:
    fname = curfname.name;
@@ -283,23 +283,23 @@ if(tarsupport is True):
    ftypehex = format(ftype, 'x').upper();
    ftypeoutstr = ftypehex;
    catfileoutstr = AppendNullByte(ftypeoutstr);
-   catfileoutstr = catfileoutstr+AppendNullByte(fname);
-   catfileoutstr = catfileoutstr+AppendNullByte(fsize);
-   catfileoutstr = catfileoutstr+AppendNullByte(flinkname);
-   catfileoutstr = catfileoutstr+AppendNullByte(fatime);
-   catfileoutstr = catfileoutstr+AppendNullByte(fmtime);
-   catfileoutstr = catfileoutstr+AppendNullByte(fmode);
-   catfileoutstr = catfileoutstr+AppendNullByte(fuid);
-   catfileoutstr = catfileoutstr+AppendNullByte(fgid);
-   catfileoutstr = catfileoutstr+AppendNullByte(fdev_minor);
-   catfileoutstr = catfileoutstr+AppendNullByte(fdev_major);
-   catfileoutstr = catfileoutstr+AppendNullByte(frdev_minor);
-   catfileoutstr = catfileoutstr+AppendNullByte(frdev_major);
+   catfileoutstr = catfileoutstr + AppendNullByte(fname);
+   catfileoutstr = catfileoutstr + AppendNullByte(flinkname);
+   catfileoutstr = catfileoutstr + AppendNullByte(fsize);
+   catfileoutstr = catfileoutstr + AppendNullByte(fatime);
+   catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
+   catfileoutstr = catfileoutstr + AppendNullByte(fmode);
+   catfileoutstr = catfileoutstr + AppendNullByte(fuid);
+   catfileoutstr = catfileoutstr + AppendNullByte(fgid);
+   catfileoutstr = catfileoutstr + AppendNullByte(fdev_minor);
+   catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
+   catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
+   catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
    catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()), 'x').upper();
-   catfileoutstr = catfileoutstr+AppendNullByte(catfileheadercshex);
+   catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
    catfileoutstrecd = catfileoutstr.encode();
    nullstrecd = "\0".encode();
-   catfileout = catfileoutstrecd+fcontents+nullstrecd;
+   catfileout = catfileoutstrecd + fcontents + nullstrecd;
    catfp.write(catfileout);
   catfp.close();
   tarinput.close();
@@ -349,8 +349,8 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
   pycatheaderdata = ReadFileHeaderData(catfp, 14);
   pycatftype = int(pycatheaderdata[0], 16);
   pycatfname = pycatheaderdata[1];
-  pycatfsize = int(pycatheaderdata[2], 16);
-  pycatflinkname = pycatheaderdata[3];
+  pycatflinkname = pycatheaderdata[2];
+  pycatfsize = int(pycatheaderdata[3], 16);
   pycatfatime = int(pycatheaderdata[4], 16);
   pycatfmtime = int(pycatheaderdata[5], 16);
   pycatfmode = oct(int(pycatheaderdata[6], 16));
@@ -367,11 +367,11 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
   hcmax = len(pycatheaderdata) - 1;
   hout = "";
   while(hc<hcmax):
-   hout = hout+AppendNullByte(pycatheaderdata[hc]);
+   hout = hout + AppendNullByte(pycatheaderdata[hc]);
    hc = hc + 1;
   pycatnewfcs = zlib.crc32(hout.encode());
   if(pycatfcs!=pycatnewfcs):
-   logging.info("Checksum Error with file "+pycatfname+" at offset "+str(pycatfhstart));
+   logging.info("Checksum Error with file " + pycatfname + " at offset " + str(pycatfhstart));
    return False;
   pycatfhend = catfp.tell() - 1;
   pycatfcontentstart = catfp.tell();
@@ -384,7 +384,7 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
    catfp.seek(pycatfsize, 1);
    pyhascontents = False;
   pycatfcontentend = catfp.tell();
-  pycatlist.update({fileidnum: {'catfileversion': pycatversion, 'fid': fileidnum, 'fhstart': pycatfhstart, 'fhend': pycatfhend, 'ftype': pycatftype, 'fname': pycatfname, 'fsize': pycatfsize, 'flinkname': pycatflinkname, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fminor': pycatfdev_minor, 'fmajor': pycatfdev_major, 'frminor': pycatfrdev_minor, 'frmajor': pycatfrdev_major, 'fchecksum': pycatfcs, 'fhascontents': pyhascontents, 'fcontentstart': pycatfcontentstart, 'fcontentend': pycatfcontentend, 'fcontents': pycatfcontents} });
+  pycatlist.update({fileidnum: {'catfileversion': pycatversion, 'fid': fileidnum, 'fhstart': pycatfhstart, 'fhend': pycatfhend, 'ftype': pycatftype, 'fname': pycatfname, 'flinkname': pycatflinkname, 'fsize': pycatfsize, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fminor': pycatfdev_minor, 'fmajor': pycatfdev_major, 'frminor': pycatfrdev_minor, 'frmajor': pycatfrdev_major, 'fchecksum': pycatfcs, 'fhascontents': pyhascontents, 'fcontentstart': pycatfcontentstart, 'fcontentend': pycatfcontentend, 'fcontents': pycatfcontents} });
   catfp.seek(1, 1);
   seekstart = catfp.tell();
   fileidnum = fileidnum + 1;
@@ -502,29 +502,29 @@ def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False):
    permissionstr = "";
    for fmodval in str(listcatfiles[lcfi]['fchmod'])[-3:]:
     try:
-     permissionstr = permissionstr+permissions['access'][fmodval];
+     permissionstr = permissionstr + permissions['access'][fmodval];
     except KeyError:
-     permissionstr = permissionstr+"---";
+     permissionstr = permissionstr + "---";
    if(listcatfiles[lcfi]['ftype']==0):
-    permissionstr = "-"+permissionstr;
+    permissionstr = "-" + permissionstr;
    if(listcatfiles[lcfi]['ftype']==1):
-    permissionstr = "h"+permissionstr;
+    permissionstr = "h" + permissionstr;
    if(listcatfiles[lcfi]['ftype']==2):
-    permissionstr = "l"+permissionstr;
+    permissionstr = "l" + permissionstr;
    if(listcatfiles[lcfi]['ftype']==3):
-    permissionstr = "c"+permissionstr;
+    permissionstr = "c" + permissionstr;
    if(listcatfiles[lcfi]['ftype']==4):
-    permissionstr = "b"+permissionstr;
+    permissionstr = "b" + permissionstr;
    if(listcatfiles[lcfi]['ftype']==5):
-    permissionstr = "d"+permissionstr;
+    permissionstr = "d" + permissionstr;
    if(listcatfiles[lcfi]['ftype']==6):
-    permissionstr = "f"+permissionstr;
+    permissionstr = "f" + permissionstr;
    printfname = listcatfiles[lcfi]['fname'];
    if(listcatfiles[lcfi]['ftype']==1):
-    printfname = listcatfiles[lcfi]['fname']+" link to "+listcatfiles[lcfi]['flinkname'];
+    printfname = listcatfiles[lcfi]['fname'] + " link to " + listcatfiles[lcfi]['flinkname'];
    if(listcatfiles[lcfi]['ftype']==2):
-    printfname = listcatfiles[lcfi]['fname']+" -> "+listcatfiles[lcfi]['flinkname'];
-   logging.info(permissionstr+" "+str(str(listcatfiles[lcfi]['fuid'])+"/"+str(listcatfiles[lcfi]['fgid'])+" "+str(listcatfiles[lcfi]['fsize']).rjust(15)+" "+datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M')+" "+printfname));
+    printfname = listcatfiles[lcfi]['fname'] + " -> " + listcatfiles[lcfi]['flinkname'];
+   logging.info(permissionstr + " " + str(str(listcatfiles[lcfi]['fuid']) + "/" + str(listcatfiles[lcfi]['fgid']) + " " + str(listcatfiles[lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname));
   lcfi = lcfi + 1;
  return returnval;
 
