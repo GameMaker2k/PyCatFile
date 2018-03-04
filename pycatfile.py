@@ -386,7 +386,7 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=Fa
    hc = hc + 1;
   pycatnewfcs = zlib.crc32(hout.encode()) & 0xffffffff;
   if(pycatfcs!=pycatnewfcs and skipchecksum is True):
-   logging.info("Checksum Error with file " + pycatfname + " at offset " + str(pycatfhstart));
+   logging.info("File Header Checksum Error with file " + pycatfname + " at offset " + str(pycatfhstart));
    return False;
   pycatfhend = catfp.tell() - 2;
   pycatfcontentstart = catfp.tell();
@@ -394,7 +394,11 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=Fa
   pyhascontents = False;
   if(pycatfsize>1 and listonly is False):
    pycatfcontents = catfp.read(pycatfsize);
+   pycatnewfccs = zlib.crc32(pycatfcontents) & 0xffffffff;
    pyhascontents = True;
+   if(pycatfccs!=pycatnewfccs and skipchecksum is True):
+    logging.info("File Content Checksum Error with file " + pycatfname + " at offset " + str(pycatfcontentstart));
+    return False;
   if(pycatfsize>1 and listonly is True):
    catfp.seek(pycatfsize, 1);
    pyhascontents = False;
