@@ -226,7 +226,7 @@ def PyCatFile(infiles, outfile, followlink=False, verbose=False):
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
-  catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()), 'x').upper();
+  catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
   catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
   catfileoutstrecd = catfileoutstr.encode();
   nullstrecd = "\0".encode();
@@ -305,7 +305,7 @@ if(tarsupport is True):
    catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
    catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
    catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
-   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()), 'x').upper();
+   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
    catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
    catfileoutstrecd = catfileoutstr.encode();
    nullstrecd = "\0".encode();
@@ -379,7 +379,7 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False):
   while(hc<hcmax):
    hout = hout + AppendNullByte(pycatheaderdata[hc]);
    hc = hc + 1;
-  pycatnewfcs = zlib.crc32(hout.encode());
+  pycatnewfcs = zlib.crc32(hout.encode()) & 0xffffffff;
   if(pycatfcs!=pycatnewfcs):
    logging.info("Checksum Error with file " + pycatfname + " at offset " + str(pycatfhstart));
    return False;
