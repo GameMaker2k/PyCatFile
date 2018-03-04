@@ -17,6 +17,8 @@
     $FileInfo: pycatfile.py - Last Update: 3/4/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
+from __future__ import absolute_import, division, print_function, unicode_literals;
+
 __program_name__ = "PyCatFile";
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
