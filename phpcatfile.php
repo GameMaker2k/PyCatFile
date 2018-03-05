@@ -23,21 +23,21 @@ $info['project_url'] = "https://github.com/GameMaker2k/PyCatFile";
 $info['version_info'] = array(0 => 0, 1 => 0, 2 => 1, 3 => "RC 1", 4 => 1);
 $info['version_date_info'] = array(0 => 2018, 1 => 3, 2 => 5, 3 => "RC 1", 1);
 $info['version_date'] = $info['version_date_info'][0].".".str_pad($info['version_date_info'][1], 2, "-=", STR_PAD_LEFT).".".str_pad($info['version_date_info'][2], 2, "-=", STR_PAD_LEFT);
-if($info['version_info'][4]!==null):
- $info['version_date_plusrc'] = $info['version_date']."-".$info['version_date_info'][4];
-if($info['version_info'][4]===null):
- $info['version_date_plusrc'] = $info['version_date'];
-if($info['version_info'][3]!==null):
- $info['version'] = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2]." ".$info['version_info'][3];
-if($info['version_info'][3]===null):
- $info['version'] = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2];
+if($info['version_info'][4]!==null) {
+ $info['version_date_plusrc'] = $info['version_date']."-".$info['version_date_info'][4]; }
+if($info['version_info'][4]===null) {
+ $info['version_date_plusrc'] = $info['version_date']; }
+if($info['version_info'][3]!==null) {
+ $info['version'] = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2]." ".$info['version_info'][3]; }
+if($info['version_info'][3]===null) {
+ $info['version'] = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2]; }
 
 function RemoveWindowsPath($dpath) {
  if(DIRECTORY_SEPARATOR=="\\") {
   $dpath = str_replace(DIRECTORY_SEPARATOR, "/", $dpath); }
  $dpath = rtrim($dpath, '/');
- if($dpath=="." or $dpath==".."):
-  $dpath = $dpath."/";
+ if($dpath=="." or $dpath=="..") {
+  $dpath = $dpath."/"; }
  return $dpath; }
 
 function ListDir($dirname) {
@@ -260,37 +260,37 @@ function CatFileToArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false,
   $fid = $listcatfiles[$lcfi]['fid'];
   $catarray['filetoid'][$fname] = $fid;
   $catarray['idtofile'][$fid] = $fname;
-  if($listcatfiles[$lcfi]['ftype']==0):
+  if($listcatfiles[$lcfi]['ftype']==0) {
    $catarray['filetypes']['files']['filetoid'][$fname] = $fid;
-   $catarray['filetypes']['files']['idtofile'][$fid] = $fname;
-  if($listcatfiles[$lcfi]['ftype']==1):
+   $catarray['filetypes']['files']['idtofile'][$fid] = $fname; }
+  if($listcatfiles[$lcfi]['ftype']==1) {
    $catarray['filetypes']['hardlinks']['filetoid'][$fname] = $fid;
    $catarray['filetypes']['hardlinks']['idtofile'][$fid] = $fname;
    $catarray['filetypes']['links']['filetoid'][$fname] = $fid;
-   $catarray['filetypes']['links']['idtofile'][$fid] = $fname;
-  if($listcatfiles[$lcfi]['ftype']==2):
+   $catarray['filetypes']['links']['idtofile'][$fid] = $fname; }
+  if($listcatfiles[$lcfi]['ftype']==2) {
    $catarray['filetypes']['symlinks']['filetoid'][$fname] = $fid;
    $catarray['filetypes']['symlinks']['idtofile'][$fid] = $fname;
    $catarray['filetypes']['links']['filetoid'][$fname] = $fid;
-   $catarray['filetypes']['links']['idtofile'][$fid] = $fname;
-  if($listcatfiles[$lcfi]['ftype']==3):
+   $catarray['filetypes']['links']['idtofile'][$fid] = $fname; }
+  if($listcatfiles[$lcfi]['ftype']==3) {
    $catarray['filetypes']['character']['filetoid'][$fname] = $fid;
    $catarray['filetypes']['character']['idtofile'][$fid] = $fname;
    $catarray['filetypes']['devices']['filetoid'][$fname] = $fid;
-   $catarray['filetypes']['devices']['idtofile'][$fid] = $fname;
-  if($listcatfiles[$lcfi]['ftype']==4):
+   $catarray['filetypes']['devices']['idtofile'][$fid] = $fname; }
+  if($listcatfiles[$lcfi]['ftype']==4) {
    $catarray['filetypes']['block']['filetoid'][$fname] = $fid;
    $catarray['filetypes']['block']['idtofile'][$fid] = $fname;
    $catarray['filetypes']['devices']['filetoid'][$fname] = $fid;
-   $catarray['filetypes']['devices']['idtofile'][$fid] = $fname;
-  if($listcatfiles[$lcfi]['ftype']==5):
+   $catarray['filetypes']['devices']['idtofile'][$fid] = $fname; }
+  if($listcatfiles[$lcfi]['ftype']==5) {
    $catarray['filetypes']['directories']['filetoid'][$fname] = $fid;
-   $catarray['filetypes']['directories']['idtofile'][$fid] = $fname;
-  if($listcatfiles[$lcfi]['ftype']==6):
+   $catarray['filetypes']['directories']['idtofile'][$fid] = $fname; }
+  if($listcatfiles[$lcfi]['ftype']==6) {
    $catarray['filetypes']['fifo']['filetoid'][$fname] = $fid;
    $catarray['filetypes']['fifo']['idtofile'][$fid] = $fname;
    $catarray['filetypes']['devices']['filetoid'][$fname] = $fid;
-   $catarray['filetypes']['devices']['idtofile'][$fid] = $fname;
+   $catarray['filetypes']['devices']['idtofile'][$fid] = $fname; }
   $lcfi = $lcfi + 1; }
  return $catarray; }
 
