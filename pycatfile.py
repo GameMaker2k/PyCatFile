@@ -142,7 +142,7 @@ def GetDevMajorMinor(fdev):
 def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbose=False):
  infiles = RemoveWindowsPath(infiles);
  outfile = RemoveWindowsPath(outfile);
- if(checksumtype!="adler32" or checksumtype!="crc32" or checksumtype!="md5" or checksumtype!="sha1" or checksumtype!="sha224" or checksumtype!="sha256" or checksumtype!="sha384" or checksumtype!="sha512"):
+ if(checksumtype!="adler32" and checksumtype!="crc32" and checksumtype!="md5" and checksumtype!="sha1" and checksumtype!="sha224" and checksumtype!="sha256" and checksumtype!="sha384" and checksumtype!="sha512"):
   checksumtype="crc32"
  if(verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
@@ -297,7 +297,7 @@ if(tarsupport is True):
  def PackCatFileFromTarFile(infile, outfile, checksumtype="crc32", verbose=False):
   infile = RemoveWindowsPath(infile);
   outfile = RemoveWindowsPath(outfile);
-  if(checksumtype!="adler32" or checksumtype!="crc32" or checksumtype!="md5" or checksumtype!="sha1" or checksumtype!="sha224" or checksumtype!="sha256" or checksumtype!="sha384" or checksumtype!="sha512"):
+  if(checksumtype!="adler32" and checksumtype!="crc32" and checksumtype!="md5" and checksumtype!="sha1" and checksumtype!="sha224" and checksumtype!="sha256" and checksumtype!="sha384" and checksumtype!="sha512"):
    checksumtype="crc32"
   tarinput = tarfile.open(infile, "r:*");
   tarfiles = tarinput.getmembers();
@@ -554,7 +554,7 @@ def RePackCatFile(infile, seekstart=0, seekend=0, listonly=False, checksumtype="
  else:
   infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, seekstart, seekend, listonly, skipchecksum);
- if(checksumtype!="adler32" or checksumtype!="crc32" or checksumtype!="md5" or checksumtype!="sha1" or checksumtype!="sha224" or checksumtype!="sha256" or checksumtype!="sha384" or checksumtype!="sha512"):
+ if(checksumtype!="adler32" and checksumtype!="crc32" and checksumtype!="md5" and checksumtype!="sha1" and checksumtype!="sha224" and checksumtype!="sha256" and checksumtype!="sha384" and checksumtype!="sha512"):
   checksumtype="crc32"
  if(verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
