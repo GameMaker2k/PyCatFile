@@ -83,11 +83,13 @@ function AppendNullByte($indata):
  $outdata = $indata."\0";
  return $outdata;
 
-function PackCatFile($infiles, $outfile, $followlink=false, $verbose=false) {
+function PackCatFile($infiles, $outfile, $followlink=false, $checksumtype="crc32", $verbose=false) {
  global $info;
  $catver = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2];
  $infiles = RemoveWindowsPath($infiles);
  $outfile = RemoveWindowsPath($outfile);
+ if($checksumtype!="adler32" or $checksumtype!="crc32" or $checksumtype!="md5" or $checksumtype!="sha1" or $checksumtype!="sha224" or $checksumtype!="sha256" or $checksumtype!="sha384" or $checksumtype!="sha512") {
+  $checksumtype="crc32" }
  if(file_exists($outfile)) {
   unlink($outfile); }
  $catfp = fopen($outfile, "wb");
@@ -151,10 +153,14 @@ function PackCatFile($infiles, $outfile, $followlink=false, $verbose=false) {
   $catfileoutstr = $catfileoutstr.AppendNullByte($fdev_major);
   $catfileoutstr = $catfileoutstr.AppendNullByte($frdev_minor);
   $catfileoutstr = $catfileoutstr.AppendNullByte($frdev_major);
-  $catfileoutstr = $catfileoutstr.AppendNullByte("crc32");
-  $catfileheadercshex = strtoupper(dechex(crc32($catfileoutstr)));
+  $catfileoutstr = $catfileoutstr.AppendNullByte($checksumtype);
+  if($checksumtype=="adler32" || $checksumtype=="crc32") {
+   $catfileheadercshex = strtoupper(dechex(hash($checksumtype, $catfileoutstr)));
+   $catfilecontentcshex = strtoupper(dechex(hash($checksumtype, $catfileoutstr))); }
+  if($checksumtype=="md5" || $checksumtype=="sha1" || $checksumtype=="sha224" || $checksumtype=="sha256" || $checksumtype=="sha384" || $checksumtype=="sha512") {
+   $catfileheadercshex = strtoupper(hash($checksumtype, $catfileoutstr));
+   $catfilecontentcshex = strtoupper(hash($checksumtype, $catfileoutstr)); }
   $catfileoutstr = $catfileoutstr.AppendNullByte($catfileheadercshex);
-  $catfilecontentcshex = strtoupper(dechex(crc32($fcontents)));
   $catfileoutstr = $catfileoutstr.AppendNullByte($catfilecontentcshex);
   $catfileoutstrecd = $catfileoutstr;
   $nullstrecd = "\0";
@@ -198,16 +204,20 @@ function CatFileToArray($infile, $seekstart=0, $seekend=0, $listonly=false, $ski
   $catfdev_major = hexdec($catheaderdata[10]);
   $catfrdev_minor = hexdec($catheaderdata[11]);
   $catfrdev_major = hexdec($catheaderdata[12]);
-  $catfhashtype = $catheaderdata[13];
-  $catfcs = hexdec($catheaderdata[14]);
-  $catfccs = hexdec($catheaderdata[15]);
+  $catfchecksumtype = $catheaderdata[13];
+  if($catfchecksumtype=="adler32" || $catfchecksumtype=="crc32") {
+   $catfcs = hexdec($catheaderdata[14]);
+   $catfccs = hexdec($catheaderdata[15]); }
+  if($catfchecksumtype=="md5" || $catfchecksumtype=="sha1" || $catfchecksumtype=="sha224" || $catfchecksumtype=="sha256" || $catfchecksumtype=="sha384" || $catfchecksumtype=="sha512") {
+   $catfcs = $catheaderdata[14];
+   $catfccs = $catheaderdata[15]; }
   $hc = 0;
   $hcmax = strlen($catheaderdata) - 2;
   $hout = "";
   while($hc<$hcmax) {
    $hout = $hout.AppendNullByte($catheaderdata[$hc]);
    $hc = $hc + 1; }
-  $catnewfcs = crc32($hout);
+  $catnewfcs = strtoupper(hash($catfchecksumtype, $hout));
   if($catfcs!=$catnewfcs && $skipchecksum===false) {
    print("File Header Checksum Error with file "+$catfname+" at offset "+$catfhstart);
    return false; }
@@ -217,7 +227,7 @@ function CatFileToArray($infile, $seekstart=0, $seekend=0, $listonly=false, $ski
   $phphascontents = false;
   if($catfsize>1 && $listonly===false) {
    $catfcontents = fread($catfp, $catfsize); 
-   $catnewfccs = crc32($catfcontents);
+   $catnewfccs = strtoupper(hash($catfchecksumtype, $catfcontents));
    if($catfccs!=$catnewfccs && $skipchecksum===false) {
     print("File Content Checksum Error with file "+$catfname+" at offset "+$catfcontentstart);
     return false; }
@@ -226,7 +236,7 @@ function CatFileToArray($infile, $seekstart=0, $seekend=0, $listonly=false, $ski
    fseek($catfp, $catfsize, SEEK_CUR); 
    $phphascontents = false; }
   $catfcontentend = ftell($catfp);
-  $catlist[$fileidnum] = array('catfileversion' => $catversion, 'fid' => $fileidnum, 'fhstart' => $catfhstart, 'fhend' => $catfhend, 'ftype' => $catftype, 'fname' => $catfname, 'flinkname' => $catflinkname, 'fsize' => $catfsize, 'fatime' => $catfatime, 'fmtime' => $catfmtime, 'fmode' => $catfmode, 'fchmod' => $catfchmod, 'fuid' => $catfuid, 'fgid' => $catfgid, 'fminor' => $catfdev_minor, 'fmajor' => $catfdev_major, 'fchecksumtype' => $catfhashtype, 'fheaderchecksum' => $catfcs, 'fcontentchecksum' => $catfccs, 'fhascontents' => $phphascontents, 'fcontentstart' => $catfcontentstart, 'fcontentend' => $catfcontentend, 'fcontents' => $catfcontents);
+  $catlist[$fileidnum] = array('catfileversion' => $catversion, 'fid' => $fileidnum, 'fhstart' => $catfhstart, 'fhend' => $catfhend, 'ftype' => $catftype, 'fname' => $catfname, 'flinkname' => $catflinkname, 'fsize' => $catfsize, 'fatime' => $catfatime, 'fmtime' => $catfmtime, 'fmode' => $catfmode, 'fchmod' => $catfchmod, 'fuid' => $catfuid, 'fgid' => $catfgid, 'fminor' => $catfdev_minor, 'fmajor' => $catfdev_major, 'fchecksumtype' => $catfchecksumtype, 'fheaderchecksum' => $catfcs, 'fcontentchecksum' => $catfccs, 'fhascontents' => $phphascontents, 'fcontentstart' => $catfcontentstart, 'fcontentend' => $catfcontentend, 'fcontents' => $catfcontents);
   fseek($catfp, 1, SEEK_CUR);
   $seekstart = ftell($catfp);
   $fileidnum = $fileidnum + 1; }
@@ -283,12 +293,14 @@ function CatFileToArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false,
   $lcfi = $lcfi + 1; }
  return $catarray; }
 
-function RePackCatFile($infiles, $outfile, $followlink=false, $verbose=false) {
+function RePackCatFile($infiles, $outfile, $followlink=false, $checksumtype="crc32", $verbose=false) {
  if(is_array($infile)) {
   $listcatfiles = $infile; }
  else {
   $infile = RemoveWindowsPath($infile);
   $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, $listonly, $skipchecksum); }
+ if($checksumtype!="adler32" or $checksumtype!="crc32" or $checksumtype!="md5" or $checksumtype!="sha1" or $checksumtype!="sha224" or $checksumtype!="sha256" or $checksumtype!="sha384" or $checksumtype!="sha512") {
+  $checksumtype="crc32" }
  if($listcatfiles==false) {
   return false; }
  $lcfi = 0;
@@ -324,10 +336,14 @@ function RePackCatFile($infiles, $outfile, $followlink=false, $verbose=false) {
   $catfileoutstr = $catfileoutstr.AppendNullByte($fdev_major);
   $catfileoutstr = $catfileoutstr.AppendNullByte($frdev_minor);
   $catfileoutstr = $catfileoutstr.AppendNullByte($frdev_major);
-  $catfileoutstr = $catfileoutstr.AppendNullByte("crc32");
-  $catfileheadercshex = strtoupper(dechex(crc32($catfileoutstr)));
+  $catfileoutstr = $catfileoutstr.AppendNullByte($checksumtype);
+  if($checksumtype=="adler32" || $checksumtype=="crc32") {
+   $catfileheadercshex = strtoupper(dechex(hash($checksumtype, $catfileoutstr)));
+   $catfilecontentcshex = strtoupper(dechex(hash($checksumtype, $catfileoutstr))); }
+  if($checksumtype=="md5" || $checksumtype=="sha1" || $checksumtype=="sha224" || $checksumtype=="sha256" || $checksumtype=="sha384" || $checksumtype=="sha512") {
+   $catfileheadercshex = strtoupper(hash($checksumtype, $catfileoutstr));
+   $catfilecontentcshex = strtoupper(hash($checksumtype, $catfileoutstr)); }
   $catfileoutstr = $catfileoutstr.AppendNullByte($catfileheadercshex);
-  $catfilecontentcshex = strtoupper(dechex(crc32($fcontents)));
   $catfileoutstr = $catfileoutstr.AppendNullByte($catfilecontentcshex);
   $catfileoutstrecd = $catfileoutstr;
   $nullstrecd = "\0";

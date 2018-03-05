@@ -34,7 +34,7 @@ if(__version_info__[3] is not None):
 if(__version_info__[3] is None):
  __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]);
 
-import os, sys, re, stat, logging, zlib, binascii;
+import os, sys, re, stat, logging, zlib, hashlib, binascii;
 
 tarsupport = False;
 try:
@@ -139,9 +139,11 @@ def GetDevMajorMinor(fdev):
   retdev.append(0);
  return retdev;
 
-def PackCatFile(infiles, outfile, followlink=False, verbose=False):
+def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbose=False):
  infiles = RemoveWindowsPath(infiles);
  outfile = RemoveWindowsPath(outfile);
+ if(checksumtype!="adler32" or checksumtype!="crc32" or checksumtype!="md5" or checksumtype!="sha1" or checksumtype!="sha224" or checksumtype!="sha256" or checksumtype!="sha384" or checksumtype!="sha512"):
+  checksumtype="crc32"
  if(verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(os.path.exists(outfile)):
@@ -226,10 +228,21 @@ def PackCatFile(infiles, outfile, followlink=False, verbose=False):
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
-  catfileoutstr = catfileoutstr + AppendNullByte("crc32");
-  catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
+  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
+  if(checksumtype=="adler32"):
+   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
+   catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').upper();
+  if(checksumtype=="crc32"):
+   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
+   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').upper();
+  if(checksumtype=="md5" or checksumtype=="sha1" or checksumtype=="sha224" or checksumtype=="sha256" or checksumtype=="sha384" or checksumtype=="sha512"):
+   checksumoutstr = hashlib.new(checksumtype);
+   checksumoutstr.update(catfileoutstr.encode());
+   catfileheadercshex = checksumoutstr.hexdigest().upper();
+   checksumoutstr = hashlib.new(checksumtype);
+   checksumoutstr.update(fcontents);
+   catfilecontentcshex = checksumoutstr.hexdigest().upper();
   catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
-  catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').upper();
   catfileoutstr = catfileoutstr + AppendNullByte(catfilecontentcshex);
   catfileoutstrecd = catfileoutstr.encode();
   nullstrecd = "\0".encode();
@@ -281,9 +294,11 @@ def PackCatFile(infiles, outfile, followlink=False, verbose=False):
  return True;
 
 if(tarsupport is True):
- def PackCatFileFromTarFile(infile, outfile, verbose=False):
+ def PackCatFileFromTarFile(infile, outfile, checksumtype="crc32", verbose=False):
   infile = RemoveWindowsPath(infile);
   outfile = RemoveWindowsPath(outfile);
+  if(checksumtype!="adler32" or checksumtype!="crc32" or checksumtype!="md5" or checksumtype!="sha1" or checksumtype!="sha224" or checksumtype!="sha256" or checksumtype!="sha384" or checksumtype!="sha512"):
+   checksumtype="crc32"
   tarinput = tarfile.open(infile, "r:*");
   tarfiles = tarinput.getmembers();
   if(verbose is True):
@@ -350,12 +365,22 @@ if(tarsupport is True):
    catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
    catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
    catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
-   catfileoutstr = catfileoutstr + AppendNullByte("crc32");
-   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
+   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
+   if(checksumtype=="adler32"):
+    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
+    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').upper();
+   if(checksumtype=="crc32"):
+    catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
+    catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').upper();
+   if(checksumtype=="md5" or checksumtype=="sha1" or checksumtype=="sha224" or checksumtype=="sha256" or checksumtype=="sha384" or checksumtype=="sha512"):
+    checksumoutstr = hashlib.new(checksumtype);
+    checksumoutstr.update(catfileoutstr.encode());
+    catfileheadercshex = checksumoutstr.hexdigest().upper();
+    checksumoutstr = hashlib.new(checksumtype);
+    checksumoutstr.update(fcontents);
+    catfilecontentcshex = checksumoutstr.hexdigest().upper();
    catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
-   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').upper();
    catfileoutstr = catfileoutstr + AppendNullByte(catfilecontentcshex);
-   catfileoutstrecd = catfileoutstr.encode();
    nullstrecd = "\0".encode();
    catfileout = catfileoutstrecd + fcontents + nullstrecd;
    catfp.write(catfileout);
@@ -420,16 +445,27 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catfdev_major = int(catheaderdata[10], 16);
   catfrdev_minor = int(catheaderdata[11], 16);
   catfrdev_major = int(catheaderdata[12], 16);
-  catfhashtype = catheaderdata[13];
-  catfcs = int(catheaderdata[14], 16);
-  catfccs = int(catheaderdata[15], 16);
+  catfchecksumtype = catheaderdata[13];
+  if(catfchecksumtype=="adler32" or catfchecksumtype=="crc32"):
+   catfcs = int(catheaderdata[14], 16);
+   catfccs = int(catheaderdata[15], 16);
+  if(catfchecksumtype=="md5" or catfchecksumtype=="sha1" or catfchecksumtype=="sha224" or catfchecksumtype=="sha256" or catfchecksumtype=="sha384" or catfchecksumtype=="sha512"):
+   catfcs = catheaderdata[14];
+   catfccs = catheaderdata[15];
   hc = 0;
   hcmax = len(catheaderdata) - 2;
   hout = "";
   while(hc<hcmax):
    hout = hout + AppendNullByte(catheaderdata[hc]);
    hc = hc + 1;
-  catnewfcs = zlib.crc32(hout.encode()) & 0xffffffff;
+  if(catfchecksumtype=="adler32"):
+   catnewfcs = zlib.adler32(hout.encode()) & 0xffffffff;
+  if(catfchecksumtype=="crc32"):
+   catnewfcs = zlib.crc32(hout.encode()) & 0xffffffff;
+  if(catfchecksumtype=="md5" or catfchecksumtype=="sha1" or catfchecksumtype=="sha224" or catfchecksumtype=="sha256" or catfchecksumtype=="sha384" or catfchecksumtype=="sha512"):
+   checksumoutstr = hashlib.new(catfchecksumtype);
+   checksumoutstr.update(hout.encode());
+   catnewfcs = checksumoutstr.hexdigest().upper();
   if(catfcs!=catnewfcs and skipchecksum is False):
    logging.info("File Header Checksum Error with file " + catfname + " at offset " + str(catfhstart));
    return False;
@@ -439,7 +475,14 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   pyhascontents = False;
   if(catfsize>1 and listonly is False):
    catfcontents = catfp.read(catfsize);
-   catnewfccs = zlib.crc32(catfcontents) & 0xffffffff;
+   if(catfchecksumtype=="adler32"):
+    catnewfccs = zlib.adler32(catfcontents) & 0xffffffff;
+   if(catfchecksumtype=="crc32"):
+    catnewfccs = zlib.crc32(catfcontents) & 0xffffffff;
+   if(catfchecksumtype=="md5" or catfchecksumtype=="sha1" or catfchecksumtype=="sha224" or catfchecksumtype=="sha256" or catfchecksumtype=="sha384" or catfchecksumtype=="sha512"):
+    checksumoutstr = hashlib.new(catfchecksumtype);
+    checksumoutstr.update(catfcontents);
+    catnewfccs = checksumoutstr.hexdigest().upper();
    pyhascontents = True;
    if(catfccs!=catnewfccs and skipchecksum is True):
     logging.info("File Content Checksum Error with file " + catfname + " at offset " + str(catfcontentstart));
@@ -448,7 +491,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catfp.seek(catfsize, 1);
    pyhascontents = False;
   catfcontentend = catfp.tell();
-  catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fmode': catfmode, 'fchmod': catfchmod, 'fuid': catfuid, 'fgid': catfgid, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfhashtype, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
+  catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fmode': catfmode, 'fchmod': catfchmod, 'fuid': catfuid, 'fgid': catfgid, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
   catfp.seek(1, 1);
   seekstart = catfp.tell();
   fileidnum = fileidnum + 1;
@@ -505,12 +548,14 @@ def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
   lcfi = lcfi + 1;
  return catarray;
 
-def RePackCatFile(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False):
+def RePackCatFile(infile, seekstart=0, seekend=0, listonly=False, checksumtype="crc32", skipchecksum=False):
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
   infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, seekstart, seekend, listonly, skipchecksum);
+ if(checksumtype!="adler32" or checksumtype!="crc32" or checksumtype!="md5" or checksumtype!="sha1" or checksumtype!="sha224" or checksumtype!="sha256" or checksumtype!="sha384" or checksumtype!="sha512"):
+  checksumtype="crc32"
  if(verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(listcatfiles is False):
@@ -548,12 +593,22 @@ def RePackCatFile(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=F
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
-  catfileoutstr = catfileoutstr + AppendNullByte("crc32");
-  catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
+  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
+  if(checksumtype=="adler32"):
+   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
+   catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').upper();
+  if(checksumtype=="crc32"):
+   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
+   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').upper();
+  if(checksumtype=="md5" or checksumtype=="sha1" or checksumtype=="sha224" or checksumtype=="sha256" or checksumtype=="sha384" or checksumtype=="sha512"):
+   checksumoutstr = hashlib.new(checksumtype);
+   checksumoutstr.update(catfileoutstr.encode());
+   catfileheadercshex = checksumoutstr.hexdigest().upper();
+   checksumoutstr = hashlib.new(checksumtype);
+   checksumoutstr.update(fcontents);
+   catfilecontentcshex = checksumoutstr.hexdigest().upper();
   catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
-  catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').upper();
   catfileoutstr = catfileoutstr + AppendNullByte(catfilecontentcshex);
-  catfileoutstrecd = catfileoutstr.encode();
   nullstrecd = "\0".encode();
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfp.write(catfileout);
@@ -596,7 +651,10 @@ def RePackCatFile(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=F
    os.unlink(os.path.splitext(outfile)[0]+".tmp");
   os.rename(outfile, os.path.splitext(outfile)[0]+".tmp");
   catuncomp = open(os.path.splitext(outfile)[0]+".tmp", "rb");
-  catcomp = lzma.open(outfile, "wb", 9);
+  if(os.path.splitext(outfile)[1]==".xz" or os.path.splitext(outfile)[1]==".cxz"):
+   catcomp = lzma.open(outfile, "wb", format=FORMAT_XZ, preset=9);
+  if(os.path.splitext(outfile)[1]==".lzma"):
+   catcomp = lzma.open(outfile, "wb", format=FORMAT_ALONE, preset=9);
   catcomp.write(catuncomp.read());
   catcomp.close();
   catuncomp.close();
@@ -733,9 +791,9 @@ if __name__ == '__main__':
  if(tarsupport is False and should_convert is True):
   should_convert = False;
  if(should_create is True and should_extract is False and should_list is False and should_convert is False):
-  PackCatFile(getargs.input, getargs.output, False, getargs.verbose);
+  PackCatFile(getargs.input, getargs.output, False, "crc32", getargs.verbose);
  if(should_create is True and should_extract is False and should_list is False and should_convert is True):
-  PackCatFileFromTarFile(getargs.input, getargs.output, getargs.verbose);
+  PackCatFileFromTarFile(getargs.input, getargs.output, "crc32", getargs.verbose);
  if(should_create is False and should_extract is True and should_list is False):
   UnPackCatFile(getargs.input, getargs.output, getargs.verbose, False);
  if(should_create is False and should_extract is False and should_list is True):
