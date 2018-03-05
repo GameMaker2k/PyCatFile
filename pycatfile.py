@@ -145,7 +145,7 @@ def PackCatFile(infiles, outfile, followlink=False, verbose=False):
  if(verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(os.path.exists(outfile)):
-  os.remove(outfile);
+  os.unlink(outfile);
  catfp = open(outfile, "wb");
  catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
  fileheaderver = str(int(catver.replace(".", "")));
@@ -236,6 +236,48 @@ def PackCatFile(infiles, outfile, followlink=False, verbose=False):
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfp.write(catfileout);
  catfp.close();
+ if(os.path.splitext(outfile)[1]==".gz" or os.path.splitext(outfile)[1]==".cgz"):
+  try:
+   import gzip;
+  except ImportError:
+   return False;
+  if(os.path.exists(os.path.splitext(outfile)[0]+".tmp")):
+   os.unlink(os.path.splitext(outfile)[0]+".tmp");
+  os.rename(outfile, os.path.splitext(outfile)[0]+".tmp");
+  catuncomp = open(os.path.splitext(outfile)[0]+".tmp", "rb");
+  catcomp = gzip.open(outfile, "wb", 9);
+  catcomp.write(catuncomp.read());
+  catcomp.close();
+  catuncomp.close();
+  os.unlink(os.path.splitext(outfile)[0]+".tmp");
+ if(os.path.splitext(outfile)[1]==".bz2" or os.path.splitext(outfile)[1]==".cbz"):
+  try:
+   import bz2;
+  except ImportError:
+   return False;
+  if(os.path.exists(os.path.splitext(outfile)[0]+".tmp")):
+   os.unlink(os.path.splitext(outfile)[0]+".tmp");
+  os.rename(outfile, os.path.splitext(outfile)[0]+".tmp");
+  catuncomp = open(os.path.splitext(outfile)[0]+".tmp", "rb");
+  catcomp = open(outfile, "wb");
+  catcomp.write(bz2.compress(catuncomp.read(), 9));
+  catcomp.close();
+  catuncomp.close();
+  os.unlink(os.path.splitext(outfile)[0]+".tmp");
+ if(os.path.splitext(outfile)[1]==".lzma" or os.path.splitext(outfile)[1]==".xz" or os.path.splitext(outfile)[1]==".cxz"):
+  try:
+   import lzma;
+  except ImportError:
+   return False;
+  if(os.path.exists(os.path.splitext(outfile)[0]+".tmp")):
+   os.unlink(os.path.splitext(outfile)[0]+".tmp");
+  os.rename(outfile, os.path.splitext(outfile)[0]+".tmp");
+  catuncomp = open(os.path.splitext(outfile)[0]+".tmp", "rb");
+  catcomp = lzma.open(outfile, "wb");
+  catcomp.write(catuncomp.read());
+  catcomp.close();
+  catuncomp.close();
+  os.unlink(os.path.splitext(outfile)[0]+".tmp");
  return True;
 
 if(tarsupport is True):
@@ -247,7 +289,7 @@ if(tarsupport is True):
   if(verbose is True):
    logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
   if(os.path.exists(outfile)):
-   os.remove(outfile);
+   os.unlink(outfile);
   catfp = open(outfile, "wb");
   catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
   fileheaderver = str(int(catver.replace(".", "")));
@@ -517,6 +559,48 @@ def RePackCatFile(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=F
   catfp.write(catfileout);
   lcfi = lcfi + 1;
  catfp.close();
+ if(os.path.splitext(outfile)[1]==".gz" or os.path.splitext(outfile)[1]==".cgz"):
+  try:
+   import gzip;
+  except ImportError:
+   return False;
+  if(os.path.exists(os.path.splitext(outfile)[0]+".tmp")):
+   os.unlink(os.path.splitext(outfile)[0]+".tmp");
+  os.rename(outfile, os.path.splitext(outfile)[0]+".tmp");
+  catuncomp = open(os.path.splitext(outfile)[0]+".tmp", "rb");
+  catcomp = gzip.open(outfile, "wb", 9);
+  catcomp.write(catuncomp.read());
+  catcomp.close();
+  catuncomp.close();
+  os.unlink(os.path.splitext(outfile)[0]+".tmp");
+ if(os.path.splitext(outfile)[1]==".bz2" or os.path.splitext(outfile)[1]==".cbz"):
+  try:
+   import bz2;
+  except ImportError:
+   return False;
+  if(os.path.exists(os.path.splitext(outfile)[0]+".tmp")):
+   os.unlink(os.path.splitext(outfile)[0]+".tmp");
+  os.rename(outfile, os.path.splitext(outfile)[0]+".tmp");
+  catuncomp = open(os.path.splitext(outfile)[0]+".tmp", "rb");
+  catcomp = open(outfile, "wb");
+  catcomp.write(bz2.compress(catuncomp.read(), 9));
+  catcomp.close();
+  catuncomp.close();
+  os.unlink(os.path.splitext(outfile)[0]+".tmp");
+ if(os.path.splitext(outfile)[1]==".lzma" or os.path.splitext(outfile)[1]==".xz" or os.path.splitext(outfile)[1]==".cxz"):
+  try:
+   import lzma;
+  except ImportError:
+   return False;
+  if(os.path.exists(os.path.splitext(outfile)[0]+".tmp")):
+   os.unlink(os.path.splitext(outfile)[0]+".tmp");
+  os.rename(outfile, os.path.splitext(outfile)[0]+".tmp");
+  catuncomp = open(os.path.splitext(outfile)[0]+".tmp", "rb");
+  catcomp = lzma.open(outfile, "wb", 9);
+  catcomp.write(catuncomp.read());
+  catcomp.close();
+  catuncomp.close();
+  os.unlink(os.path.splitext(outfile)[0]+".tmp");
  return True;
 
 def UnPackCatFile(infile, outdir=None, verbose=False, skipchecksum=False):
