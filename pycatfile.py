@@ -147,8 +147,8 @@ def PackCatFile(infiles, outfile, followlink=False, verbose=False):
  if(os.path.exists(outfile)):
   os.remove(outfile);
  catfp = open(outfile, "wb");
- pycatver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
- fileheaderver = str(int(pycatver.replace(".", "")));
+ catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
+ fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
  catfp.write(fileheader.encode());
  GetDirList = ListDir(infiles);
@@ -249,8 +249,8 @@ if(tarsupport is True):
   if(os.path.exists(outfile)):
    os.remove(outfile);
   catfp = open(outfile, "wb");
-  pycatver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
-  fileheaderver = str(int(pycatver.replace(".", "")));
+  catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
+  fileheaderver = str(int(catver.replace(".", "")));
   fileheader = AppendNullByte("CatFile" + fileheaderver);
   catfp.write(fileheader.encode());
   for curfname in tarfiles:
@@ -350,9 +350,9 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  CatSize = catfp.tell();
  CatSizeEnd = CatSize;
  catfp.seek(0, 0);
- pycatstring = ReadFileHeaderData(catfp, 1)[0];
- pycatversion = int(re.findall("([\d]+)$", pycatstring)[0], 16);
- pycatlist = {};
+ catstring = ReadFileHeaderData(catfp, 1)[0];
+ catversion = int(re.findall("([\d]+)$", catstring)[0], 16);
+ catlist = {};
  fileidnum = 0;
  if(seekstart!=0):
   catfp.seek(seekstart, 0);
@@ -361,57 +361,57 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  if(seekend==0):
   seekend = CatSizeEnd;
  while(seekstart<seekend):
-  pycatfhstart = catfp.tell();
-  pycatheaderdata = ReadFileHeaderData(catfp, 16);
-  pycatftype = int(pycatheaderdata[0], 16);
-  pycatfname = pycatheaderdata[1];
-  pycatflinkname = pycatheaderdata[2];
-  pycatfsize = int(pycatheaderdata[3], 16);
-  pycatfatime = int(pycatheaderdata[4], 16);
-  pycatfmtime = int(pycatheaderdata[5], 16);
-  pycatfmode = oct(int(pycatheaderdata[6], 16));
-  pycatprefchmod = oct(int(pycatfmode[-3:], 8));
-  pycatfchmod = pycatprefchmod;
-  pycatfuid = int(pycatheaderdata[7], 16);
-  pycatfgid = int(pycatheaderdata[8], 16);
-  pycatfdev_minor = int(pycatheaderdata[9], 16);
-  pycatfdev_major = int(pycatheaderdata[10], 16);
-  pycatfrdev_minor = int(pycatheaderdata[11], 16);
-  pycatfrdev_major = int(pycatheaderdata[12], 16);
-  pycatfhashtype = pycatheaderdata[13];
-  pycatfcs = int(pycatheaderdata[14], 16);
-  pycatfccs = int(pycatheaderdata[15], 16);
+  catfhstart = catfp.tell();
+  catheaderdata = ReadFileHeaderData(catfp, 16);
+  catftype = int(catheaderdata[0], 16);
+  catfname = catheaderdata[1];
+  catflinkname = catheaderdata[2];
+  catfsize = int(catheaderdata[3], 16);
+  catfatime = int(catheaderdata[4], 16);
+  catfmtime = int(catheaderdata[5], 16);
+  catfmode = oct(int(catheaderdata[6], 16));
+  catprefchmod = oct(int(catfmode[-3:], 8));
+  catfchmod = catprefchmod;
+  catfuid = int(catheaderdata[7], 16);
+  catfgid = int(catheaderdata[8], 16);
+  catfdev_minor = int(catheaderdata[9], 16);
+  catfdev_major = int(catheaderdata[10], 16);
+  catfrdev_minor = int(catheaderdata[11], 16);
+  catfrdev_major = int(catheaderdata[12], 16);
+  catfhashtype = catheaderdata[13];
+  catfcs = int(catheaderdata[14], 16);
+  catfccs = int(catheaderdata[15], 16);
   hc = 0;
-  hcmax = len(pycatheaderdata) - 2;
+  hcmax = len(catheaderdata) - 2;
   hout = "";
   while(hc<hcmax):
-   hout = hout + AppendNullByte(pycatheaderdata[hc]);
+   hout = hout + AppendNullByte(catheaderdata[hc]);
    hc = hc + 1;
-  pycatnewfcs = zlib.crc32(hout.encode()) & 0xffffffff;
-  if(pycatfcs!=pycatnewfcs and skipchecksum is False):
-   logging.info("File Header Checksum Error with file " + pycatfname + " at offset " + str(pycatfhstart));
+  catnewfcs = zlib.crc32(hout.encode()) & 0xffffffff;
+  if(catfcs!=catnewfcs and skipchecksum is False):
+   logging.info("File Header Checksum Error with file " + catfname + " at offset " + str(catfhstart));
    return False;
-  pycatfhend = catfp.tell() - 1;
-  pycatfcontentstart = catfp.tell();
-  pycatfcontents = "";
+  catfhend = catfp.tell() - 1;
+  catfcontentstart = catfp.tell();
+  catfcontents = "";
   pyhascontents = False;
-  if(pycatfsize>1 and listonly is False):
-   pycatfcontents = catfp.read(pycatfsize);
-   pycatnewfccs = zlib.crc32(pycatfcontents) & 0xffffffff;
+  if(catfsize>1 and listonly is False):
+   catfcontents = catfp.read(catfsize);
+   catnewfccs = zlib.crc32(catfcontents) & 0xffffffff;
    pyhascontents = True;
-   if(pycatfccs!=pycatnewfccs and skipchecksum is True):
-    logging.info("File Content Checksum Error with file " + pycatfname + " at offset " + str(pycatfcontentstart));
+   if(catfccs!=catnewfccs and skipchecksum is True):
+    logging.info("File Content Checksum Error with file " + catfname + " at offset " + str(catfcontentstart));
     return False;
-  if(pycatfsize>1 and listonly is True):
-   catfp.seek(pycatfsize, 1);
+  if(catfsize>1 and listonly is True):
+   catfp.seek(catfsize, 1);
    pyhascontents = False;
-  pycatfcontentend = catfp.tell();
-  pycatlist.update({fileidnum: {'catfileversion': pycatversion, 'fid': fileidnum, 'fhstart': pycatfhstart, 'fhend': pycatfhend, 'ftype': pycatftype, 'fname': pycatfname, 'flinkname': pycatflinkname, 'fsize': pycatfsize, 'fatime': pycatfatime, 'fmtime': pycatfmtime, 'fmode': pycatfmode, 'fchmod': pycatfchmod, 'fuid': pycatfuid, 'fgid': pycatfgid, 'fminor': pycatfdev_minor, 'fmajor': pycatfdev_major, 'frminor': pycatfrdev_minor, 'frmajor': pycatfrdev_major, 'fchecksumtype': pycatfhashtype, 'fheaderchecksum': pycatfcs, 'fcontentchecksum': pycatfccs, 'fhascontents': pyhascontents, 'fcontentstart': pycatfcontentstart, 'fcontentend': pycatfcontentend, 'fcontents': pycatfcontents} });
+  catfcontentend = catfp.tell();
+  catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fmode': catfmode, 'fchmod': catfchmod, 'fuid': catfuid, 'fgid': catfgid, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfhashtype, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
   catfp.seek(1, 1);
   seekstart = catfp.tell();
   fileidnum = fileidnum + 1;
  catfp.close();
- return pycatlist;
+ return catlist;
 
 def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False):
  if(isinstance(infile, dict)):
@@ -421,47 +421,47 @@ def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
   listcatfiles = CatFileToArray(infile, seekstart, seekend, listonly, skipchecksum);
  if(listcatfiles is False):
   return False;
- pycatarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
+ catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
   filetoidarray = {listcatfiles[lcfi]['fname']: listcatfiles[lcfi]['fid']};
   idtofilearray = {listcatfiles[lcfi]['fid']: listcatfiles[lcfi]['fname']};
-  pycatarray['filetoid'].update(filetoidarray);
-  pycatarray['idtofile'].update(idtofilearray);
+  catarray['filetoid'].update(filetoidarray);
+  catarray['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==0):
-   pycatarray['filetypes']['files']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['files']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['files']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['files']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==1):
-   pycatarray['filetypes']['hardlinks']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['hardlinks']['idtofile'].update(idtofilearray);
-   pycatarray['filetypes']['links']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['links']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['hardlinks']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['hardlinks']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['links']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['links']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==2):
-   pycatarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
-   pycatarray['filetypes']['links']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['links']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['links']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['links']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==3):
-   pycatarray['filetypes']['character']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['character']['idtofile'].update(idtofilearray);
-   pycatarray['filetypes']['devices']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['character']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['character']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==4):
-   pycatarray['filetypes']['block']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['block']['idtofile'].update(idtofilearray);
-   pycatarray['filetypes']['devices']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['block']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['block']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==5):
-   pycatarray['filetypes']['directories']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['directories']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['directories']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['directories']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==6):
-   pycatarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
-   pycatarray['filetypes']['devices']['filetoid'].update(filetoidarray);
-   pycatarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
   lcfi = lcfi + 1;
- return pycatarray;
+ return catarray;
 
 def RePackCatFile(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False):
  if(isinstance(infile, dict)):

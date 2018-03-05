@@ -85,13 +85,13 @@ function AppendNullByte($indata):
 
 function PackCatFile($infiles, $outfile, $followlink=false, $verbose=false) {
  global $info;
- $phpcatver = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2];
+ $catver = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2];
  $infiles = RemoveWindowsPath($infiles);
  $outfile = RemoveWindowsPath($outfile);
  if(file_exists($outfile)) {
   unlink($outfile); }
  $catfp = fopen($outfile, "wb");
- $fileheaderver = intval(str_replace(".", "", $phpcatver));
+ $fileheaderver = intval(str_replace(".", "", $catver));
  $fileheader = AppendNullByte("CatFile".$fileheaderver);
  fwrite($catfp, $fileheader);
  $GetDirList = ListDir($infiles);
@@ -170,10 +170,10 @@ function CatFileToArray($infile, $seekstart=0, $seekend=0, $listonly=false, $ski
  $CatSize = ftell($catfp);
  $CatSizeEnd = $CatSize;
  fseek($catfp, 0, SEEK_SET);
- $phpcatstring = ReadFileHeaderData($catfp, 1)[0];
- preg_match("/([\d]+)$/", $phpcatstring, $phpcatm);
- $phpcatversion = $phpcatm[0];
- $phpcatlist = array();
+ $catstring = ReadFileHeaderData($catfp, 1)[0];
+ preg_match("/([\d]+)$/", $catstring, $catm);
+ $catversion = $catm[0];
+ $catlist = array();
  $fileidnum = 0;
  if($seekstart!=0) {
   fseek($catfp, $seekstart, SEEK_SET); }
@@ -182,56 +182,56 @@ function CatFileToArray($infile, $seekstart=0, $seekend=0, $listonly=false, $ski
  if($seekend==0) {
   $seekend = $CatSizeEnd; }
  while($seekstart<$seekend) {
-  $phpcatfhstart = ftell($catfp);
-  $phpcatheaderdata = ReadFileHeaderData($catfp, 16);
-  $phpcatftype = hexdec($phpcatheaderdata[0]);
-  $phpcatfname = $phpcatheaderdata[1];
-  $phpcatflinkname = $phpcatheaderdata[2];
-  $phpcatfsize = hexdec($phpcatheaderdata[3]);
-  $phpcatfatime = hexdec($phpcatheaderdata[4]);
-  $phpcatfmtime = hexdec($phpcatheaderdata[5]);
-  $phpcatfmode = decoct(hexdec($phpcatheaderdata[6]));
-  $phpcatfchmod = substr($phpcatfmode, -3);
-  $phpcatfuid = hexdec($phpcatheaderdata[7]);
-  $phpcatfgid = hexdec($phpcatheaderdata[8]);
-  $phpcatfdev_minor = hexdec($phpcatheaderdata[9]);
-  $phpcatfdev_major = hexdec($phpcatheaderdata[10]);
-  $phpcatfrdev_minor = hexdec($phpcatheaderdata[11]);
-  $phpcatfrdev_major = hexdec($phpcatheaderdata[12]);
-  $phpcatfhashtype = $phpcatheaderdata[13];
-  $phpcatfcs = hexdec($phpcatheaderdata[14]);
-  $phpcatfccs = hexdec($phpcatheaderdata[15]);
+  $catfhstart = ftell($catfp);
+  $catheaderdata = ReadFileHeaderData($catfp, 16);
+  $catftype = hexdec($catheaderdata[0]);
+  $catfname = $catheaderdata[1];
+  $catflinkname = $catheaderdata[2];
+  $catfsize = hexdec($catheaderdata[3]);
+  $catfatime = hexdec($catheaderdata[4]);
+  $catfmtime = hexdec($catheaderdata[5]);
+  $catfmode = decoct(hexdec($catheaderdata[6]));
+  $catfchmod = substr($catfmode, -3);
+  $catfuid = hexdec($catheaderdata[7]);
+  $catfgid = hexdec($catheaderdata[8]);
+  $catfdev_minor = hexdec($catheaderdata[9]);
+  $catfdev_major = hexdec($catheaderdata[10]);
+  $catfrdev_minor = hexdec($catheaderdata[11]);
+  $catfrdev_major = hexdec($catheaderdata[12]);
+  $catfhashtype = $catheaderdata[13];
+  $catfcs = hexdec($catheaderdata[14]);
+  $catfccs = hexdec($catheaderdata[15]);
   $hc = 0;
-  $hcmax = strlen($phpcatheaderdata) - 2;
+  $hcmax = strlen($catheaderdata) - 2;
   $hout = "";
   while($hc<$hcmax) {
-   $hout = $hout.AppendNullByte($phpcatheaderdata[$hc]);
+   $hout = $hout.AppendNullByte($catheaderdata[$hc]);
    $hc = $hc + 1; }
-  $phpcatnewfcs = crc32($hout);
-  if($phpcatfcs!=$phpcatnewfcs && $skipchecksum===false) {
-   print("File Header Checksum Error with file "+$phpcatfname+" at offset "+$phpcatfhstart);
+  $catnewfcs = crc32($hout);
+  if($catfcs!=$catnewfcs && $skipchecksum===false) {
+   print("File Header Checksum Error with file "+$catfname+" at offset "+$catfhstart);
    return false; }
-  $phpcatfhend = ftell($catfp) - 1;
-  $phpcatfcontentstart = ftell($catfp);
-  $phpcatfcontents = "";
+  $catfhend = ftell($catfp) - 1;
+  $catfcontentstart = ftell($catfp);
+  $catfcontents = "";
   $phphascontents = false;
-  if($phpcatfsize>1 && $listonly===false) {
-   $phpcatfcontents = fread($catfp, $phpcatfsize); 
-   $phpcatnewfccs = crc32($phpcatfcontents);
-   if($phpcatfccs!=$phpcatnewfccs && $skipchecksum===false) {
-    print("File Content Checksum Error with file "+$phpcatfname+" at offset "+$phpcatfcontentstart);
+  if($catfsize>1 && $listonly===false) {
+   $catfcontents = fread($catfp, $catfsize); 
+   $catnewfccs = crc32($catfcontents);
+   if($catfccs!=$catnewfccs && $skipchecksum===false) {
+    print("File Content Checksum Error with file "+$catfname+" at offset "+$catfcontentstart);
     return false; }
    $phphascontents = true; }
-  if($phpcatfsize>1 && $listonly===true) {
-   fseek($catfp, $phpcatfsize, SEEK_CUR); 
+  if($catfsize>1 && $listonly===true) {
+   fseek($catfp, $catfsize, SEEK_CUR); 
    $phphascontents = false; }
-  $phpcatfcontentend = ftell($catfp);
-  $phpcatlist[$fileidnum] = array('catfileversion' => $phpcatversion, 'fid' => $fileidnum, 'fhstart' => $phpcatfhstart, 'fhend' => $phpcatfhend, 'ftype' => $phpcatftype, 'fname' => $phpcatfname, 'flinkname' => $phpcatflinkname, 'fsize' => $phpcatfsize, 'fatime' => $phpcatfatime, 'fmtime' => $phpcatfmtime, 'fmode' => $phpcatfmode, 'fchmod' => $phpcatfchmod, 'fuid' => $phpcatfuid, 'fgid' => $phpcatfgid, 'fminor' => $phpcatfdev_minor, 'fmajor' => $phpcatfdev_major, 'fchecksumtype' => $phpcatfhashtype, 'fheaderchecksum' => $phpcatfcs, 'fcontentchecksum' => $phpcatfccs, 'fhascontents' => $phphascontents, 'fcontentstart' => $phpcatfcontentstart, 'fcontentend' => $phpcatfcontentend, 'fcontents' => $phpcatfcontents);
+  $catfcontentend = ftell($catfp);
+  $catlist[$fileidnum] = array('catfileversion' => $catversion, 'fid' => $fileidnum, 'fhstart' => $catfhstart, 'fhend' => $catfhend, 'ftype' => $catftype, 'fname' => $catfname, 'flinkname' => $catflinkname, 'fsize' => $catfsize, 'fatime' => $catfatime, 'fmtime' => $catfmtime, 'fmode' => $catfmode, 'fchmod' => $catfchmod, 'fuid' => $catfuid, 'fgid' => $catfgid, 'fminor' => $catfdev_minor, 'fmajor' => $catfdev_major, 'fchecksumtype' => $catfhashtype, 'fheaderchecksum' => $catfcs, 'fcontentchecksum' => $catfccs, 'fhascontents' => $phphascontents, 'fcontentstart' => $catfcontentstart, 'fcontentend' => $catfcontentend, 'fcontents' => $catfcontents);
   fseek($catfp, 1, SEEK_CUR);
   $seekstart = ftell($catfp);
   $fileidnum = $fileidnum + 1; }
  fclose($catfp);
- return $phpcatlist; }
+ return $catlist; }
 
 function CatFileToArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false, $skipchecksum=false) {
  if(is_array($infile)) {
@@ -241,47 +241,47 @@ function CatFileToArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false,
   $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, $listonly, $skipchecksum); }
  if($listcatfiles==false) {
   return false; }
- $phpcatarray = array('list': $listcatfiles, 'filetoid' => array(), 'idtofile' => array(), 'filetypes' => array('directories' => array('filetoid' => array(), 'idtofile' => array()), 'files' => array('filetoid' => array(), 'idtofile' => array()), 'links' => array('filetoid' => array(), 'idtofile' => array()), 'symlinks' => array('filetoid' => array(), 'idtofile' => array()), 'hardlinks' => array('filetoid' => array(), 'idtofile' => array()), 'character' => array('filetoid' => array(), 'idtofile' => array()), 'block' => array('filetoid' => array(), 'idtofile' => array()), 'fifo' => array('filetoid' => array(), 'idtofile' => array()), 'devices' => array('filetoid' => array(), 'idtofile' => array())));
+ $catarray = array('list': $listcatfiles, 'filetoid' => array(), 'idtofile' => array(), 'filetypes' => array('directories' => array('filetoid' => array(), 'idtofile' => array()), 'files' => array('filetoid' => array(), 'idtofile' => array()), 'links' => array('filetoid' => array(), 'idtofile' => array()), 'symlinks' => array('filetoid' => array(), 'idtofile' => array()), 'hardlinks' => array('filetoid' => array(), 'idtofile' => array()), 'character' => array('filetoid' => array(), 'idtofile' => array()), 'block' => array('filetoid' => array(), 'idtofile' => array()), 'fifo' => array('filetoid' => array(), 'idtofile' => array()), 'devices' => array('filetoid' => array(), 'idtofile' => array())));
  $lcfi = 0;
  $lcfx = count($listcatfiles);
  while($lcfi<$lcfx) {
   $fname = $listcatfiles[$lcfi]['fname'];
   $fid = $listcatfiles[$lcfi]['fid'];
-  $phpcatarray['filetoid'][$fname] = $fid;
-  $phpcatarray['idtofile'][$fid] = $fname;
+  $catarray['filetoid'][$fname] = $fid;
+  $catarray['idtofile'][$fid] = $fname;
   if($listcatfiles[$lcfi]['ftype']==0):
-   $phpcatarray['filetypes']['files']['filetoid'][$fname] = $fid;
-   $phpcatarray['filetypes']['files']['idtofile'][$fid] = $fname;
+   $catarray['filetypes']['files']['filetoid'][$fname] = $fid;
+   $catarray['filetypes']['files']['idtofile'][$fid] = $fname;
   if($listcatfiles[$lcfi]['ftype']==1):
-   $phpcatarray['filetypes']['hardlinks']['filetoid'][$fname] = $fid;
-   $phpcatarray['filetypes']['hardlinks']['idtofile'][$fid] = $fname;
-   $phpcatarray['filetypes']['links']['filetoid'][$fname] = $fid;
-   $phpcatarray['filetypes']['links']['idtofile'][$fid] = $fname;
+   $catarray['filetypes']['hardlinks']['filetoid'][$fname] = $fid;
+   $catarray['filetypes']['hardlinks']['idtofile'][$fid] = $fname;
+   $catarray['filetypes']['links']['filetoid'][$fname] = $fid;
+   $catarray['filetypes']['links']['idtofile'][$fid] = $fname;
   if($listcatfiles[$lcfi]['ftype']==2):
-   $phpcatarray['filetypes']['symlinks']['filetoid'][$fname] = $fid;
-   $phpcatarray['filetypes']['symlinks']['idtofile'][$fid] = $fname;
-   $phpcatarray['filetypes']['links']['filetoid'][$fname] = $fid;
-   $phpcatarray['filetypes']['links']['idtofile'][$fid] = $fname;
+   $catarray['filetypes']['symlinks']['filetoid'][$fname] = $fid;
+   $catarray['filetypes']['symlinks']['idtofile'][$fid] = $fname;
+   $catarray['filetypes']['links']['filetoid'][$fname] = $fid;
+   $catarray['filetypes']['links']['idtofile'][$fid] = $fname;
   if($listcatfiles[$lcfi]['ftype']==3):
-   $phpcatarray['filetypes']['character']['filetoid'][$fname] = $fid;
-   $phpcatarray['filetypes']['character']['idtofile'][$fid] = $fname;
-   $phpcatarray['filetypes']['devices']['filetoid'][$fname] = $fid;
-   $phpcatarray['filetypes']['devices']['idtofile'][$fid] = $fname;
+   $catarray['filetypes']['character']['filetoid'][$fname] = $fid;
+   $catarray['filetypes']['character']['idtofile'][$fid] = $fname;
+   $catarray['filetypes']['devices']['filetoid'][$fname] = $fid;
+   $catarray['filetypes']['devices']['idtofile'][$fid] = $fname;
   if($listcatfiles[$lcfi]['ftype']==4):
-   $phpcatarray['filetypes']['block']['filetoid'][$fname] = $fid;
-   $phpcatarray['filetypes']['block']['idtofile'][$fid] = $fname;
-   $phpcatarray['filetypes']['devices']['filetoid'][$fname] = $fid;
-   $phpcatarray['filetypes']['devices']['idtofile'][$fid] = $fname;
+   $catarray['filetypes']['block']['filetoid'][$fname] = $fid;
+   $catarray['filetypes']['block']['idtofile'][$fid] = $fname;
+   $catarray['filetypes']['devices']['filetoid'][$fname] = $fid;
+   $catarray['filetypes']['devices']['idtofile'][$fid] = $fname;
   if($listcatfiles[$lcfi]['ftype']==5):
-   $phpcatarray['filetypes']['directories']['filetoid'][$fname] = $fid;
-   $phpcatarray['filetypes']['directories']['idtofile'][$fid] = $fname;
+   $catarray['filetypes']['directories']['filetoid'][$fname] = $fid;
+   $catarray['filetypes']['directories']['idtofile'][$fid] = $fname;
   if($listcatfiles[$lcfi]['ftype']==6):
-   $phpcatarray['filetypes']['fifo']['filetoid'][$fname] = $fid;
-   $phpcatarray['filetypes']['fifo']['idtofile'][$fid] = $fname;
-   $phpcatarray['filetypes']['devices']['filetoid'][$fname] = $fid;
-   $phpcatarray['filetypes']['devices']['idtofile'][$fid] = $fname;
+   $catarray['filetypes']['fifo']['filetoid'][$fname] = $fid;
+   $catarray['filetypes']['fifo']['idtofile'][$fid] = $fname;
+   $catarray['filetypes']['devices']['filetoid'][$fname] = $fid;
+   $catarray['filetypes']['devices']['idtofile'][$fid] = $fname;
   $lcfi = $lcfi + 1; }
- return $phpcatarray; }
+ return $catarray; }
 
 function RePackCatFile($infiles, $outfile, $followlink=false, $verbose=false) {
  if(is_array($infile)) {
