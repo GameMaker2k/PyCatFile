@@ -12,7 +12,7 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: phpcatfile.php - Last Update: 3/4/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: phpcatfile.php - Last Update: 3/5/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 */
 
 date_default_timezone_set('UTC');
@@ -21,7 +21,7 @@ $info['program_name'] = "PHPCatFile";
 $info['project'] = $info['program_name'];
 $info['project_url'] = "https://github.com/GameMaker2k/PyCatFile";
 $info['version_info'] = array(0 => 0, 1 => 0, 2 => 1, 3 => "RC 1", 4 => 1);
-$info['version_date_info'] = array(0 => 2018, 1 => 3, 2 => 4, 3 => "RC 1", 1);
+$info['version_date_info'] = array(0 => 2018, 1 => 3, 2 => 5, 3 => "RC 1", 1);
 $info['version_date'] = $info['version_date_info'][0].".".str_pad($info['version_date_info'][1], 2, "-=", STR_PAD_LEFT).".".str_pad($info['version_date_info'][2], 2, "-=", STR_PAD_LEFT);
 if($info['version_info'][4]!==null):
  $info['version_date_plusrc'] = $info['version_date']."-".$info['version_date_info'][4];
@@ -83,7 +83,7 @@ function AppendNullByte($indata):
  $outdata = $indata."\0";
  return $outdata;
 
-function PHPCatFile($infiles, $outfile, $followlink=false, $verbose=false) {
+function PackCatFile($infiles, $outfile, $followlink=false, $verbose=false) {
  global $info;
  $phpcatver = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2];
  $infiles = RemoveWindowsPath($infiles);
@@ -151,7 +151,7 @@ function PHPCatFile($infiles, $outfile, $followlink=false, $verbose=false) {
   $catfileoutstr = $catfileoutstr.AppendNullByte($fdev_major);
   $catfileoutstr = $catfileoutstr.AppendNullByte($frdev_minor);
   $catfileoutstr = $catfileoutstr.AppendNullByte($frdev_major);
-  $catfileoutstr = $catfileoutstr.AppendNullByte("crc32);
+  $catfileoutstr = $catfileoutstr.AppendNullByte("crc32");
   $catfileheadercshex = strtoupper(dechex(crc32($catfileoutstr)));
   $catfileoutstr = $catfileoutstr.AppendNullByte($catfileheadercshex);
   $catfilecontentcshex = strtoupper(dechex(crc32($fcontents)));
@@ -163,7 +163,7 @@ function PHPCatFile($infiles, $outfile, $followlink=false, $verbose=false) {
  fclose($catfp);
  return true; }
 
-function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false, $skipchecksum=false) {
+function CatFileToArray($infile, $seekstart=0, $seekend=0, $listonly=false, $skipchecksum=false) {
  $infile = RemoveWindowsPath($infile);
  $catfp = fopen($infile, "rb");
  fseek($catfp, 0, SEEK_END);
@@ -233,12 +233,14 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false, $skip
  fclose($catfp);
  return $phpcatlist; }
 
-function PHPCatArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false, $skipchecksum=false) {
+function CatFileToArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false, $skipchecksum=false) {
  if(is_array($infile)) {
   $listcatfiles = $infile; }
  else {
   $infile = RemoveWindowsPath($infile);
   $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, $listonly, $skipchecksum); }
+ if($listcatfiles==false) {
+  return false; }
  $phpcatarray = array('list': $listcatfiles, 'filetoid' => array(), 'idtofile' => array(), 'filetypes' => array('directories' => array('filetoid' => array(), 'idtofile' => array()), 'files' => array('filetoid' => array(), 'idtofile' => array()), 'links' => array('filetoid' => array(), 'idtofile' => array()), 'symlinks' => array('filetoid' => array(), 'idtofile' => array()), 'hardlinks' => array('filetoid' => array(), 'idtofile' => array()), 'character' => array('filetoid' => array(), 'idtofile' => array()), 'block' => array('filetoid' => array(), 'idtofile' => array()), 'fifo' => array('filetoid' => array(), 'idtofile' => array()), 'devices' => array('filetoid' => array(), 'idtofile' => array())));
  $lcfi = 0;
  $lcfx = count($listcatfiles);
@@ -281,7 +283,60 @@ function PHPCatArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false, $s
   $lcfi = $lcfi + 1; }
  return $phpcatarray; }
 
-function PHPUnCatFile($infile, $outdir=null, $verbose=False, $skipchecksum=false) {
+function RePackCatFile($infiles, $outfile, $followlink=false, $verbose=false) {
+ if(is_array($infile)) {
+  $listcatfiles = $infile; }
+ else {
+  $infile = RemoveWindowsPath($infile);
+  $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, $listonly, $skipchecksum); }
+ if($listcatfiles==false) {
+  return false; }
+ $lcfi = 0;
+ $lcfx = count($listcatfiles);
+ while($lcfi<$lcfx) {
+  $fname = $listcatfiles[$lcfi]['fname'];
+  if($verbose===true) {
+   print($fname."\n"); }
+  $fsize = strtoupper(dechex(intval($listcatfiles[$lcfi]['fsize'])));
+  $flinkname = $listcatfiles[$lcfi]['flinkname'];
+  $fatime = strtoupper(dechex(intval($listcatfiles[$lcfi]['fatime'])));
+  $fmtime = strtoupper(dechex(intval($listcatfiles[$lcfi]['fmtime'])));
+  $fmode = strtoupper(dechex(intval($listcatfiles[$lcfi]['fmode'])));
+  $fuid = strtoupper(dechex(intval($listcatfiles[$lcfi]['fuid'])));
+  $fgid = strtoupper(dechex(intval($listcatfiles[$lcfi]['fgid'])));
+  $fdev_minor = strtoupper(dechex(intval($listcatfiles[$lcfi]['fminor'])));
+  $fdev_major = strtoupper(dechex(intval($listcatfiles[$lcfi]['fmajor'])));
+  $frdev_minor = strtoupper(dechex(intval($listcatfiles[$lcfi]['frminor'])));
+  $frdev_major = strtoupper(dechex(intval($listcatfiles[$lcfi]['frmajor'])));
+  $fcontents = $listcatfiles[$lcfi]['fcontents'];
+  $ftypehex = strtoupper(dechex(intval($listcatfiles[$lcfi]['ftype'])));
+  $ftypeoutstr = $ftypehex;
+  $catfileoutstr = AppendNullByte($ftypeoutstr);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fname);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($flinkname);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fsize);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fatime);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fmtime);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fmode);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fuid);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fgid);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fdev_minor);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($fdev_major);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($frdev_minor);
+  $catfileoutstr = $catfileoutstr.AppendNullByte($frdev_major);
+  $catfileoutstr = $catfileoutstr.AppendNullByte("crc32");
+  $catfileheadercshex = strtoupper(dechex(crc32($catfileoutstr)));
+  $catfileoutstr = $catfileoutstr.AppendNullByte($catfileheadercshex);
+  $catfilecontentcshex = strtoupper(dechex(crc32($fcontents)));
+  $catfileoutstr = $catfileoutstr.AppendNullByte($catfilecontentcshex);
+  $catfileoutstrecd = $catfileoutstr;
+  $nullstrecd = "\0";
+  $catfileout = $catfileoutstrecd.$fcontents.$nullstrecd;
+  fwrite($catfp, $catfileout); }
+ fclose($catfp);
+ return true; }
+
+function UnPackCatFile($infile, $outdir=null, $verbose=False, $skipchecksum=false) {
  if($outdir!==null) {
   $outdir = RemoveWindowsPath($outdir); }
  if(is_array($infile)) {
@@ -317,7 +372,7 @@ function PHPUnCatFile($infile, $outdir=null, $verbose=False, $skipchecksum=false
   $lcfi = $lcfi + 1; }
  return true; }
 
-function PHPCatListFiles($infile, $seekstart=0, $seekend=0, $verbose=false, $skipchecksum=false) {
+function CatFileListFiles($infile, $seekstart=0, $seekend=0, $verbose=false, $skipchecksum=false) {
  if(is_array($infile)) {
   $listcatfiles = $infile; }
  else {
@@ -371,4 +426,5 @@ function PHPCatListFiles($infile, $seekstart=0, $seekend=0, $verbose=false, $ski
    print($permissionstr." ".$listcatfiles[$lcfi]['fuid']."/".$listcatfiles[$lcfi]['fgid']." ".str_pad($listcatfiles[$lcfi]['fsize'], 15, " ", STR_PAD_LEFT)." ".gmdate('Y-m-d H:i', $listcatfiles[$lcfi]['fmtime'])." ".$printfname."\n"); }
   $lcfi = $lcfi + 1; }
  return true; }
+
 ?>

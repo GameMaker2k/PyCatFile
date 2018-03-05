@@ -14,7 +14,7 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 3/4/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 3/5/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
@@ -23,7 +23,7 @@ __program_name__ = "PyCatFile";
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 0, 1, "RC 1", 1);
-__version_date_info__ = (2018, 3, 4, "RC 1", 1);
+__version_date_info__ = (2018, 3, 5, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
@@ -139,7 +139,7 @@ def GetDevMajorMinor(fdev):
   retdev.append(0);
  return retdev;
 
-def PyCatFile(infiles, outfile, followlink=False, verbose=False):
+def PackCatFile(infiles, outfile, followlink=False, verbose=False):
  infiles = RemoveWindowsPath(infiles);
  outfile = RemoveWindowsPath(outfile);
  if(verbose is True):
@@ -239,7 +239,7 @@ def PyCatFile(infiles, outfile, followlink=False, verbose=False):
  return True;
 
 if(tarsupport is True):
- def PyCatFromTarFile(infile, outfile, verbose=False):
+ def PackCatFileFromTarFile(infile, outfile, verbose=False):
   infile = RemoveWindowsPath(infile);
   outfile = RemoveWindowsPath(outfile);
   tarinput = tarfile.open(infile, "r");
@@ -321,7 +321,7 @@ if(tarsupport is True):
   tarinput.close();
   return True;
 
-def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False):
+def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False):
  infile = RemoveWindowsPath(infile);
  compresscheck = CheckFileType(infile);
  if(compresscheck is False):
@@ -413,12 +413,12 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=Fa
  catfp.close();
  return pycatlist;
 
-def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False):
+def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False):
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
   infile = RemoveWindowsPath(infile);
-  listcatfiles = PyCatToArray(infile, seekstart, seekend, listonly, skipchecksum);
+  listcatfiles = CatFileToArray(infile, seekstart, seekend, listonly, skipchecksum);
  if(listcatfiles is False):
   return False;
  pycatarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
@@ -463,7 +463,63 @@ def PyCatArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum
   lcfi = lcfi + 1;
  return pycatarray;
 
-def PyUnCatFile(infile, outdir=None, verbose=False, skipchecksum=False):
+def RePackCatFile(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False):
+ if(isinstance(infile, dict)):
+  listcatfiles = infile;
+ else:
+  infile = RemoveWindowsPath(infile);
+  listcatfiles = CatFileToArray(infile, seekstart, seekend, listonly, skipchecksum);
+ if(verbose is True):
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+ if(listcatfiles is False):
+  return False;
+ lcfi = 0;
+ lcfx = len(listcatfiles);
+ while(lcfi < lcfx):
+  fname = listcatfiles[lcfi]['fname'];
+  if(verbose is True):
+   logging.info(fname);
+  fsize = format(int(listcatfiles[lcfi]['fsize']), 'x').upper();
+  flinkname = listcatfiles[lcfi]['flinkname'];
+  fatime = format(int(listcatfiles[lcfi]['fatime']), 'x').upper();
+  fmtime = format(int(listcatfiles[lcfi]['fmtime']), 'x').upper();
+  fmode = format(int(listcatfiles[lcfi]['fmode']), 'x').upper();
+  fuid = format(int(listcatfiles[lcfi]['fuid']), 'x').upper();
+  fgid = format(int(listcatfiles[lcfi]['fgid']), 'x').upper();
+  fdev_minor = format(int(listcatfiles[lcfi]['fminor']), 'x').upper();
+  fdev_major = format(int(listcatfiles[lcfi]['fmajor']), 'x').upper();
+  frdev_minor = format(int(listcatfiles[lcfi]['frminor']), 'x').upper();
+  frdev_major = format(int(listcatfiles[lcfi]['frmajor']), 'x').upper();
+  fcontents = listcatfiles[lcfi]['fcontents'];
+  ftypehex = format(listcatfiles[lcfi]['ftype'], 'x').upper();
+  ftypeoutstr = ftypehex;
+  catfileoutstr = AppendNullByte(ftypeoutstr);
+  catfileoutstr = catfileoutstr + AppendNullByte(fname);
+  catfileoutstr = catfileoutstr + AppendNullByte(flinkname);
+  catfileoutstr = catfileoutstr + AppendNullByte(fsize);
+  catfileoutstr = catfileoutstr + AppendNullByte(fatime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fmode);
+  catfileoutstr = catfileoutstr + AppendNullByte(fuid);
+  catfileoutstr = catfileoutstr + AppendNullByte(fgid);
+  catfileoutstr = catfileoutstr + AppendNullByte(fdev_minor);
+  catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
+  catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
+  catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
+  catfileoutstr = catfileoutstr + AppendNullByte("crc32");
+  catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
+  catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
+  catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').upper();
+  catfileoutstr = catfileoutstr + AppendNullByte(catfilecontentcshex);
+  catfileoutstrecd = catfileoutstr.encode();
+  nullstrecd = "\0".encode();
+  catfileout = catfileoutstrecd + fcontents + nullstrecd;
+  catfp.write(catfileout);
+  lcfi = lcfi + 1;
+ catfp.close();
+ return True;
+
+def UnPackCatFile(infile, outdir=None, verbose=False, skipchecksum=False):
  if(outdir is not None):
   outdir = RemoveWindowsPath(outdir);
  if(verbose is True):
@@ -472,7 +528,7 @@ def PyUnCatFile(infile, outdir=None, verbose=False, skipchecksum=False):
   listcatfiles = infile;
  else:
   infile = RemoveWindowsPath(infile);
-  listcatfiles = PyCatToArray(infile, 0, 0, False, skipchecksum);
+  listcatfiles = CatFileToArray(infile, 0, 0, False, skipchecksum);
  if(listcatfiles is False):
   return False;
  lcfi = 0;
@@ -503,14 +559,14 @@ def PyUnCatFile(infile, outdir=None, verbose=False, skipchecksum=False):
   lcfi = lcfi + 1;
  return True;
 
-def PyCatListFiles(infile, seekstart=0, seekend=0, verbose=False, skipchecksum=False):
+def CatFileListFiles(infile, seekstart=0, seekend=0, verbose=False, skipchecksum=False):
  import datetime;
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
   infile = RemoveWindowsPath(infile);
-  listcatfiles = PyCatToArray(infile, seekstart, seekend, True, skipchecksum);
+  listcatfiles = CatFileToArray(infile, seekstart, seekend, True, skipchecksum);
  if(listcatfiles is False):
   return False;
  lcfi = 0;
@@ -593,10 +649,10 @@ if __name__ == '__main__':
  if(tarsupport is False and should_convert is True):
   should_convert = False;
  if(should_create is True and should_extract is False and should_list is False and should_convert is False):
-  PyCatFile(getargs.input, getargs.output, False, getargs.verbose);
+  PackCatFile(getargs.input, getargs.output, False, getargs.verbose);
  if(should_create is True and should_extract is False and should_list is False and should_convert is True):
-  PyCatFromTarFile(getargs.input, getargs.output, getargs.verbose);
+  PackCatFileFromTarFile(getargs.input, getargs.output, getargs.verbose);
  if(should_create is False and should_extract is True and should_list is False):
-  PyUnCatFile(getargs.input, getargs.output, getargs.verbose, False);
+  UnPackCatFile(getargs.input, getargs.output, getargs.verbose, False);
  if(should_create is False and should_extract is False and should_list is True):
-  PyCatListFiles(getargs.input, 0, 0, getargs.verbose, False);
+  CatFileListFiles(getargs.input, 0, 0, getargs.verbose, False);
