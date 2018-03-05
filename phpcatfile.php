@@ -90,7 +90,7 @@ function PackCatFile($infiles, $outfile, $followlink=false, $checksumtype="crc32
  $outfile = RemoveWindowsPath($outfile);
  $checksumtype = strtolower($checksumtype);
  if($checksumtype!="adler32" && $checksumtype!="crc32" && $checksumtype!="md5" && $checksumtype!="sha1" && $checksumtype!="sha224" && $checksumtype!="sha256" && $checksumtype!="sha384" && $checksumtype!="sha512") {
-  $checksumtype="crc32" }
+  $checksumtype="crc32"; }
  if(file_exists($outfile)) {
   unlink($outfile); }
  $catfp = fopen($outfile, "wb");
@@ -302,7 +302,7 @@ function RePackCatFile($infiles, $outfile, $followlink=false, $checksumtype="crc
   $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, $listonly, $skipchecksum); }
  $checksumtype = strtolower($checksumtype);
  if($checksumtype!="adler32" && $checksumtype!="crc32" && $checksumtype!="md5" && $checksumtype!="sha1" && $checksumtype!="sha224" && $checksumtype!="sha256" && $checksumtype!="sha384" && $checksumtype!="sha512") {
-  $checksumtype="crc32" }
+  $checksumtype="crc32"; }
  if($listcatfiles==false) {
   return false; }
  $lcfi = 0;
