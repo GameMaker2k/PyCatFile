@@ -284,7 +284,7 @@ if(tarsupport is True):
  def PackCatFileFromTarFile(infile, outfile, verbose=False):
   infile = RemoveWindowsPath(infile);
   outfile = RemoveWindowsPath(outfile);
-  tarinput = tarfile.open(infile, "r");
+  tarinput = tarfile.open(infile, "r:*");
   tarfiles = tarinput.getmembers();
   if(verbose is True):
    logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
