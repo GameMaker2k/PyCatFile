@@ -202,7 +202,7 @@ function PHPCatToArray($infile, $seekstart=0, $seekend=0, $listonly=false, $skip
   $phpcatfcs = hexdec($phpcatheaderdata[14]);
   $phpcatfccs = hexdec($phpcatheaderdata[15]);
   $hc = 0;
-  $hcmax = strlen($phpcatheaderdata) - 3;
+  $hcmax = strlen($phpcatheaderdata) - 2;
   $hout = "";
   while($hc<$hcmax) {
    $hout = $hout.AppendNullByte($phpcatheaderdata[$hc]);
