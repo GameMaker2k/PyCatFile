@@ -382,7 +382,7 @@ def PyCatToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=Fa
   pycatfcs = int(pycatheaderdata[14], 16);
   pycatfccs = int(pycatheaderdata[15], 16);
   hc = 0;
-  hcmax = len(pycatheaderdata) - 3;
+  hcmax = len(pycatheaderdata) - 2;
   hout = "";
   while(hc<hcmax):
    hout = hout + AppendNullByte(pycatheaderdata[hc]);
