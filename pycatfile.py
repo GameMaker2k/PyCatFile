@@ -143,6 +143,7 @@ def GetDevMajorMinor(fdev):
 def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbose=False):
  infiles = RemoveWindowsPath(infiles);
  outfile = RemoveWindowsPath(outfile);
+ checksumtype = checksumtype.lower();
  if(checksumtype!="adler32" and checksumtype!="crc32" and checksumtype!="md5" and checksumtype!="sha1" and checksumtype!="sha224" and checksumtype!="sha256" and checksumtype!="sha384" and checksumtype!="sha512"):
   checksumtype="crc32"
  if(verbose is True):
@@ -298,6 +299,7 @@ if(tarsupport is True):
  def PackCatFileFromTarFile(infile, outfile, checksumtype="crc32", verbose=False):
   infile = RemoveWindowsPath(infile);
   outfile = RemoveWindowsPath(outfile);
+  checksumtype = checksumtype.lower();
   if(checksumtype!="adler32" and checksumtype!="crc32" and checksumtype!="md5" and checksumtype!="sha1" and checksumtype!="sha224" and checksumtype!="sha256" and checksumtype!="sha384" and checksumtype!="sha512"):
    checksumtype="crc32"
   tarinput = tarfile.open(infile, "r:*");
@@ -446,7 +448,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catfdev_major = int(catheaderdata[10], 16);
   catfrdev_minor = int(catheaderdata[11], 16);
   catfrdev_major = int(catheaderdata[12], 16);
-  catfchecksumtype = catheaderdata[13];
+  catfchecksumtype = catheaderdata[13].lower();
   if(catfchecksumtype=="adler32" or catfchecksumtype=="crc32"):
    catfcs = int(catheaderdata[14], 16);
    catfccs = int(catheaderdata[15], 16);
@@ -555,6 +557,7 @@ def RePackCatFile(infile, seekstart=0, seekend=0, listonly=False, checksumtype="
  else:
   infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, seekstart, seekend, listonly, skipchecksum);
+ checksumtype = checksumtype.lower();
  if(checksumtype!="adler32" and checksumtype!="crc32" and checksumtype!="md5" and checksumtype!="sha1" and checksumtype!="sha224" and checksumtype!="sha256" and checksumtype!="sha384" and checksumtype!="sha512"):
   checksumtype="crc32"
  if(verbose is True):

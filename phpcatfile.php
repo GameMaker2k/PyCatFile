@@ -88,6 +88,7 @@ function PackCatFile($infiles, $outfile, $followlink=false, $checksumtype="crc32
  $catver = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2];
  $infiles = RemoveWindowsPath($infiles);
  $outfile = RemoveWindowsPath($outfile);
+ $checksumtype = strtolower($checksumtype);
  if($checksumtype!="adler32" && $checksumtype!="crc32" && $checksumtype!="md5" && $checksumtype!="sha1" && $checksumtype!="sha224" && $checksumtype!="sha256" && $checksumtype!="sha384" && $checksumtype!="sha512") {
   $checksumtype="crc32" }
  if(file_exists($outfile)) {
@@ -204,7 +205,7 @@ function CatFileToArray($infile, $seekstart=0, $seekend=0, $listonly=false, $ski
   $catfdev_major = hexdec($catheaderdata[10]);
   $catfrdev_minor = hexdec($catheaderdata[11]);
   $catfrdev_major = hexdec($catheaderdata[12]);
-  $catfchecksumtype = $catheaderdata[13];
+  $catfchecksumtype = strtolower($catheaderdata[13]);
   if($catfchecksumtype=="adler32" || $catfchecksumtype=="crc32") {
    $catfcs = hexdec($catheaderdata[14]);
    $catfccs = hexdec($catheaderdata[15]); }
@@ -299,6 +300,7 @@ function RePackCatFile($infiles, $outfile, $followlink=false, $checksumtype="crc
  else {
   $infile = RemoveWindowsPath($infile);
   $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, $listonly, $skipchecksum); }
+ $checksumtype = strtolower($checksumtype);
  if($checksumtype!="adler32" && $checksumtype!="crc32" && $checksumtype!="md5" && $checksumtype!="sha1" && $checksumtype!="sha224" && $checksumtype!="sha256" && $checksumtype!="sha384" && $checksumtype!="sha512") {
   $checksumtype="crc32" }
  if($listcatfiles==false) {
