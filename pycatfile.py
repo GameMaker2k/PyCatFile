@@ -54,6 +54,7 @@ if __name__ == '__main__':
  argparser.add_argument("-c", "--create", action="store_true", help="concatenate files only");
  if(tarsupport is True):
   argparser.add_argument("-tar", "--tar", action="store_true", help="convert from tar file");
+ argparser.add_argument("-checksum", "--checksum", default="crc32", help="checksum type to use default is crc32");
  argparser.add_argument("-e", "-x", "--extract", action="store_true", help="extract files only");
  argparser.add_argument("-l", "-t", "--list", action="store_true", help="list files only");
  argparser.add_argument("-o", "--output", default=None, help="extract concatenate files to or concatenate output name");
@@ -791,9 +792,9 @@ if __name__ == '__main__':
  if(tarsupport is False and should_convert is True):
   should_convert = False;
  if(should_create is True and should_extract is False and should_list is False and should_convert is False):
-  PackCatFile(getargs.input, getargs.output, False, "crc32", getargs.verbose);
+  PackCatFile(getargs.input, getargs.output, False, getargs.checksum, getargs.verbose);
  if(should_create is True and should_extract is False and should_list is False and should_convert is True):
-  PackCatFileFromTarFile(getargs.input, getargs.output, "crc32", getargs.verbose);
+  PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose);
  if(should_create is False and should_extract is True and should_list is False):
   UnPackCatFile(getargs.input, getargs.output, getargs.verbose, False);
  if(should_create is False and should_extract is False and should_list is True):
