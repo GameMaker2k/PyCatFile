@@ -213,7 +213,7 @@ function CatFileToArray($infile, $seekstart=0, $seekend=0, $listonly=false, $ski
    $catfcs = $catheaderdata[14];
    $catfccs = $catheaderdata[15]; }
   $hc = 0;
-  $hcmax = strlen($catheaderdata) - 2;
+  $hcmax = count($catheaderdata) - 2;
   $hout = "";
   while($hc<$hcmax) {
    $hout = $hout.AppendNullByte($catheaderdata[$hc]);
@@ -249,7 +249,7 @@ function CatFileToArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false,
   $listcatfiles = $infile; }
  else {
   $infile = RemoveWindowsPath($infile);
-  $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, $listonly, $skipchecksum); }
+  $listcatfiles = CatFileToArray($infile, $seekstart, $seekend, $listonly, $skipchecksum); }
  if($listcatfiles===false) {
   return false; }
  $catarray = array('list' => $listcatfiles, 'filetoid' => array(), 'idtofile' => array(), 'filetypes' => array('directories' => array('filetoid' => array(), 'idtofile' => array()), 'files' => array('filetoid' => array(), 'idtofile' => array()), 'links' => array('filetoid' => array(), 'idtofile' => array()), 'symlinks' => array('filetoid' => array(), 'idtofile' => array()), 'hardlinks' => array('filetoid' => array(), 'idtofile' => array()), 'character' => array('filetoid' => array(), 'idtofile' => array()), 'block' => array('filetoid' => array(), 'idtofile' => array()), 'fifo' => array('filetoid' => array(), 'idtofile' => array()), 'devices' => array('filetoid' => array(), 'idtofile' => array())));
@@ -299,7 +299,7 @@ function RePackCatFile($infiles, $outfile, $followlink=false, $checksumtype="crc
   $listcatfiles = $infile; }
  else {
   $infile = RemoveWindowsPath($infile);
-  $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, $listonly, $skipchecksum); }
+  $listcatfiles = CatFileToArray($infile, $seekstart, $seekend, $listonly, $skipchecksum); }
  $checksumtype = strtolower($checksumtype);
  if($checksumtype!="adler32" && $checksumtype!="crc32" && $checksumtype!="md5" && $checksumtype!="sha1" && $checksumtype!="sha224" && $checksumtype!="sha256" && $checksumtype!="sha384" && $checksumtype!="sha512") {
   $checksumtype="crc32"; }
@@ -361,7 +361,7 @@ function UnPackCatFile($infile, $outdir=null, $verbose=False, $skipchecksum=fals
   $listcatfiles = $infile; }
  else {
   $infile = RemoveWindowsPath($infile);
-  $listcatfiles = PHPCatToArray($infile, 0, 0, false, $skipchecksum); }
+  $listcatfiles = CatFileToArray($infile, 0, 0, false, $skipchecksum); }
  if($listcatfiles===false) {
   return false; }
  $lcfi = 0;
@@ -395,7 +395,7 @@ function CatFileListFiles($infile, $seekstart=0, $seekend=0, $verbose=false, $sk
   $listcatfiles = $infile; }
  else {
   $infile = RemoveWindowsPath($infile);
-  $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, true, $skipchecksum); }
+  $listcatfiles = CatFileToArray($infile, $seekstart, $seekend, true, $skipchecksum); }
  if($listcatfiles===false) {
   return false; }
  $lcfi = 0;
