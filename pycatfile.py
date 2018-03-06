@@ -433,8 +433,8 @@ if(tarsupport is True):
 
 def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False):
  if(hasattr(infile, "read")):
-  catfp.seek(0, 0);
   catfp = infile;
+  catfp.seek(0, 0);
  else:
   infile = RemoveWindowsPath(infile);
   compresscheck = CheckFileType(infile);
