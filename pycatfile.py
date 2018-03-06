@@ -315,7 +315,8 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfp.write(catfileout);
  if(outfile=="-" or returnfp is True):
-  return catfp
+  catfp.seek(0, 0);
+  return catfp;
  else:
   catfp.close();
   CompressCatFile(outfile);
@@ -422,7 +423,8 @@ if(tarsupport is True):
    catfp.write(catfileout);
   if(outfile=="-" or returnfp is False):
    tarinput.close();
-   return catfp
+   catfp.seek(0, 0);
+   return catfp;
   else:
    catfp.close();
    tarinput.close();
@@ -684,7 +686,8 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
   catfp.write(catfileout);
   lcfi = lcfi + 1;
  if(outfile=="-" or returnfp is True):
-  return catfp
+  catfp.seek(0, 0);
+  return catfp;
  else:
   catfp.close();
   CompressCatFile(outfile);
