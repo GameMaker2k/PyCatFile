@@ -103,10 +103,6 @@ function CheckFileType($infile) {
  fclose($catfp);
  return $filetype; }
 
-  if(!function_exists("gzcompress")) {
-   return False;
-  }
-
 function CompressCatFile($infile) {
  if(pathinfo($infile, PATHINFO_EXTENSION)=="gz" or pathinfo($infile, PATHINFO_EXTENSION)=="cgz") {
   if(!function_exists("gzcompress")) {
