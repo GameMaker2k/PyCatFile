@@ -79,9 +79,9 @@ function ReadFileHeaderData($fp, $rounds=0) {
   $rocount = $rocount + 1; }
  return $HeaderOut; }
 
-function AppendNullByte($indata):
+function AppendNullByte($indata) {
  $outdata = $indata."\0";
- return $outdata;
+ return $outdata; }
 
 function PackCatFile($infiles, $outfile, $followlink=false, $checksumtype="crc32", $verbose=false) {
  global $info;
@@ -250,7 +250,7 @@ function CatFileToArrayIndex($infile, $seekstart=0, $seekend=0, $listonly=false,
  else {
   $infile = RemoveWindowsPath($infile);
   $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, $listonly, $skipchecksum); }
- if($listcatfiles==false) {
+ if($listcatfiles===false) {
   return false; }
  $catarray = array('list' => $listcatfiles, 'filetoid' => array(), 'idtofile' => array(), 'filetypes' => array('directories' => array('filetoid' => array(), 'idtofile' => array()), 'files' => array('filetoid' => array(), 'idtofile' => array()), 'links' => array('filetoid' => array(), 'idtofile' => array()), 'symlinks' => array('filetoid' => array(), 'idtofile' => array()), 'hardlinks' => array('filetoid' => array(), 'idtofile' => array()), 'character' => array('filetoid' => array(), 'idtofile' => array()), 'block' => array('filetoid' => array(), 'idtofile' => array()), 'fifo' => array('filetoid' => array(), 'idtofile' => array()), 'devices' => array('filetoid' => array(), 'idtofile' => array())));
  $lcfi = 0;
@@ -303,7 +303,7 @@ function RePackCatFile($infiles, $outfile, $followlink=false, $checksumtype="crc
  $checksumtype = strtolower($checksumtype);
  if($checksumtype!="adler32" && $checksumtype!="crc32" && $checksumtype!="md5" && $checksumtype!="sha1" && $checksumtype!="sha224" && $checksumtype!="sha256" && $checksumtype!="sha384" && $checksumtype!="sha512") {
   $checksumtype="crc32"; }
- if($listcatfiles==false) {
+ if($listcatfiles===false) {
   return false; }
  $lcfi = 0;
  $lcfx = count($listcatfiles);
@@ -362,7 +362,7 @@ function UnPackCatFile($infile, $outdir=null, $verbose=False, $skipchecksum=fals
  else {
   $infile = RemoveWindowsPath($infile);
   $listcatfiles = PHPCatToArray($infile, 0, 0, false, $skipchecksum); }
- if($listcatfiles==false) {
+ if($listcatfiles===false) {
   return false; }
  $lcfi = 0;
  $lcfx = count($listcatfiles);
@@ -396,7 +396,7 @@ function CatFileListFiles($infile, $seekstart=0, $seekend=0, $verbose=false, $sk
  else {
   $infile = RemoveWindowsPath($infile);
   $listcatfiles = PHPCatToArray($infile, $seekstart, $seekend, true, $skipchecksum); }
- if($listcatfiles==false) {
+ if($listcatfiles===false) {
   return false; }
  $lcfi = 0;
  $lcfx = count($listcatfiles);
@@ -437,11 +437,11 @@ function CatFileListFiles($infile, $seekstart=0, $seekend=0, $verbose=false, $sk
                      (($listcatfiles[$lcfi]['fchmod'] & 0x0200) ? 't' : 'x' ) :
                      (($listcatfiles[$lcfi]['fchmod'] & 0x0200) ? 'T' : '-'));
    $printfname = $listcatfiles[$lcfi]['fname'];
-   if($listcatfiles[$lcfi]['ftype']==1):
-    $printfname = $listcatfiles[$lcfi]['fname']." link to "+$listcatfiles[$lcfi]['flinkname'];
-   if($listcatfiles[$lcfi]['ftype']==2):
+   if($listcatfiles[$lcfi]['ftype']==1) {
+    $printfname = $listcatfiles[$lcfi]['fname']." link to "+$listcatfiles[$lcfi]['flinkname']; }
+   if($listcatfiles[$lcfi]['ftype']==2) {
     $printfname = $listcatfiles[$lcfi]['fname']." -> "+$listcatfiles[$lcfi]['flinkname'];
-   print($permissionstr." ".$listcatfiles[$lcfi]['fuid']."/".$listcatfiles[$lcfi]['fgid']." ".str_pad($listcatfiles[$lcfi]['fsize'], 15, " ", STR_PAD_LEFT)." ".gmdate('Y-m-d H:i', $listcatfiles[$lcfi]['fmtime'])." ".$printfname."\n"); }
+   print($permissionstr." ".$listcatfiles[$lcfi]['fuid']."/".$listcatfiles[$lcfi]['fgid']." ".str_pad($listcatfiles[$lcfi]['fsize'], 15, " ", STR_PAD_LEFT)." ".gmdate('Y-m-d H:i', $listcatfiles[$lcfi]['fmtime'])." ".$printfname."\n"); } }
   $lcfi = $lcfi + 1; }
  return true; }
 
