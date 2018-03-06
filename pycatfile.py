@@ -140,7 +140,7 @@ def CompressCatFile(infile):
   if(os.path.exists(fbasename+".tmp")):
    os.unlink(fbasename+".tmp");
   os.rename(infile, fbasename+".tmp");
-  with open(infile, "rb") as catuncomp, gzip.open(fbasename+".tmp", "wb", 9) as catcomp:
+  with open(fbasename+".tmp", "rb") as catuncomp, gzip.open(infile, "wb", 9) as catcomp:
    shutil.copyfileobj(catuncomp, catcomp);
   catcomp.close();
   catuncomp.close();
@@ -153,7 +153,7 @@ def CompressCatFile(infile):
   if(os.path.exists(fbasename+".tmp")):
    os.unlink(fbasename+".tmp");
   os.rename(infile, fbasename+".tmp");
-  with open(infile, "rb") as catuncomp, bz2.BZ2File(fbasename+".tmp", "wb", 9) as catcomp:
+  with open(fbasename+".tmp", "rb") as catuncomp, bz2.BZ2File(infile, "wb", 9) as catcomp:
    shutil.copyfileobj(catuncomp, catcomp);
   catcomp.close();
   catuncomp.close();
@@ -166,10 +166,10 @@ def CompressCatFile(infile):
   if(os.path.exists(fbasename+".tmp")):
    os.unlink(fbasename+".tmp");
   if(fextname==".lzma"):
-   with open(infile, "rb") as catuncomp, lzma.open(fbasename+".tmp", "wb", format=FORMAT_ALONE, preset=9) as catcomp:
+   with open(fbasename+".tmp", "rb") as catuncomp, lzma.open(infile, "wb", format=FORMAT_ALONE, preset=9) as catcomp:
     shutil.copyfileobj(catuncomp, catcomp);
   else:
-   with open(infile, "rb") as catuncomp, lzma.open(fbasename+".tmp", "wb", format=FORMAT_XZ, preset=9) as catcomp:
+   with open(fbasename+".tmp", "rb") as catuncomp, lzma.open(infile, "wb", format=FORMAT_XZ, preset=9) as catcomp:
     shutil.copyfileobj(catuncomp, catcomp);
   catcomp.close();
   catuncomp.close();
