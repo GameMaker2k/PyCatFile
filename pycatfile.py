@@ -36,6 +36,11 @@ if(__version_info__[3] is None):
 
 import os, sys, re, stat, logging, zlib, hashlib, binascii;
 
+try:
+ from StringIO import StringIO as BytesIO;
+except ImportError:
+ from io import BytesIO;
+
 tarsupport = False;
 try:
  import tarfile;
