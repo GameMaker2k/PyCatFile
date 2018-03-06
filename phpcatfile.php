@@ -103,6 +103,43 @@ function CheckFileType($infile) {
  fclose($catfp);
  return $filetype; }
 
+  if(!function_exists("gzcompress")) {
+   return False;
+  }
+
+function CompressCatFile($infile) {
+ if(pathinfo($infile, PATHINFO_EXTENSION)=="gz" or pathinfo($infile, PATHINFO_EXTENSION)=="cgz") {
+  if(!function_exists("gzcompress")) {
+   return false; }
+  if(file_exists(pathinfo($infile, PATHINFO_FILENAME).".tmp")) {
+   unlink(pathinfo($infile, PATHINFO_FILENAME).".tmp"); }
+  rename($infile, pathinfo($infile, PATHINFO_FILENAME).".tmp");
+  $catuncomp = fopen(pathinfo($infile, PATHINFO_FILENAME).".tmp", "rb");
+  $catcomp = fopen($infile, "wb");
+  fseek($catuncomp, 0, SEEK_END);
+  $endoffile = ftell($catuncomp);
+  fseek($catuncomp, 0, SEEK_SET);
+  fwrite($catcomp, gzcompress(fread($catuncomp, $endoffile), 9));
+  fclose($catcomp);
+  fclose($catuncomp);
+  unlink(pathinfo($infile, PATHINFO_FILENAME).".tmp"); }
+ if(pathinfo($infile, PATHINFO_EXTENSION)=="bz2" or pathinfo($infile, PATHINFO_EXTENSION)=="cbz") {
+  if(!function_exists("gzcompress")) {
+   return false; }
+  if(file_exists(pathinfo($infile, PATHINFO_FILENAME).".tmp")) {
+   unlink(pathinfo($infile, PATHINFO_FILENAME).".tmp"); }
+  rename($infile, pathinfo($infile, PATHINFO_FILENAME).".tmp");
+  $catuncomp = fopen(pathinfo($infile, PATHINFO_FILENAME).".tmp", "rb");
+  $catcomp = fopen($infile, "wb");
+  fseek($catuncomp, 0, SEEK_END);
+  $endoffile = ftell($catuncomp);
+  fseek($catuncomp, 0, SEEK_SET);
+  fwrite($catcomp, bzcompress(fread($catuncomp, $endoffile), 9));
+  fclose($catcomp);
+  fclose($catuncomp);
+  unlink(pathinfo($infile, PATHINFO_FILENAME).".tmp"); }
+ return True; }
+
 function PackCatFile($infiles, $outfile, $followlink=false, $checksumtype="crc32", $verbose=false) {
  global $info;
  $catver = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2];
