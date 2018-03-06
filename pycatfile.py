@@ -167,10 +167,10 @@ def CompressCatFile(infile):
    os.unlink(fbasename+".tmp");
   os.rename(infile, fbasename+".tmp");
   if(fextname==".lzma"):
-   with open(fbasename+".tmp", "rb") as catuncomp, lzma.open(infile, "wb", format=FORMAT_ALONE, preset=9) as catcomp:
+   with open(fbasename+".tmp", "rb") as catuncomp, lzma.open(infile, "wb", format=lzma.FORMAT_ALONE, preset=9) as catcomp:
     shutil.copyfileobj(catuncomp, catcomp);
   else:
-   with open(fbasename+".tmp", "rb") as catuncomp, lzma.open(infile, "wb", format=FORMAT_XZ, preset=9) as catcomp:
+   with open(fbasename+".tmp", "rb") as catuncomp, lzma.open(infile, "wb", format=lzma.FORMAT_XZ, preset=9) as catcomp:
     shutil.copyfileobj(catuncomp, catcomp);
   catcomp.close();
   catuncomp.close();
