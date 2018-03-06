@@ -391,6 +391,7 @@ if(tarsupport is True):
     catfilecontentcshex = checksumoutstr.hexdigest().upper();
    catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
    catfileoutstr = catfileoutstr + AppendNullByte(catfilecontentcshex);
+   catfileoutstrecd = catfileoutstr.encode();
    nullstrecd = "\0".encode();
    catfileout = catfileoutstrecd + fcontents + nullstrecd;
    catfp.write(catfileout);
@@ -559,7 +560,7 @@ def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
   lcfi = lcfi + 1;
  return catarray;
 
-def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False):
+def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, verbose=False):
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
@@ -572,6 +573,11 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(listcatfiles is False):
   return False;
+ catfp = open(outfile, "wb");
+ catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
+ fileheaderver = str(int(catver.replace(".", "")));
+ fileheader = AppendNullByte("CatFile" + fileheaderver);
+ catfp.write(fileheader.encode());
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
@@ -582,7 +588,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
   flinkname = listcatfiles[lcfi]['flinkname'];
   fatime = format(int(listcatfiles[lcfi]['fatime']), 'x').upper();
   fmtime = format(int(listcatfiles[lcfi]['fmtime']), 'x').upper();
-  fmode = format(int(listcatfiles[lcfi]['fmode']), 'x').upper();
+  fmode = format(int(int(listcatfiles[lcfi]['fmode'], 8)), 'x').upper();
   fuid = format(int(listcatfiles[lcfi]['fuid']), 'x').upper();
   fgid = format(int(listcatfiles[lcfi]['fgid']), 'x').upper();
   fdev_minor = format(int(listcatfiles[lcfi]['fminor']), 'x').upper();
@@ -590,6 +596,8 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
   frdev_minor = format(int(listcatfiles[lcfi]['frminor']), 'x').upper();
   frdev_major = format(int(listcatfiles[lcfi]['frmajor']), 'x').upper();
   fcontents = listcatfiles[lcfi]['fcontents'];
+  if(listcatfiles[lcfi]['ftype']!=0):
+   fcontents = fcontents.encode();
   ftypehex = format(listcatfiles[lcfi]['ftype'], 'x').upper();
   ftypeoutstr = ftypehex;
   catfileoutstr = AppendNullByte(ftypeoutstr);
@@ -621,6 +629,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
    catfilecontentcshex = checksumoutstr.hexdigest().upper();
   catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
   catfileoutstr = catfileoutstr + AppendNullByte(catfilecontentcshex);
+  catfileoutstrecd = catfileoutstr.encode();
   nullstrecd = "\0".encode();
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfp.write(catfileout);
@@ -759,15 +768,15 @@ if __name__ == '__main__':
  if(tarsupport is False and should_convert is True):
   should_convert = False;
  should_repack = False;
- if(should_create is False and should_extract is False and should_list is False and getargs.list is True):
+ if(should_create is True and getargs.tar is False and getargs.repack is True):
   should_repack = True;
  if(should_create is True and should_extract is False and should_list is False and should_repack is False and should_convert is False):
   PackCatFile(getargs.input, getargs.output, False, getargs.checksum, getargs.verbose);
  if(should_create is True and should_extract is False and should_list is False and should_repack is False and should_convert is True):
   PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose);
- if(should_create is False and should_extract is True and should_list is False and should_repack is False):
+ if(should_create is True and should_extract is False and should_list is False and should_repack is True and should_convert is False):
+  RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose);
+ if(should_create is False and should_extract is True and should_list is False):
   UnPackCatFile(getargs.input, getargs.output, getargs.verbose, False);
- if(should_create is False and should_extract is False and should_list is True and should_repack is False):
+ if(should_create is False and should_extract is False and should_list is True):
   CatFileListFiles(getargs.input, 0, 0, getargs.verbose, False);
- if(should_create is False and should_extract is False and should_list is False and should_repack is True):
-  RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, getargs.verbose);
