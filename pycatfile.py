@@ -147,7 +147,7 @@ def CompressCatFile(infile):
   os.unlink(fbasename+".tmp");
  if(fextname==".bz2" or fextname==".cbz"):
   try:
-   import bz2;
+   import bz2, shutil;
   except ImportError:
    return False;
   if(os.path.exists(fbasename+".tmp")):
@@ -160,7 +160,7 @@ def CompressCatFile(infile):
   os.unlink(fbasename+".tmp");
  if(fextname==".lzma" or fextname==".xz" or fextname==".cxz"):
   try:
-   import lzma;
+   import lzma, shutil;
   except ImportError:
    return False;
   if(os.path.exists(fbasename+".tmp")):
