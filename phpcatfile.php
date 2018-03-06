@@ -445,4 +445,6 @@ function CatFileListFiles($infile, $seekstart=0, $seekend=0, $verbose=false, $sk
   $lcfi = $lcfi + 1; }
  return true; }
 
+CatFileListFiles("./iDB.cat", 0, 0, true, false);
+
 ?>
