@@ -200,7 +200,6 @@ def GetDevMajorMinor(fdev):
  return retdev;
 
 def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbose=False, returnfp=False):
- infiles = RemoveWindowsPath(infiles);
  if(outfile!="-" or not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -602,13 +601,15 @@ def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
   lcfi = lcfi + 1;
  return catarray;
 
-def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, verbose=False):
+def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
   if(hasattr(infile, "read")):
    infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, seekstart, seekend, False, skipchecksum);
+ if(outfile!="-" or not hasattr(outfile, "write")):
+  outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
  if(checksumtype!="adler32" and checksumtype!="crc32" and checksumtype!="md5" and checksumtype!="sha1" and checksumtype!="sha224" and checksumtype!="sha256" and checksumtype!="sha384" and checksumtype!="sha512"):
   checksumtype="crc32"
@@ -616,7 +617,12 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(listcatfiles is False):
   return False;
- catfp = open(outfile, "wb");
+ if(outfile=="-"):
+  catfp = BytesIO();
+ elif(hasattr(outfile, "write")):
+  catfp = outfile;
+ else:
+  catfp = open(outfile, "wb");
  catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
@@ -677,8 +683,12 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfp.write(catfileout);
   lcfi = lcfi + 1;
- catfp.close();
- CompressCatFile(outfile);
+ if(outfile=="-" or returnfp is True):
+  return catfp
+ else:
+  catfp.close();
+  CompressCatFile(outfile);
+  return True;
  return True;
 
 def UnPackCatFile(infile, outdir=None, verbose=False, skipchecksum=False):
@@ -816,7 +826,7 @@ if __name__ == '__main__':
  if(should_create is True and getargs.tar is False and getargs.repack is True):
   should_repack = True;
  if(should_create is True and should_extract is False and should_list is False and should_repack is False and should_convert is False):
-  PackCatFile(getargs.input, getargs.output, False, getargs.checksum, getargs.verbose);
+  PackCatFile(getargs.input, getargs.output, False, getargs.checksum, getargs.verbose, False);
  if(should_create is True and should_extract is False and should_list is False and should_repack is False and should_convert is True):
   PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose);
  if(should_create is True and should_extract is False and should_list is False and should_repack is True and should_convert is False):
