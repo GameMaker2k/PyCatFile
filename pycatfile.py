@@ -196,7 +196,8 @@ def GetDevMajorMinor(fdev):
 
 def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbose=False):
  infiles = RemoveWindowsPath(infiles);
- outfile = RemoveWindowsPath(outfile);
+ if(outfile!="-"):
+  outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
  if(checksumtype!="adler32" and checksumtype!="crc32" and checksumtype!="md5" and checksumtype!="sha1" and checksumtype!="sha224" and checksumtype!="sha256" and checksumtype!="sha384" and checksumtype!="sha512"):
   checksumtype="crc32"
@@ -204,7 +205,10 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(os.path.exists(outfile)):
   os.unlink(outfile);
- catfp = open(outfile, "wb");
+ if(outfile=="-"):
+  catfp = BytesIO();
+ else:
+  catfp = open(outfile, "wb");
  catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
@@ -304,14 +308,18 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
   nullstrecd = "\0".encode();
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfp.write(catfileout);
- catfp.close();
- CompressCatFile(outfile);
- return True;
+ if(outfile=="-"):
+  return catfp
+ else:
+  catfp.close();
+  CompressCatFile(outfile);
+  return True;
 
 if(tarsupport is True):
  def PackCatFileFromTarFile(infile, outfile, checksumtype="crc32", verbose=False):
   infile = RemoveWindowsPath(infile);
-  outfile = RemoveWindowsPath(outfile);
+  if(outfile=!"-"):
+   outfile = RemoveWindowsPath(outfile);
   checksumtype = checksumtype.lower();
   if(checksumtype!="adler32" and checksumtype!="crc32" and checksumtype!="md5" and checksumtype!="sha1" and checksumtype!="sha224" and checksumtype!="sha256" and checksumtype!="sha384" and checksumtype!="sha512"):
    checksumtype="crc32"
@@ -321,7 +329,10 @@ if(tarsupport is True):
    logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
   if(os.path.exists(outfile)):
    os.unlink(outfile);
-  catfp = open(outfile, "wb");
+  if(outfile=="-"):
+   catfp = BytesIO();
+  else:
+   catfp = open(outfile, "wb");
   catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
   fileheaderver = str(int(catver.replace(".", "")));
   fileheader = AppendNullByte("CatFile" + fileheaderver);
@@ -401,10 +412,14 @@ if(tarsupport is True):
    nullstrecd = "\0".encode();
    catfileout = catfileoutstrecd + fcontents + nullstrecd;
    catfp.write(catfileout);
-  catfp.close();
-  tarinput.close();
-  CompressCatFile(outfile);
-  return True;
+  if(outfile=="-"):
+   tarinput.close();
+   return catfp
+  else:
+   catfp.close();
+   tarinput.close();
+   CompressCatFile(outfile);
+   return True;
 
 def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False):
  infile = RemoveWindowsPath(infile);
