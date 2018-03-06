@@ -325,7 +325,7 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
 if(tarsupport is True):
  def PackCatFileFromTarFile(infile, outfile, checksumtype="crc32", verbose=False, returnfp=False):
   infile = RemoveWindowsPath(infile);
-  if(outfile=!"-" or not hasattr(outfile, "write")):
+  if(outfile!="-" or not hasattr(outfile, "write")):
    outfile = RemoveWindowsPath(outfile);
   checksumtype = checksumtype.lower();
   if(checksumtype!="adler32" and checksumtype!="crc32" and checksumtype!="md5" and checksumtype!="sha1" and checksumtype!="sha224" and checksumtype!="sha256" and checksumtype!="sha384" and checksumtype!="sha512"):
