@@ -433,6 +433,7 @@ if(tarsupport is True):
 
 def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False):
  if(hasattr(infile, "read")):
+  catfp.seek(0, 0);
   catfp = infile;
  else:
   infile = RemoveWindowsPath(infile);
@@ -556,7 +557,7 @@ def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
-  if(hasattr(infile, "read")):
+  if(not hasattr(infile, "read")):
    infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, seekstart, seekend, listonly, skipchecksum);
  if(listcatfiles is False):
@@ -607,7 +608,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
-  if(hasattr(infile, "read")):
+  if(not hasattr(infile, "read")):
    infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, seekstart, seekend, False, skipchecksum);
  if(outfile!="-" or not hasattr(outfile, "write")):
@@ -702,7 +703,7 @@ def UnPackCatFile(infile, outdir=None, verbose=False, skipchecksum=False):
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
-  if(hasattr(infile, "read")):
+  if(not hasattr(infile, "read")):
    infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, 0, 0, False, skipchecksum);
  if(listcatfiles is False):
@@ -741,7 +742,7 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, verbose=False, skipchecksum
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
-  if(hasattr(infile, "read")):
+  if(not hasattr(infile, "read")):
    infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, seekstart, seekend, True, skipchecksum);
  if(listcatfiles is False):
