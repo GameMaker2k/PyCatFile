@@ -14,7 +14,7 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 3/5/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 3/6/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
@@ -23,7 +23,7 @@ __program_name__ = "PyCatFile";
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 0, 1, "RC 1", 1);
-__version_date_info__ = (2018, 3, 5, "RC 1", 1);
+__version_date_info__ = (2018, 3, 6, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
@@ -404,6 +404,14 @@ if(tarsupport is True):
 def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False):
  infile = RemoveWindowsPath(infile);
  compresscheck = CheckFileType(infile);
+ if(compresscheck is False):
+  fextname = os.path.splitext(infile)[1];
+  if(fextname==".gz" or fextname==".cgz"):
+   compresscheck = "gzip";
+  if(fextname==".bz2" or fextname==".cbz"):
+   compresscheck = "bzip2";
+  if(fextname==".lzma" or fextname==".xz" or fextname==".cxz"):
+   compresscheck = "lzma";
  if(compresscheck is False):
   return False;
  if(compresscheck=="gzip"):
