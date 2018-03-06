@@ -828,9 +828,9 @@ if __name__ == '__main__':
  if(should_create is True and should_extract is False and should_list is False and should_repack is False and should_convert is False):
   PackCatFile(getargs.input, getargs.output, False, getargs.checksum, getargs.verbose, False);
  if(should_create is True and should_extract is False and should_list is False and should_repack is False and should_convert is True):
-  PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose);
+  PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose, );
  if(should_create is True and should_extract is False and should_list is False and should_repack is True and should_convert is False):
-  RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose);
+  RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
  if(should_create is False and should_extract is True and should_list is False):
   UnPackCatFile(getargs.input, getargs.output, getargs.verbose, False);
  if(should_create is False and should_extract is False and should_list is True):
