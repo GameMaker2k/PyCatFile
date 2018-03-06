@@ -165,6 +165,7 @@ def CompressCatFile(infile):
    return False;
   if(os.path.exists(fbasename+".tmp")):
    os.unlink(fbasename+".tmp");
+  os.rename(infile, fbasename+".tmp");
   if(fextname==".lzma"):
    with open(fbasename+".tmp", "rb") as catuncomp, lzma.open(infile, "wb", format=FORMAT_ALONE, preset=9) as catcomp:
     shutil.copyfileobj(catuncomp, catcomp);
