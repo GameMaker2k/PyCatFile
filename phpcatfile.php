@@ -83,6 +83,26 @@ function AppendNullByte($indata) {
  $outdata = $indata."\0";
  return $outdata; }
 
+function CheckFileType($infile) {
+ $catfp = fopen($infile, "rb");
+ fseek($catfp, 0, 0);
+ $prefp = fread($catfp, 2);
+ $filetype = False;
+ if($prefp==pack("H*", "1f8b")) {
+  $filetype = "gzip"; }
+ fseek($catfp, 0, 0);
+ $prefp = fread($catfp, 3);
+ if($prefp==pack("H*", "425a68")) {
+  $filetype = "bzip2"; }
+ fseek($catfp, 0, 0);
+ $prefp = fread($catfp, 7);
+ /*if($prefp==pack("H*", "fd377a585a0000")) {
+  $filetype = "lzma"; }*/
+ if($prefp==pack("H*", "43617446696c65")) {
+  $filetype = "catfile"; }
+ fclose($catfp);
+ return $filetype; }
+
 function PackCatFile($infiles, $outfile, $followlink=false, $checksumtype="crc32", $verbose=false) {
  global $info;
  $catver = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2];
@@ -172,7 +192,15 @@ function PackCatFile($infiles, $outfile, $followlink=false, $checksumtype="crc32
 
 function CatFileToArray($infile, $seekstart=0, $seekend=0, $listonly=false, $skipchecksum=false) {
  $infile = RemoveWindowsPath($infile);
- $catfp = fopen($infile, "rb");
+ $compresscheck = CheckFileType($infile);
+ if($compresscheck===false) {
+  return false; }
+ if($compresscheck==="gzip") {
+  $catfp = gzopen($infile, "rb"); }
+ if($compresscheck==="bzip2") {
+  $catfp = bzopen($infile, "rb"); }
+ if($compresscheck==="catfile") {
+  $catfp = fopen($infile, "rb"); }
  fseek($catfp, 0, SEEK_END);
  $CatSize = ftell($catfp);
  $CatSizeEnd = $CatSize;
