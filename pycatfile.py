@@ -431,7 +431,7 @@ if(tarsupport is True):
    CompressCatFile(outfile);
    return True;
 
-def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False):
+def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
  if(hasattr(infile, "read")):
   catfp = infile;
   catfp.seek(0, 0);
@@ -550,16 +550,19 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catfp.seek(1, 1);
   seekstart = catfp.tell();
   fileidnum = fileidnum + 1;
- catfp.close();
+ if(returnfp is True):
+  catlist.update({'catfp': catfp);
+ else:
+  catfp.close();
  return catlist;
 
-def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False):
+def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
   if(not hasattr(infile, "read")):
    infile = RemoveWindowsPath(infile);
-  listcatfiles = CatFileToArray(infile, seekstart, seekend, listonly, skipchecksum);
+  listcatfiles = CatFileToArray(infile, seekstart, seekend, listonly, skipchecksum, returnfp);
  if(listcatfiles is False):
   return False;
  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
@@ -695,7 +698,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
   return True;
  return True;
 
-def UnPackCatFile(infile, outdir=None, verbose=False, skipchecksum=False):
+def UnPackCatFile(infile, outdir=None, verbose=False, skipchecksum=False, returnfp=False):
  if(outdir is not None):
   outdir = RemoveWindowsPath(outdir);
  if(verbose is True):
@@ -705,7 +708,7 @@ def UnPackCatFile(infile, outdir=None, verbose=False, skipchecksum=False):
  else:
   if(not hasattr(infile, "read")):
    infile = RemoveWindowsPath(infile);
-  listcatfiles = CatFileToArray(infile, 0, 0, False, skipchecksum);
+  listcatfiles = CatFileToArray(infile, 0, 0, False, skipchecksum, returnfp);
  if(listcatfiles is False):
   return False;
  lcfi = 0;
@@ -736,7 +739,7 @@ def UnPackCatFile(infile, outdir=None, verbose=False, skipchecksum=False):
   lcfi = lcfi + 1;
  return True;
 
-def CatFileListFiles(infile, seekstart=0, seekend=0, verbose=False, skipchecksum=False):
+def CatFileListFiles(infile, seekstart=0, seekend=0, verbose=False, skipchecksum=False, returnfp=False):
  import datetime;
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(isinstance(infile, dict)):
@@ -744,7 +747,7 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, verbose=False, skipchecksum
  else:
   if(not hasattr(infile, "read")):
    infile = RemoveWindowsPath(infile);
-  listcatfiles = CatFileToArray(infile, seekstart, seekend, True, skipchecksum);
+  listcatfiles = CatFileToArray(infile, seekstart, seekend, True, skipchecksum, returnfp);
  if(listcatfiles is False):
   return False;
  lcfi = 0;
