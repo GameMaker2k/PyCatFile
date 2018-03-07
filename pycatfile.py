@@ -533,7 +533,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   seekstart = catfp.tell();
   fileidnum = fileidnum + 1;
  if(returnfp is True):
-  catlist.update({'catfp': catfp);
+  catlist.update({'catfp': catfp});
  else:
   catfp.close();
  return catlist;

@@ -29,6 +29,7 @@ __version_date__ = pycatfile.__version_date__;
 __version_date_plusrc__ = pycatfile.__version_date_plusrc__
 __version__ = pycatfile.__version__;
 __version_date_plusrc__ = pycatfile.__version_date_plusrc__;
+tarsupport = pycatfile.tarsupport;
 
 argparser = argparse.ArgumentParser(description="Manipulating concatenate files", conflict_handler="resolve", add_help=True);
 argparser.add_argument("-V", "--version", action="version", version=__program_name__ + " " + __version__);
