@@ -14,32 +14,21 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 3/6/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: catfile.py - Last Update: 3/6/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
+import argparse, logging, pycatfile;
 
-__program_name__ = "PyCatFile";
-__project__ = __program_name__;
-__project_url__ = "https://github.com/GameMaker2k/PyCatFile";
-__version_info__ = (0, 0, 1, "RC 1", 1);
-__version_date_info__ = (2018, 3, 6, "RC 1", 1);
-__version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
-if(__version_info__[4] is not None):
- __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
-if(__version_info__[4] is None):
- __version_date_plusrc__ = __version_date__;
-if(__version_info__[3] is not None):
- __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]) + " " + str(__version_info__[3]);
-if(__version_info__[3] is None):
- __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]);
-
-import argparse;
-
-try:
- from StringIO import StringIO as BytesIO;
-except ImportError:
- from io import BytesIO;
+__project__ = pycatfile.__project__;
+__program_name__ = pycatfile.__program_name__;
+__project_url__ = pycatfile.__project_url__;
+__version_info__ = pycatfile.__version_info__;
+__version_date_info__ = pycatfile.__version_date_info__;
+__version_date__ = pycatfile.__version_date__;
+__version_date_plusrc__ = pycatfile.__version_date_plusrc__
+__version__ = pycatfile.__version__;
+__version_date_plusrc__ = pycatfile.__version_date_plusrc__;
 
 argparser = argparse.ArgumentParser(description="Manipulating concatenate files", conflict_handler="resolve", add_help=True);
 argparser.add_argument("-V", "--version", action="version", version=__program_name__ + " " + __version__);
@@ -98,13 +87,15 @@ if(tarsupport is False and should_convert is True):
 should_repack = False;
 if(should_create is True and getargs.tar is False and getargs.repack is True):
  should_repack = True;
+ if(getargs.verbose is True):
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
 if(should_create is True and should_extract is False and should_list is False and should_repack is False and should_convert is False):
- PackCatFile(getargs.input, getargs.output, False, getargs.checksum, getargs.verbose, False);
+ pycatfile.PackCatFile(getargs.input, getargs.output, False, getargs.checksum, getargs.verbose, False);
 if(should_create is True and should_extract is False and should_list is False and should_repack is False and should_convert is True):
- PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose, );
+ pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose, False);
 if(should_create is True and should_extract is False and should_list is False and should_repack is True and should_convert is False):
- RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
+ pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
 if(should_create is False and should_extract is True and should_list is False):
- UnPackCatFile(getargs.input, getargs.output, getargs.verbose, False);
+ pycatfile.UnPackCatFile(getargs.input, getargs.output, getargs.verbose, False);
 if(should_create is False and should_extract is False and should_list is True):
- CatFileListFiles(getargs.input, 0, 0, getargs.verbose, False);
+ pycatfile.CatFileListFiles(getargs.input, 0, 0, getargs.verbose, False);
