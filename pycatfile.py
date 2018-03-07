@@ -548,6 +548,8 @@ def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
  if(listcatfiles is False):
   return False;
  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
+ if(returnfp is True):
+  catarray.update({'catfp': listcatfiles['catfp']});
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
@@ -595,7 +597,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
  else:
   if(not hasattr(infile, "read")):
    infile = RemoveWindowsPath(infile);
-  listcatfiles = CatFileToArray(infile, seekstart, seekend, False, skipchecksum);
+  listcatfiles = CatFileToArray(infile, seekstart, seekend, False, skipchecksum, True);
  if(outfile!="-" or not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -606,11 +608,13 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
  if(listcatfiles is False):
   return False;
  if(outfile=="-"):
+  listcatfiles['catfp'].close();
   catfp = BytesIO();
  elif(hasattr(outfile, "write")):
+  listcatfiles['catfp'].close();
   catfp = outfile;
  else:
-  catfp = open(outfile, "wb");
+  catfp = listcatfiles['catfp'];
  catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
@@ -678,7 +682,6 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
   catfp.close();
   CompressCatFile(outfile);
   return True;
- return True;
 
 def UnPackCatFile(infile, outdir=None, verbose=False, skipchecksum=False, returnfp=False):
  if(outdir is not None):
@@ -719,7 +722,10 @@ def UnPackCatFile(infile, outdir=None, verbose=False, skipchecksum=False, return
   if(listcatfiles[lcfi]['ftype']==6 and hasattr(os, "mkfifo")):
    os.mkfifo(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
   lcfi = lcfi + 1;
- return True;
+ if(returnfp is True):
+  return listcatfiles['catfp'];
+ else:
+  return True;
 
 def CatFileListFiles(infile, seekstart=0, seekend=0, verbose=False, skipchecksum=False, returnfp=False):
  import datetime;
@@ -768,4 +774,7 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, verbose=False, skipchecksum
     printfname = listcatfiles[lcfi]['fname'] + " -> " + listcatfiles[lcfi]['flinkname'];
    logging.info(permissionstr + " " + str(str(listcatfiles[lcfi]['fuid']) + "/" + str(listcatfiles[lcfi]['fgid']) + " " + str(listcatfiles[lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname));
   lcfi = lcfi + 1;
- return returnval;
+ if(returnfp is True):
+  return listcatfiles['catfp'];
+ else:
+  return True;
