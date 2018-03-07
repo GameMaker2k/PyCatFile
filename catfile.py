@@ -91,11 +91,26 @@ if(should_create is True and getargs.tar is False and getargs.repack is True):
  if(getargs.verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
 if(should_create is True and should_extract is False and should_list is False and should_repack is False and should_convert is False):
- pycatfile.PackCatFile(getargs.input, getargs.output, False, getargs.checksum, getargs.verbose, False);
+ if(getargs.output=="-"):
+   pycatout = pycatfile.PackCatFile(getargs.input, getargs.output, False, getargs.checksum, False, False).read();
+   sys.stdout.buffer.write(pycatout);
+   pycatout.close();
+ else:
+  pycatfile.PackCatFile(getargs.input, getargs.output, False, getargs.checksum, getargs.verbose, False);
 if(should_create is True and should_extract is False and should_list is False and should_repack is False and should_convert is True):
- pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose, False);
+ if(getargs.output=="-"):
+   pycatout = pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose, False).read();
+   sys.stdout.buffer.write(pycatout);
+   pycatout.close();
+ else:
+  pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose, False);
 if(should_create is True and should_extract is False and should_list is False and should_repack is True and should_convert is False):
- pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
+ if(getargs.output=="-"):
+   pycatout = pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False).read();
+   sys.stdout.buffer.write(pycatout);
+   pycatout.close();
+ else:
+  pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
 if(should_create is False and should_extract is True and should_list is False):
  pycatfile.UnPackCatFile(getargs.input, getargs.output, getargs.verbose, False);
 if(should_create is False and should_extract is False and should_list is True):
