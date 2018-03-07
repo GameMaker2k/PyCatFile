@@ -597,7 +597,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
  else:
   if(not hasattr(infile, "read")):
    infile = RemoveWindowsPath(infile);
-  listcatfiles = CatFileToArray(infile, seekstart, seekend, False, skipchecksum, True);
+  listcatfiles = CatFileToArray(infile, seekstart, seekend, False, skipchecksum, False);
  if(outfile!="-" or not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -608,13 +608,11 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
  if(listcatfiles is False):
   return False;
  if(outfile=="-"):
-  listcatfiles['catfp'].close();
   catfp = BytesIO();
  elif(hasattr(outfile, "write")):
-  listcatfiles['catfp'].close();
   catfp = outfile;
  else:
-  catfp = listcatfiles['catfp'];
+  catfp = open(outfile, "wb");
  catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);

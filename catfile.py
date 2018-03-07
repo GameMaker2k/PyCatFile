@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import argparse, logging, pycatfile;
+import sys, argparse, logging, pycatfile;
 
 __project__ = pycatfile.__project__;
 __program_name__ = pycatfile.__program_name__;
