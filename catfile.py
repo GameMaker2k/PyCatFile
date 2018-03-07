@@ -92,22 +92,22 @@ if(should_create is True and getargs.tar is False and getargs.repack is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
 if(should_create is True and should_extract is False and should_list is False and should_repack is False and should_convert is False):
  if(getargs.output=="-"):
-   pycatout = pycatfile.PackCatFile(getargs.input, getargs.output, False, getargs.checksum, False, False).read();
-   sys.stdout.buffer.write(pycatout);
+   pycatout = pycatfile.PackCatFile(getargs.input, getargs.output, False, getargs.checksum, False, False);
+   sys.stdout.buffer.write(pycatout.read());
    pycatout.close();
  else:
   pycatfile.PackCatFile(getargs.input, getargs.output, False, getargs.checksum, getargs.verbose, False);
 if(should_create is True and should_extract is False and should_list is False and should_repack is False and should_convert is True):
  if(getargs.output=="-"):
-   pycatout = pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose, False).read();
-   sys.stdout.buffer.write(pycatout);
+   pycatout = pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose, False);
+   sys.stdout.buffer.write(pycatout.read());
    pycatout.close();
  else:
   pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose, False);
 if(should_create is True and should_extract is False and should_list is False and should_repack is True and should_convert is False):
  if(getargs.output=="-"):
-   pycatout = pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False).read();
-   sys.stdout.buffer.write(pycatout);
+   pycatout = pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
+   sys.stdout.buffer.write(pycatout.read());
    pycatout.close();
  else:
   pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
