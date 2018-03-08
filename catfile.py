@@ -20,6 +20,26 @@
 from __future__ import absolute_import, division, print_function, unicode_literals;
 import sys, argparse, logging, pycatfile;
 
+teststringio = 0;
+if(teststringio<=0):
+ try:
+  from cStringIO import StringIO as BytesIO;
+  teststringio = 1;
+ except ImportError:
+  teststringio = 0;
+if(teststringio<=0):
+ try:
+  from StringIO import StringIO as BytesIO;
+  teststringio = 2;
+ except ImportError:
+  teststringio = 0;
+if(teststringio<=0):
+ try:
+  from io import BytesIO;
+  teststringio = 3;
+ except ImportError:
+  teststringio = 0;
+
 __project__ = pycatfile.__project__;
 __program_name__ = pycatfile.__program_name__;
 __project_url__ = pycatfile.__project_url__;
@@ -105,13 +125,43 @@ if(should_create is True and should_extract is False and should_list is False an
  else:
   pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose, False);
 if(should_create is True and should_extract is False and should_list is False and should_repack is True and should_convert is False):
+ inputfile = getargs.input;
+ if(inputfile=="-"):
+  inputfile = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   for line in sys.stdin.buffer:
+    inputfile.write(line);
+  else:
+   for line in sys.stdin:
+    inputfile.write(line);
+  inputfile.seek(0, 0);
  if(getargs.output=="-"):
-   pycatout = pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
+   pycatout = pycatfile.RePackCatFile(inputfile, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
    sys.stdout.buffer.write(pycatout.read());
    pycatout.close();
  else:
-  pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
+  pycatfile.RePackCatFile(inputfile, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
 if(should_create is False and should_extract is True and should_list is False):
- pycatfile.UnPackCatFile(getargs.input, getargs.output, False, getargs.verbose, False);
+ inputfile = getargs.input;
+ if(inputfile=="-"):
+  inputfile = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   for line in sys.stdin.buffer:
+    inputfile.write(line);
+  else:
+   for line in sys.stdin:
+    inputfile.write(line);
+  inputfile.seek(0, 0);
+ pycatfile.UnPackCatFile(inputfile, getargs.output, False, getargs.verbose, False);
 if(should_create is False and should_extract is False and should_list is True):
- pycatfile.CatFileListFiles(getargs.input, 0, 0, False, getargs.verbose, False);
+ inputfile = getargs.input;
+ if(inputfile=="-"):
+  inputfile = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   for line in sys.stdin.buffer:
+    inputfile.write(line);
+  else:
+   for line in sys.stdin:
+    inputfile.write(line);
+  inputfile.seek(0, 0);
+ pycatfile.CatFileListFiles(inputfile, 0, 0, False, getargs.verbose, False);

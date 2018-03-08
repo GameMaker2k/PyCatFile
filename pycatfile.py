@@ -40,19 +40,19 @@ if(sys.version[0]=="2"):
  from io import open as open;
 
 teststringio = 0;
-if(teststringio>0):
+if(teststringio<=0):
  try:
   from cStringIO import StringIO as BytesIO;
   teststringio = 1;
  except ImportError:
   teststringio = 0;
-if(teststringio>0):
+if(teststringio<=0):
  try:
   from StringIO import StringIO as BytesIO;
   teststringio = 2;
  except ImportError:
   teststringio = 0;
-if(teststringio>0):
+if(teststringio<=0):
  try:
   from io import BytesIO;
   teststringio = 3;
@@ -462,7 +462,13 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   if(CheckFileType(catfp, False)!="catfile"):
    return False;
  elif(infile=="-"):
-  catfp = sys.stdin;
+  catfp = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   for line in sys.stdin.buffer:
+    catfp.write(line);
+  else:
+   for line in sys.stdin:
+    catfp.write(line);
   catfp.seek(0, 0);
   if(CheckFileType(catfp, False)!="catfile"):
    return False;
