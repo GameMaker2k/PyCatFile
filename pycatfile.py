@@ -588,6 +588,11 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catfp.close();
  return catlist;
 
+def CatStringToArray(catstr, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
+ catfp = BytesIO(catstr);
+ listcatfiles = CatFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
+ return listcatfiles;
+
 def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
  if(isinstance(infile, dict)):
   listcatfiles = infile;
@@ -640,6 +645,11 @@ def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
    catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
   lcfi = lcfi + 1;
  return catarray;
+
+def CatStringToArrayIndex(catstr, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
+ catfp = BytesIO(catstr);
+ listcatfiles = CatFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
+ return listcatfiles;
 
 def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
  if(isinstance(infile, dict)):
@@ -733,7 +743,12 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
   CompressCatFile(outfile);
   return True;
 
-def UnPackCatFile(infile, outdir=None, verbose=False, skipchecksum=False, returnfp=False):
+def RePackCatFileFromString(catstr, outfile, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
+ catfp = BytesIO(catstr);
+ listcatfiles = RePackCatFile(catfp, seekstart, seekend, checksumtype, skipchecksum, verbose, returnfp);
+ return listcatfiles;
+
+def UnPackCatFile(infile, outdir=None, skipchecksum=False, verbose=False, returnfp=False):
  if(outdir is not None):
   outdir = RemoveWindowsPath(outdir);
  if(verbose is True):
@@ -777,7 +792,12 @@ def UnPackCatFile(infile, outdir=None, verbose=False, skipchecksum=False, return
  else:
   return True;
 
-def CatFileListFiles(infile, seekstart=0, seekend=0, verbose=False, skipchecksum=False, returnfp=False):
+def UnPackCatString(catstr, outdir=None, skipchecksum=False, verbose=False, returnfp=False):
+ catfp = BytesIO(catstr);
+ listcatfiles = UnPackCatFile(catfp, outdir, verbose, skipchecksum, returnfp);
+ return listcatfiles;
+
+def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose=False, returnfp=False):
  import datetime;
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(isinstance(infile, dict)):
@@ -828,3 +848,8 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, verbose=False, skipchecksum
   return listcatfiles['catfp'];
  else:
   return True;
+
+def CatStringListFiles(catstr, seekstart=0, seekend=0, skipchecksum=False, verbose=False, returnfp=False):
+ catfp = BytesIO(catstr);
+ listcatfiles = UnPackCatFile(catfp, seekstart, seekend, verbose, skipchecksum, returnfp);
+ return listcatfiles;

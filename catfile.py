@@ -112,6 +112,6 @@ if(should_create is True and should_extract is False and should_list is False an
  else:
   pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
 if(should_create is False and should_extract is True and should_list is False):
- pycatfile.UnPackCatFile(getargs.input, getargs.output, getargs.verbose, False);
+ pycatfile.UnPackCatFile(getargs.input, getargs.output, False, getargs.verbose, False);
 if(should_create is False and should_extract is False and should_list is True):
- pycatfile.CatFileListFiles(getargs.input, 0, 0, getargs.verbose, False);
+ pycatfile.CatFileListFiles(getargs.input, 0, 0, False, getargs.verbose, False);
