@@ -36,28 +36,10 @@ if(__version_info__[3] is None):
 
 import os, sys, re, stat, logging, zlib, hashlib, binascii;
 
-if(sys.version[0]=="2"):
- from io import open as open;
-
-teststringio = 0;
-if(teststringio>0):
- try:
-  from cStringIO import StringIO as BytesIO;
-  teststringio = 1;
- except ImportError:
-  teststringio = 0;
-if(teststringio>0):
- try:
-  from StringIO import StringIO as BytesIO;
-  teststringio = 2;
- except ImportError:
-  teststringio = 0;
-if(teststringio>0):
- try:
-  from io import BytesIO;
-  teststringio = 3;
- except ImportError:
-  teststringio = 0;
+try:
+ from StringIO import StringIO as BytesIO;
+except ImportError:
+ from io import BytesIO;
 
 tarsupport = False;
 try:
