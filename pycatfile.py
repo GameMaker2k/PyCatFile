@@ -163,7 +163,10 @@ def CompressCatFile(infile):
    return False;
   if(os.path.exists(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")))):
    os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
-  os.rename(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
+  try:
+   os.rename(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
+  except OSError:
+   shutil.move(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
   with open(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")), "rb") as catuncomp, gzip.open(infile, "wb", 9) as catcomp:
    shutil.copyfileobj(catuncomp, catcomp);
   catcomp.close();
@@ -176,7 +179,10 @@ def CompressCatFile(infile):
    return False;
   if(os.path.exists(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")))):
    os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
-  os.rename(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
+  try:
+   os.rename(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
+  except OSError:
+   shutil.move(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
   with open(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")), "rb") as catuncomp, bz2.BZ2File(infile, "wb", 9) as catcomp:
    shutil.copyfileobj(catuncomp, catcomp);
   catcomp.close();
@@ -189,7 +195,10 @@ def CompressCatFile(infile):
    return False;
   if(os.path.exists(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")))):
    os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
-  os.rename(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
+  try:
+   os.rename(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
+  except OSError:
+   shutil.move(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
   if(fextname==".lzma"):
    with open(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")), "rb") as catuncomp, lzma.open(infile, "wb", format=lzma.FORMAT_ALONE, preset=9) as catcomp:
     shutil.copyfileobj(catuncomp, catcomp);
