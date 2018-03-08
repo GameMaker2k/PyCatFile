@@ -73,7 +73,7 @@ if __name__ == "__main__":
  if(os.sep=="\\"):
   curscrpath = curscrpath.replace(os.sep, "/");
  curscrpath = curscrpath+"/";
- scrfile = curscrpath+"mkhockeydata.py";
+ scrfile = curscrpath+"catfile.py";
  if(os.path.exists(scrfile) and os.path.isfile(scrfile)):
   scrcmd = subprocess.Popen([sys.executable, scrfile] + sys.argv[1:]);
   scrcmd.wait();
