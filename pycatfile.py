@@ -14,26 +14,10 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 3/7/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 3/8/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-
-__program_name__ = "PyCatFile";
-__project__ = __program_name__;
-__project_url__ = "https://github.com/GameMaker2k/PyCatFile";
-__version_info__ = (0, 0, 1, "RC 1", 1);
-__version_date_info__ = (2018, 3, 7, "RC 1", 1);
-__version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
-if(__version_info__[4] is not None):
- __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
-if(__version_info__[4] is None):
- __version_date_plusrc__ = __version_date__;
-if(__version_info__[3] is not None):
- __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]) + " " + str(__version_info__[3]);
-if(__version_info__[3] is None):
- __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]);
-
 import os, sys, re, stat, logging, zlib, hashlib, binascii;
 
 if(sys.version[0]=="2"):
@@ -65,6 +49,34 @@ try:
  tarsupport = True;
 except ImportError:
  tarsupport = False;
+
+__program_name__ = "PyCatFile";
+__project__ = __program_name__;
+__project_url__ = "https://github.com/GameMaker2k/PyCatFile";
+__version_info__ = (0, 0, 1, "RC 1", 1);
+__version_date_info__ = (2018, 3, 8, "RC 1", 1);
+__version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
+if(__version_info__[4] is not None):
+ __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
+if(__version_info__[4] is None):
+ __version_date_plusrc__ = __version_date__;
+if(__version_info__[3] is not None):
+ __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]) + " " + str(__version_info__[3]);
+if(__version_info__[3] is None):
+ __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]);
+
+if __name__ == "__main__":
+ import subprocess;
+ curscrpath = os.path.dirname(sys.argv[0]);
+ if(curscrpath==""):
+  curscrpath = ".";
+ if(os.sep=="\\"):
+  curscrpath = curscrpath.replace(os.sep, "/");
+ curscrpath = curscrpath+"/";
+ scrfile = curscrpath+"mkhockeydata.py";
+ if(os.path.exists(scrfile) and os.path.isfile(scrfile)):
+  scrcmd = subprocess.Popen([sys.executable, scrfile] + sys.argv[1:]);
+  scrcmd.wait();
 
 def RemoveWindowsPath(dpath):
  if(os.sep!="/"):
