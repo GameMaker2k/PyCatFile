@@ -127,7 +127,7 @@ def AppendNullByte(indata):
  return outdata;
 
 def CheckFileType(infile, closefp=True):
- if(hasattr(infile, "read")):
+ if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
  else:
   catfp = open(infile, "rb");
@@ -151,11 +151,15 @@ def CheckFileType(infile, closefp=True):
   catfp.close();
  return filetype;
 
-def CompressCatFile(infile):
+def CompressCatFile(infile, outext):
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   return True;
  fbasename = os.path.splitext(infile)[0];
  fextname = os.path.splitext(infile)[1];
+ outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'lzma', 'xz', 'cxz'];
+ outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.lzma', '.xz', '.cxz'];
+ if(not fextname in outextlistwd and outext in outextlist):
+  fextname = "."+outext;
  if(fextname==".gz" or fextname==".cgz"):
   try:
    import gzip, shutil, tempfile;
@@ -241,7 +245,7 @@ def CheckSumSupport(checkfor, checklist):
   return False;
 
 def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbose=False, returnfp=False):
- if(outfile!="-" or not hasattr(outfile, "write")):
+ if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
  if(CheckSumSupport(checksumtype, 5) is False):
@@ -252,7 +256,7 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
   os.unlink(outfile);
  if(outfile=="-"):
   catfp = BytesIO();
- elif(hasattr(outfile, "write")):
+ elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
  else:
   catfp = open(outfile, "wb");
@@ -362,17 +366,17 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
   return catfp;
  else:
   catfp.close();
-  CompressCatFile(outfile);
+  CompressCatFile(outfile, None);
   return True;
 
 if(tarsupport is True):
  def PackCatFileFromTarFile(infile, outfile, checksumtype="crc32", verbose=False, returnfp=False):
-  if(outfile!="-" or not hasattr(outfile, "write")):
+  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
    outfile = RemoveWindowsPath(outfile);
   checksumtype = checksumtype.lower();
   if(CheckSumSupport(checksumtype, 5) is False):
    checksumtype="crc32";
-  if(hasattr(infile, "read")):
+  if(hasattr(infile, "read") or hasattr(infile, "write")):
    tarinput = infile;
    tarinput.seek(0, 0);
    tarinput = tarfile.open(fileobj=tarinput, mode="r:*");
@@ -396,7 +400,7 @@ if(tarsupport is True):
    os.unlink(outfile);
   if(outfile=="-"):
    catfp = BytesIO();
-  elif(hasattr(outfile, "write")):
+  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
    catfp = outfile;
   else:
    catfp = open(outfile, "wb");
@@ -488,11 +492,11 @@ if(tarsupport is True):
   else:
    catfp.close();
    tarinput.close();
-   CompressCatFile(outfile);
+   CompressCatFile(outfile, None);
    return True;
 
 def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
- if(hasattr(infile, "read")):
+ if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
   catfp.seek(0, 0);
   compresscheck = CheckFileType(catfp, False);
@@ -648,7 +652,7 @@ def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
-  if(not hasattr(infile, "read") and infile!="-"):
+  if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
    infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, seekstart, seekend, listonly, skipchecksum, returnfp);
  if(listcatfiles is False):
@@ -706,10 +710,10 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
-  if(not hasattr(infile, "read") and infile!="-"):
+  if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
    infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, seekstart, seekend, False, skipchecksum, False);
- if(outfile!="-" or not hasattr(outfile, "write")):
+ if(outfile!="-" and not hasattr(infile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
  if(CheckSumSupport(checksumtype, 5) is False):
@@ -720,7 +724,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
   return False;
  if(outfile=="-"):
   catfp = BytesIO();
- elif(hasattr(outfile, "write")):
+ elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
  else:
   catfp = open(outfile, "wb");
@@ -791,7 +795,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
   return catfp;
  else:
   catfp.close();
-  CompressCatFile(outfile);
+  CompressCatFile(outfile, None);
   return True;
 
 def RePackCatFileFromString(catstr, outfile, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
@@ -807,7 +811,7 @@ def UnPackCatFile(infile, outdir=None, skipchecksum=False, verbose=False, return
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
-  if(not hasattr(infile, "read") and infile!="-"):
+  if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
    infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, 0, 0, False, skipchecksum, returnfp);
  if(listcatfiles is False):
@@ -854,7 +858,7 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
-  if(not hasattr(infile, "read") and infile!="-"):
+  if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
    infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, seekstart, seekend, True, skipchecksum, returnfp);
  if(listcatfiles is False):
