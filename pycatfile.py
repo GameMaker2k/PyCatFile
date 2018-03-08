@@ -147,7 +147,7 @@ def CheckFileType(infile, closefp=True):
  if(prefp==binascii.unhexlify("43617446696c65")):
   filetype = "catfile";
  catfp.seek(0, 0);
- if(closefp is True):
+ if(closefp):
   catfp.close();
  return filetype;
 
@@ -248,9 +248,9 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
- if(CheckSumSupport(checksumtype, 5) is False):
+ if(not CheckSumSupport(checksumtype, 5)):
   checksumtype="crc32";
- if(verbose is True):
+ if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(os.path.exists(outfile)):
   os.unlink(outfile);
@@ -267,9 +267,9 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
  GetDirList = ListDir(infiles);
  for curfname in GetDirList:
   fname = curfname;
-  if(verbose is True):
+  if(verbose):
    logging.info(fname);
-  if(followlink is False or followlink is None):
+  if(not followlink or followlink is None):
    fstatinfo = os.lstat(fname);
   else:
    fstatinfo = os.stat(fname);
@@ -319,7 +319,7 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
    fpc = open(fname, "rb");
    fcontents = fpc.read(int(fstatinfo.st_size));
    fpc.close();
-  if(followlink is True and (ftype==1 or ftype==2)):
+  if(followlink and (ftype==1 or ftype==2)):
    flstatinfo = os.stat(flinkname);
    fpc = open(flinkname, "rb");
    fcontents = fpc.read(int(flstatinfo.st_size));
@@ -340,13 +340,13 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
-  if(CheckSumSupport(checksumtype, 1) is True):
+  if(CheckSumSupport(checksumtype, 1)):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').upper();
-  if(CheckSumSupport(checksumtype, 2) is True):
+  if(CheckSumSupport(checksumtype, 2)):
    catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
    catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').upper();
-  if(CheckSumSupport(checksumtype, 4) is True):
+  if(CheckSumSupport(checksumtype, 4)):
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode());
    catfileheadercshex = checksumoutstr.hexdigest().upper();
@@ -361,7 +361,7 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
   nullstrecd = "\0".encode();
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfp.write(catfileout);
- if(outfile=="-" or returnfp is True):
+ if(outfile=="-" or returnfp):
   catfp.seek(0, 0);
   return catfp;
  else:
@@ -369,12 +369,12 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
   CompressCatFile(outfile, None);
   return True;
 
-if(tarsupport is True):
+if(tarsupport):
  def PackCatFileFromTarFile(infile, outfile, checksumtype="crc32", verbose=False, returnfp=False):
   if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
    outfile = RemoveWindowsPath(outfile);
   checksumtype = checksumtype.lower();
-  if(CheckSumSupport(checksumtype, 5) is False):
+  if(not CheckSumSupport(checksumtype, 5)):
    checksumtype="crc32";
   if(hasattr(infile, "read") or hasattr(infile, "write")):
    tarinput = infile;
@@ -394,7 +394,7 @@ if(tarsupport is True):
    infile = RemoveWindowsPath(infile);
    tarinput = tarfile.open(infile, mode="r:*");
   tarfiles = tarinput.getmembers();
-  if(verbose is True):
+  if(verbose):
    logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
   if(os.path.exists(outfile)):
    os.unlink(outfile);
@@ -410,7 +410,7 @@ if(tarsupport is True):
   catfp.write(fileheader.encode());
   for curfname in tarfiles:
    fname = curfname.name;
-   if(verbose is True):
+   if(verbose):
     logging.info(fname);
    ftype = 0;
    if(curfname.isfile()):
@@ -464,13 +464,13 @@ if(tarsupport is True):
    catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
    catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
    catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
-   if(CheckSumSupport(checksumtype, 1) is True):
+   if(CheckSumSupport(checksumtype, 1)):
     catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
     catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').upper();
-   if(CheckSumSupport(checksumtype, 2) is True):
+   if(CheckSumSupport(checksumtype, 2)):
     catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
     catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').upper();
-   if(CheckSumSupport(checksumtype, 4) is True):
+   if(CheckSumSupport(checksumtype, 4)):
     checksumoutstr = hashlib.new(checksumtype);
     checksumoutstr.update(catfileoutstr.encode());
     catfileheadercshex = checksumoutstr.hexdigest().upper();
@@ -485,7 +485,7 @@ if(tarsupport is True):
    nullstrecd = "\0".encode();
    catfileout = catfileoutstrecd + fcontents + nullstrecd;
    catfp.write(catfileout);
-  if(outfile=="-" or returnfp is False):
+  if(outfile=="-" or not returnfp):
    tarinput.close();
    catfp.seek(0, 0);
    return catfp;
@@ -524,7 +524,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  else:
   infile = RemoveWindowsPath(infile);
   compresscheck = CheckFileType(infile, True);
-  if(compresscheck is False):
+  if(not compresscheck):
    fextname = os.path.splitext(infile)[1];
    if(fextname==".gz" or fextname==".cgz"):
     compresscheck = "gzip";
@@ -532,7 +532,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
     compresscheck = "bzip2";
    if(fextname==".lzma" or fextname==".xz" or fextname==".cxz"):
     compresscheck = "lzma";
-  if(compresscheck is False):
+  if(not compresscheck):
    return False;
   if(compresscheck=="gzip"):
    try:
@@ -588,10 +588,10 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catfrdev_minor = int(catheaderdata[12], 16);
   catfrdev_major = int(catheaderdata[13], 16);
   catfchecksumtype = catheaderdata[14].lower();
-  if(CheckSumSupport(catfchecksumtype, 3) is True):
+  if(CheckSumSupport(catfchecksumtype, 3)):
    catfcs = int(catheaderdata[15], 16);
    catfccs = int(catheaderdata[16], 16);
-  if(CheckSumSupport(catfchecksumtype, 4) is True):
+  if(CheckSumSupport(catfchecksumtype, 4)):
    catfcs = catheaderdata[15];
    catfccs = catheaderdata[16];
   hc = 1;
@@ -600,36 +600,36 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   while(hc<hcmax):
    hout = hout + AppendNullByte(catheaderdata[hc]);
    hc = hc + 1;
-  if(CheckSumSupport(catfchecksumtype, 1) is True):
+  if(CheckSumSupport(catfchecksumtype, 1)):
    catnewfcs = zlib.adler32(hout.encode()) & 0xffffffff;
-  if(CheckSumSupport(catfchecksumtype, 2) is True):
+  if(CheckSumSupport(catfchecksumtype, 2)):
    catnewfcs = zlib.crc32(hout.encode()) & 0xffffffff;
-  if(CheckSumSupport(catfchecksumtype, 4) is True):
+  if(CheckSumSupport(catfchecksumtype, 4)):
    checksumoutstr = hashlib.new(catfchecksumtype);
    checksumoutstr.update(hout.encode());
    catnewfcs = checksumoutstr.hexdigest().upper();
-  if(catfcs!=catnewfcs and skipchecksum is False):
+  if(catfcs!=catnewfcs and not skipchecksum):
    logging.info("File Header Checksum Error with file " + catfname + " at offset " + str(catfhstart));
    return False;
   catfhend = catfp.tell() - 1;
   catfcontentstart = catfp.tell();
   catfcontents = "";
   pyhascontents = False;
-  if(catfsize>1 and listonly is False):
+  if(catfsize>1 and not listonly):
    catfcontents = catfp.read(catfsize);
-   if(CheckSumSupport(catfchecksumtype, 1) is True):
+   if(CheckSumSupport(catfchecksumtype, 1)):
     catnewfccs = zlib.adler32(catfcontents) & 0xffffffff;
-   if(CheckSumSupport(catfchecksumtype, 2) is True):
+   if(CheckSumSupport(catfchecksumtype, 2)):
     catnewfccs = zlib.crc32(catfcontents) & 0xffffffff;
-   if(CheckSumSupport(catfchecksumtype, 4) is True):
+   if(CheckSumSupport(catfchecksumtype, 4)):
     checksumoutstr = hashlib.new(catfchecksumtype);
     checksumoutstr.update(catfcontents);
     catnewfccs = checksumoutstr.hexdigest().upper();
    pyhascontents = True;
-   if(catfccs!=catnewfccs and skipchecksum is True):
+   if(catfccs!=catnewfccs and skipchecksum):
     logging.info("File Content Checksum Error with file " + catfname + " at offset " + str(catfcontentstart));
     return False;
-  if(catfsize>1 and listonly is True):
+  if(catfsize>1 and listonly):
    catfp.seek(catfsize, 1);
    pyhascontents = False;
   catfcontentend = catfp.tell();
@@ -637,7 +637,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catfp.seek(1, 1);
   seekstart = catfp.tell();
   fileidnum = fileidnum + 1;
- if(returnfp is True):
+ if(returnfp):
   catlist.update({'catfp': catfp});
  else:
   catfp.close();
@@ -655,10 +655,10 @@ def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
   if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
    infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, seekstart, seekend, listonly, skipchecksum, returnfp);
- if(listcatfiles is False):
+ if(not listcatfiles):
   return False;
  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
- if(returnfp is True):
+ if(returnfp):
   catarray.update({'catfp': listcatfiles['catfp']});
  lcfi = 0;
  lcfx = len(listcatfiles);
@@ -716,11 +716,11 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
  if(outfile!="-" and not hasattr(infile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
- if(CheckSumSupport(checksumtype, 5) is False):
+ if(not CheckSumSupport(checksumtype, 5)):
   checksumtype="crc32";
- if(verbose is True):
+ if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
- if(listcatfiles is False):
+ if(not listcatfiles):
   return False;
  if(outfile=="-"):
   catfp = BytesIO();
@@ -736,7 +736,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
   fname = listcatfiles[lcfi]['fname'];
-  if(verbose is True):
+  if(verbose):
    logging.info(fname);
   fsize = format(int(listcatfiles[lcfi]['fsize']), 'x').upper();
   flinkname = listcatfiles[lcfi]['flinkname'];
@@ -768,13 +768,13 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
-  if(CheckSumSupport(checksumtype, 1) is True):
+  if(CheckSumSupport(checksumtype, 1)):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').upper();
-  if(CheckSumSupport(checksumtype, 2) is True):
+  if(CheckSumSupport(checksumtype, 2)):
    catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
    catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').upper();
-  if(CheckSumSupport(checksumtype, 4) is True):
+  if(CheckSumSupport(checksumtype, 4)):
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode());
    catfileheadercshex = checksumoutstr.hexdigest().upper();
@@ -790,7 +790,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfp.write(catfileout);
   lcfi = lcfi + 1;
- if(outfile=="-" or returnfp is True):
+ if(outfile=="-" or returnfp):
   catfp.seek(0, 0);
   return catfp;
  else:
@@ -806,7 +806,7 @@ def RePackCatFileFromString(catstr, outfile, seekstart=0, seekend=0, checksumtyp
 def UnPackCatFile(infile, outdir=None, skipchecksum=False, verbose=False, returnfp=False):
  if(outdir is not None):
   outdir = RemoveWindowsPath(outdir);
- if(verbose is True):
+ if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(isinstance(infile, dict)):
   listcatfiles = infile;
@@ -814,12 +814,12 @@ def UnPackCatFile(infile, outdir=None, skipchecksum=False, verbose=False, return
   if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
    infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, 0, 0, False, skipchecksum, returnfp);
- if(listcatfiles is False):
+ if(not listcatfiles):
   return False;
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
-  if(verbose is True):
+  if(verbose):
    logging.info(listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==0):
    fpc = open(listcatfiles[lcfi]['fname'], "wb");
@@ -842,7 +842,7 @@ def UnPackCatFile(infile, outdir=None, skipchecksum=False, verbose=False, return
   if(listcatfiles[lcfi]['ftype']==6 and hasattr(os, "mkfifo")):
    os.mkfifo(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
   lcfi = lcfi + 1;
- if(returnfp is True):
+ if(returnfp):
   return listcatfiles['catfp'];
  else:
   return True;
@@ -861,16 +861,16 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose
   if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
    infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, seekstart, seekend, True, skipchecksum, returnfp);
- if(listcatfiles is False):
+ if(not listcatfiles):
   return False;
  lcfi = 0;
  lcfx = len(listcatfiles);
  returnval = {};
  while(lcfi < lcfx):
   returnval.update({lcfi: listcatfiles[lcfi]['fname']});
-  if(verbose is False):
+  if(not verbose):
    logging.info(listcatfiles[lcfi]['fname']);
-  if(verbose is True):
+  if(verbose):
    permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
    permissionstr = "";
    for fmodval in str(listcatfiles[lcfi]['fchmod'])[-3:]:
@@ -899,7 +899,7 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose
     printfname = listcatfiles[lcfi]['fname'] + " -> " + listcatfiles[lcfi]['flinkname'];
    logging.info(permissionstr + " " + str(str(listcatfiles[lcfi]['fuid']) + "/" + str(listcatfiles[lcfi]['fgid']) + " " + str(listcatfiles[lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname));
   lcfi = lcfi + 1;
- if(returnfp is True):
+ if(returnfp):
   return listcatfiles['catfp'];
  else:
   return True;
