@@ -56,7 +56,7 @@ argparser.add_argument("-V", "--version", action="version", version=__program_na
 argparser.add_argument("-i", "-f", "--input", help="files to concatenate or concatenate file extract", required=True);
 argparser.add_argument("-d", "-v", "--verbose", action="store_true", help="print various debugging information");
 argparser.add_argument("-c", "--create", action="store_true", help="concatenate files only");
-if(tarsupport is True):
+if(tarsupport):
  argparser.add_argument("-tar", "--tar", action="store_true", help="convert from tar file");
 argparser.add_argument("-checksum", "--checksum", default="crc32", help="checksum type to use default is crc32");
 argparser.add_argument("-e", "-x", "--extract", action="store_true", help="extract files only");
@@ -68,56 +68,56 @@ getargs = argparser.parse_args();
 should_extract = False;
 should_create = True;
 should_list = False;
-if(getargs.extract is False and getargs.create is True and getargs.list is False):
+if(not getargs.extract and getargs.create and not getargs.list):
  should_create = True;
  should_extract = False;
  should_list = False;
-if(getargs.extract is True and getargs.create is False and getargs.list is False):
+if(getargs.extract and not getargs.create and not getargs.list):
  should_create = False;
  should_extract = True;
  should_list = False;
-if(getargs.extract is True and getargs.create is True and getargs.list is False):
+if(getargs.extract and getargs.create and not getargs.list):
  should_create = True;
  should_extract = False;
  should_list = False;
-if(getargs.extract is False and getargs.create is False and getargs.list is False):
+if(not getargs.extract and not getargs.create and not getargs.list):
  should_create = True;
  should_extract = False;
  should_list = False;
-if(getargs.extract is False and getargs.create is True and getargs.list is True):
+if(not getargs.extract and getargs.create and getargs.list):
  should_create = True;
  should_extract = False;
  should_list = False;
-if(getargs.extract is True and getargs.create is False and getargs.list is True):
+if(getargs.extract and not getargs.create and getargs.list):
  should_create = False;
  should_extract = True;
  should_list = False;
-if(getargs.extract is True and getargs.create is True and getargs.list is True):
+if(getargs.extract and getargs.create and getargs.list):
  should_create = True;
  should_extract = False;
  should_list = False;
-if(getargs.extract is False and getargs.create is False and getargs.list is True):
+if(not getargs.extract and not getargs.create and getargs.list):
  should_create = False;
  should_extract = False;
  should_list = True;
 should_convert = False;
-if(should_create is True and getargs.tar is True):
+if(should_create and getargs.tar):
  should_convert = True;
-if(tarsupport is False and should_convert is True):
+if(not tarsupport and should_convert):
  should_convert = False;
 should_repack = False;
-if(should_create is True and getargs.tar is False and getargs.repack is True):
+if(should_create and not getargs.tar and getargs.repack):
  should_repack = True;
- if(getargs.verbose is True):
+ if(getargs.verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
-if(should_create is True and should_extract is False and should_list is False and should_repack is False and should_convert is False):
+if(should_create and not should_extract and not should_list and not should_repack and not should_convert):
  if(getargs.output=="-"):
    pycatout = pycatfile.PackCatFile(getargs.input, getargs.output, False, getargs.checksum, False, False);
    sys.stdout.buffer.write(pycatout.read());
    pycatout.close();
  else:
   pycatfile.PackCatFile(getargs.input, getargs.output, False, getargs.checksum, getargs.verbose, False);
-if(should_create is True and should_extract is False and should_list is False and should_repack is False and should_convert is True):
+if(should_create and not should_extract and not should_list and not should_repack and should_convert):
  inputfile = getargs.input;
  if(inputfile=="-"):
   inputfile = BytesIO();
@@ -134,7 +134,7 @@ if(should_create is True and should_extract is False and should_list is False an
    pycatout.close();
  else:
   pycatfile.PackCatFileFromTarFile(inputfile, getargs.output, getargs.checksum, getargs.verbose, False);
-if(should_create is True and should_extract is False and should_list is False and should_repack is True and should_convert is False):
+if(should_create and not should_extract and not should_list and should_repack and not should_convert):
  inputfile = getargs.input;
  if(inputfile=="-"):
   inputfile = BytesIO();
@@ -155,7 +155,7 @@ if(should_create is True and should_extract is False and should_list is False an
    pycatout.close();
  else:
   pycatfile.RePackCatFile(inputfile, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
-if(should_create is False and should_extract is True and should_list is False):
+if(not should_create and should_extract and not should_list):
  inputfile = getargs.input;
  if(inputfile=="-"):
   inputfile = BytesIO();
@@ -171,7 +171,7 @@ if(should_create is False and should_extract is True and should_list is False):
    inputfile = gzip.GzipFile(fileobj=inputfile, mode="rb");
   inputfile.seek(0, 0);
  pycatfile.UnPackCatFile(inputfile, getargs.output, False, getargs.verbose, False);
-if(should_create is False and should_extract is False and should_list is True):
+if(not should_create and not should_extract and should_list):
  inputfile = getargs.input;
  if(inputfile=="-"):
   inputfile = BytesIO();
