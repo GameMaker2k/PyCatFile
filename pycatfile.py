@@ -126,47 +126,47 @@ def CompressCatFile(infile):
  fextname = os.path.splitext(infile)[1];
  if(fextname==".gz" or fextname==".cgz"):
   try:
-   import gzip, shutil;
+   import gzip, shutil, tempfile;
   except ImportError:
    return False;
-  if(os.path.exists(fbasename+".tmp")):
-   os.unlink(fbasename+".tmp");
-  os.rename(infile, fbasename+".tmp");
-  with open(fbasename+".tmp", "rb") as catuncomp, gzip.open(infile, "wb", 9) as catcomp:
+  if(os.path.exists(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")))):
+   os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
+  os.rename(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
+  with open(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")), "rb") as catuncomp, gzip.open(infile, "wb", 9) as catcomp:
    shutil.copyfileobj(catuncomp, catcomp);
   catcomp.close();
   catuncomp.close();
-  os.unlink(fbasename+".tmp");
+  os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
  if(fextname==".bz2" or fextname==".cbz"):
   try:
-   import bz2, shutil;
+   import bz2, shutil, tempfile;
   except ImportError:
    return False;
-  if(os.path.exists(fbasename+".tmp")):
-   os.unlink(fbasename+".tmp");
-  os.rename(infile, fbasename+".tmp");
-  with open(fbasename+".tmp", "rb") as catuncomp, bz2.BZ2File(infile, "wb", 9) as catcomp:
+  if(os.path.exists(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")))):
+   os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
+  os.rename(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
+  with open(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")), "rb") as catuncomp, bz2.BZ2File(infile, "wb", 9) as catcomp:
    shutil.copyfileobj(catuncomp, catcomp);
   catcomp.close();
   catuncomp.close();
-  os.unlink(fbasename+".tmp");
+  os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
  if(fextname==".lzma" or fextname==".xz" or fextname==".cxz"):
   try:
-   import lzma, shutil;
+   import lzma, shutil, tempfile;
   except ImportError:
    return False;
-  if(os.path.exists(fbasename+".tmp")):
-   os.unlink(fbasename+".tmp");
-  os.rename(infile, fbasename+".tmp");
+  if(os.path.exists(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")))):
+   os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
+  os.rename(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
   if(fextname==".lzma"):
-   with open(fbasename+".tmp", "rb") as catuncomp, lzma.open(infile, "wb", format=lzma.FORMAT_ALONE, preset=9) as catcomp:
+   with open(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")), "rb") as catuncomp, lzma.open(infile, "wb", format=lzma.FORMAT_ALONE, preset=9) as catcomp:
     shutil.copyfileobj(catuncomp, catcomp);
   else:
-   with open(fbasename+".tmp", "rb") as catuncomp, lzma.open(infile, "wb", format=lzma.FORMAT_XZ, preset=9) as catcomp:
+   with open(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")), "rb") as catuncomp, lzma.open(infile, "wb", format=lzma.FORMAT_XZ, preset=9) as catcomp:
     shutil.copyfileobj(catuncomp, catcomp);
   catcomp.close();
   catuncomp.close();
-  os.unlink(fbasename+".tmp");
+  os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
  return True;
 
 def GetDevMajorMinor(fdev):
@@ -439,6 +439,9 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  if(hasattr(infile, "read")):
   catfp = infile;
   catfp.seek(0, 0);
+ elif(infile=="-"):
+  catfp = sys.stdin;
+  catfp.seek(0, 0);
  else:
   infile = RemoveWindowsPath(infile);
   compresscheck = CheckFileType(infile);
@@ -565,7 +568,7 @@ def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
-  if(not hasattr(infile, "read")):
+  if(not hasattr(infile, "read") and infile!="-"):
    infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, seekstart, seekend, listonly, skipchecksum, returnfp);
  if(listcatfiles is False):
@@ -618,7 +621,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
-  if(not hasattr(infile, "read")):
+  if(not hasattr(infile, "read") and infile!="-"):
    infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, seekstart, seekend, False, skipchecksum, False);
  if(outfile!="-" or not hasattr(outfile, "write")):
@@ -714,7 +717,7 @@ def UnPackCatFile(infile, outdir=None, verbose=False, skipchecksum=False, return
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
-  if(not hasattr(infile, "read")):
+  if(not hasattr(infile, "read") and infile!="-"):
    infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, 0, 0, False, skipchecksum, returnfp);
  if(listcatfiles is False):
@@ -756,7 +759,7 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, verbose=False, skipchecksum
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
-  if(not hasattr(infile, "read")):
+  if(not hasattr(infile, "read") and infile!="-"):
    infile = RemoveWindowsPath(infile);
   listcatfiles = CatFileToArray(infile, seekstart, seekend, True, skipchecksum, returnfp);
  if(listcatfiles is False):
