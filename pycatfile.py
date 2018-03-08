@@ -36,10 +36,28 @@ if(__version_info__[3] is None):
 
 import os, sys, re, stat, logging, zlib, hashlib, binascii;
 
-try:
- from StringIO import StringIO as BytesIO;
-except ImportError:
- from io import BytesIO;
+if(sys.version[0]=="2"):
+ from io import open as open;
+
+teststringio = 0;
+if(teststringio>0):
+ try:
+  from cStringIO import StringIO as BytesIO;
+  teststringio = 1;
+ except ImportError:
+  teststringio = 0;
+if(teststringio>0):
+ try:
+  from StringIO import StringIO as BytesIO;
+  teststringio = 2;
+ except ImportError:
+  teststringio = 0;
+if(teststringio>0):
+ try:
+  from io import BytesIO;
+  teststringio = 3;
+ except ImportError:
+  teststringio = 0;
 
 tarsupport = False;
 try:
@@ -96,7 +114,7 @@ def AppendNullByte(indata):
  outdata = str(indata) + "\0";
  return outdata;
 
-def CheckFileType(infile):
+def CheckFileType(infile, closefp=True):
  if(hasattr(infile, "read")):
   catfp = infile;
  else:
@@ -116,7 +134,9 @@ def CheckFileType(infile):
   filetype = "lzma";
  if(prefp==binascii.unhexlify("43617446696c65")):
   filetype = "catfile";
- catfp.close();
+ catfp.seek(0, 0);
+ if(closefp is True):
+  catfp.close();
  return filetype;
 
 def CompressCatFile(infile):
@@ -439,12 +459,16 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  if(hasattr(infile, "read")):
   catfp = infile;
   catfp.seek(0, 0);
+  if(CheckFileType(catfp, False)!="catfile"):
+   return False;
  elif(infile=="-"):
   catfp = sys.stdin;
   catfp.seek(0, 0);
+  if(CheckFileType(catfp, False)!="catfile"):
+   return False;
  else:
   infile = RemoveWindowsPath(infile);
-  compresscheck = CheckFileType(infile);
+  compresscheck = CheckFileType(infile, True);
   if(compresscheck is False):
    fextname = os.path.splitext(infile)[1];
    if(fextname==".gz" or fextname==".cgz"):
