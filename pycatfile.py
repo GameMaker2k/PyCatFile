@@ -236,7 +236,7 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
  if(CheckSumSupport(checksumtype, 5) is False):
-  checksumtype="crc32"
+  checksumtype="crc32";
  if(verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(os.path.exists(outfile)):
@@ -358,13 +358,28 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
 
 if(tarsupport is True):
  def PackCatFileFromTarFile(infile, outfile, checksumtype="crc32", verbose=False, returnfp=False):
-  infile = RemoveWindowsPath(infile);
   if(outfile!="-" or not hasattr(outfile, "write")):
    outfile = RemoveWindowsPath(outfile);
   checksumtype = checksumtype.lower();
   if(CheckSumSupport(checksumtype, 5) is False):
-   checksumtype="crc32"
-  tarinput = tarfile.open(infile, "r:*");
+   checksumtype="crc32";
+  if(hasattr(infile, "read")):
+   tarinput = infile;
+   tarinput.seek(0, 0);
+   tarinput = tarfile.open(fileobj=tarinput, mode="r:*");
+  elif(infile=="-"):
+   tarinput = BytesIO();
+   if(hasattr(sys.stdin, "buffer")):
+    for line in sys.stdin.buffer:
+     tarinput.write(line);
+   else:
+    for line in sys.stdin:
+     tarinput.write(line);
+   tarinput.seek(0, 0);
+   tarinput = tarfile.open(fileobj=tarinput, mode="r:*");
+  else:
+   infile = RemoveWindowsPath(infile);
+   tarinput = tarfile.open(infile, mode="r:*");
   tarfiles = tarinput.getmembers();
   if(verbose is True):
    logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
@@ -471,8 +486,13 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  if(hasattr(infile, "read")):
   catfp = infile;
   catfp.seek(0, 0);
-  if(CheckFileType(catfp, False)!="catfile"):
+  compresscheck = CheckFileType(catfp, False);
+  if(compresscheck=="gzip"):
+   import gzip;
+   catfp = gzip.GzipFile(fileobj=catfp, mode="rb");
+  if(compresscheck!="gzip" and compresscheck!="catfile"):
    return False;
+  catfp.seek(0, 0);
  elif(infile=="-"):
   catfp = BytesIO();
   if(hasattr(sys.stdin, "buffer")):
@@ -482,7 +502,11 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    for line in sys.stdin:
     catfp.write(line);
   catfp.seek(0, 0);
-  if(CheckFileType(catfp, False)!="catfile"):
+  compresscheck = CheckFileType(catfp, False);
+  if(compresscheck=="gzip"):
+   import gzip;
+   catfp = gzip.GzipFile(fileobj=catfp, mode="rb");
+  if(compresscheck!="gzip" and compresscheck!="catfile"):
    return False;
  else:
   infile = RemoveWindowsPath(infile);
@@ -680,7 +704,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
  if(CheckSumSupport(checksumtype, 5) is False):
-  checksumtype="crc32"
+  checksumtype="crc32";
  if(verbose is True):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(listcatfiles is False):

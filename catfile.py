@@ -118,12 +118,22 @@ if(should_create is True and should_extract is False and should_list is False an
  else:
   pycatfile.PackCatFile(getargs.input, getargs.output, False, getargs.checksum, getargs.verbose, False);
 if(should_create is True and should_extract is False and should_list is False and should_repack is False and should_convert is True):
+ inputfile = getargs.input;
+ if(inputfile=="-"):
+  inputfile = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   for line in sys.stdin.buffer:
+    inputfile.write(line);
+  else:
+   for line in sys.stdin:
+    inputfile.write(line);
+  inputfile.seek(0, 0);
  if(getargs.output=="-"):
-   pycatout = pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose, False);
+   pycatout = pycatfile.PackCatFileFromTarFile(inputfile, getargs.output, getargs.checksum, getargs.verbose, False);
    sys.stdout.buffer.write(pycatout.read());
    pycatout.close();
  else:
-  pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose, False);
+  pycatfile.PackCatFileFromTarFile(inputfile, getargs.output, getargs.checksum, getargs.verbose, False);
 if(should_create is True and should_extract is False and should_list is False and should_repack is True and should_convert is False):
  inputfile = getargs.input;
  if(inputfile=="-"):
@@ -134,6 +144,10 @@ if(should_create is True and should_extract is False and should_list is False an
   else:
    for line in sys.stdin:
     inputfile.write(line);
+  compresscheck = pycatfile.CheckFileType(inputfile, False);
+  if(compresscheck=="gzip"):
+   import gzip;
+   inputfile = gzip.GzipFile(fileobj=inputfile, mode="rb");
   inputfile.seek(0, 0);
  if(getargs.output=="-"):
    pycatout = pycatfile.RePackCatFile(inputfile, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
@@ -151,6 +165,10 @@ if(should_create is False and should_extract is True and should_list is False):
   else:
    for line in sys.stdin:
     inputfile.write(line);
+  compresscheck = pycatfile.CheckFileType(inputfile, False);
+  if(compresscheck=="gzip"):
+   import gzip;
+   inputfile = gzip.GzipFile(fileobj=inputfile, mode="rb");
   inputfile.seek(0, 0);
  pycatfile.UnPackCatFile(inputfile, getargs.output, False, getargs.verbose, False);
 if(should_create is False and should_extract is False and should_list is True):
@@ -163,5 +181,9 @@ if(should_create is False and should_extract is False and should_list is True):
   else:
    for line in sys.stdin:
     inputfile.write(line);
+  compresscheck = pycatfile.CheckFileType(inputfile, False);
+  if(compresscheck=="gzip"):
+   import gzip;
+   inputfile = gzip.GzipFile(fileobj=inputfile, mode="rb");
   inputfile.seek(0, 0);
  pycatfile.CatFileListFiles(inputfile, 0, 0, False, getargs.verbose, False);
