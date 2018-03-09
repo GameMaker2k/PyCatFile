@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import sys, argparse, logging, pycatfile;
+import sys, logging, argparse, pycatfile;
 
 teststringio = 0;
 if(teststringio<=0):

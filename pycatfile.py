@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import os, sys, re, stat, logging, zlib, hashlib, binascii, shutil, tempfile;
+import os, re, sys, stat, zlib, shutil, hashlib, logging, binascii, tempfile;
 
 if(sys.version[0]=="2"):
  from io import open as open;

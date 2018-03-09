@@ -16,8 +16,8 @@
     $FileInfo: setup.py - Last Update: 3/9/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
-import re, os, sys, pkg_resources;
-from setuptools import setup, find_packages;
+import os, re, sys, pkg_resources;
+from setuptools import setup;
 
 verinfofilename = os.path.realpath("."+os.path.sep+os.path.sep+"pycatfile.py");
 verinfofile = open(verinfofilename, "r");
