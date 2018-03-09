@@ -14,7 +14,7 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: catfile.py - Last Update: 3/8/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: catfile.py - Last Update: 3/9/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
@@ -111,78 +111,12 @@ if(should_create and not getargs.tar and getargs.repack):
  if(getargs.verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
 if(should_create and not should_extract and not should_list and not should_repack and not should_convert):
- if(getargs.output=="-"):
-   pycatout = pycatfile.PackCatFile(getargs.input, getargs.output, False, getargs.checksum, False, False);
-   sys.stdout.buffer.write(pycatout.read());
-   pycatout.close();
- else:
-  pycatfile.PackCatFile(getargs.input, getargs.output, False, getargs.checksum, getargs.verbose, False);
+ pycatfile.PackCatFile(getargs.input, getargs.output, False, getargs.checksum, getargs.verbose, False);
 if(should_create and not should_extract and not should_list and not should_repack and should_convert):
- inputfile = getargs.input;
- if(inputfile=="-"):
-  import shutil;
-  inputfile = BytesIO();
-  if(hasattr(sys.stdin, "buffer")):
-   shutil.copyfileobj(sys.stdin.buffer, inputfile);
-  else:
-   shutil.copyfileobj(sys.stdin, inputfile);
-  inputfile.seek(0, 0);
- if(getargs.output=="-"):
-   pycatout = pycatfile.PackCatFileFromTarFile(inputfile, getargs.output, getargs.checksum, getargs.verbose, False);
-   sys.stdout.buffer.write(pycatout.read());
-   pycatout.close();
- else:
-  pycatfile.PackCatFileFromTarFile(inputfile, getargs.output, getargs.checksum, getargs.verbose, False);
+ pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose, False);
 if(should_create and not should_extract and not should_list and should_repack and not should_convert):
- inputfile = getargs.input;
- if(inputfile=="-"):
-  import shutil;
-  inputfile = BytesIO();
-  if(hasattr(sys.stdin, "buffer")):
-   shutil.copyfileobj(sys.stdin.buffer, inputfile);
-  else:
-   shutil.copyfileobj(sys.stdin, inputfile);
-  inputfile.seek(0, 0);
-  compresscheck = pycatfile.CheckFileType(inputfile, False);
-  if(compresscheck=="gzip"):
-   import gzip;
-   inputfile = gzip.GzipFile(fileobj=inputfile, mode="rb");
-  inputfile.seek(0, 0);
- if(getargs.output=="-"):
-   pycatout = pycatfile.RePackCatFile(inputfile, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
-   sys.stdout.buffer.write(pycatout.read());
-   pycatout.close();
- else:
-  pycatfile.RePackCatFile(inputfile, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
+ pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
 if(not should_create and should_extract and not should_list):
- inputfile = getargs.input;
- if(inputfile=="-"):
-  import shutil;
-  inputfile = BytesIO();
-  if(hasattr(sys.stdin, "buffer")):
-   shutil.copyfileobj(sys.stdin.buffer, inputfile);
-  else:
-   shutil.copyfileobj(sys.stdin, inputfile);
-  inputfile.seek(0, 0);
-  compresscheck = pycatfile.CheckFileType(inputfile, False);
-  if(compresscheck=="gzip"):
-   import gzip;
-   inputfile = gzip.GzipFile(fileobj=inputfile, mode="rb");
-  inputfile.seek(0, 0);
- pycatfile.UnPackCatFile(inputfile, getargs.output, False, getargs.verbose, False);
+ pycatfile.UnPackCatFile(getargs.input, getargs.output, False, getargs.verbose, False);
 if(not should_create and not should_extract and should_list):
- inputfile = getargs.input;
- if(inputfile=="-"):
-  import shutil;
-  inputfile = BytesIO();
-  if(hasattr(sys.stdin, "buffer")):
-   shutil.copyfileobj(sys.stdin.buffer, inputfile);
-  else:
-   shutil.copyfileobj(sys.stdin, inputfile);
-  inputfile.seek(0, 0);
-  compresscheck = pycatfile.CheckFileType(inputfile, False);
-  if(compresscheck=="gzip"):
-   import gzip;
-   inputfile = gzip.GzipFile(fileobj=inputfile, mode="rb");
-  inputfile.seek(0, 0);
- pycatfile.CatFileListFiles(inputfile, 0, 0, False, getargs.verbose, False);
+ pycatfile.CatFileListFiles(getargs.input, 0, 0, False, getargs.verbose, False);

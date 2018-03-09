@@ -14,7 +14,7 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 3/8/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 3/9/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
@@ -54,7 +54,7 @@ __program_name__ = "PyCatFile";
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 0, 1, "RC 1", 1);
-__version_date_info__ = (2018, 3, 8, "RC 1", 1);
+__version_date_info__ = (2018, 3, 9, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
@@ -126,7 +126,7 @@ def AppendNullByte(indata):
  outdata = str(indata) + "\0";
  return outdata;
 
-def CheckFileType(infile, closefp=True):
+def CheckCompressionType(infile, closefp=True):
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
  else:
@@ -255,6 +255,7 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
  if(os.path.exists(outfile)):
   os.unlink(outfile);
  if(outfile=="-"):
+  verbose = False;
   catfp = BytesIO();
  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
@@ -361,12 +362,20 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
   nullstrecd = "\0".encode();
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfp.write(catfileout);
- if(outfile=="-" or returnfp):
+ if(outfile=="-"):
+  import shutil;
+  catfp.seek(0, 0);
+  if(hasattr(sys.stdout, "buffer")):
+   shutil.copyfileobj(catfp, sys.stdout.buffer);
+  else:
+   shutil.copyfileobj(catfp, sys.stdout);
+ if(returnfp):
   catfp.seek(0, 0);
   return catfp;
  else:
   catfp.close();
-  CompressCatFile(outfile, None);
+  if(outfile!="-"):
+   CompressCatFile(outfile, None);
   return True;
 
 if(tarsupport):
@@ -381,13 +390,13 @@ if(tarsupport):
    tarinput.seek(0, 0);
    tarinput = tarfile.open(fileobj=tarinput, mode="r:*");
   elif(infile=="-"):
+   import shutil;
+   verbose = False;
    tarinput = BytesIO();
    if(hasattr(sys.stdin, "buffer")):
-    for line in sys.stdin.buffer:
-     tarinput.write(line);
+    shutil.copyfileobj(sys.stdin.buffer, tarinput);
    else:
-    for line in sys.stdin:
-     tarinput.write(line);
+    shutil.copyfileobj(sys.stdin, tarinput);
    tarinput.seek(0, 0);
    tarinput = tarfile.open(fileobj=tarinput, mode="r:*");
   else:
@@ -485,21 +494,29 @@ if(tarsupport):
    nullstrecd = "\0".encode();
    catfileout = catfileoutstrecd + fcontents + nullstrecd;
    catfp.write(catfileout);
-  if(outfile=="-" or not returnfp):
+  if(outfile=="-"):
+   import shutil;
+   catfp.seek(0, 0);
+   if(hasattr(sys.stdout, "buffer")):
+    shutil.copyfileobj(catfp, sys.stdout.buffer);
+   else:
+    shutil.copyfileobj(catfp, sys.stdout);
+  if(returnfp):
    tarinput.close();
    catfp.seek(0, 0);
    return catfp;
   else:
    catfp.close();
    tarinput.close();
-   CompressCatFile(outfile, None);
+   if(outfile!="-"):
+    CompressCatFile(outfile, None);
    return True;
 
 def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
   catfp.seek(0, 0);
-  compresscheck = CheckFileType(catfp, False);
+  compresscheck = CheckCompressionType(catfp, False);
   if(compresscheck=="gzip"):
    import gzip;
    catfp = gzip.GzipFile(fileobj=catfp, mode="rb");
@@ -507,15 +524,14 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    return False;
   catfp.seek(0, 0);
  elif(infile=="-"):
+  import shutil;
   catfp = BytesIO();
   if(hasattr(sys.stdin, "buffer")):
-   for line in sys.stdin.buffer:
-    catfp.write(line);
+   shutil.copyfileobj(sys.stdin.buffer, catfp);
   else:
-   for line in sys.stdin:
-    catfp.write(line);
+   shutil.copyfileobj(sys.stdin, catfp);
   catfp.seek(0, 0);
-  compresscheck = CheckFileType(catfp, False);
+  compresscheck = CheckCompressionType(catfp, False);
   if(compresscheck=="gzip"):
    import gzip;
    catfp = gzip.GzipFile(fileobj=catfp, mode="rb");
@@ -523,7 +539,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    return False;
  else:
   infile = RemoveWindowsPath(infile);
-  compresscheck = CheckFileType(infile, True);
+  compresscheck = CheckCompressionType(infile, True);
   if(not compresscheck):
    fextname = os.path.splitext(infile)[1];
    if(fextname==".gz" or fextname==".cgz"):
@@ -723,6 +739,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
  if(not listcatfiles):
   return False;
  if(outfile=="-"):
+  verbose = False;
   catfp = BytesIO();
  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
@@ -790,12 +807,20 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfp.write(catfileout);
   lcfi = lcfi + 1;
- if(outfile=="-" or returnfp):
+ if(outfile=="-"):
+  import shutil;
+  catfp.seek(0, 0);
+  if(hasattr(sys.stdout, "buffer")):
+   shutil.copyfileobj(catfp, sys.stdout.buffer);
+  else:
+   shutil.copyfileobj(catfp, sys.stdout);
+ if(returnfp):
   catfp.seek(0, 0);
   return catfp;
  else:
   catfp.close();
-  CompressCatFile(outfile, None);
+  if(outfile!="-"):
+   CompressCatFile(outfile, None);
   return True;
 
 def RePackCatFileFromString(catstr, outfile, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
