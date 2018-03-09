@@ -108,8 +108,8 @@ if(not tarsupport and should_convert):
 should_repack = False;
 if(should_create and not getargs.tar and getargs.repack):
  should_repack = True;
- if(getargs.verbose):
-  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+if(getargs.verbose):
+ logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
 if(should_create and not should_extract and not should_list and not should_repack and not should_convert):
  pycatfile.PackCatFile(getargs.input, getargs.output, False, getargs.checksum, getargs.verbose, False);
 if(should_create and not should_extract and not should_list and not should_repack and should_convert):
