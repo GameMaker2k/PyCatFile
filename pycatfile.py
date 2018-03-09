@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import os, sys, re, stat, logging, zlib, hashlib, binascii;
+import os, sys, re, stat, logging, zlib, hashlib, binascii, shutil, tempfile;
 
 if(sys.version[0]=="2"):
  from io import open as open;
@@ -162,7 +162,7 @@ def CompressCatFile(infile, outext):
   fextname = "."+outext;
  if(fextname==".gz" or fextname==".cgz"):
   try:
-   import gzip, shutil, tempfile;
+   import gzip;
   except ImportError:
    return False;
   if(os.path.exists(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")))):
@@ -178,7 +178,7 @@ def CompressCatFile(infile, outext):
   os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
  if(fextname==".bz2" or fextname==".cbz"):
   try:
-   import bz2, shutil, tempfile;
+   import bz2;
   except ImportError:
    return False;
   if(os.path.exists(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")))):
@@ -194,7 +194,7 @@ def CompressCatFile(infile, outext):
   os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
  if(fextname==".lzma" or fextname==".xz" or fextname==".cxz"):
   try:
-   import lzma, shutil, tempfile;
+   import lzma;
   except ImportError:
    return False;
   if(os.path.exists(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")))):
@@ -363,7 +363,6 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfp.write(catfileout);
  if(outfile=="-"):
-  import shutil;
   catfp.seek(0, 0);
   if(hasattr(sys.stdout, "buffer")):
    shutil.copyfileobj(catfp, sys.stdout.buffer);
@@ -390,7 +389,6 @@ if(tarsupport):
    tarinput.seek(0, 0);
    tarinput = tarfile.open(fileobj=tarinput, mode="r:*");
   elif(infile=="-"):
-   import shutil;
    verbose = False;
    tarinput = BytesIO();
    if(hasattr(sys.stdin, "buffer")):
@@ -495,7 +493,6 @@ if(tarsupport):
    catfileout = catfileoutstrecd + fcontents + nullstrecd;
    catfp.write(catfileout);
   if(outfile=="-"):
-   import shutil;
    catfp.seek(0, 0);
    if(hasattr(sys.stdout, "buffer")):
     shutil.copyfileobj(catfp, sys.stdout.buffer);
@@ -524,7 +521,6 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    return False;
   catfp.seek(0, 0);
  elif(infile=="-"):
-  import shutil;
   catfp = BytesIO();
   if(hasattr(sys.stdin, "buffer")):
    shutil.copyfileobj(sys.stdin.buffer, catfp);
@@ -808,7 +804,6 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
   catfp.write(catfileout);
   lcfi = lcfi + 1;
  if(outfile=="-"):
-  import shutil;
   catfp.seek(0, 0);
   if(hasattr(sys.stdout, "buffer")):
    shutil.copyfileobj(catfp, sys.stdout.buffer);
