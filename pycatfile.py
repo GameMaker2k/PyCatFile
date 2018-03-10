@@ -864,7 +864,9 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   fmtime = format(int(listcatfiles[lcfi]['fmtime']), 'x').upper();
   fmode = format(int(int(listcatfiles[lcfi]['fmode'], 8)), 'x').upper();
   fuid = format(int(listcatfiles[lcfi]['fuid']), 'x').upper();
+  funame = listcatfiles[lcfi]['funame'];
   fgid = format(int(listcatfiles[lcfi]['fgid']), 'x').upper();
+  fgname = listcatfiles[lcfi]['fgname'];
   fdev_minor = format(int(listcatfiles[lcfi]['fminor']), 'x').upper();
   fdev_major = format(int(listcatfiles[lcfi]['fmajor']), 'x').upper();
   frdev_minor = format(int(listcatfiles[lcfi]['frminor']), 'x').upper();
@@ -882,7 +884,9 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmode);
   catfileoutstr = catfileoutstr + AppendNullByte(fuid);
+  catfileoutstr = catfileoutstr + AppendNullByte(funame);
   catfileoutstr = catfileoutstr + AppendNullByte(fgid);
+  catfileoutstr = catfileoutstr + AppendNullByte(fgname);
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
