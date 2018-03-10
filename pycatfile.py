@@ -911,10 +911,7 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose
    permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
    permissionstr = "";
    for fmodval in str(listcatfiles[lcfi]['fchmod'])[-3:]:
-    try:
-     permissionstr = permissionstr + permissions['access'][fmodval];
-    except KeyError:
-     permissionstr = permissionstr + "---";
+    permissionstr = permissionstr + permissions['access'].get(fmodval, '---');
    if(listcatfiles[lcfi]['ftype']==0):
     permissionstr = "-" + permissionstr;
    if(listcatfiles[lcfi]['ftype']==1):
