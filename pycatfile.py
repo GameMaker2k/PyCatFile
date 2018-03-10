@@ -160,72 +160,6 @@ def CheckCompressionType(infile, closefp=True):
   catfp.close();
  return filetype;
 
-def CompressCatFile(infile, outext, compression="auto"):
- if(hasattr(infile, "read") or hasattr(infile, "write")):
-  return True;
- fbasename = os.path.splitext(infile)[0];
- fextname = os.path.splitext(infile)[1];
- outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'lzma', 'xz', 'cxz'];
- outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.lzma', '.xz', '.cxz'];
- compressionlist = ['auto', 'gzip', 'bzip2', 'lzma', 'xz'];
- if(not compression in compressionlist):
-  compression = "auto";
- if(not fextname in outextlistwd and outext in outextlist):
-  fextname = "."+outext;
- if(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
-  try:
-   import gzip;
-  except ImportError:
-   return False;
-  if(os.path.exists(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")))):
-   os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
-  try:
-   os.rename(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
-  except OSError:
-   shutil.move(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
-  with open(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")), "rb") as catuncomp, gzip.open(infile, "wb", 9) as catcomp:
-   shutil.copyfileobj(catuncomp, catcomp);
-  catcomp.close();
-  catuncomp.close();
-  os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
- if(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
-  try:
-   import bz2;
-  except ImportError:
-   return False;
-  if(os.path.exists(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")))):
-   os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
-  try:
-   os.rename(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
-  except OSError:
-   shutil.move(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
-  with open(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")), "rb") as catuncomp, bz2.BZ2File(infile, "wb", 9) as catcomp:
-   shutil.copyfileobj(catuncomp, catcomp);
-  catcomp.close();
-  catuncomp.close();
-  os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
- if(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
-  try:
-   import lzma;
-  except ImportError:
-   return False;
-  if(os.path.exists(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")))):
-   os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
-  try:
-   os.rename(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
-  except OSError:
-   shutil.move(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
-  if((fextname==".lzma" and compression=="auto") or compression=="lzma"):
-   with open(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")), "rb") as catuncomp, lzma.open(infile, "wb", format=lzma.FORMAT_ALONE, preset=9) as catcomp:
-    shutil.copyfileobj(catuncomp, catcomp);
-  else:
-   with open(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")), "rb") as catuncomp, lzma.open(infile, "wb", format=lzma.FORMAT_XZ, preset=9) as catcomp:
-    shutil.copyfileobj(catuncomp, catcomp);
-  catcomp.close();
-  catuncomp.close();
-  os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
- return True;
-
 def UncompressCatFile(fp):
  if(not hasattr(fp, "read") and not hasattr(fp, "write")):
   return False;
@@ -514,7 +448,34 @@ if(tarsupport):
   elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
    catfp = outfile;
   else:
-   catfp = open(outfile, "wb");
+   fbasename = os.path.splitext(outfile)[0];
+   fextname = os.path.splitext(outfile)[1];
+   if(not fextname in outextlistwd):
+    catfp = open(outfile, "wb");
+   elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
+    try:
+     import gzip;
+    except ImportError:
+     return False;
+    catfp = gzip.open(outfile, "wb", 9);
+   elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
+    try:
+     import bz2;
+    except ImportError:
+     return False;
+    catfp = bz2.BZ2File(outfile, "wb", 9);
+   elif(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
+    try:
+     import lzma;
+    except ImportError:
+     return False;
+    catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=9);
+   elif((fextname==".lzma" and compression=="auto") or compression=="lzma"):
+    try:
+     import lzma;
+    except ImportError:
+     return False;
+    catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=9);
   catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
   fileheaderver = str(int(catver.replace(".", "")));
   fileheader = AppendNullByte("CatFile" + fileheaderver);
@@ -613,8 +574,6 @@ if(tarsupport):
   else:
    catfp.close();
    tarinput.close();
-   if(outfile!="-"):
-    CompressCatFile(outfile, None, compression);
    return True;
 
 if(tarsupport):
