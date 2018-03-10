@@ -943,7 +943,7 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose
    fgprint = listcatfiles[lcfi]['fgname']
    if(len(fgprint)<=0):
     fgprint = listcatfiles[lcfi]['fgid'];
-   logging.info(permissionstr + " " + str(str(fuprint) + "/" + str(fgprint]) + " " + str(listcatfiles[lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname));
+   logging.info(permissionstr + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(listcatfiles[lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname));
   lcfi = lcfi + 1;
  if(returnfp):
   return listcatfiles['catfp'];
