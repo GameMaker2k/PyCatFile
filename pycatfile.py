@@ -937,7 +937,13 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose
     printfname = listcatfiles[lcfi]['fname'] + " link to " + listcatfiles[lcfi]['flinkname'];
    if(listcatfiles[lcfi]['ftype']==2):
     printfname = listcatfiles[lcfi]['fname'] + " -> " + listcatfiles[lcfi]['flinkname'];
-   logging.info(permissionstr + " " + str(str(listcatfiles[lcfi]['fuid']) + "/" + str(listcatfiles[lcfi]['fgid']) + " " + str(listcatfiles[lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname));
+   fuprint = listcatfiles[lcfi]['funame'];
+   if(len(fuprint)<=0):
+    fuprint = listcatfiles[lcfi]['fuid'];
+   fgprint = listcatfiles[lcfi]['fgname']
+   if(len(fgprint)<=0):
+    fgprint = listcatfiles[lcfi]['fgid'];
+   logging.info(permissionstr + " " + str(str(fuprint) + "/" + str(fgprint]) + " " + str(listcatfiles[lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname));
   lcfi = lcfi + 1;
  if(returnfp):
   return listcatfiles['catfp'];
