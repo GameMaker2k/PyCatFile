@@ -323,7 +323,7 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
   try:
    import grp;
    groupinfo = grp.getgrgid(fstatinfo.st_gid);
-   fgname = group.gr_name;
+   fgname = groupinfo.gr_name;
   except ImportError:
    fgname = "";
   fdev_minor = format(int(fdev_minor), 'x').upper();
