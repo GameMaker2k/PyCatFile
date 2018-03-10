@@ -415,6 +415,8 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
 if(tarsupport):
  def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="crc32", verbose=False, returnfp=False):
   compressionlist = ['auto', 'gzip', 'bzip2', 'lzma', 'xz'];
+  outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'lzma', 'xz', 'cxz'];
+  outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.lzma', '.xz', '.cxz'];
   if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
    outfile = RemoveWindowsPath(outfile);
   checksumtype = checksumtype.lower();
@@ -793,6 +795,8 @@ def CatStringToArrayIndex(catstr, seekstart=0, seekend=0, listonly=False, skipch
 
 def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'lzma', 'xz'];
+ outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'lzma', 'xz', 'cxz'];
+ outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.lzma', '.xz', '.cxz'];
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
