@@ -460,6 +460,8 @@ if(tarsupport):
    fmode = format(int(curfname.mode), 'x').upper();
    fuid = format(int(curfname.uid), 'x').upper();
    fgid = format(int(curfname.gid), 'x').upper();
+   funame = curfname.uname;
+   fgname = curfname.gname;
    fdev_minor = format(int(curfname.devminor), 'x').upper();
    fdev_major = format(int(curfname.devmajor), 'x').upper();
    frdev_minor = format(int(curfname.devminor), 'x').upper();
