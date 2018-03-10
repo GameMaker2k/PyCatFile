@@ -151,16 +151,19 @@ def CheckCompressionType(infile, closefp=True):
   catfp.close();
  return filetype;
 
-def CompressCatFile(infile, outext):
+def CompressCatFile(infile, outext, compression="auto"):
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   return True;
  fbasename = os.path.splitext(infile)[0];
  fextname = os.path.splitext(infile)[1];
  outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'lzma', 'xz', 'cxz'];
  outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.lzma', '.xz', '.cxz'];
+ compressionlist = ['auto', 'gzip', 'bzip2', 'lzma', 'xz'];
+ if(not compression in compressionlist):
+  compression = "auto";
  if(not fextname in outextlistwd and outext in outextlist):
   fextname = "."+outext;
- if(fextname==".gz" or fextname==".cgz"):
+ if(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
   try:
    import gzip;
   except ImportError:
@@ -176,7 +179,7 @@ def CompressCatFile(infile, outext):
   catcomp.close();
   catuncomp.close();
   os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
- if(fextname==".bz2" or fextname==".cbz"):
+ if(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
   try:
    import bz2;
   except ImportError:
@@ -192,7 +195,7 @@ def CompressCatFile(infile, outext):
   catcomp.close();
   catuncomp.close();
   os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
- if(fextname==".lzma" or fextname==".xz" or fextname==".cxz"):
+ if(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
   try:
    import lzma;
   except ImportError:
@@ -203,7 +206,7 @@ def CompressCatFile(infile, outext):
    os.rename(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
   except OSError:
    shutil.move(infile, os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
-  if(fextname==".lzma"):
+  if((fextname==".lzma" and compression=="auto") or compression=="lzma"):
    with open(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")), "rb") as catuncomp, lzma.open(infile, "wb", format=lzma.FORMAT_ALONE, preset=9) as catcomp:
     shutil.copyfileobj(catuncomp, catcomp);
   else:
@@ -244,12 +247,15 @@ def CheckSumSupport(checkfor, checklist):
  else:
   return False;
 
-def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbose=False, returnfp=False):
+def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksumtype="crc32", verbose=False, returnfp=False):
+ compressionlist = ['auto', 'gzip', 'bzip2', 'lzma', 'xz'];
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
  if(not CheckSumSupport(checksumtype, 5)):
   checksumtype="crc32";
+ if(not compression in compressionlist):
+  compression = "auto";
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(os.path.exists(outfile)):
@@ -391,16 +397,19 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
  else:
   catfp.close();
   if(outfile!="-"):
-   CompressCatFile(outfile, None);
+   CompressCatFile(outfile, None, compression);
   return True;
 
 if(tarsupport):
- def PackCatFileFromTarFile(infile, outfile, checksumtype="crc32", verbose=False, returnfp=False):
+ def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="crc32", verbose=False, returnfp=False):
+  compressionlist = ['auto', 'gzip', 'bzip2', 'lzma', 'xz'];
   if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
    outfile = RemoveWindowsPath(outfile);
   checksumtype = checksumtype.lower();
   if(not CheckSumSupport(checksumtype, 5)):
    checksumtype="crc32";
+  if(not compression in compressionlist):
+   compression = "auto";
   if(hasattr(infile, "read") or hasattr(infile, "write")):
    tarinput = infile;
    tarinput.seek(0, 0);
@@ -527,8 +536,14 @@ if(tarsupport):
    catfp.close();
    tarinput.close();
    if(outfile!="-"):
-    CompressCatFile(outfile, None);
+    CompressCatFile(outfile, None, compression);
    return True;
+
+if(tarsupport):
+ def RePackCatFileFromString(tarstr, outfile, compression="auto", checksumtype="crc32", verbose=False, returnfp=False):
+  catfp = BytesIO(tarstr);
+  listcatfiles = PackCatFileFromTarFile(infile, outfile, compression, checksumtype, verbose, returnfp);
+  return listcatfiles;
 
 def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
  if(hasattr(infile, "read") or hasattr(infile, "write")):
@@ -741,7 +756,8 @@ def CatStringToArrayIndex(catstr, seekstart=0, seekend=0, listonly=False, skipch
  listcatfiles = CatFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
  return listcatfiles;
 
-def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
+def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
+ compressionlist = ['auto', 'gzip', 'bzip2', 'lzma', 'xz'];
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
@@ -753,6 +769,8 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
  checksumtype = checksumtype.lower();
  if(not CheckSumSupport(checksumtype, 5)):
   checksumtype="crc32";
+ if(not compression in compressionlist):
+  compression = "auto";
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(not listcatfiles):
@@ -838,12 +856,12 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, checksumtype="crc32",
  else:
   catfp.close();
   if(outfile!="-"):
-   CompressCatFile(outfile, None);
+   CompressCatFile(outfile, None, compression);
   return True;
 
-def RePackCatFileFromString(catstr, outfile, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
+def RePackCatFileFromString(catstr, outfile, seekstart=0, seekend=0, compression="auto", checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
  catfp = BytesIO(catstr);
- listcatfiles = RePackCatFile(catfp, seekstart, seekend, checksumtype, skipchecksum, verbose, returnfp);
+ listcatfiles = RePackCatFile(catfp, seekstart, seekend, compression, checksumtype, skipchecksum, verbose, returnfp);
  return listcatfiles;
 
 def UnPackCatFile(infile, outdir=None, skipchecksum=False, verbose=False, returnfp=False):

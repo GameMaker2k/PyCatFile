@@ -111,11 +111,11 @@ if(should_create and not getargs.tar and getargs.repack):
 if(getargs.verbose):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
 if(should_create and not should_extract and not should_list and not should_repack and not should_convert):
- pycatfile.PackCatFile(getargs.input, getargs.output, False, getargs.checksum, getargs.verbose, False);
+ pycatfile.PackCatFile(getargs.input, getargs.output, "auto", False, getargs.checksum, getargs.verbose, False);
 if(should_create and not should_extract and not should_list and not should_repack and should_convert):
- pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.checksum, getargs.verbose, False);
+ pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, "auto", getargs.checksum, getargs.verbose, False);
 if(should_create and not should_extract and not should_list and should_repack and not should_convert):
- pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.checksum, False, getargs.verbose, False);
+ pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, "auto", getargs.checksum, False, getargs.verbose, False);
 if(not should_create and should_extract and not should_list):
  pycatfile.UnPackCatFile(getargs.input, getargs.output, False, getargs.verbose, False);
 if(not should_create and not should_extract and should_list):
