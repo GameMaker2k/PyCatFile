@@ -14,7 +14,7 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 3/9/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 3/10/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
@@ -54,7 +54,7 @@ __program_name__ = "PyCatFile";
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 0, 1, "RC 1", 1);
-__version_date_info__ = (2018, 3, 9, "RC 1", 1);
+__version_date_info__ = (2018, 3, 10, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
@@ -300,6 +300,8 @@ def CheckSumSupport(checkfor, checklist):
 
 def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksumtype="crc32", verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'lzma', 'xz'];
+ outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'lzma', 'xz', 'cxz'];
+ outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.lzma', '.xz', '.cxz'];
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -317,7 +319,34 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
  else:
-  catfp = open(outfile, "wb");
+  fbasename = os.path.splitext(outfile)[0];
+  fextname = os.path.splitext(outfile)[1];
+  if(not fextname in outextlistwd):
+   catfp = open(outfile, "wb");
+  elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
+   try:
+    import gzip;
+   except ImportError:
+    return False;
+   catfp = gzip.open(outfile, "wb", 9);
+  elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
+   try:
+    import bz2;
+   except ImportError:
+    return False;
+   catfp = bz2.BZ2File(outfile, "wb", 9);
+  elif(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
+   try:
+    import lzma;
+   except ImportError:
+    return False;
+   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=9);
+  elif((fextname==".lzma" and compression=="auto") or compression=="lzma"):
+   try:
+    import lzma;
+   except ImportError:
+    return False;
+   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=9);
  catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
@@ -447,8 +476,6 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
   return catfp;
  else:
   catfp.close();
-  if(outfile!="-"):
-   CompressCatFile(outfile, None, compression);
   return True;
 
 if(tarsupport):
@@ -830,7 +857,34 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
  else:
-  catfp = open(outfile, "wb");
+  fbasename = os.path.splitext(outfile)[0];
+  fextname = os.path.splitext(outfile)[1];
+  if(not fextname in outextlistwd):
+   catfp = open(outfile, "wb");
+  elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
+   try:
+    import gzip;
+   except ImportError:
+    return False;
+   catfp = gzip.open(outfile, "wb", 9);
+  elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
+   try:
+    import bz2;
+   except ImportError:
+    return False;
+   catfp = bz2.BZ2File(outfile, "wb", 9);
+  elif(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
+   try:
+    import lzma;
+   except ImportError:
+    return False;
+   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=9);
+  elif((fextname==".lzma" and compression=="auto") or compression=="lzma"):
+   try:
+    import lzma;
+   except ImportError:
+    return False;
+   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=9);
  catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
@@ -904,8 +958,6 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   return catfp;
  else:
   catfp.close();
-  if(outfile!="-"):
-   CompressCatFile(outfile, None, compression);
   return True;
 
 def RePackCatFileFromString(catstr, outfile, seekstart=0, seekend=0, compression="auto", checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
