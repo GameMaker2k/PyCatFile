@@ -350,7 +350,9 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
   catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmode);
   catfileoutstr = catfileoutstr + AppendNullByte(fuid);
+  catfileoutstr = catfileoutstr + AppendNullByte(funame);
   catfileoutstr = catfileoutstr + AppendNullByte(fgid);
+  catfileoutstr = catfileoutstr + AppendNullByte(fgname);
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
@@ -482,7 +484,9 @@ if(tarsupport):
    catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
    catfileoutstr = catfileoutstr + AppendNullByte(fmode);
    catfileoutstr = catfileoutstr + AppendNullByte(fuid);
+   catfileoutstr = catfileoutstr + AppendNullByte(funame);
    catfileoutstr = catfileoutstr + AppendNullByte(fgid);
+   catfileoutstr = catfileoutstr + AppendNullByte(fgname);
    catfileoutstr = catfileoutstr + AppendNullByte(fdev_minor);
    catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
    catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
@@ -599,7 +603,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   seekend = CatSizeEnd;
  while(seekstart<seekend):
   catfhstart = catfp.tell();
-  catheaderdata = ReadFileHeaderData(catfp, 17);
+  catheaderdata = ReadFileHeaderData(catfp, 19);
   catfheadersize = int(catheaderdata[0], 16);
   catftype = int(catheaderdata[1], 16);
   catfname = catheaderdata[2];
@@ -611,18 +615,20 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catprefchmod = oct(int(catfmode[-3:], 8));
   catfchmod = catprefchmod;
   catfuid = int(catheaderdata[8], 16);
-  catfgid = int(catheaderdata[9], 16);
-  catfdev_minor = int(catheaderdata[10], 16);
-  catfdev_major = int(catheaderdata[11], 16);
-  catfrdev_minor = int(catheaderdata[12], 16);
-  catfrdev_major = int(catheaderdata[13], 16);
-  catfchecksumtype = catheaderdata[14].lower();
+  catfuname = catheaderdata[9];
+  catfgid = int(catheaderdata[10], 16);
+  catfgname = catheaderdata[11];
+  catfdev_minor = int(catheaderdata[12], 16);
+  catfdev_major = int(catheaderdata[13], 16);
+  catfrdev_minor = int(catheaderdata[14], 16);
+  catfrdev_major = int(catheaderdata[15], 16);
+  catfchecksumtype = catheaderdata[16].lower();
   if(CheckSumSupport(catfchecksumtype, 3)):
-   catfcs = int(catheaderdata[15], 16);
-   catfccs = int(catheaderdata[16], 16);
+   catfcs = int(catheaderdata[17], 16);
+   catfccs = int(catheaderdata[18], 16);
   if(CheckSumSupport(catfchecksumtype, 4)):
-   catfcs = catheaderdata[15];
-   catfccs = catheaderdata[16];
+   catfcs = catheaderdata[17];
+   catfccs = catheaderdata[18];
   hc = 1;
   hcmax = len(catheaderdata) - 2;
   hout = "";
@@ -662,7 +668,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catfp.seek(catfsize, 1);
    pyhascontents = False;
   catfcontentend = catfp.tell();
-  catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'flinkname': catflinkname, 'fsize': catfsize, 'fheadersize': catfheadersize, 'fatime': catfatime, 'fmtime': catfmtime, 'fmode': catfmode, 'fchmod': catfchmod, 'fuid': catfuid, 'fgid': catfgid, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
+  catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'flinkname': catflinkname, 'fsize': catfsize, 'fheadersize': catfheadersize, 'fatime': catfatime, 'fmtime': catfmtime, 'fmode': catfmode, 'fchmod': catfchmod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
   catfp.seek(1, 1);
   seekstart = catfp.tell();
   fileidnum = fileidnum + 1;
