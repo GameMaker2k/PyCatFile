@@ -311,6 +311,20 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
   fmode = format(int(fstatinfo.st_mode), 'x').upper();
   fuid = format(int(fstatinfo.st_uid), 'x').upper();
   fgid = format(int(fstatinfo.st_gid), 'x').upper();
+  funame = "";
+  try:
+   import pwd;
+   userinfo = pwd.getpwuid(st_uid);
+   funame = userinfo.pw_name;
+  except ImportError:
+   funame = "";
+  fgname = "";
+  try:
+   import grp;
+   groupinfo = grp.getgrgid(st_gid);
+   fgname = group.gr_name;
+  except ImportError:
+   fgname = "";
   fdev_minor = format(int(fdev_minor), 'x').upper();
   fdev_major = format(int(fdev_major), 'x').upper();
   frdev_minor = format(int(frdev_minor), 'x').upper();
