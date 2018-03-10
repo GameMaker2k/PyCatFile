@@ -315,14 +315,14 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
   funame = "";
   try:
    import pwd;
-   userinfo = pwd.getpwuid(st_uid);
+   userinfo = pwd.getpwuid(fstatinfo.st_uid);
    funame = userinfo.pw_name;
   except ImportError:
    funame = "";
   fgname = "";
   try:
    import grp;
-   groupinfo = grp.getgrgid(st_gid);
+   groupinfo = grp.getgrgid(fstatinfo.st_gid);
    fgname = group.gr_name;
   except ImportError:
    fgname = "";
