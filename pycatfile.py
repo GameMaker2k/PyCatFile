@@ -217,6 +217,48 @@ def CompressCatFile(infile, outext, compression="auto"):
   os.unlink(os.path.join(tempfile.gettempdir(), os.path.basename(fbasename+".tmp")));
  return True;
 
+def UncompressCatFile(fp):
+ if(not hasattr(fp, "read") and not hasattr(fp, "write")):
+  return False;
+ compresscheck = CheckCompressionType(fp, False);
+ if(compresscheck=="gzip"):
+  try:
+   import gzip;
+  except ImportError:
+   return False;
+  catfp = gzip.GzipFile(fileobj=fp, mode="rb");
+ if(compresscheck=="bzip2"):
+  try:
+   import bz2;
+  except ImportError:
+   return False;
+  catfp = BytesIO();
+  with fp as fpcontent:
+   catfp.write(bz2.decompress(fp.read()));
+ if(compresscheck=="lzma"):
+  try:
+   import lzma;
+  except ImportError:
+   return False;
+  catfp = BytesIO();
+  with fp as fpcontent:
+   catfp.write(lzma.decompress(fp.read()));
+ if(compresscheck=="catfile"):
+  catfp = fp;
+ if(not compresscheck):
+  try:
+   import lzma;
+  except ImportError:
+   return False;
+  catfp = BytesIO();
+  with fp as fpcontent:
+   try:
+    catfp.write(lzma.decompress(fp.read()));
+   except lzma.LZMAError:
+    return False;
+ return catfp;
+  
+
 def GetDevMajorMinor(fdev):
  retdev = [];
  if(hasattr(os, "minor")):
@@ -549,11 +591,8 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
   catfp.seek(0, 0);
-  compresscheck = CheckCompressionType(catfp, False);
-  if(compresscheck=="gzip"):
-   import gzip;
-   catfp = gzip.GzipFile(fileobj=catfp, mode="rb");
-  if(compresscheck!="gzip" and compresscheck!="catfile"):
+  catfp = UncompressCatFile(catfp);
+  if(not catfp):
    return False;
   catfp.seek(0, 0);
  elif(infile=="-"):
@@ -563,12 +602,10 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   else:
    shutil.copyfileobj(sys.stdin, catfp);
   catfp.seek(0, 0);
-  compresscheck = CheckCompressionType(catfp, False);
-  if(compresscheck=="gzip"):
-   import gzip;
-   catfp = gzip.GzipFile(fileobj=catfp, mode="rb");
-  if(compresscheck!="gzip" and compresscheck!="catfile"):
+  catfp = UncompressCatFile(catfp);
+  if(not catfp):
    return False;
+  catfp.seek(0, 0);
  else:
   infile = RemoveWindowsPath(infile);
   compresscheck = CheckCompressionType(infile, True);
@@ -602,7 +639,11 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catfp = lzma.open(infile, "rb");
   if(compresscheck=="catfile"):
    catfp = open(infile, "rb");
- catfp.seek(0, 2);
+ try:
+  catfp.seek(0, 2);
+ except ValueError:
+  logging.info("Seek from end not supported with gzip on Python 2");
+  return False;
  CatSize = catfp.tell();
  CatSizeEnd = CatSize;
  catfp.seek(0, 0);
