@@ -292,9 +292,10 @@ def PackCatFile(infiles, outfile, followlink=False, checksumtype="crc32", verbos
   getfdev = GetDevMajorMinor(fdev);
   fdev_minor = getfdev[0];
   fdev_major = getfdev[1];
-  try:
+  frdev = fstatinfo.st_dev;
+  if(hasattr(fstatinfo, "st_rdev")):
    frdev = fstatinfo.st_rdev;
-  except AttributeError:
+  else:
    frdev = fstatinfo.st_dev;
   getfrdev = GetDevMajorMinor(frdev);
   frdev_minor = getfrdev[0];
