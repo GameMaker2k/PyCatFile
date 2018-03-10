@@ -112,6 +112,15 @@ def ReadTillNullByte(fp):
 def ReadUntilNullByte(fp):
  return ReadTillNullByte(fp);
 
+def SeekToEndOfFile(fp):
+ lasttell = 0;
+ while(True):
+  fp.seek(1, 1);
+  if(lasttell==fp.tell()):
+   break;
+  lasttell = fp.tell();
+ return True;
+
 def ReadFileHeaderData(fp, rounds=0):
  rocount = 0;
  roend = int(rounds);
@@ -642,8 +651,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  try:
   catfp.seek(0, 2);
  except ValueError:
-  logging.info("Seek from end not supported with gzip on Python 2");
-  return False;
+  SeekToEndOfFile(catfp);
  CatSize = catfp.tell();
  CatSizeEnd = CatSize;
  catfp.seek(0, 0);
