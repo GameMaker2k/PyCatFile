@@ -202,6 +202,9 @@ def UncompressCatFile(fp):
  return catfp;
   
 def CompressCatFile(fp, compression="auto"):
+ if(not hasattr(fp, "read") and not hasattr(fp, "write")):
+  return False;
+ fp.seek(0, 0);
  if(compression=="gzip"):
   try:
    import gzip;
@@ -231,6 +234,7 @@ def CompressCatFile(fp, compression="auto"):
   catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ, preset=9));
  if(compression=="auto"):
   catfp = fp;
+ catfp.seek(0, 0);
  return catfp;
 
 def GetDevMajorMinor(fdev):
