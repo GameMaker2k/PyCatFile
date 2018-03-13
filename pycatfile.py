@@ -88,14 +88,19 @@ def RemoveWindowsPath(dpath):
 
 def ListDir(dirpath):
  retlist = [];
- for root, dirs, filenames in os.walk(dirpath):
-  dpath = root;
-  dpath = RemoveWindowsPath(dpath);
-  retlist.append(dpath);
-  for file in filenames:
-   fpath = os.path.join(root, file);
-   fpath = RemoveWindowsPath(fpath);
-   retlist.append(fpath);
+ if(not os.path.exists(dirpath)):
+  return False;
+ if(os.path.exists(dirpath) and os.path.isdir(dirpath)):
+  for root, dirs, filenames in os.walk(dirpath):
+   dpath = root;
+   dpath = RemoveWindowsPath(dpath);
+   retlist.append(dpath);
+   for file in filenames:
+    fpath = os.path.join(root, file);
+    fpath = RemoveWindowsPath(fpath);
+    retlist.append(fpath);
+ else:
+  retlist.append(dirpath);
  return retlist;
 
 def ReadTillNullByte(fp):
@@ -336,6 +341,8 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
  fileheader = AppendNullByte("CatFile" + fileheaderver);
  catfp.write(fileheader.encode());
  GetDirList = ListDir(infiles);
+ if(not GetDirList):
+  return False;
  for curfname in GetDirList:
   fname = curfname;
   if(verbose):
