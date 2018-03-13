@@ -344,7 +344,7 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
  catfp.write(fileheader.encode());
- GetDirList = ListDir(infiles);
+ GetDirList = ListDir(infiles, followlink);
  if(not GetDirList):
   return False;
  for curfname in GetDirList:
