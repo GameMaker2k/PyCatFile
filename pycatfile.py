@@ -14,7 +14,7 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 3/10/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 3/12/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
@@ -54,7 +54,7 @@ __program_name__ = "PyCatFile";
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 0, 1, "RC 1", 1);
-__version_date_info__ = (2018, 3, 10, "RC 1", 1);
+__version_date_info__ = (2018, 3, 12, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
@@ -176,16 +176,14 @@ def UncompressCatFile(fp):
   except ImportError:
    return False;
   catfp = BytesIO();
-  with fp as fpcontent:
-   catfp.write(bz2.decompress(fp.read()));
+  catfp.write(bz2.decompress(fp.read()));
  if(compresscheck=="lzma"):
   try:
    import lzma;
   except ImportError:
    return False;
   catfp = BytesIO();
-  with fp as fpcontent:
-   catfp.write(lzma.decompress(fp.read()));
+  catfp.write(lzma.decompress(fp.read()));
  if(compresscheck=="catfile"):
   catfp = fp;
  if(not compresscheck):
@@ -200,7 +198,22 @@ def UncompressCatFile(fp):
    except lzma.LZMAError:
     return False;
  return catfp;
-  
+
+def GZipCompress(data, compresslevel=9):
+ try:
+  import gzip;
+ except ImportError:
+  return False;
+ tmpfp = tempfile.NamedTemporaryFile("w+b", delete=False);
+ tmpfp.close();
+ tmpfp = gzip.GzipFile(tmpfp.name, mode="wb", compresslevel=compresslevel);
+ tmpfp.write(data);
+ tmpfp.close();
+ catfp = open(tmpfp.name, "rb");
+ catdata = catfp.read();
+ catfp.close();
+ return catdata;
+
 def CompressCatFile(fp, compression="auto"):
  if(not hasattr(fp, "read") and not hasattr(fp, "write")):
   return False;
@@ -210,7 +223,8 @@ def CompressCatFile(fp, compression="auto"):
    import gzip;
   except ImportError:
    return False;
-  catfp = gzip.GzipFile(fileobj=fp, mode="wb", compresslevel=9);
+  catfp = BytesIO();
+  catfp.write(GZipCompress(fp.read(), compresslevel=9));
  if(compression=="bzip2"):
   try:
    import bz2;

@@ -14,7 +14,7 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: catfile.py - Last Update: 3/10/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: catfile.py - Last Update: 3/12/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
@@ -63,6 +63,7 @@ argparser.add_argument("-e", "-x", "--extract", action="store_true", help="extra
 argparser.add_argument("-l", "-t", "--list", action="store_true", help="list files only");
 argparser.add_argument("-r", "--repack", action="store_true", help="reconcatenate files only fixing checksum errors");
 argparser.add_argument("-o", "--output", default=None, help="extract concatenate files to or concatenate output name");
+argparser.add_argument("-compress", "--compress", default="auto", help="extract concatenate files to or concatenate output name");
 getargs = argparser.parse_args();
 
 should_extract = False;
@@ -111,11 +112,11 @@ if(should_create and not getargs.tar and getargs.repack):
 if(getargs.verbose):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
 if(should_create and not should_extract and not should_list and not should_repack and not should_convert):
- pycatfile.PackCatFile(getargs.input, getargs.output, "auto", False, getargs.checksum, getargs.verbose, False);
+ pycatfile.PackCatFile(getargs.input, getargs.output, getargs.compress, False, getargs.checksum, getargs.verbose, False);
 if(should_create and not should_extract and not should_list and not should_repack and should_convert):
- pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, "auto", getargs.checksum, getargs.verbose, False);
+ pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.compress, getargs.checksum, getargs.verbose, False);
 if(should_create and not should_extract and not should_list and should_repack and not should_convert):
- pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, "auto", getargs.checksum, False, getargs.verbose, False);
+ pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.compress, getargs.checksum, False, getargs.verbose, False);
 if(not should_create and should_extract and not should_list):
  pycatfile.UnPackCatFile(getargs.input, getargs.output, False, getargs.verbose, False);
 if(not should_create and not should_extract and should_list):
