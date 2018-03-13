@@ -87,22 +87,24 @@ def RemoveWindowsPath(dpath):
  return dpath;
 
 def ListDir(dirpath, followlink=False):
+ dirpath = list(dirpath);
  retlist = [];
- if(not os.path.exists(dirpath)):
-  return False;
- if(os.path.exists(dirpath) and os.path.islink(dirpath)):
-  dirpath = RemoveWindowsPath(os.path.realpath(dirpath));
- if(os.path.exists(dirpath) and os.path.isdir(dirpath)):
-  for root, dirs, filenames in os.walk(dirpath):
-   dpath = root;
-   dpath = RemoveWindowsPath(dpath);
-   retlist.append(dpath);
-   for file in filenames:
-    fpath = os.path.join(root, file);
-    fpath = RemoveWindowsPath(fpath);
-    retlist.append(fpath);
- else:
-  retlist.append(RemoveWindowsPath(dirpath));
+ for mydirfile in dirpath:
+  if(not os.path.exists(mydirfile)):
+   return False;
+  if(os.path.exists(mydirfile) and os.path.islink(mydirfile)):
+   mydirfile = RemoveWindowsPath(os.path.realpath(mydirfile));
+  if(os.path.exists(mydirfile) and os.path.isdir(mydirfile)):
+   for root, dirs, filenames in os.walk(mydirfile):
+    dpath = root;
+    dpath = RemoveWindowsPath(dpath);
+    retlist.append(dpath);
+    for file in filenames:
+     fpath = os.path.join(root, file);
+     fpath = RemoveWindowsPath(fpath);
+     retlist.append(fpath);
+  else:
+   retlist.append(RemoveWindowsPath(mydirfile));
  return retlist;
 
 def ReadTillNullByte(fp):
