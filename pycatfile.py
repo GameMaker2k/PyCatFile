@@ -214,24 +214,21 @@ def CompressCatFile(fp, compression="auto"):
   except ImportError:
    return False;
   catfp = BytesIO();
-  with fp as fpcontent:
-   catfp.write(bz2.compress(fp.read()), compresslevel=9);
+  catfp.write(bz2.compress(fp.read(), compresslevel=9));
  if(compression=="lzma"):
   try:
    import lzma;
   except ImportError:
    return False;
   catfp = BytesIO();
-  with fp as fpcontent:
-   catfp.write(lzma.compress(fp.read()), format=lzma.FORMAT_ALONE, preset=9);
+  catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE, preset=9));
  if(compression=="xz"):
   try:
    import lzma;
   except ImportError:
    return False;
   catfp = BytesIO();
-  with fp as fpcontent:
-   catfp.write(lzma.compress(fp.read()), format=lzma.FORMAT_XZ, preset=9);
+  catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ, preset=9));
  if(compression=="auto"):
   catfp = fp;
  return catfp;
