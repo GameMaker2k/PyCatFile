@@ -93,7 +93,6 @@ def ListDir(dirpath, followlink=False):
   dirpath = [dirpath];
  retlist = [];
  for mydirfile in dirpath:
-  print(mydirfile);
   if(not os.path.exists(mydirfile)):
    return False;
   if(os.path.exists(mydirfile) and os.path.islink(mydirfile)):
