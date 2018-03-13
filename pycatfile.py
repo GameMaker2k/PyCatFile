@@ -204,7 +204,7 @@ def GZipCompress(data, compresslevel=9):
   import gzip;
  except ImportError:
   return False;
- tmpfp = tempfile.NamedTemporaryFile("w+b", delete=False);
+ tmpfp = tempfile.NamedTemporaryFile("wb", delete=False);
  tmpfp.close();
  tmpfp = gzip.GzipFile(tmpfp.name, mode="wb", compresslevel=compresslevel);
  tmpfp.write(data);
