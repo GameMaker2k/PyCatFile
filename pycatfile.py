@@ -305,7 +305,7 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  if(not fextname in outextlistwd):
+  if(not fextname in outextlistwd and compression=="auto"):
    catfp = open(outfile, "wb");
   elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
    try:
@@ -505,7 +505,7 @@ if(tarsupport):
   else:
    fbasename = os.path.splitext(outfile)[0];
    fextname = os.path.splitext(outfile)[1];
-   if(not fextname in outextlistwd):
+   if(not fextname in outextlistwd and compression=="auto"):
     catfp = open(outfile, "wb");
    elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
     try:
@@ -890,7 +890,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  if(not fextname in outextlistwd):
+  if(not fextname in outextlistwd and compression=="auto"):
    catfp = open(outfile, "wb");
   elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
    try:
