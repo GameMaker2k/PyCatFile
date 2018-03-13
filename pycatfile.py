@@ -87,9 +87,13 @@ def RemoveWindowsPath(dpath):
  return dpath;
 
 def ListDir(dirpath, followlink=False):
- dirpath = list(dirpath);
+ if(isinstance(dirpath, (list, tuple, ))):
+  dirpath = list(dirpath);
+ if(isinstance(dirpath, (str, ))):
+  dirpath = [dirpath];
  retlist = [];
  for mydirfile in dirpath:
+  print(mydirfile);
   if(not os.path.exists(mydirfile)):
    return False;
   if(os.path.exists(mydirfile) and os.path.islink(mydirfile)):
