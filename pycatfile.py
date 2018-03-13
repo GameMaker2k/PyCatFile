@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import os, re, sys, stat, zlib, shutil, hashlib, logging, binascii;
+import os, re, sys, stat, zlib, shutil, hashlib, logging, binascii, tempfile;
 
 if(sys.version[0]=="2"):
  from io import open as open;
@@ -201,6 +201,40 @@ def UncompressCatFile(fp):
     return False;
  return catfp;
   
+def CompressCatFile(fp, compression="auto"):
+ if(compression=="gzip"):
+  try:
+   import gzip;
+  except ImportError:
+   return False;
+  catfp = gzip.GzipFile(fileobj=fp, mode="wb", compresslevel=9);
+ if(compression=="bzip2"):
+  try:
+   import bz2;
+  except ImportError:
+   return False;
+  catfp = BytesIO();
+  with fp as fpcontent:
+   catfp.write(bz2.compress(fp.read()), compresslevel=9);
+ if(compression=="lzma"):
+  try:
+   import lzma;
+  except ImportError:
+   return False;
+  catfp = BytesIO();
+  with fp as fpcontent:
+   catfp.write(lzma.compress(fp.read()), format=lzma.FORMAT_ALONE, preset=9);
+ if(compression=="xz"):
+  try:
+   import lzma;
+  except ImportError:
+   return False;
+  catfp = BytesIO();
+  with fp as fpcontent:
+   catfp.write(lzma.compress(fp.read()), format=lzma.FORMAT_XZ, preset=9);
+ if(compression=="auto"):
+  catfp = fp;
+ return catfp;
 
 def GetDevMajorMinor(fdev):
  retdev = [];
@@ -400,6 +434,8 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
   nullstrecd = "\0".encode();
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfp.write(catfileout);
+ if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+  catfp = CompressCatFile(catfp, compression);
  if(outfile=="-"):
   catfp.seek(0, 0);
   if(hasattr(sys.stdout, "buffer")):
@@ -565,6 +601,8 @@ if(tarsupport):
    nullstrecd = "\0".encode();
    catfileout = catfileoutstrecd + fcontents + nullstrecd;
    catfp.write(catfileout);
+  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+   catfp = CompressCatFile(catfp, compression);
   if(outfile=="-"):
    catfp.seek(0, 0);
    if(hasattr(sys.stdout, "buffer")):
@@ -929,6 +967,8 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfp.write(catfileout);
   lcfi = lcfi + 1;
+ if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+  catfp = CompressCatFile(catfp, compression);
  if(outfile=="-"):
   catfp.seek(0, 0);
   if(hasattr(sys.stdout, "buffer")):
