@@ -224,9 +224,14 @@ def GZipCompress(data, compresslevel=9):
  return catdata;
 
 def CompressCatFile(fp, compression="auto"):
+ compressionlist = ['auto', 'gzip', 'bzip2', 'lzma', 'xz'];
  if(not hasattr(fp, "read") and not hasattr(fp, "write")):
   return False;
  fp.seek(0, 0);
+ if(not compression or compression):
+  compression = None;
+ if(not compression in compressionlist and compression is not None):
+  compression = "auto";
  if(compression=="gzip"):
   try:
    import gzip;
@@ -255,7 +260,7 @@ def CompressCatFile(fp, compression="auto"):
    return False;
   catfp = BytesIO();
   catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ, preset=9));
- if(compression=="auto"):
+ if(compression=="auto" or compression is None):
   catfp = fp;
  catfp.seek(0, 0);
  return catfp;
@@ -299,7 +304,9 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
  checksumtype = checksumtype.lower();
  if(not CheckSumSupport(checksumtype, 5)):
   checksumtype="crc32";
- if(not compression in compressionlist):
+ if(not compression or compression):
+  compression = None;
+ if(not compression in compressionlist and compression is not None):
   compression = "auto";
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
@@ -314,7 +321,7 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  if(not fextname in outextlistwd and compression=="auto"):
+  if(not fextname in outextlistwd and (compression=="auto" or compression is None)):
    catfp = open(outfile, "wb");
   elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
    try:
@@ -485,7 +492,9 @@ if(tarsupport):
   checksumtype = checksumtype.lower();
   if(not CheckSumSupport(checksumtype, 5)):
    checksumtype="crc32";
-  if(not compression in compressionlist):
+  if(not compression or compression):
+   compression = None;
+  if(not compression in compressionlist and compression is not None):
    compression = "auto";
   if(hasattr(infile, "read") or hasattr(infile, "write")):
    tarinput = infile;
@@ -516,7 +525,7 @@ if(tarsupport):
   else:
    fbasename = os.path.splitext(outfile)[0];
    fextname = os.path.splitext(outfile)[1];
-   if(not fextname in outextlistwd and compression=="auto"):
+   if(not fextname in outextlistwd  and (compression=="auto" or compression is None)):
     catfp = open(outfile, "wb");
    elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
     try:
@@ -884,7 +893,9 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
  checksumtype = checksumtype.lower();
  if(not CheckSumSupport(checksumtype, 5)):
   checksumtype="crc32";
- if(not compression in compressionlist):
+ if(not compression or compression):
+  compression = None;
+ if(not compression in compressionlist and compression is not None):
   compression = "auto";
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
@@ -901,7 +912,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  if(not fextname in outextlistwd and compression=="auto"):
+  if(not fextname in outextlistwd and (compression=="auto" or compression is None)):
    catfp = open(outfile, "wb");
   elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
    try:
