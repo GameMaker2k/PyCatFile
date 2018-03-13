@@ -228,7 +228,7 @@ def CompressCatFile(fp, compression="auto"):
  if(not hasattr(fp, "read") and not hasattr(fp, "write")):
   return False;
  fp.seek(0, 0);
- if(not compression or compression or compression="catfile"):
+ if(not compression or compression or compression=="catfile"):
   compression = None;
  if(not compression in compressionlist and compression is not None):
   compression = "auto";
@@ -304,7 +304,7 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
  checksumtype = checksumtype.lower();
  if(not CheckSumSupport(checksumtype, 5)):
   checksumtype="crc32";
- if(not compression or compression or compression="catfile"):
+ if(not compression or compression or compression=="catfile"):
   compression = None;
  if(not compression in compressionlist and compression is not None):
   compression = "auto";
@@ -492,7 +492,7 @@ if(tarsupport):
   checksumtype = checksumtype.lower();
   if(not CheckSumSupport(checksumtype, 5)):
    checksumtype="crc32";
-  if(not compression or compression or compression="catfile"):
+  if(not compression or compression or compression=="catfile"):
    compression = None;
   if(not compression in compressionlist and compression is not None):
    compression = "auto";
@@ -893,7 +893,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
  checksumtype = checksumtype.lower();
  if(not CheckSumSupport(checksumtype, 5)):
   checksumtype="crc32";
- if(not compression or compression or compression="catfile"):
+ if(not compression or compression or compression=="catfile"):
   compression = None;
  if(not compression in compressionlist and compression is not None):
   compression = "auto";
