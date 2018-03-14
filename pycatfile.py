@@ -1047,13 +1047,33 @@ def UnPackCatFile(infile, outdir=None, skipchecksum=False, verbose=False, return
  lcfi = 0;
  lcfx = len(listcatfiles);
  while(lcfi < lcfx):
+  funame = "";
+  try:
+   import pwd;
+   try:
+    userinfo = pwd.getpwuid(listcatfiles[lcfi]['fuid']);
+    funame = userinfo.pw_name;
+   except KeyError:
+    funame = "";
+  except ImportError:
+   funame = "";
+  fgname = "";
+  try:
+   import grp;
+   try:
+    groupinfo = grp.getgrgid(listcatfiles[lcfi]['fgid']);
+    fgname = groupinfo.gr_name;
+   except KeyError:
+    fgname = "";
+  except ImportError:
+   fgname = "";
   if(verbose):
    logging.info(listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==0):
    fpc = open(listcatfiles[lcfi]['fname'], "wb");
    fpc.write(listcatfiles[lcfi]['fcontents']);
    fpc.close();
-   if(hasattr(os, "chown")):
+   if(hasattr(os, "chown") and funame==listcatfiles[lcfi]['funame'] and fgname==listcatfiles[lcfi]['fgname']):
     os.chown(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fuid'], listcatfiles[lcfi]['fgid']);
    os.chmod(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
    os.utime(listcatfiles[lcfi]['fname'], (listcatfiles[lcfi]['fatime'], listcatfiles[lcfi]['fmtime']));
@@ -1063,7 +1083,7 @@ def UnPackCatFile(infile, outdir=None, skipchecksum=False, verbose=False, return
    os.symlink(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==5):
    os.mkdir(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
-   if(hasattr(os, "chown")):
+   if(hasattr(os, "chown") and funame==listcatfiles[lcfi]['funame'] and fgname==listcatfiles[lcfi]['fgname']):
     os.chown(listcatfiles[lcfi]['fname'], listcatfiles[lcfi]['fuid'], listcatfiles[lcfi]['fgid']);
    os.chmod(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
    os.utime(listcatfiles[lcfi]['fname'], (listcatfiles[lcfi]['fatime'], listcatfiles[lcfi]['fmtime']));
