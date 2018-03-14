@@ -14,7 +14,7 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 3/12/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 3/14/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
@@ -86,7 +86,7 @@ def RemoveWindowsPath(dpath):
   dpath = dpath + "/";
  return dpath;
 
-def ListDir(dirpath, followlink=False):
+def ListDir(dirpath, followlink=False, duplicates=False):
  if(isinstance(dirpath, (list, tuple, ))):
   dirpath = list(dirpath);
  if(isinstance(dirpath, (str, ))):
@@ -101,11 +101,17 @@ def ListDir(dirpath, followlink=False):
    for root, dirs, filenames in os.walk(mydirfile):
     dpath = root;
     dpath = RemoveWindowsPath(dpath);
-    retlist.append(dpath);
+    if(dpath not in retlist and not duplicates):
+     retlist.append(dpath);
+    if(duplicates):
+     retlist.append(dpath);
     for file in filenames:
      fpath = os.path.join(root, file);
      fpath = RemoveWindowsPath(fpath);
-     retlist.append(fpath);
+     if(fpath not in retlist and not duplicates):
+      retlist.append(fpath);
+     if(duplicates):
+      retlist.append(fpath);
   else:
    retlist.append(RemoveWindowsPath(mydirfile));
  return retlist;
@@ -233,7 +239,7 @@ def CompressCatFile(fp, compression="auto"):
  fp.seek(0, 0);
  if(not compression or compression or compression=="catfile"):
   compression = None;
- if(not compression in compressionlist and compression is not None):
+ if(compression not in compressionlist and compression is not None):
   compression = "auto";
  if(compression=="gzip"):
   try:
@@ -309,7 +315,7 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
   checksumtype="crc32";
  if(not compression or compression or compression=="catfile"):
   compression = None;
- if(not compression in compressionlist and compression is not None):
+ if(compression not in compressionlist and compression is not None):
   compression = "auto";
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
@@ -324,7 +330,7 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  if(not fextname in outextlistwd and (compression=="auto" or compression is None)):
+  if(fextname not in outextlistwd and (compression=="auto" or compression is None)):
    catfp = open(outfile, "wb");
   elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
    try:
@@ -354,7 +360,7 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
  catfp.write(fileheader.encode());
- GetDirList = ListDir(infiles, followlink);
+ GetDirList = ListDir(infiles, followlink, False);
  if(not GetDirList):
   return False;
  for curfname in GetDirList:
@@ -497,7 +503,7 @@ if(tarsupport):
    checksumtype="crc32";
   if(not compression or compression or compression=="catfile"):
    compression = None;
-  if(not compression in compressionlist and compression is not None):
+  if(compression not in compressionlist and compression is not None):
    compression = "auto";
   if(hasattr(infile, "read") or hasattr(infile, "write")):
    tarinput = infile;
@@ -528,7 +534,7 @@ if(tarsupport):
   else:
    fbasename = os.path.splitext(outfile)[0];
    fextname = os.path.splitext(outfile)[1];
-   if(not fextname in outextlistwd  and (compression=="auto" or compression is None)):
+   if(fextname not in outextlistwd  and (compression=="auto" or compression is None)):
     catfp = open(outfile, "wb");
    elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
     try:
@@ -898,7 +904,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   checksumtype="crc32";
  if(not compression or compression or compression=="catfile"):
   compression = None;
- if(not compression in compressionlist and compression is not None):
+ if(compression not in compressionlist and compression is not None):
   compression = "auto";
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
@@ -915,7 +921,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  if(not fextname in outextlistwd and (compression=="auto" or compression is None)):
+  if(fextname not in outextlistwd and (compression=="auto" or compression is None)):
    catfp = open(outfile, "wb");
   elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
    try:
