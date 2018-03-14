@@ -116,9 +116,9 @@ if(should_create and not getargs.tar and getargs.repack):
 if(getargs.verbose):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
 if(should_create and not should_extract and not should_list and not should_repack and not should_convert):
- inputfile = getargs.input;
- if(getargs.text and os.path.exists(inputfile) and os.path.isfile(inputfile)):
-  with open(inputfile, "r") as finfile:
+ inputfile = [getargs.input];
+ if(getargs.text and os.path.exists(inputfile[0]) and os.path.isfile(inputfile[0])):
+  with open(inputfile[0], "r") as finfile:
    inputfilel = [];
    for line in finfile:
     inputfilel.append(line.strip());
