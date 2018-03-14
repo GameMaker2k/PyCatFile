@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import sys, logging, argparse, pycatfile;
+import os, sys, logging, argparse, pycatfile;
 
 if(sys.version[0]=="2"):
  from io import open as open;
