@@ -128,6 +128,7 @@ if(should_create and not should_extract and not should_list and not should_repac
   for line in sys.stdin:
    inputfilel.append(line.strip());
   inputfile = inputfilel;
+ inputfile = list(filter(None, inputfile));
  pycatfile.PackCatFile(inputfile, getargs.output, getargs.compression, False, getargs.checksum, getargs.verbose, False);
 if(should_create and not should_extract and not should_list and not should_repack and should_convert):
  pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.compression, getargs.checksum, getargs.verbose, False);
