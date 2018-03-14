@@ -20,6 +20,9 @@
 from __future__ import absolute_import, division, print_function, unicode_literals;
 import sys, logging, argparse, pycatfile;
 
+if(sys.version[0]=="2"):
+ from io import open as open;
+
 teststringio = 0;
 if(teststringio<=0):
  try:
@@ -64,6 +67,7 @@ argparser.add_argument("-l", "-t", "--list", action="store_true", help="list fil
 argparser.add_argument("-r", "--repack", action="store_true", help="reconcatenate files only fixing checksum errors");
 argparser.add_argument("-o", "--output", default=None, help="extract concatenate files to or concatenate output name");
 argparser.add_argument("-compression", "--compression", default="auto", help="concatenate files with compression");
+argparser.add_argument("-T", "--text", action="store_true", help="read file locations from text file");
 getargs = argparser.parse_args();
 
 should_extract = False;
@@ -112,7 +116,14 @@ if(should_create and not getargs.tar and getargs.repack):
 if(getargs.verbose):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
 if(should_create and not should_extract and not should_list and not should_repack and not should_convert):
- pycatfile.PackCatFile(getargs.input, getargs.output, getargs.compression, False, getargs.checksum, getargs.verbose, False);
+ inputfile = getargs.input;
+ if(getargs.text and os.path.exists(inputfile) and os.path.isfile(inputfile)):
+  with open(inputfile, "r") as finfile:
+   inputfilel = [];
+   for line in finfile:
+    inputfilel.append(line.strip());
+  inputfile = inputfilel;
+ pycatfile.PackCatFile(inputfile, getargs.output, getargs.compression, False, getargs.checksum, getargs.verbose, False);
 if(should_create and not should_extract and not should_list and not should_repack and should_convert):
  pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.compression, getargs.checksum, getargs.verbose, False);
 if(should_create and not should_extract and not should_list and should_repack and not should_convert):
