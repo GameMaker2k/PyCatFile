@@ -239,7 +239,7 @@ def CompressCatFile(fp, compression="auto"):
  fp.seek(0, 0);
  if(not compression or compression or compression=="catfile"):
   compression = None;
- if(compression not in compressionlist and compression is not None):
+ if(compression not in compressionlist and compression is None):
   compression = "auto";
  if(compression=="gzip"):
   try:
@@ -315,7 +315,7 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
   checksumtype="crc32";
  if(not compression or compression or compression=="catfile"):
   compression = None;
- if(compression not in compressionlist and compression is not None):
+ if(compression not in compressionlist and compression is None):
   compression = "auto";
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
@@ -501,7 +501,7 @@ if(tarsupport):
    checksumtype="crc32";
   if(not compression or compression or compression=="catfile"):
    compression = None;
-  if(compression not in compressionlist and compression is not None):
+  if(compression not in compressionlist and compression is None):
    compression = "auto";
   if(hasattr(infile, "read") or hasattr(infile, "write")):
    tarinput = infile;
@@ -899,7 +899,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   checksumtype="crc32";
  if(not compression or compression or compression=="catfile"):
   compression = None;
- if(compression not in compressionlist and compression is not None):
+ if(compression not in compressionlist and compression is None):
   compression = "auto";
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
