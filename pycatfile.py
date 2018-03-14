@@ -399,7 +399,7 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
   frdev_major = getfrdev[1];
   if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
    fsize = format(int("0"), 'x').upper();
-  if(ftype==0):
+  if(ftype==0 or ftype==7):
    fsize = format(int(fstatinfo.st_size), 'x').upper();
   flinkname = "";
   if(ftype==1 or ftype==2):
@@ -428,7 +428,7 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
   frdev_minor = format(int(frdev_minor), 'x').upper();
   frdev_major = format(int(frdev_major), 'x').upper();
   fcontents = "".encode();
-  if(ftype==0):
+  if(ftype==0 or ftype==7):
    fpc = open(fname, "rb");
    fcontents = fpc.read(int(fstatinfo.st_size));
    fpc.close();
@@ -583,7 +583,7 @@ if(tarsupport):
     ftype = 6;
    if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
     fsize = format(int("0"), 'x').upper();
-   if(ftype==0):
+   if(ftype==0 or ftype==7):
     fsize = format(int(curfname.size), 'x').upper();
    flinkname = "";
    if(ftype==1 or ftype==2):
@@ -600,7 +600,7 @@ if(tarsupport):
    frdev_minor = format(int(curfname.devminor), 'x').upper();
    frdev_major = format(int(curfname.devmajor), 'x').upper();
    fcontents = "".encode();
-   if(ftype==0):
+   if(ftype==0 or ftype==7):
     fpc = tarinput.extractfile(curfname);
     fcontents = fpc.read(int(curfname.size));
     fpc.close();
@@ -838,7 +838,7 @@ def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
   idtofilearray = {listcatfiles[lcfi]['fid']: listcatfiles[lcfi]['fname']};
   catarray['filetoid'].update(filetoidarray);
   catarray['idtofile'].update(idtofilearray);
-  if(listcatfiles[lcfi]['ftype']==0):
+  if(listcatfiles[lcfi]['ftype']==0 or listcatfiles[lcfi]['ftype']==7):
    catarray['filetypes']['files']['filetoid'].update(filetoidarray);
    catarray['filetypes']['files']['idtofile'].update(idtofilearray);
   if(listcatfiles[lcfi]['ftype']==1):
@@ -966,7 +966,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   frdev_minor = format(int(listcatfiles[lcfi]['frminor']), 'x').upper();
   frdev_major = format(int(listcatfiles[lcfi]['frmajor']), 'x').upper();
   fcontents = listcatfiles[lcfi]['fcontents'];
-  if(listcatfiles[lcfi]['ftype']!=0):
+  if(listcatfiles[lcfi]['ftype']!=0 and listcatfiles[lcfi]['ftype']!=7):
    fcontents = fcontents.encode();
   ftypehex = format(listcatfiles[lcfi]['ftype'], 'x').upper();
   ftypeoutstr = ftypehex;
@@ -1069,7 +1069,7 @@ def UnPackCatFile(infile, outdir=None, skipchecksum=False, verbose=False, return
    fgname = "";
   if(verbose):
    logging.info(listcatfiles[lcfi]['fname']);
-  if(listcatfiles[lcfi]['ftype']==0):
+  if(listcatfiles[lcfi]['ftype']==0 or listcatfiles[lcfi]['ftype']==7):
    fpc = open(listcatfiles[lcfi]['fname'], "wb");
    fpc.write(listcatfiles[lcfi]['fcontents']);
    fpc.close();
@@ -1123,7 +1123,7 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose
    permissionstr = "";
    for fmodval in str(listcatfiles[lcfi]['fchmod'])[-3:]:
     permissionstr = permissionstr + permissions['access'].get(fmodval, '---');
-   if(listcatfiles[lcfi]['ftype']==0):
+   if(listcatfiles[lcfi]['ftype']==0 or listcatfiles[lcfi]['ftype']==7):
     permissionstr = "-" + permissionstr;
    if(listcatfiles[lcfi]['ftype']==1):
     permissionstr = "h" + permissionstr;
