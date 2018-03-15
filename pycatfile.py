@@ -308,6 +308,8 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
  compressionlist = ['auto', 'gzip', 'bzip2', 'lzma', 'xz'];
  outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'lzma', 'xz', 'cxz'];
  outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.lzma', '.xz', '.cxz'];
+ inodelist = [];
+ inodetofile = {};
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -387,6 +389,8 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   else:
    fstatinfo = os.stat(fname);
   fpremode = fstatinfo.st_mode;
+  finode = fstatinfo.st_ino;
+  flinkcount = fstatinfo.st_nlink;
   ftype = 0;
   if(stat.S_ISREG(fpremode)):
    ftype = 0;
@@ -400,6 +404,13 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
    ftype = 5;
   if(stat.S_ISFIFO(fpremode)):
    ftype = 6;
+  if(ftype==0 or ftype==7):
+   if(finode not in inodelist):
+    inodelist.append(finode);
+	inodetofile.update(finode: fname);
+   if(finode in inodelist):
+    ftype = 1;
+    flinkname = inodetofile[finode];
   fdev = fstatinfo.st_dev;
   getfdev = GetDevMajorMinor(fdev);
   fdev_minor = getfdev[0];
@@ -421,6 +432,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
    flinkname = os.readlink(fname);
   fatime = format(int(fstatinfo.st_atime), 'x').upper();
   fmtime = format(int(fstatinfo.st_mtime), 'x').upper();
+  cmtime = format(int(fstatinfo.st_ctime), 'x').upper();
   fmode = format(int(fstatinfo.st_mode), 'x').upper();
   fuid = format(int(fstatinfo.st_uid), 'x').upper();
   fgid = format(int(fstatinfo.st_gid), 'x').upper();
@@ -442,6 +454,8 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   fdev_major = format(int(fdev_major), 'x').upper();
   frdev_minor = format(int(frdev_minor), 'x').upper();
   frdev_major = format(int(frdev_major), 'x').upper();
+  finode = format(int(finode), 'x').upper();
+  flinkcount = format(int(flinkcount), 'x').upper();
   fcontents = "".encode();
   if(ftype==0 or ftype==7):
    fpc = open(fname, "rb");
@@ -460,11 +474,14 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   catfileoutstr = catfileoutstr + AppendNullByte(fsize);
   catfileoutstr = catfileoutstr + AppendNullByte(fatime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fctime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmode);
   catfileoutstr = catfileoutstr + AppendNullByte(fuid);
   catfileoutstr = catfileoutstr + AppendNullByte(funame);
   catfileoutstr = catfileoutstr + AppendNullByte(fgid);
   catfileoutstr = catfileoutstr + AppendNullByte(fgname);
+  catfileoutstr = catfileoutstr + AppendNullByte(finode);
+  catfileoutstr = catfileoutstr + AppendNullByte(flinkcount);
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
@@ -605,11 +622,14 @@ if(tarsupport):
     flinkname = curfname.linkname;
    fatime = format(int(curfname.mtime), 'x').upper();
    fmtime = format(int(curfname.mtime), 'x').upper();
+   cmtime = format(int(curfname.mtime), 'x').upper();
    fmode = format(int(curfname.mode), 'x').upper();
    fuid = format(int(curfname.uid), 'x').upper();
    fgid = format(int(curfname.gid), 'x').upper();
    funame = curfname.uname;
    fgname = curfname.gname;
+   finode = format(int("0"), 'x').upper();
+   flinkcount = format(int("0"), 'x').upper();
    fdev_minor = format(int(curfname.devminor), 'x').upper();
    fdev_major = format(int(curfname.devmajor), 'x').upper();
    frdev_minor = format(int(curfname.devminor), 'x').upper();
@@ -627,11 +647,14 @@ if(tarsupport):
    catfileoutstr = catfileoutstr + AppendNullByte(fsize);
    catfileoutstr = catfileoutstr + AppendNullByte(fatime);
    catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
+   catfileoutstr = catfileoutstr + AppendNullByte(fctime);
    catfileoutstr = catfileoutstr + AppendNullByte(fmode);
    catfileoutstr = catfileoutstr + AppendNullByte(fuid);
    catfileoutstr = catfileoutstr + AppendNullByte(funame);
    catfileoutstr = catfileoutstr + AppendNullByte(fgid);
    catfileoutstr = catfileoutstr + AppendNullByte(fgname);
+   catfileoutstr = catfileoutstr + AppendNullByte(finode);
+   catfileoutstr = catfileoutstr + AppendNullByte(flinkcount);
    catfileoutstr = catfileoutstr + AppendNullByte(fdev_minor);
    catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
    catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
@@ -750,31 +773,34 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   seekend = CatSizeEnd;
  while(seekstart<seekend):
   catfhstart = catfp.tell();
-  catheaderdata = ReadFileHeaderData(catfp, 18);
+  catheaderdata = ReadFileHeaderData(catfp, 21);
   catftype = int(catheaderdata[0], 16);
   catfname = catheaderdata[1];
   catflinkname = catheaderdata[2];
   catfsize = int(catheaderdata[3], 16);
   catfatime = int(catheaderdata[4], 16);
   catfmtime = int(catheaderdata[5], 16);
-  catfmode = oct(int(catheaderdata[6], 16));
+  catfctime = int(catheaderdata[6], 16);
+  catfmode = oct(int(catheaderdata[7], 16));
   catprefchmod = oct(int(catfmode[-3:], 8));
   catfchmod = catprefchmod;
-  catfuid = int(catheaderdata[7], 16);
-  catfuname = catheaderdata[8];
-  catfgid = int(catheaderdata[9], 16);
-  catfgname = catheaderdata[10];
-  catfdev_minor = int(catheaderdata[11], 16);
-  catfdev_major = int(catheaderdata[12], 16);
-  catfrdev_minor = int(catheaderdata[13], 16);
-  catfrdev_major = int(catheaderdata[14], 16);
-  catfchecksumtype = catheaderdata[15].lower();
+  catfuid = int(catheaderdata[8], 16);
+  catfuname = catheaderdata[9];
+  catfgid = int(catheaderdata[10], 16);
+  catfgname = catheaderdata[11];
+  finode = int(catheaderdata[12], 16);
+  flinkcount = int(catheaderdata[13], 16);
+  catfdev_minor = int(catheaderdata[14], 16);
+  catfdev_major = int(catheaderdata[15], 16);
+  catfrdev_minor = int(catheaderdata[16], 16);
+  catfrdev_major = int(catheaderdata[17], 16);
+  catfchecksumtype = catheaderdata[18].lower();
   if(CheckSumSupport(catfchecksumtype, 3)):
-   catfcs = int(catheaderdata[16], 16);
-   catfccs = int(catheaderdata[17], 16);
+   catfcs = int(catheaderdata[19], 16);
+   catfccs = int(catheaderdata[10], 16);
   if(CheckSumSupport(catfchecksumtype, 4)):
-   catfcs = catheaderdata[16];
-   catfccs = catheaderdata[17];
+   catfcs = catheaderdata[19];
+   catfccs = catheaderdata[20];
   hc = 0;
   hcmax = len(catheaderdata) - 2;
   hout = "";
@@ -814,7 +840,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catfp.seek(catfsize, 1);
    pyhascontents = False;
   catfcontentend = catfp.tell();
-  catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fmode': catfmode, 'fchmod': catfchmod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
+  catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fmode': catfmode, 'fchmod': catfchmod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
   catfp.seek(1, 1);
   seekstart = catfp.tell();
   fileidnum = fileidnum + 1;
@@ -971,11 +997,14 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   flinkname = listcatfiles[lcfi]['flinkname'];
   fatime = format(int(listcatfiles[lcfi]['fatime']), 'x').upper();
   fmtime = format(int(listcatfiles[lcfi]['fmtime']), 'x').upper();
+  fctime = format(int(listcatfiles[lcfi]['fctime']), 'x').upper();
   fmode = format(int(int(listcatfiles[lcfi]['fmode'], 8)), 'x').upper();
   fuid = format(int(listcatfiles[lcfi]['fuid']), 'x').upper();
   funame = listcatfiles[lcfi]['funame'];
   fgid = format(int(listcatfiles[lcfi]['fgid']), 'x').upper();
   fgname = listcatfiles[lcfi]['fgname'];
+  finode = listcatfiles[lcfi]['finode'];
+  flinkcount = listcatfiles[lcfi]['flinkcount'];
   fdev_minor = format(int(listcatfiles[lcfi]['fminor']), 'x').upper();
   fdev_major = format(int(listcatfiles[lcfi]['fmajor']), 'x').upper();
   frdev_minor = format(int(listcatfiles[lcfi]['frminor']), 'x').upper();
@@ -991,11 +1020,14 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   catfileoutstr = catfileoutstr + AppendNullByte(fsize);
   catfileoutstr = catfileoutstr + AppendNullByte(fatime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
+   catfileoutstr = catfileoutstr + AppendNullByte(fctime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmode);
   catfileoutstr = catfileoutstr + AppendNullByte(fuid);
   catfileoutstr = catfileoutstr + AppendNullByte(funame);
   catfileoutstr = catfileoutstr + AppendNullByte(fgid);
   catfileoutstr = catfileoutstr + AppendNullByte(fgname);
+  catfileoutstr = catfileoutstr + AppendNullByte(finode);
+  catfileoutstr = catfileoutstr + AppendNullByte(flinkcount);
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
