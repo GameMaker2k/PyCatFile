@@ -404,6 +404,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
    ftype = 5;
   if(stat.S_ISFIFO(fpremode)):
    ftype = 6;
+  flinkname = "";
   if(ftype==0 or ftype==7):
    if(finode in inodelist):
     ftype = 1;
@@ -411,6 +412,8 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
    if(finode not in inodelist):
     inodelist.append(finode);
     inodetofile.update({finode: fname});
+  if(ftype==2):
+   flinkname = os.readlink(fname);
   fdev = fstatinfo.st_dev;
   getfdev = GetDevMajorMinor(fdev);
   fdev_minor = getfdev[0];
@@ -427,9 +430,6 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
    fsize = format(int("0"), 'x').upper();
   if(ftype==0 or ftype==7):
    fsize = format(int(fstatinfo.st_size), 'x').upper();
-  flinkname = "";
-  if(ftype==2):
-   flinkname = os.readlink(fname);
   fatime = format(int(fstatinfo.st_atime), 'x').upper();
   fmtime = format(int(fstatinfo.st_mtime), 'x').upper();
   fctime = format(int(fstatinfo.st_ctime), 'x').upper();
