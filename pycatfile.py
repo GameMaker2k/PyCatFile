@@ -405,12 +405,12 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   if(stat.S_ISFIFO(fpremode)):
    ftype = 6;
   if(ftype==0 or ftype==7):
-   if(finode not in inodelist):
-    inodelist.append(finode);
-	inodetofile.update(finode: fname);
    if(finode in inodelist):
     ftype = 1;
     flinkname = inodetofile[finode];
+   if(finode not in inodelist):
+    inodelist.append(finode);
+    inodetofile.update({finode: fname});
   fdev = fstatinfo.st_dev;
   getfdev = GetDevMajorMinor(fdev);
   fdev_minor = getfdev[0];
@@ -428,11 +428,11 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   if(ftype==0 or ftype==7):
    fsize = format(int(fstatinfo.st_size), 'x').upper();
   flinkname = "";
-  if(ftype==1 or ftype==2):
+  if(ftype==2):
    flinkname = os.readlink(fname);
   fatime = format(int(fstatinfo.st_atime), 'x').upper();
   fmtime = format(int(fstatinfo.st_mtime), 'x').upper();
-  cmtime = format(int(fstatinfo.st_ctime), 'x').upper();
+  fctime = format(int(fstatinfo.st_ctime), 'x').upper();
   fmode = format(int(fstatinfo.st_mode), 'x').upper();
   fuid = format(int(fstatinfo.st_uid), 'x').upper();
   fgid = format(int(fstatinfo.st_gid), 'x').upper();
@@ -1020,7 +1020,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   catfileoutstr = catfileoutstr + AppendNullByte(fsize);
   catfileoutstr = catfileoutstr + AppendNullByte(fatime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
-   catfileoutstr = catfileoutstr + AppendNullByte(fctime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fctime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmode);
   catfileoutstr = catfileoutstr + AppendNullByte(fuid);
   catfileoutstr = catfileoutstr + AppendNullByte(funame);
