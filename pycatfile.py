@@ -89,7 +89,7 @@ def RemoveWindowsPath(dpath):
 def ListDir(dirpath, followlink=False, duplicates=False):
  if(isinstance(dirpath, (list, tuple, ))):
   dirpath = list(filter(None, dirpath));
- if(isinstance(dirpath, (str, ))):
+ elif(isinstance(dirpath, (str, ))):
   dirpath = list(filter(None, [dirpath]));
  retlist = [];
  for mydirfile in dirpath:
@@ -361,18 +361,22 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
  fileheader = AppendNullByte("CatFile" + fileheaderver);
  catfp.write(fileheader.encode());
  if(infiles=="-"):
-  GetDirList = [];
+  infilelist = [];
   for line in sys.stdin:
-   GetDirList.append(line.strip());
-  GetDirList = list(filter(None, GetDirList));
- elif(infile!="-" and dirlistfromtxt and os.path.exists(infile) and os.path.isfile(infile)):
-  with open(infile, "r") as finfile:
-   GetDirList = [];
+   infilelist.append(line.strip());
+  infilelist = list(filter(None, infilelist));
+ elif(infiles!="-" and dirlistfromtxt and os.path.exists(infiles) and os.path.isfile(infiles)):
+  with open(infiles, "r") as finfile:
+   infilelist = [];
    for line in finfile:
-    GetDirList.append(line.strip());
-  GetDirList = list(filter(None, GetDirList));
+    infilelist.append(line.strip());
+  infilelist = list(filter(None, infilelist));
  else:
-  GetDirList = ListDir(infiles, followlink, False);
+  if(isinstance(infiles, (list, tuple, ))):
+   infiles = list(filter(None, infiles));
+  elif(isinstance(infiles, (str, ))):
+   infiles = list(filter(None, [infiles]));
+ GetDirList = ListDir(infiles, followlink, False);
  if(not GetDirList):
   return False;
  for curfname in GetDirList:
