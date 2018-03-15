@@ -360,7 +360,13 @@ def PackCatFile(infiles, outfile, compression="auto", followlink=False, checksum
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
  catfp.write(fileheader.encode());
- GetDirList = ListDir(infiles, followlink, False);
+ if(infiles=="-"):
+  GetDirList = [];
+  for line in sys.stdin:
+   GetDirList.append(line.strip());
+  GetDirList = list(filter(None, GetDirList));
+ else:
+  GetDirList = ListDir(infiles, followlink, False);
  if(not GetDirList):
   return False;
  for curfname in GetDirList:
