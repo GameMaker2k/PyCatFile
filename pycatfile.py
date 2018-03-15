@@ -622,7 +622,7 @@ if(tarsupport):
     flinkname = curfname.linkname;
    fatime = format(int(curfname.mtime), 'x').upper();
    fmtime = format(int(curfname.mtime), 'x').upper();
-   cmtime = format(int(curfname.mtime), 'x').upper();
+   fctime = format(int(curfname.mtime), 'x').upper();
    fmode = format(int(curfname.mode), 'x').upper();
    fuid = format(int(curfname.uid), 'x').upper();
    fgid = format(int(curfname.gid), 'x').upper();
