@@ -826,7 +826,7 @@ def CatStringToArray(catstr, seekstart=0, seekend=0, listonly=False, skipchecksu
  listcatfiles = CatFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
  return listcatfiles;
 
-def ListDirToArray(infiles, dirlistfromtxt=False, compression, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
+def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
  outarray = BytesIO();
  packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, followlink, checksumtype, verbose, True);
  return CatFileToArray(outarray, seekstart, seekend, listonly, skipchecksum, returnfp);
