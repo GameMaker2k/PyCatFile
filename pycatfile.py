@@ -360,23 +360,22 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
  catfp.write(fileheader.encode());
+ infilelist = []
  if(infiles=="-"):
-  infilelist = [];
   for line in sys.stdin:
    infilelist.append(line.strip());
   infilelist = list(filter(None, infilelist));
  elif(infiles!="-" and dirlistfromtxt and os.path.exists(infiles) and os.path.isfile(infiles)):
   with open(infiles, "r") as finfile:
-   infilelist = [];
    for line in finfile:
     infilelist.append(line.strip());
   infilelist = list(filter(None, infilelist));
  else:
   if(isinstance(infiles, (list, tuple, ))):
-   infiles = list(filter(None, infiles));
+   infilelist = list(filter(None, infiles));
   elif(isinstance(infiles, (str, ))):
-   infiles = list(filter(None, [infiles]));
- GetDirList = ListDir(infiles, followlink, False);
+   infilelist = list(filter(None, [infiles]));
+ GetDirList = ListDir(infilelist, followlink, False);
  if(not GetDirList):
   return False;
  for curfname in GetDirList:
