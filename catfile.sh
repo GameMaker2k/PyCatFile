@@ -7,6 +7,7 @@ function PackCatFile {
   echo "${fname}"
   flinkname=""
   fcurinode=${curinode}
+  finode=$(stat -c %i ${fname})
   ftype=0
   if [ -f ${fname} ]; then
    ftype=0
@@ -32,6 +33,15 @@ function PackCatFile {
   if [ -p ${fname} ]; then
    ftype=6
    fsize=0
+  fi
+  if [ -f ${fname} ]; then
+   if [[ ${inodetofile[${finode}]} ]]; then
+    ftype=1
+    flinkname=${inodetofile[${finode}]}
+   else
+    inodetofile[${finode}]=${fname}
+    curinode=$[curinode + 1]
+   fi
   fi
   fdev_minor=$(printf "%x" $(stat -c %T ${fname}))
   fdev_major=$(printf "%x" $(stat -c %t ${fname}))
@@ -103,7 +113,6 @@ function PackCatFile {
    cat ${fname} >> ${2}
   fi
   echo -n -e '\x00' >> ${2}
-  curinode=$[curinode + 1]
  done
 }
 

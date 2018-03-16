@@ -410,6 +410,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
     inodelist.append(finode);
     inodetofile.update({finode: fname});
     inodetocatinode.update({finode: curinode});
+    curinode = curinode + 1;
   if(ftype==2):
    flinkname = os.readlink(fname);
   fdev = fstatinfo.st_dev;
@@ -510,7 +511,6 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   nullstrecd = "\0".encode();
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfp.write(catfileout);
-  curinode = curinode + 1;
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressCatFile(catfp, compression);
  if(outfile=="-"):
