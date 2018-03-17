@@ -95,13 +95,83 @@ function PackCatFile {
   echo -n -e '\x00' >> ${tmpfile}
   echo -n "${fdev_major}" >> ${tmpfile}
   echo -n -e '\x00' >> ${tmpfile}
-  echo -n "crc32" >> ${tmpfile}
-  echo -n -e '\x00' >> ${tmpfile}
-  catfileheadercshex=$(crc32 ${tmpfile})
-  if [ -f ${fname} ]; then
-   catfilecontentcshex=$(crc32 ${fname})
+  if [ "${4}" == "none" ]; then
+   echo -n "${4}" >> ${tmpfile}
+   echo -n -e '\x00' >> ${tmpfile}
+   catfileheadercshex="0"
+   catfilecontentcshex="0"
+  elif [ "${4}" == "crc32" ]; then
+   echo -n "${4}" >> ${tmpfile}
+   echo -n -e '\x00' >> ${tmpfile}
+   catfileheadercshex=$(crc32 ${tmpfile})
+   if [ -f ${fname} ]; then
+    catfilecontentcshex=$(crc32 ${fname})
+   else
+    catfilecontentcshex=$(crc32 /dev/null)
+   fi
+  elif [ "${4}" == "md5" ]; then
+   echo -n "md5" >> ${tmpfile}
+   echo -n -e '\x00' >> ${tmpfile}
+   catfileheadercshex=$(md5sum ${tmpfile})
+   if [ -f ${fname} ]; then
+    catfilecontentcshex=$(md5sum ${fname})
+   else
+    catfilecontentcshex=$(md5sum /dev/null)
+   fi
+  elif [ "${4}" == "sha1" ]; then
+   echo -n "${4}" >> ${tmpfile}
+   echo -n -e '\x00' >> ${tmpfile}
+   catfileheadercshex=$(sha1sum ${tmpfile})
+   if [ -f ${fname} ]; then
+    catfilecontentcshex=$(sha1sum ${fname})
+   else
+    catfilecontentcshex=$(sha1sum /dev/null)
+   fi
+  elif [ "${4}" == "sha224" ]; then
+   echo -n "${4}" >> ${tmpfile}
+   echo -n -e '\x00' >> ${tmpfile}
+   catfileheadercshex=$(sha224sum ${tmpfile})
+   if [ -f ${fname} ]; then
+    catfilecontentcshex=$(sha224sum ${fname})
+   else
+    catfilecontentcshex=$(sha224sum /dev/null)
+   fi
+  elif [ "${4}" == "sha256" ]; then
+   echo -n "${4}" >> ${tmpfile}
+   echo -n -e '\x00' >> ${tmpfile}
+   catfileheadercshex=$(sha256sum ${tmpfile})
+   if [ -f ${fname} ]; then
+    catfilecontentcshex=$(sha256sum ${fname})
+   else
+    catfilecontentcshex=$(sha256sum /dev/null)
+   fi
+  elif [ "${4}" == "sha384" ]; then
+   echo -n "${4}" >> ${tmpfile}
+   echo -n -e '\x00' >> ${tmpfile}
+   catfileheadercshex=$(sha384sum ${tmpfile})
+   if [ -f ${fname} ]; then
+    catfilecontentcshex=$(sha384sum ${fname})
+   else
+    catfilecontentcshex=$(sha384sum /dev/null)
+   fi
+  elif [ "${4}" == "sha512" ]; then
+   echo -n "${4}" >> ${tmpfile}
+   echo -n -e '\x00' >> ${tmpfile}
+   catfileheadercshex=$(sha512sum ${tmpfile})
+   if [ -f ${fname} ]; then
+    catfilecontentcshex=$(sha512sum ${fname})
+   else
+    catfilecontentcshex=$(sha512sum /dev/null)
+   fi
   else
-   catfilecontentcshex=$(crc32 /dev/null)
+   echo -n "crc32" >> ${tmpfile}
+   echo -n -e '\x00' >> ${tmpfile}
+   catfileheadercshex=$(crc32 ${tmpfile})
+   if [ -f ${fname} ]; then
+    catfilecontentcshex=$(crc32 ${fname})
+   else
+    catfilecontentcshex=$(crc32 /dev/null)
+   fi
   fi
   cat ${tmpfile} >> ${2}
   rm -rf ${tmpfile}
@@ -114,6 +184,15 @@ function PackCatFile {
   fi
   echo -n -e '\x00' >> ${2}
  done
+ if [ "${3}" == "gzip" ]; then
+  gzip --quiet --best ${2}
+ elif [ "${3}" == "bzip2" ]; then
+  gzip --compress --quiet --best ${2}
+ elif [ "${3}" == "lzma" ]; then
+  lzma --compress --quiet -9 --extreme ${2}
+ elif [ "${3}" == "xz" ]; then
+  xz --compress --quiet -9 --extreme ${2}
+ fi
 }
 
-PackCatFile "${1}" "${2}"
+PackCatFile "${1}" "${2}" "${3}" "${4}"
