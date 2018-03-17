@@ -291,7 +291,7 @@ def CheckSumSupport(checkfor, checklist):
  if(checklist==4):
   checklist = sorted(list(hashlib.algorithms_guaranteed));
  if(checklist==5):
-  checklist = sorted(list(hashlib.algorithms_guaranteed) + ['adler32', 'crc32']);
+  checklist = sorted(list(hashlib.algorithms_guaranteed) + ['adler32', 'crc32', "none"]);
  if(checkfor in checklist):
   return True;
  else:
@@ -492,6 +492,9 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
+  if(checksumtype=="none"):
+   catfileheadercshex = format(0, 'x').upper();
+   catfilecontentcshex = format(0, 'x').upper();
   if(CheckSumSupport(checksumtype, 1)):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').upper();
@@ -618,6 +621,9 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catfrdev_minor = int(catheaderdata[17], 16);
   catfrdev_major = int(catheaderdata[18], 16);
   catfchecksumtype = catheaderdata[19].lower();
+  if(catfchecksumtype=="none"):
+   catfcs = int(catheaderdata[20]);
+   catfccs = int(catheaderdata[21]);
   if(CheckSumSupport(catfchecksumtype, 3)):
    catfcs = int(catheaderdata[20], 16);
    catfccs = int(catheaderdata[21], 16);
@@ -630,6 +636,8 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   while(hc<hcmax):
    hout = hout + AppendNullByte(catheaderdata[hc]);
    hc = hc + 1;
+  if(catfchecksumtype=="none"):
+   catnewfcs = 0;
   if(CheckSumSupport(catfchecksumtype, 1)):
    catnewfcs = zlib.adler32(hout.encode()) & 0xffffffff;
   if(CheckSumSupport(catfchecksumtype, 2)):
@@ -647,6 +655,8 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   pyhascontents = False;
   if(catfsize>1 and not listonly):
    catfcontents = catfp.read(catfsize);
+   if(catfchecksumtype=="none"):
+    catnewfccs = 0;
    if(CheckSumSupport(catfchecksumtype, 1)):
     catnewfccs = zlib.adler32(catfcontents) & 0xffffffff;
    if(CheckSumSupport(catfchecksumtype, 2)):
@@ -857,6 +867,9 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
+  if(checksumtype=="none"):
+   catfileheadercshex = format(0, 'x').upper();
+   catfilecontentcshex = format(0, 'x').upper();
   if(CheckSumSupport(checksumtype, 1)):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').upper();
