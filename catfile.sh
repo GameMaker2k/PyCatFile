@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 function PackCatFile {
  shopt -s globstar
  curinode=0
