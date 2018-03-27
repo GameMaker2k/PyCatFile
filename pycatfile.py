@@ -412,7 +412,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
     inodetofile.update({finode: fname});
     inodetocatinode.update({finode: curinode});
   if(ftype!=1):
-   curfinode =format(int(curinode), 'x').upper();
+   curfinode = format(int(curinode), 'x').upper();
    curinode = curinode + 1;
   if(ftype==2):
    flinkname = os.readlink(fname);
