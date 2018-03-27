@@ -756,16 +756,21 @@ def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", follo
  packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, followlink, checksumtype, verbose, True);
  return CatFileToArrayIndex(outarray, seekstart, seekend, listonly, skipchecksum, returnfp);
 
-def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
+def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", followlink=False, checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'lzma', 'xz'];
  outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'lzma', 'xz', 'cxz'];
  outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.lzma', '.xz', '.cxz'];
  if(isinstance(infile, dict)):
-  listcatfiles = infile;
+  prelistcatfiles = CatFileToArrayIndex(infile, 0, 0, False, skipchecksum, returnfp);
+  listcatfiles = prelistcatfiles['list'];
  else:
   if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
    infile = RemoveWindowsPath(infile);
-  listcatfiles = CatFileToArray(infile, seekstart, seekend, False, skipchecksum, False);
+  if(followlink):
+   prelistcatfiles = CatFileToArrayIndex(infile, 0, 0, False, skipchecksum, returnfp);
+   listcatfiles = prelistcatfiles['list'];
+  else:
+   listcatfiles = CatFileToArray(infile, 0, 0, False, skipchecksum, returnfp);
  if(outfile!="-" and not hasattr(infile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -844,9 +849,36 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   frdev_minor = format(int(listcatfiles[lcfi]['frminor']), 'x').upper();
   frdev_major = format(int(listcatfiles[lcfi]['frmajor']), 'x').upper();
   fcontents = listcatfiles[lcfi]['fcontents'];
-  if(listcatfiles[lcfi]['ftype']!=0 and listcatfiles[lcfi]['ftype']!=7):
-   fcontents = fcontents.encode();
-  ftypehex = format(listcatfiles[lcfi]['ftype'], 'x').upper();
+  if(followlink):
+   if(listcatfiles[lcfi]['ftype']==1 or listcatfiles[lcfi]['ftype']==2):
+    getflinkpath = listcatfiles[lcfi]['flinkname'];
+    flinkid = prelistcatfiles['filetoid'][getflinkpath];
+    flinkinfo = listcatfiles[flinkid];
+    fsize = format(int(flinkinfo['fsize']), 'x').upper();
+    flinkname = flinkinfo['flinkname'];
+    fatime = format(int(flinkinfo['fatime']), 'x').upper();
+    fmtime = format(int(flinkinfo['fmtime']), 'x').upper();
+    fctime = format(int(flinkinfo['fctime']), 'x').upper();
+    fmode = format(int(int(flinkinfo['fmode'], 8)), 'x').upper();
+    fchmode = format(int(int(flinkinfo['fchmode'], 8)), 'x').upper();
+    fuid = format(int(flinkinfo['fuid']), 'x').upper();
+    funame = flinkinfo['funame'];
+    fgid = format(int(flinkinfo['fgid']), 'x').upper();
+    fgname = flinkinfo['fgname'];
+    finode = flinkinfo['finode'];
+    flinkcount = flinkinfo['flinkcount'];
+    fdev_minor = format(int(flinkinfo['fminor']), 'x').upper();
+    fdev_major = format(int(flinkinfo['fmajor']), 'x').upper();
+    frdev_minor = format(int(flinkinfo['frminor']), 'x').upper();
+    frdev_major = format(int(flinkinfo['frmajor']), 'x').upper();
+    fcontents = flinkinfo['fcontents'];
+	if(flinkinfo['ftype']!=0 and flinkinfo['ftype']!=7):
+	 fcontents = fcontents.encode();
+	ftypehex = format(flinkinfo['ftype'], 'x').upper();
+  if(not followlink):
+   if(listcatfiles[lcfi]['ftype']!=0 and listcatfiles[lcfi]['ftype']!=7):
+    fcontents = fcontents.encode();
+   ftypehex = format(listcatfiles[lcfi]['ftype'], 'x').upper();
   catfileoutstr = AppendNullByte(ftypehex);
   catfileoutstr = catfileoutstr + AppendNullByte(fname);
   catfileoutstr = catfileoutstr + AppendNullByte(flinkname);
@@ -915,17 +947,22 @@ def PackCatFileFromListDir(infiles, outfile, dirlistfromtxt=False, seekstart=0, 
  packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, followlink, checksumtype, verbose, True);
  return RePackCatFile(outarray, outfile, seekstart, seekend, compression, checksumtype, skipchecksum, verbose, returnfp);
 
-def UnPackCatFile(infile, outdir=None, skipchecksum=False, verbose=False, returnfp=False):
+def UnPackCatFile(infile, outdir=None, followlink=False, skipchecksum=False, verbose=False, returnfp=False):
  if(outdir is not None):
   outdir = RemoveWindowsPath(outdir);
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(isinstance(infile, dict)):
-  listcatfiles = infile;
+  prelistcatfiles = CatFileToArrayIndex(infile, 0, 0, False, skipchecksum, returnfp);
+  listcatfiles = prelistcatfiles['list'];
  else:
   if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
    infile = RemoveWindowsPath(infile);
-  listcatfiles = CatFileToArray(infile, 0, 0, False, skipchecksum, returnfp);
+  if(followlink):
+   prelistcatfiles = CatFileToArrayIndex(infile, 0, 0, False, skipchecksum, returnfp);
+   listcatfiles = prelistcatfiles['list'];
+  else:
+   listcatfiles = CatFileToArray(infile, 0, 0, False, skipchecksum, returnfp);
  if(not listcatfiles):
   return False;
  lcfi = 0;
@@ -962,9 +999,99 @@ def UnPackCatFile(infile, outdir=None, skipchecksum=False, verbose=False, return
    os.chmod(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
    os.utime(listcatfiles[lcfi]['fname'], (listcatfiles[lcfi]['fatime'], listcatfiles[lcfi]['fmtime']));
   if(listcatfiles[lcfi]['ftype']==1):
-   os.link(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
+   if(followlink):
+	getflinkpath = listcatfiles[lcfi]['flinkname'];
+    flinkid = prelistcatfiles['filetoid'][getflinkpath];
+    flinkinfo = listcatfiles[flinkid];
+    funame = "";
+    try:
+     import pwd;
+     try:
+      userinfo = pwd.getpwuid(flinkinfo['fuid']);
+      funame = userinfo.pw_name;
+     except KeyError:
+      funame = "";
+    except ImportError:
+     funame = "";
+    fgname = "";
+    try:
+     import grp;
+     try:
+      groupinfo = grp.getgrgid(flinkinfo['fgid']);
+      fgname = groupinfo.gr_name;
+     except KeyError:
+      fgname = "";
+    except ImportError:
+     fgname = "";
+	if(flinkinfo['ftype']==0 or flinkinfo['ftype']==7):
+     fpc = open(listcatfiles[lcfi]['fname'], "wb");
+     fpc.write(flinkinfo['fcontents']);
+     fpc.close();
+     if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname']):
+      os.chown(listcatfiles[lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
+     os.chmod(listcatfiles[lcfi]['fname'], int(flinkinfo['fchmod'], 8));
+     os.utime(listcatfiles[lcfi]['fname'], (flinkinfo['fatime'], flinkinfo['fmtime']));
+	if(flinkinfo['ftype']==1):
+     os.link(flinkinfo['flinkname'], listcatfiles[lcfi]['fname']);
+	if(flinkinfo['ftype']==2):
+     os.symlink(flinkinfo['flinkname'], listcatfiles[lcfi]['fname']);
+    if(flinkinfo['ftype']==5):
+     os.mkdir(listcatfiles[lcfi]['fname'], int(flinkinfo['fchmod'], 8));
+     if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname']):
+      os.chown(listcatfiles[lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
+     os.chmod(listcatfiles[lcfi]['fname'], int(flinkinfo['fchmod'], 8));
+     os.utime(listcatfiles[lcfi]['fname'], (flinkinfo['fatime'], flinkinfo['fmtime']));
+	if(flinkinfo['ftype']==6 and hasattr(os, "mkfifo")):
+     os.mkfifo(listcatfiles[lcfi]['fname'], int(flinkinfo['fchmod'], 8));
+   else:
+    os.link(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==2):
-   os.symlink(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
+   if(followlink):
+	getflinkpath = listcatfiles[lcfi]['flinkname'];
+    flinkid = prelistcatfiles['filetoid'][getflinkpath];
+    flinkinfo = listcatfiles[flinkid];
+    funame = "";
+    try:
+     import pwd;
+     try:
+      userinfo = pwd.getpwuid(flinkinfo['fuid']);
+      funame = userinfo.pw_name;
+     except KeyError:
+      funame = "";
+    except ImportError:
+     funame = "";
+    fgname = "";
+    try:
+     import grp;
+     try:
+      groupinfo = grp.getgrgid(flinkinfo['fgid']);
+      fgname = groupinfo.gr_name;
+     except KeyError:
+      fgname = "";
+    except ImportError:
+     fgname = "";
+	if(flinkinfo['ftype']==0 or flinkinfo['ftype']==7):
+     fpc = open(listcatfiles[lcfi]['fname'], "wb");
+     fpc.write(flinkinfo['fcontents']);
+     fpc.close();
+     if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname']):
+      os.chown(listcatfiles[lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
+     os.chmod(listcatfiles[lcfi]['fname'], int(flinkinfo['fchmod'], 8));
+     os.utime(listcatfiles[lcfi]['fname'], (flinkinfo['fatime'], flinkinfo['fmtime']));
+	if(flinkinfo['ftype']==1):
+     os.link(flinkinfo['flinkname'], listcatfiles[lcfi]['fname']);
+	if(flinkinfo['ftype']==2):
+     os.symlink(flinkinfo['flinkname'], listcatfiles[lcfi]['fname']);
+    if(flinkinfo['ftype']==5):
+     os.mkdir(listcatfiles[lcfi]['fname'], int(flinkinfo['fchmod'], 8));
+     if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname']):
+      os.chown(listcatfiles[lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
+     os.chmod(listcatfiles[lcfi]['fname'], int(flinkinfo['fchmod'], 8));
+     os.utime(listcatfiles[lcfi]['fname'], (flinkinfo['fatime'], flinkinfo['fmtime']));
+	if(flinkinfo['ftype']==6 and hasattr(os, "mkfifo")):
+     os.mkfifo(listcatfiles[lcfi]['fname'], int(flinkinfo['fchmod'], 8));
+   else:
+    os.symlink(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==5):
    os.mkdir(listcatfiles[lcfi]['fname'], int(listcatfiles[lcfi]['fchmod'], 8));
    if(hasattr(os, "chown") and funame==listcatfiles[lcfi]['funame'] and fgname==listcatfiles[lcfi]['fgname']):

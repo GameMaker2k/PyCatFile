@@ -110,8 +110,8 @@ if(getargs.verbose):
 if(should_create and not should_extract and not should_list and not should_repack):
  pycatfile.PackCatFile(getargs.input, getargs.output, getargs.text, getargs.compression, False, getargs.checksum, getargs.verbose, False);
 if(should_create and not should_extract and not should_list and should_repack):
- pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.compression, getargs.checksum, False, getargs.verbose, False);
+ pycatfile.RePackCatFile(getargs.input, getargs.output, 0, 0, getargs.compression, False, getargs.checksum, False, getargs.verbose, False);
 if(not should_create and should_extract and not should_list):
- pycatfile.UnPackCatFile(getargs.input, getargs.output, False, getargs.verbose, False);
+ pycatfile.UnPackCatFile(getargs.input, getargs.output, False, False, getargs.verbose, False);
 if(not should_create and not should_extract and should_list):
  pycatfile.CatFileListFiles(getargs.input, 0, 0, False, getargs.verbose, False);
