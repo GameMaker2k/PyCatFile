@@ -374,6 +374,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
  curinode = 0;
  inodelist = [];
  inodetofile = {};
+ filetoinode = {};
  inodetocatinode = {};
  for curfname in GetDirList:
   fname = curfname;
@@ -410,7 +411,9 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
     inodelist.append(finode);
     inodetofile.update({finode: fname});
     inodetocatinode.update({finode: curinode});
-    curinode = curinode + 1;
+  if(ftype!=1):
+   curfinode = curinode;
+   curinode = curinode + 1;
   if(ftype==2):
    flinkname = os.readlink(fname);
   fdev = fstatinfo.st_dev;
@@ -485,7 +488,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   catfileoutstr = catfileoutstr + AppendNullByte(funame);
   catfileoutstr = catfileoutstr + AppendNullByte(fgid);
   catfileoutstr = catfileoutstr + AppendNullByte(fgname);
-  catfileoutstr = catfileoutstr + AppendNullByte(finode);
+  catfileoutstr = catfileoutstr + AppendNullByte(curfinode);
   catfileoutstr = catfileoutstr + AppendNullByte(flinkcount);
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
