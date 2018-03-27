@@ -485,7 +485,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   catfileoutstr = catfileoutstr + AppendNullByte(funame);
   catfileoutstr = catfileoutstr + AppendNullByte(fgid);
   catfileoutstr = catfileoutstr + AppendNullByte(fgname);
-  catfileoutstr = catfileoutstr + AppendNullByte(fcurinode);
+  catfileoutstr = catfileoutstr + AppendNullByte(finode);
   catfileoutstr = catfileoutstr + AppendNullByte(flinkcount);
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
@@ -872,9 +872,9 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
     frdev_minor = format(int(flinkinfo['frminor']), 'x').upper();
     frdev_major = format(int(flinkinfo['frmajor']), 'x').upper();
     fcontents = flinkinfo['fcontents'];
-	if(flinkinfo['ftype']!=0 and flinkinfo['ftype']!=7):
-	 fcontents = fcontents.encode();
-	ftypehex = format(flinkinfo['ftype'], 'x').upper();
+    if(flinkinfo['ftype']!=0 and flinkinfo['ftype']!=7):
+     fcontents = fcontents.encode();
+    ftypehex = format(flinkinfo['ftype'], 'x').upper();
   if(not followlink):
    if(listcatfiles[lcfi]['ftype']!=0 and listcatfiles[lcfi]['ftype']!=7):
     fcontents = fcontents.encode();
@@ -1000,7 +1000,7 @@ def UnPackCatFile(infile, outdir=None, followlink=False, skipchecksum=False, ver
    os.utime(listcatfiles[lcfi]['fname'], (listcatfiles[lcfi]['fatime'], listcatfiles[lcfi]['fmtime']));
   if(listcatfiles[lcfi]['ftype']==1):
    if(followlink):
-	getflinkpath = listcatfiles[lcfi]['flinkname'];
+    getflinkpath = listcatfiles[lcfi]['flinkname'];
     flinkid = prelistcatfiles['filetoid'][getflinkpath];
     flinkinfo = listcatfiles[flinkid];
     funame = "";
@@ -1023,7 +1023,7 @@ def UnPackCatFile(infile, outdir=None, followlink=False, skipchecksum=False, ver
       fgname = "";
     except ImportError:
      fgname = "";
-	if(flinkinfo['ftype']==0 or flinkinfo['ftype']==7):
+    if(flinkinfo['ftype']==0 or flinkinfo['ftype']==7):
      fpc = open(listcatfiles[lcfi]['fname'], "wb");
      fpc.write(flinkinfo['fcontents']);
      fpc.close();
@@ -1031,9 +1031,9 @@ def UnPackCatFile(infile, outdir=None, followlink=False, skipchecksum=False, ver
       os.chown(listcatfiles[lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
      os.chmod(listcatfiles[lcfi]['fname'], int(flinkinfo['fchmod'], 8));
      os.utime(listcatfiles[lcfi]['fname'], (flinkinfo['fatime'], flinkinfo['fmtime']));
-	if(flinkinfo['ftype']==1):
+    if(flinkinfo['ftype']==1):
      os.link(flinkinfo['flinkname'], listcatfiles[lcfi]['fname']);
-	if(flinkinfo['ftype']==2):
+    if(flinkinfo['ftype']==2):
      os.symlink(flinkinfo['flinkname'], listcatfiles[lcfi]['fname']);
     if(flinkinfo['ftype']==5):
      os.mkdir(listcatfiles[lcfi]['fname'], int(flinkinfo['fchmod'], 8));
@@ -1041,13 +1041,13 @@ def UnPackCatFile(infile, outdir=None, followlink=False, skipchecksum=False, ver
       os.chown(listcatfiles[lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
      os.chmod(listcatfiles[lcfi]['fname'], int(flinkinfo['fchmod'], 8));
      os.utime(listcatfiles[lcfi]['fname'], (flinkinfo['fatime'], flinkinfo['fmtime']));
-	if(flinkinfo['ftype']==6 and hasattr(os, "mkfifo")):
+    if(flinkinfo['ftype']==6 and hasattr(os, "mkfifo")):
      os.mkfifo(listcatfiles[lcfi]['fname'], int(flinkinfo['fchmod'], 8));
    else:
     os.link(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==2):
    if(followlink):
-	getflinkpath = listcatfiles[lcfi]['flinkname'];
+    getflinkpath = listcatfiles[lcfi]['flinkname'];
     flinkid = prelistcatfiles['filetoid'][getflinkpath];
     flinkinfo = listcatfiles[flinkid];
     funame = "";
@@ -1070,7 +1070,7 @@ def UnPackCatFile(infile, outdir=None, followlink=False, skipchecksum=False, ver
       fgname = "";
     except ImportError:
      fgname = "";
-	if(flinkinfo['ftype']==0 or flinkinfo['ftype']==7):
+    if(flinkinfo['ftype']==0 or flinkinfo['ftype']==7):
      fpc = open(listcatfiles[lcfi]['fname'], "wb");
      fpc.write(flinkinfo['fcontents']);
      fpc.close();
@@ -1078,9 +1078,9 @@ def UnPackCatFile(infile, outdir=None, followlink=False, skipchecksum=False, ver
       os.chown(listcatfiles[lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
      os.chmod(listcatfiles[lcfi]['fname'], int(flinkinfo['fchmod'], 8));
      os.utime(listcatfiles[lcfi]['fname'], (flinkinfo['fatime'], flinkinfo['fmtime']));
-	if(flinkinfo['ftype']==1):
+    if(flinkinfo['ftype']==1):
      os.link(flinkinfo['flinkname'], listcatfiles[lcfi]['fname']);
-	if(flinkinfo['ftype']==2):
+    if(flinkinfo['ftype']==2):
      os.symlink(flinkinfo['flinkname'], listcatfiles[lcfi]['fname']);
     if(flinkinfo['ftype']==5):
      os.mkdir(listcatfiles[lcfi]['fname'], int(flinkinfo['fchmod'], 8));
@@ -1088,7 +1088,7 @@ def UnPackCatFile(infile, outdir=None, followlink=False, skipchecksum=False, ver
       os.chown(listcatfiles[lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
      os.chmod(listcatfiles[lcfi]['fname'], int(flinkinfo['fchmod'], 8));
      os.utime(listcatfiles[lcfi]['fname'], (flinkinfo['fatime'], flinkinfo['fmtime']));
-	if(flinkinfo['ftype']==6 and hasattr(os, "mkfifo")):
+    if(flinkinfo['ftype']==6 and hasattr(os, "mkfifo")):
      os.mkfifo(listcatfiles[lcfi]['fname'], int(flinkinfo['fchmod'], 8));
    else:
     os.symlink(listcatfiles[lcfi]['flinkname'], listcatfiles[lcfi]['fname']);
