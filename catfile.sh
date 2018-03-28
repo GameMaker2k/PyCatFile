@@ -57,6 +57,7 @@ function PackCatFile {
   funame=$(stat -c %U ${fname})
   fgname=$(stat -c %G ${fname})
   flinkcount=$(printf "%x" $(stat -c %h ${fname}))
+  finodehex=$(printf "%x" ${finode})
   ftypehex=$(printf "%x" ${ftype})
   tmpfile=$(mktemp);
   echo -n "${ftypehex}" > ${tmpfile}
@@ -86,6 +87,8 @@ function PackCatFile {
   echo -n "${fgname}" >> ${tmpfile}
   echo -n -e '\x00' >> ${tmpfile}
   echo -n "${fcurinode}" >> ${tmpfile}
+  echo -n -e '\x00' >> ${tmpfile}
+  echo -n "${finodehex}" >> ${tmpfile}
   echo -n -e '\x00' >> ${tmpfile}
   echo -n "${flinkcount}" >> ${tmpfile}
   echo -n -e '\x00' >> ${tmpfile}

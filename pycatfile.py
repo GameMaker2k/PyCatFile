@@ -14,7 +14,7 @@
     Copyright 2018 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 3/14/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 3/28/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
@@ -47,7 +47,7 @@ __program_name__ = "PyCatFile";
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 0, 1, "RC 1", 1);
-__version_date_info__ = (2018, 3, 12, "RC 1", 1);
+__version_date_info__ = (2018, 3, 28, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
@@ -79,6 +79,17 @@ def RemoveWindowsPath(dpath):
   dpath = dpath + "/";
  return dpath;
 
+def NormalizeRelativePath(inpath):
+ inpath = RemoveWindowsPath(inpath);
+ if(os.path.isabs(inpath)):
+  outpath = inpath;
+ else:
+  if(inpath.startswith("./") or inpath.startswith("../")):
+   outpath = inpath;
+  else:
+   outpath = "./"+inpath;
+ return outpath;
+
 def ListDir(dirpath, followlink=False, duplicates=False):
  if(isinstance(dirpath, (list, tuple, ))):
   dirpath = list(filter(None, dirpath));
@@ -88,6 +99,7 @@ def ListDir(dirpath, followlink=False, duplicates=False):
  for mydirfile in dirpath:
   if(not os.path.exists(mydirfile)):
    return False;
+  mydirfile = NormalizeRelativePath(mydirfile);
   if(os.path.exists(mydirfile) and os.path.islink(mydirfile)):
    mydirfile = RemoveWindowsPath(os.path.realpath(mydirfile));
   if(os.path.exists(mydirfile) and os.path.isdir(mydirfile)):
@@ -372,6 +384,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
  if(not GetDirList):
   return False;
  curinode = 0;
+ curfid = 0;
  inodelist = [];
  inodetofile = {};
  filetoinode = {};
@@ -401,19 +414,23 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   if(stat.S_ISFIFO(fpremode)):
    ftype = 6;
   flinkname = "";
-  fcurinode = curinode;
-  if(ftype==0 or ftype==7):
-   if(finode in inodelist):
-    ftype = 1;
-    flinkname = inodetofile[finode];
-    fcurinode = format(int(inodetocatinode[finode]), 'x').upper();
-   if(finode not in inodelist):
-    inodelist.append(finode);
-    inodetofile.update({finode: fname});
-    inodetocatinode.update({finode: curinode});
-  if(ftype!=1):
-   curfinode = format(int(curinode), 'x').upper();
+  fcurfid = format(int(curfid), 'x').upper();
+  if(not followlink):
+   if(ftype!=1):
+    if(finode in inodelist):
+     ftype = 1;
+     flinkname = inodetofile[finode];
+     fcurinode = format(int(inodetocatinode[finode]), 'x').upper();
+    if(finode not in inodelist):
+     inodelist.append(finode);
+     inodetofile.update({finode: fname});
+     inodetocatinode.update({finode: curinode});
+     fcurinode = format(int(curinode), 'x').upper();
+     curinode = curinode + 1;
+  else:
+   fcurinode = format(int(curinode), 'x').upper();
    curinode = curinode + 1;
+  curfid = curfid + 1;
   if(ftype==2):
    flinkname = os.readlink(fname);
   fdev = fstatinfo.st_dev;
@@ -488,7 +505,8 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   catfileoutstr = catfileoutstr + AppendNullByte(funame);
   catfileoutstr = catfileoutstr + AppendNullByte(fgid);
   catfileoutstr = catfileoutstr + AppendNullByte(fgname);
-  catfileoutstr = catfileoutstr + AppendNullByte(curfinode);
+  catfileoutstr = catfileoutstr + AppendNullByte(fcurfid);
+  catfileoutstr = catfileoutstr + AppendNullByte(fcurinode);
   catfileoutstr = catfileoutstr + AppendNullByte(flinkcount);
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
@@ -603,7 +621,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   seekend = CatSizeEnd;
  while(seekstart<seekend):
   catfhstart = catfp.tell();
-  catheaderdata = ReadFileHeaderData(catfp, 22);
+  catheaderdata = ReadFileHeaderData(catfp, 23);
   catftype = int(catheaderdata[0], 16);
   catfname = catheaderdata[1];
   catflinkname = catheaderdata[2];
@@ -617,22 +635,23 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catfuname = catheaderdata[10];
   catfgid = int(catheaderdata[11], 16);
   catfgname = catheaderdata[12];
-  finode = int(catheaderdata[13], 16);
-  flinkcount = int(catheaderdata[14], 16);
-  catfdev_minor = int(catheaderdata[15], 16);
-  catfdev_major = int(catheaderdata[16], 16);
-  catfrdev_minor = int(catheaderdata[17], 16);
-  catfrdev_major = int(catheaderdata[18], 16);
-  catfchecksumtype = catheaderdata[19].lower();
+  fid = int(catheaderdata[13], 16);
+  finode = int(catheaderdata[14], 16);
+  flinkcount = int(catheaderdata[15], 16);
+  catfdev_minor = int(catheaderdata[16], 16);
+  catfdev_major = int(catheaderdata[17], 16);
+  catfrdev_minor = int(catheaderdata[18], 16);
+  catfrdev_major = int(catheaderdata[19], 16);
+  catfchecksumtype = catheaderdata[20].lower();
   if(catfchecksumtype=="none"):
-   catfcs = int(catheaderdata[20]);
-   catfccs = int(catheaderdata[21]);
+   catfcs = int(catheaderdata[21]);
+   catfccs = int(catheaderdata[22]);
   if(CheckSumSupport(catfchecksumtype, 3)):
-   catfcs = int(catheaderdata[20], 16);
-   catfccs = int(catheaderdata[21], 16);
+   catfcs = int(catheaderdata[21], 16);
+   catfccs = int(catheaderdata[22], 16);
   if(CheckSumSupport(catfchecksumtype, 4)):
-   catfcs = catheaderdata[20];
-   catfccs = catheaderdata[21];
+   catfcs = catheaderdata[21];
+   catfccs = catheaderdata[22];
   hc = 0;
   hcmax = len(catheaderdata) - 2;
   hout = "";
@@ -830,6 +849,11 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
  catfp.write(fileheader.encode());
  lcfi = 0;
  lcfx = len(listcatfiles);
+ curinode = 0;
+ curfid = 0;
+ inodelist = [];
+ inodetofile = {};
+ filetoinode = {};
  while(lcfi < lcfx):
   fname = listcatfiles[lcfi]['fname'];
   if(verbose):
@@ -878,10 +902,23 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
     if(flinkinfo['ftype']!=0 and flinkinfo['ftype']!=7):
      fcontents = fcontents.encode();
     ftypehex = format(flinkinfo['ftype'], 'x').upper();
-  if(not followlink):
+  else:
    if(listcatfiles[lcfi]['ftype']!=0 and listcatfiles[lcfi]['ftype']!=7):
     fcontents = fcontents.encode();
    ftypehex = format(listcatfiles[lcfi]['ftype'], 'x').upper();
+  fcurfid = format(curfid, 'x').upper();
+  if(not followlink):
+   if(flinkinfo['ftype']!=1):
+    fcurinode = format(int(curinode), 'x').upper();
+    inodetofile.update({curinode: fname});
+    filetoinode.update({fname: curinode});
+    curinode = curinode + 1;
+   else:
+    fcurinode = format(int(filetoinode[flinkname]), 'x').upper();
+  else:
+    fcurinode = format(int(curinode), 'x').upper();
+    curinode = curinode + 1;
+  curfid = curfid + 1;
   catfileoutstr = AppendNullByte(ftypehex);
   catfileoutstr = catfileoutstr + AppendNullByte(fname);
   catfileoutstr = catfileoutstr + AppendNullByte(flinkname);
@@ -895,7 +932,8 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
   catfileoutstr = catfileoutstr + AppendNullByte(funame);
   catfileoutstr = catfileoutstr + AppendNullByte(fgid);
   catfileoutstr = catfileoutstr + AppendNullByte(fgname);
-  catfileoutstr = catfileoutstr + AppendNullByte(finode);
+  catfileoutstr = catfileoutstr + AppendNullByte(fcurfid);
+  catfileoutstr = catfileoutstr + AppendNullByte(fcurinode);
   catfileoutstr = catfileoutstr + AppendNullByte(flinkcount);
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
