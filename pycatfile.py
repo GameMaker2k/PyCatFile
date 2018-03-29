@@ -65,8 +65,8 @@ if __name__ == "__main__":
   curscrpath = ".";
  if(os.sep=="\\"):
   curscrpath = curscrpath.replace(os.sep, "/");
- curscrpath = curscrpath+"/";
- scrfile = curscrpath+"catfile.py";
+ curscrpath = curscrpath + "/";
+ scrfile = curscrpath + "catfile.py";
  if(os.path.exists(scrfile) and os.path.isfile(scrfile)):
   scrcmd = subprocess.Popen([sys.executable, scrfile] + sys.argv[1:]);
   scrcmd.wait();
@@ -87,7 +87,7 @@ def NormalizeRelativePath(inpath):
   if(inpath.startswith("./") or inpath.startswith("../")):
    outpath = inpath;
   else:
-   outpath = "./"+inpath;
+   outpath = "./" + inpath;
  return outpath;
 
 def ListDir(dirpath, followlink=False, duplicates=False):
