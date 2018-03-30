@@ -76,8 +76,6 @@ function PackCatFile {
   echo -n -e '\x00' >> ${tmpfile}
   echo -n "${fmode}" >> ${tmpfile}
   echo -n -e '\x00' >> ${tmpfile}
-  echo -n "${fchmode}" >> ${tmpfile}
-  echo -n -e '\x00' >> ${tmpfile}
   echo -n "${fuid}" >> ${tmpfile}
   echo -n -e '\x00' >> ${tmpfile}
   echo -n "${funame}" >> ${tmpfile}
