@@ -643,7 +643,12 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   SeekToEndOfFile(catfp);
  CatSize = catfp.tell();
  CatSizeEnd = CatSize;
- catfp.seek(0, 0);
+ try:
+  catfp.seek(0, 0);
+ except OSError:
+  return False;
+ except ValueError:
+  return False;
  catstring = ReadFileHeaderData(catfp, 1)[0];
  catversion = int(re.findall("([\d]+)$", catstring)[0], 16);
  catlist = {};
