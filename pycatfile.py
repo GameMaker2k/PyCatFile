@@ -369,6 +369,12 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
    except ImportError:
     return False;
    catfp = bz2.BZ2File(outfile, "wb", 9);
+  elif(((fextname==".zst" or fextname==".czst") and compression=="auto") or compression=="bzip2"):
+   try:
+    import zstandard;
+   except ImportError:
+    return False;
+   catfp = zstandard.open(outfile, "wb", zstandard.ZstdCompressor(level=10));
   elif(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
    try:
     import lzma;
