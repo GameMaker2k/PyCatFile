@@ -637,6 +637,8 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catfp = open(infile, "rb");
  try:
   catfp.seek(0, 2);
+ except OSError:
+  SeekToEndOfFile(catfp);
  except ValueError:
   SeekToEndOfFile(catfp);
  CatSize = catfp.tell();
