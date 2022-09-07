@@ -494,12 +494,16 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
    funame = userinfo.pw_name;
   except ImportError:
    funame = "";
+  except KeyError:
+   funame = "";
   fgname = "";
   try:
    import grp;
    groupinfo = grp.getgrgid(fstatinfo.st_gid);
    fgname = groupinfo.gr_name;
   except ImportError:
+   fgname = "";
+  except KeyError:
    fgname = "";
   fdev_minor = format(int(fdev_minor), 'x').upper();
   fdev_major = format(int(fdev_major), 'x').upper();
