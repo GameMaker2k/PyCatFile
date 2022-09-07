@@ -160,6 +160,31 @@ def AppendNullByte(indata):
  outdata = str(indata) + "\0";
  return outdata;
 
+def CompressionSupport():
+ compression_list = [];
+ try:
+  import gzip;
+  compression_list.append("gzip");
+ except ImportError:
+  '''return False;'''
+ try:
+  import bz2;
+  compression_list.append("bzip2");
+ except ImportError:
+  '''return False;'''
+ try:
+  import zstandard;
+  compression_list.append("zstandard");
+ except ImportError:
+  '''return False;'''
+ try:
+  import lzma;
+  compression_list.append("lzma");
+  compression_list.append("xz");
+ except ImportError:
+  '''return False;'''
+ return compression_list;
+
 def CheckCompressionType(infile, closefp=True):
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
