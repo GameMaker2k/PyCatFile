@@ -168,21 +168,21 @@ function PackCatFile($infiles, $outfile, $followlink=False, $checksumtype="crc32
   if(is_dir($fname)) {
    $ftype = 5; }
   if($ftype==1 || $ftype==2 || $ftype==5) {
-   $fsize = strtoupper(dechex(intval("0"))); }
+   $fsize = strtolower(dechex(intval("0"))); }
   if($ftype==0) {
-   $fsize = strtoupper(dechex(intval($fstatinfo['size']))); }
+   $fsize = strtolower(dechex(intval($fstatinfo['size']))); }
   $flinkname = "";
   if($ftype==1 || $ftype==2) {
    $flinkname = readlink($fname); }
-  $fatime = strtoupper(dechex(intval($fstatinfo['atime'])));
-  $fmtime = strtoupper(dechex(intval($fstatinfo['mtime'])));
-  $fmode = strtoupper(dechex(intval($fstatinfo['mode'])));
-  $fuid = strtoupper(dechex(intval($fstatinfo['uid'])));
-  $fgid = strtoupper(dechex(intval($fstatinfo['gid'])));
-  $fdev_minor = strtoupper(dechex(intval(0)));
-  $fdev_major = strtoupper(dechex(intval(0)));
-  $frdev_minor = strtoupper(dechex(intval(0)));
-  $frdev_major = strtoupper(dechex(intval(0)));
+  $fatime = strtolower(dechex(intval($fstatinfo['atime'])));
+  $fmtime = strtolower(dechex(intval($fstatinfo['mtime'])));
+  $fmode = strtolower(dechex(intval($fstatinfo['mode'])));
+  $fuid = strtolower(dechex(intval($fstatinfo['uid'])));
+  $fgid = strtolower(dechex(intval($fstatinfo['gid'])));
+  $fdev_minor = strtolower(dechex(intval(0)));
+  $fdev_major = strtolower(dechex(intval(0)));
+  $frdev_minor = strtolower(dechex(intval(0)));
+  $frdev_major = strtolower(dechex(intval(0)));
   $fcontents = "";
   if($ftype==0) {
    $fpc = fopen($fname, "rb");
@@ -193,7 +193,7 @@ function PackCatFile($infiles, $outfile, $followlink=False, $checksumtype="crc32
    $fpc = fopen($flinkname, "rb");
    $fcontents = fread($fpc, intval($flstatinfo['size']));
    fclose($fpc); }
-  $ftypehex = strtoupper(dechex($ftype));
+  $ftypehex = strtolower(dechex($ftype));
   $ftypeoutstr = $ftypehex;
   $catfileoutstr = AppendNullByte($ftypeoutstr);
   $catfileoutstr = $catfileoutstr.AppendNullByte($fname);
@@ -210,11 +210,11 @@ function PackCatFile($infiles, $outfile, $followlink=False, $checksumtype="crc32
   $catfileoutstr = $catfileoutstr.AppendNullByte($frdev_major);
   $catfileoutstr = $catfileoutstr.AppendNullByte($checksumtype);
   if($checksumtype=="adler32" || $checksumtype=="crc32") {
-   $catfileheadercshex = strtoupper(dechex(hash($checksumtype, $catfileoutstr)));
-   $catfilecontentcshex = strtoupper(dechex(hash($checksumtype, $catfileoutstr))); }
+   $catfileheadercshex = strtolower(dechex(hash($checksumtype, $catfileoutstr)));
+   $catfilecontentcshex = strtolower(dechex(hash($checksumtype, $catfileoutstr))); }
   if($checksumtype=="md5" || $checksumtype=="sha1" || $checksumtype=="sha224" || $checksumtype=="sha256" || $checksumtype=="sha384" || $checksumtype=="sha512") {
-   $catfileheadercshex = strtoupper(hash($checksumtype, $catfileoutstr));
-   $catfilecontentcshex = strtoupper(hash($checksumtype, $catfileoutstr)); }
+   $catfileheadercshex = strtolower(hash($checksumtype, $catfileoutstr));
+   $catfilecontentcshex = strtolower(hash($checksumtype, $catfileoutstr)); }
   $catfileoutstr = $catfileoutstr.AppendNullByte($catfileheadercshex);
   $catfileoutstr = $catfileoutstr.AppendNullByte($catfilecontentcshex);
   $catfileoutstrecd = $catfileoutstr;
@@ -280,7 +280,7 @@ function CatFileToArray($infile, $seekstart=0, $seekend=0, $listonly=False, $ski
   while($hc<$hcmax) {
    $hout = $hout.AppendNullByte($catheaderdata[$hc]);
    $hc = $hc + 1; }
-  $catnewfcs = strtoupper(hash($catfchecksumtype, $hout));
+  $catnewfcs = strtolower(hash($catfchecksumtype, $hout));
   if($catfcs!=$catnewfcs && $skipchecksum===False) {
    print("File Header Checksum Error with file "+$catfname+" at offset "+$catfhstart);
    return False; }
@@ -290,7 +290,7 @@ function CatFileToArray($infile, $seekstart=0, $seekend=0, $listonly=False, $ski
   $phphascontents = False;
   if($catfsize>1 && $listonly===False) {
    $catfcontents = fread($catfp, $catfsize); 
-   $catnewfccs = strtoupper(hash($catfchecksumtype, $catfcontents));
+   $catnewfccs = strtolower(hash($catfchecksumtype, $catfcontents));
    if($catfccs!=$catnewfccs && $skipchecksum===False) {
     print("File Content Checksum Error with file "+$catfname+" at offset "+$catfcontentstart);
     return False; }
@@ -373,19 +373,19 @@ function RePackCatFile($infiles, $outfile, $seekstart=0, $seekend=0, $checksumty
   $fname = $listcatfiles[$lcfi]['fname'];
   if($verbose===True) {
    print($fname."\n"); }
-  $fsize = strtoupper(dechex(intval($listcatfiles[$lcfi]['fsize'])));
+  $fsize = strtolower(dechex(intval($listcatfiles[$lcfi]['fsize'])));
   $flinkname = $listcatfiles[$lcfi]['flinkname'];
-  $fatime = strtoupper(dechex(intval($listcatfiles[$lcfi]['fatime'])));
-  $fmtime = strtoupper(dechex(intval($listcatfiles[$lcfi]['fmtime'])));
-  $fmode = strtoupper(dechex(intval($listcatfiles[$lcfi]['fmode'])));
-  $fuid = strtoupper(dechex(intval($listcatfiles[$lcfi]['fuid'])));
-  $fgid = strtoupper(dechex(intval($listcatfiles[$lcfi]['fgid'])));
-  $fdev_minor = strtoupper(dechex(intval($listcatfiles[$lcfi]['fminor'])));
-  $fdev_major = strtoupper(dechex(intval($listcatfiles[$lcfi]['fmajor'])));
-  $frdev_minor = strtoupper(dechex(intval($listcatfiles[$lcfi]['frminor'])));
-  $frdev_major = strtoupper(dechex(intval($listcatfiles[$lcfi]['frmajor'])));
+  $fatime = strtolower(dechex(intval($listcatfiles[$lcfi]['fatime'])));
+  $fmtime = strtolower(dechex(intval($listcatfiles[$lcfi]['fmtime'])));
+  $fmode = strtolower(dechex(intval($listcatfiles[$lcfi]['fmode'])));
+  $fuid = strtolower(dechex(intval($listcatfiles[$lcfi]['fuid'])));
+  $fgid = strtolower(dechex(intval($listcatfiles[$lcfi]['fgid'])));
+  $fdev_minor = strtolower(dechex(intval($listcatfiles[$lcfi]['fminor'])));
+  $fdev_major = strtolower(dechex(intval($listcatfiles[$lcfi]['fmajor'])));
+  $frdev_minor = strtolower(dechex(intval($listcatfiles[$lcfi]['frminor'])));
+  $frdev_major = strtolower(dechex(intval($listcatfiles[$lcfi]['frmajor'])));
   $fcontents = $listcatfiles[$lcfi]['fcontents'];
-  $ftypehex = strtoupper(dechex(intval($listcatfiles[$lcfi]['ftype'])));
+  $ftypehex = strtolower(dechex(intval($listcatfiles[$lcfi]['ftype'])));
   $ftypeoutstr = $ftypehex;
   $catfileoutstr = AppendNullByte($ftypeoutstr);
   $catfileoutstr = $catfileoutstr.AppendNullByte($fname);
@@ -402,11 +402,11 @@ function RePackCatFile($infiles, $outfile, $seekstart=0, $seekend=0, $checksumty
   $catfileoutstr = $catfileoutstr.AppendNullByte($frdev_major);
   $catfileoutstr = $catfileoutstr.AppendNullByte($checksumtype);
   if($checksumtype=="adler32" || $checksumtype=="crc32") {
-   $catfileheadercshex = strtoupper(dechex(hash($checksumtype, $catfileoutstr)));
-   $catfilecontentcshex = strtoupper(dechex(hash($checksumtype, $catfileoutstr))); }
+   $catfileheadercshex = strtolower(dechex(hash($checksumtype, $catfileoutstr)));
+   $catfilecontentcshex = strtolower(dechex(hash($checksumtype, $catfileoutstr))); }
   if($checksumtype=="md5" || $checksumtype=="sha1" || $checksumtype=="sha224" || $checksumtype=="sha256" || $checksumtype=="sha384" || $checksumtype=="sha512") {
-   $catfileheadercshex = strtoupper(hash($checksumtype, $catfileoutstr));
-   $catfilecontentcshex = strtoupper(hash($checksumtype, $catfileoutstr)); }
+   $catfileheadercshex = strtolower(hash($checksumtype, $catfileoutstr));
+   $catfilecontentcshex = strtolower(hash($checksumtype, $catfileoutstr)); }
   $catfileoutstr = $catfileoutstr.AppendNullByte($catfileheadercshex);
   $catfileoutstr = $catfileoutstr.AppendNullByte($catfilecontentcshex);
   $catfileoutstrecd = $catfileoutstr;

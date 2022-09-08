@@ -516,21 +516,21 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   if(stat.S_ISFIFO(fpremode)):
    ftype = 6;
   flinkname = "";
-  fcurfid = format(int(curfid), 'x').upper();
+  fcurfid = format(int(curfid), 'x').lower();
   if(not followlink):
    if(ftype!=1):
     if(finode in inodelist):
      ftype = 1;
      flinkname = inodetofile[finode];
-     fcurinode = format(int(inodetocatinode[finode]), 'x').upper();
+     fcurinode = format(int(inodetocatinode[finode]), 'x').lower();
     if(finode not in inodelist):
      inodelist.append(finode);
      inodetofile.update({finode: fname});
      inodetocatinode.update({finode: curinode});
-     fcurinode = format(int(curinode), 'x').upper();
+     fcurinode = format(int(curinode), 'x').lower();
      curinode = curinode + 1;
   else:
-   fcurinode = format(int(curinode), 'x').upper();
+   fcurinode = format(int(curinode), 'x').lower();
    curinode = curinode + 1;
   curfid = curfid + 1;
   if(ftype==2):
@@ -548,21 +548,21 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   frdev_minor = getfrdev[0];
   frdev_major = getfrdev[1];
   if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
-   fsize = format(int("0"), 'x').upper();
+   fsize = format(int("0"), 'x').lower();
   if(ftype==0 or ftype==7):
-   fsize = format(int(fstatinfo.st_size), 'x').upper();
-  fatime = format(int(fstatinfo.st_atime), 'x').upper();
-  fmtime = format(int(fstatinfo.st_mtime), 'x').upper();
-  fctime = format(int(fstatinfo.st_ctime), 'x').upper();
+   fsize = format(int(fstatinfo.st_size), 'x').lower();
+  fatime = format(int(fstatinfo.st_atime), 'x').lower();
+  fmtime = format(int(fstatinfo.st_mtime), 'x').lower();
+  fctime = format(int(fstatinfo.st_ctime), 'x').lower();
   if(hasattr(fstatinfo, "st_birthtime")):
-   fbtime = format(int(fstatinfo.st_birthtime), 'x').upper();
+   fbtime = format(int(fstatinfo.st_birthtime), 'x').lower();
   else:
-   fbtime = format(int(fstatinfo.st_ctime), 'x').upper();
-  fmode = format(int(fstatinfo.st_mode), 'x').upper();
-  fchmode = format(int(stat.S_IMODE(fstatinfo.st_mode)), 'x').upper();
-  ftypemod = format(int(stat.S_IFMT(fstatinfo.st_mode)), 'x').upper();
-  fuid = format(int(fstatinfo.st_uid), 'x').upper();
-  fgid = format(int(fstatinfo.st_gid), 'x').upper();
+   fbtime = format(int(fstatinfo.st_ctime), 'x').lower();
+  fmode = format(int(fstatinfo.st_mode), 'x').lower();
+  fchmode = format(int(stat.S_IMODE(fstatinfo.st_mode)), 'x').lower();
+  ftypemod = format(int(stat.S_IFMT(fstatinfo.st_mode)), 'x').lower();
+  fuid = format(int(fstatinfo.st_uid), 'x').lower();
+  fgid = format(int(fstatinfo.st_gid), 'x').lower();
   funame = "";
   try:
    import pwd;
@@ -583,12 +583,12 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
     fgname = "";
   except ImportError:
    fgname = "";
-  fdev_minor = format(int(fdev_minor), 'x').upper();
-  fdev_major = format(int(fdev_major), 'x').upper();
-  frdev_minor = format(int(frdev_minor), 'x').upper();
-  frdev_major = format(int(frdev_major), 'x').upper();
-  finode = format(int(finode), 'x').upper();
-  flinkcount = format(int(flinkcount), 'x').upper();
+  fdev_minor = format(int(fdev_minor), 'x').lower();
+  fdev_major = format(int(fdev_major), 'x').lower();
+  frdev_minor = format(int(frdev_minor), 'x').lower();
+  frdev_major = format(int(frdev_major), 'x').lower();
+  finode = format(int(finode), 'x').lower();
+  flinkcount = format(int(flinkcount), 'x').lower();
   fcontents = "".encode();
   if(ftype==0 or ftype==7):
    fpc = open(fname, "rb");
@@ -599,7 +599,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
    fpc = open(flinkname, "rb");
    fcontents = fpc.read(int(flstatinfo.st_size));
    fpc.close();
-  ftypehex = format(ftype, 'x').upper();
+  ftypehex = format(ftype, 'x').lower();
   catfileoutstr = AppendNullByte(ftypehex);
   catfileoutstr = catfileoutstr + AppendNullByte(fname);
   catfileoutstr = catfileoutstr + AppendNullByte(flinkname);
@@ -621,21 +621,21 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
   if(checksumtype=="none"):
-   catfileheadercshex = format(0, 'x').upper();
-   catfilecontentcshex = format(0, 'x').upper();
+   catfileheadercshex = format(0, 'x').lower();
+   catfilecontentcshex = format(0, 'x').lower();
   if(CheckSumSupport(checksumtype, 1)):
-   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
-   catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').upper();
+   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
+   catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').lower();
   if(CheckSumSupport(checksumtype, 2)):
-   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
-   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').upper();
+   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
+   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').lower();
   if(CheckSumSupport(checksumtype, 4)):
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode());
-   catfileheadercshex = checksumoutstr.hexdigest().upper();
+   catfileheadercshex = checksumoutstr.hexdigest().lower();
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(fcontents);
-   catfilecontentcshex = checksumoutstr.hexdigest().upper();
+   catfilecontentcshex = checksumoutstr.hexdigest().lower();
   catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
   catfileoutstr = catfileoutstr + AppendNullByte(catfilecontentcshex);
   catfileoutstrecd = catfileoutstr.encode();
@@ -782,8 +782,8 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catfcs = int(catheaderdata[20], 16);
    catfccs = int(catheaderdata[21], 16);
   if(CheckSumSupport(catfchecksumtype, 4)):
-   catfcs = catheaderdata[20].upper();
-   catfccs = catheaderdata[21].upper();
+   catfcs = catheaderdata[20].lower();
+   catfccs = catheaderdata[21].lower();
   hc = 0;
   hcmax = len(catheaderdata) - 2;
   hout = "";
@@ -799,7 +799,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   if(CheckSumSupport(catfchecksumtype, 4)):
    checksumoutstr = hashlib.new(catfchecksumtype);
    checksumoutstr.update(hout.encode());
-   catnewfcs = checksumoutstr.hexdigest().upper();
+   catnewfcs = checksumoutstr.hexdigest().lower();
   if(catfcs!=catnewfcs and not skipchecksum):
    logging.info("File Header Checksum Error with file " + catfname + " at offset " + str(catfhstart));
    return False;
@@ -818,7 +818,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    if(CheckSumSupport(catfchecksumtype, 4)):
     checksumoutstr = hashlib.new(catfchecksumtype);
     checksumoutstr.update(catfcontents);
-    catnewfccs = checksumoutstr.hexdigest().upper();
+    catnewfccs = checksumoutstr.hexdigest().lower();
    pyhascontents = True;
    if(catfccs!=catnewfccs and skipchecksum):
     logging.info("File Content Checksum Error with file " + catfname + " at offset " + str(catfcontentstart));
@@ -1002,65 +1002,65 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
   fname = listcatfiles[lcfi]['fname'];
   if(verbose):
    logging.info(fname);
-  fsize = format(int(listcatfiles[lcfi]['fsize']), 'x').upper();
+  fsize = format(int(listcatfiles[lcfi]['fsize']), 'x').lower();
   flinkname = listcatfiles[lcfi]['flinkname'];
-  fatime = format(int(listcatfiles[lcfi]['fatime']), 'x').upper();
-  fmtime = format(int(listcatfiles[lcfi]['fmtime']), 'x').upper();
-  fctime = format(int(listcatfiles[lcfi]['fctime']), 'x').upper();
-  fmode = format(int(int(listcatfiles[lcfi]['fmode'], 8)), 'x').upper();
-  fchmode = format(int(int(listcatfiles[lcfi]['fchmode'], 8)), 'x').upper();
-  fuid = format(int(listcatfiles[lcfi]['fuid']), 'x').upper();
+  fatime = format(int(listcatfiles[lcfi]['fatime']), 'x').lower();
+  fmtime = format(int(listcatfiles[lcfi]['fmtime']), 'x').lower();
+  fctime = format(int(listcatfiles[lcfi]['fctime']), 'x').lower();
+  fmode = format(int(int(listcatfiles[lcfi]['fmode'], 8)), 'x').lower();
+  fchmode = format(int(int(listcatfiles[lcfi]['fchmode'], 8)), 'x').lower();
+  fuid = format(int(listcatfiles[lcfi]['fuid']), 'x').lower();
   funame = listcatfiles[lcfi]['funame'];
-  fgid = format(int(listcatfiles[lcfi]['fgid']), 'x').upper();
+  fgid = format(int(listcatfiles[lcfi]['fgid']), 'x').lower();
   fgname = listcatfiles[lcfi]['fgname'];
   finode = listcatfiles[lcfi]['finode'];
   flinkcount = listcatfiles[lcfi]['flinkcount'];
-  fdev_minor = format(int(listcatfiles[lcfi]['fminor']), 'x').upper();
-  fdev_major = format(int(listcatfiles[lcfi]['fmajor']), 'x').upper();
-  frdev_minor = format(int(listcatfiles[lcfi]['frminor']), 'x').upper();
-  frdev_major = format(int(listcatfiles[lcfi]['frmajor']), 'x').upper();
+  fdev_minor = format(int(listcatfiles[lcfi]['fminor']), 'x').lower();
+  fdev_major = format(int(listcatfiles[lcfi]['fmajor']), 'x').lower();
+  frdev_minor = format(int(listcatfiles[lcfi]['frminor']), 'x').lower();
+  frdev_major = format(int(listcatfiles[lcfi]['frmajor']), 'x').lower();
   fcontents = listcatfiles[lcfi]['fcontents'];
   if(followlink):
    if(listcatfiles[lcfi]['ftype']==1 or listcatfiles[lcfi]['ftype']==2):
     getflinkpath = listcatfiles[lcfi]['flinkname'];
     flinkid = prelistcatfiles['filetoid'][getflinkpath];
     flinkinfo = listcatfiles[flinkid];
-    fsize = format(int(flinkinfo['fsize']), 'x').upper();
+    fsize = format(int(flinkinfo['fsize']), 'x').lower();
     flinkname = flinkinfo['flinkname'];
-    fatime = format(int(flinkinfo['fatime']), 'x').upper();
-    fmtime = format(int(flinkinfo['fmtime']), 'x').upper();
-    fctime = format(int(flinkinfo['fctime']), 'x').upper();
-    fmode = format(int(int(flinkinfo['fmode'], 8)), 'x').upper();
-    fchmode = format(int(int(flinkinfo['fchmode'], 8)), 'x').upper();
-    fuid = format(int(flinkinfo['fuid']), 'x').upper();
+    fatime = format(int(flinkinfo['fatime']), 'x').lower();
+    fmtime = format(int(flinkinfo['fmtime']), 'x').lower();
+    fctime = format(int(flinkinfo['fctime']), 'x').lower();
+    fmode = format(int(int(flinkinfo['fmode'], 8)), 'x').lower();
+    fchmode = format(int(int(flinkinfo['fchmode'], 8)), 'x').lower();
+    fuid = format(int(flinkinfo['fuid']), 'x').lower();
     funame = flinkinfo['funame'];
-    fgid = format(int(flinkinfo['fgid']), 'x').upper();
+    fgid = format(int(flinkinfo['fgid']), 'x').lower();
     fgname = flinkinfo['fgname'];
     finode = flinkinfo['finode'];
     flinkcount = flinkinfo['flinkcount'];
-    fdev_minor = format(int(flinkinfo['fminor']), 'x').upper();
-    fdev_major = format(int(flinkinfo['fmajor']), 'x').upper();
-    frdev_minor = format(int(flinkinfo['frminor']), 'x').upper();
-    frdev_major = format(int(flinkinfo['frmajor']), 'x').upper();
+    fdev_minor = format(int(flinkinfo['fminor']), 'x').lower();
+    fdev_major = format(int(flinkinfo['fmajor']), 'x').lower();
+    frdev_minor = format(int(flinkinfo['frminor']), 'x').lower();
+    frdev_major = format(int(flinkinfo['frmajor']), 'x').lower();
     fcontents = flinkinfo['fcontents'];
     if(flinkinfo['ftype']!=0 and flinkinfo['ftype']!=7):
      fcontents = fcontents.encode();
-    ftypehex = format(flinkinfo['ftype'], 'x').upper();
+    ftypehex = format(flinkinfo['ftype'], 'x').lower();
   else:
    if(listcatfiles[lcfi]['ftype']!=0 and listcatfiles[lcfi]['ftype']!=7):
     fcontents = fcontents.encode();
-   ftypehex = format(listcatfiles[lcfi]['ftype'], 'x').upper();
-  fcurfid = format(curfid, 'x').upper();
+   ftypehex = format(listcatfiles[lcfi]['ftype'], 'x').lower();
+  fcurfid = format(curfid, 'x').lower();
   if(not followlink):
    if(flinkinfo['ftype']!=1):
-    fcurinode = format(int(curinode), 'x').upper();
+    fcurinode = format(int(curinode), 'x').lower();
     inodetofile.update({curinode: fname});
     filetoinode.update({fname: curinode});
     curinode = curinode + 1;
    else:
-    fcurinode = format(int(filetoinode[flinkname]), 'x').upper();
+    fcurinode = format(int(filetoinode[flinkname]), 'x').lower();
   else:
-    fcurinode = format(int(curinode), 'x').upper();
+    fcurinode = format(int(curinode), 'x').lower();
     curinode = curinode + 1;
   curfid = curfid + 1;
   catfileoutstr = AppendNullByte(ftypehex);
@@ -1085,21 +1085,21 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
   if(checksumtype=="none"):
-   catfileheadercshex = format(0, 'x').upper();
-   catfilecontentcshex = format(0, 'x').upper();
+   catfileheadercshex = format(0, 'x').lower();
+   catfilecontentcshex = format(0, 'x').lower();
   if(CheckSumSupport(checksumtype, 1)):
-   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
-   catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').upper();
+   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
+   catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').lower();
   if(CheckSumSupport(checksumtype, 2)):
-   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').upper();
-   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').upper();
+   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
+   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').lower();
   if(CheckSumSupport(checksumtype, 4)):
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode());
-   catfileheadercshex = checksumoutstr.hexdigest().upper();
+   catfileheadercshex = checksumoutstr.hexdigest().lower();
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(fcontents);
-   catfilecontentcshex = checksumoutstr.hexdigest().upper();
+   catfilecontentcshex = checksumoutstr.hexdigest().lower();
   catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
   catfileoutstr = catfileoutstr + AppendNullByte(catfilecontentcshex);
   catfileoutstrecd = catfileoutstr.encode();
