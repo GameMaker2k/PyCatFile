@@ -106,74 +106,74 @@ function PackCatFile {
   elif [ "${4}" == "crc32" ]; then
    echo -n "${4}" >> ${tmpfile}
    echo -n -e '\x00' >> ${tmpfile}
-   catfileheadercshex=$(crc32 ${tmpfile})
+   catfileheadercshex=$(crc32 ${tmpfile} | cut -d ' ' -f 1)
    if [ -f ${fname} ]; then
-    catfilecontentcshex=$(crc32 ${fname})
+    catfilecontentcshex=$(crc32 ${fname} | cut -d ' ' -f 1)
    else
-    catfilecontentcshex=$(crc32 /dev/null)
+    catfilecontentcshex=$(crc32 /dev/null | cut -d ' ' -f 1)
    fi
   elif [ "${4}" == "md5" ]; then
    echo -n "md5" >> ${tmpfile}
    echo -n -e '\x00' >> ${tmpfile}
-   catfileheadercshex=$(md5sum ${tmpfile})
+   catfileheadercshex=$(md5sum ${tmpfile} | cut -d ' ' -f 1)
    if [ -f ${fname} ]; then
-    catfilecontentcshex=$(md5sum ${fname})
+    catfilecontentcshex=$(md5sum ${fname} | cut -d ' ' -f 1)
    else
-    catfilecontentcshex=$(md5sum /dev/null)
+    catfilecontentcshex=$(md5sum /dev/null | cut -d ' ' -f 1)
    fi
   elif [ "${4}" == "sha1" ]; then
    echo -n "${4}" >> ${tmpfile}
    echo -n -e '\x00' >> ${tmpfile}
-   catfileheadercshex=$(sha1sum ${tmpfile})
+   catfileheadercshex=$(sha1sum ${tmpfile} | cut -d ' ' -f 1)
    if [ -f ${fname} ]; then
-    catfilecontentcshex=$(sha1sum ${fname})
+    catfilecontentcshex=$(sha1sum ${fname} | cut -d ' ' -f 1)
    else
-    catfilecontentcshex=$(sha1sum /dev/null)
+    catfilecontentcshex=$(sha1sum /dev/null | cut -d ' ' -f 1)
    fi
   elif [ "${4}" == "sha224" ]; then
    echo -n "${4}" >> ${tmpfile}
    echo -n -e '\x00' >> ${tmpfile}
-   catfileheadercshex=$(sha224sum ${tmpfile})
+   catfileheadercshex=$(sha224sum ${tmpfile} | cut -d ' ' -f 1)
    if [ -f ${fname} ]; then
-    catfilecontentcshex=$(sha224sum ${fname})
+    catfilecontentcshex=$(sha224sum ${fname} | cut -d ' ' -f 1)
    else
-    catfilecontentcshex=$(sha224sum /dev/null)
+    catfilecontentcshex=$(sha224sum /dev/null | cut -d ' ' -f 1)
    fi
   elif [ "${4}" == "sha256" ]; then
    echo -n "${4}" >> ${tmpfile}
    echo -n -e '\x00' >> ${tmpfile}
-   catfileheadercshex=$(sha256sum ${tmpfile})
+   catfileheadercshex=$(sha256sum ${tmpfile} | cut -d ' ' -f 1)
    if [ -f ${fname} ]; then
-    catfilecontentcshex=$(sha256sum ${fname})
+    catfilecontentcshex=$(sha256sum ${fname} | cut -d ' ' -f 1)
    else
-    catfilecontentcshex=$(sha256sum /dev/null)
+    catfilecontentcshex=$(sha256sum /dev/null | cut -d ' ' -f 1)
    fi
   elif [ "${4}" == "sha384" ]; then
    echo -n "${4}" >> ${tmpfile}
    echo -n -e '\x00' >> ${tmpfile}
-   catfileheadercshex=$(sha384sum ${tmpfile})
+   catfileheadercshex=$(sha384sum ${tmpfile} | cut -d ' ' -f 1)
    if [ -f ${fname} ]; then
-    catfilecontentcshex=$(sha384sum ${fname})
+    catfilecontentcshex=$(sha384sum ${fname} | cut -d ' ' -f 1)
    else
-    catfilecontentcshex=$(sha384sum /dev/null)
+    catfilecontentcshex=$(sha384sum /dev/null | cut -d ' ' -f 1)
    fi
   elif [ "${4}" == "sha512" ]; then
    echo -n "${4}" >> ${tmpfile}
    echo -n -e '\x00' >> ${tmpfile}
-   catfileheadercshex=$(sha512sum ${tmpfile})
+   catfileheadercshex=$(sha512sum ${tmpfile} | cut -d ' ' -f 1)
    if [ -f ${fname} ]; then
-    catfilecontentcshex=$(sha512sum ${fname})
+    catfilecontentcshex=$(sha512sum ${fname} | cut -d ' ' -f 1)
    else
-    catfilecontentcshex=$(sha512sum /dev/null)
+    catfilecontentcshex=$(sha512sum /dev/null | cut -d ' ' -f 1)
    fi
   else
    echo -n "crc32" >> ${tmpfile}
    echo -n -e '\x00' >> ${tmpfile}
-   catfileheadercshex=$(crc32 ${tmpfile})
+   catfileheadercshex=$(crc32 ${tmpfile} | cut -d ' ' -f 1)
    if [ -f ${fname} ]; then
-    catfilecontentcshex=$(crc32 ${fname})
+    catfilecontentcshex=$(crc32 ${fname} | cut -d ' ' -f 1)
    else
-    catfilecontentcshex=$(crc32 /dev/null)
+    catfilecontentcshex=$(crc32 /dev/null | cut -d ' ' -f 1)
    fi
   fi
   cat ${tmpfile} >> ${2}
