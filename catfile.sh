@@ -192,11 +192,11 @@ function PackCatFile {
  elif [ "${3}" == "bzip2" ]; then
   gzip --compress --quiet --best ${2}
  elif [ "${3}" == "zstd" ]; then
-  zstd -19 -qq --format=zstd ${2}
+  zstd -19 --rm -qq --format=zstd ${2}
  elif [ "${3}" == "lz4" ]; then
-  lz4 -9 -z -qq ${2}
+  lz4 -9 -z --rm -qq ${2}
  elif [ "${3}" == "lzo" ]; then
-  lzop -9 -q ${2}
+  lzop -9 -U -q ${2}
  elif [ "${3}" == "lzma" ]; then
   lzma --compress --quiet -9 --extreme ${2}
  elif [ "${3}" == "xz" ]; then
