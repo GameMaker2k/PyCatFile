@@ -201,6 +201,8 @@ function PackCatFile {
   lzma --compress --quiet -9 --extreme ${2}
  elif [ "${3}" == "xz" ]; then
   xz --compress --quiet -9 --extreme ${2}
+ elif [ "${3}" == "brotli" ]; then
+  brotli --rm --best ${2}
  fi
 }
 
