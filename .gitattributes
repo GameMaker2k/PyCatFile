@@ -1,1 +1,2 @@
-*.py *.php ident
+*.py ident
+*.php ident
