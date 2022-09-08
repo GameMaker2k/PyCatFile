@@ -180,6 +180,7 @@ def CompressionSupport():
  try:
   import lzo;
   compression_list.append("lzo");
+  compression_list.append("lzop");
  except ImportError:
   '''return False;'''
  try:
@@ -261,7 +262,7 @@ def UncompressCatFile(fp):
    return False;
   catfp = BytesIO();
   catfp.write(lz4.frame.decompress(fp.read()));
- if(compresscheck=="lzo"):
+ if(compresscheck=="lzo" or compresscheck=="lzop"):
   try:
    import lzo;
   except ImportError:
@@ -306,7 +307,7 @@ def GZipCompress(data, compresslevel=9):
  return catdata;
 
 def CompressCatFile(fp, compression="auto"):
- compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzma', 'xz'];
+ compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
  if(not hasattr(fp, "read") and not hasattr(fp, "write")):
   return False;
  fp.seek(0, 0);
@@ -335,7 +336,7 @@ def CompressCatFile(fp, compression="auto"):
    return False;
   catfp = BytesIO();
   catfp.write(lz4.frame.compress(fp.read(), compression_level=9));
- if(compression=="lzo"):
+ if(compression=="lzo" or compression=="lzop"):
   try:
    import lzo;
   except ImportError:
@@ -399,9 +400,9 @@ def CheckSumSupport(checkfor, checklist):
   return False;
 
 def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", followlink=False, checksumtype="crc32", verbose=False, returnfp=False):
- compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzma', 'xz'];
- outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'clzo', 'lzma', 'xz', 'cxz'];
- outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', '.clz4', '.lzo', '.clzo', '.lzma', '.xz', '.cxz'];
+ compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
+ outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'lzop', 'clzo', 'lzma', 'xz', 'cxz'];
+ outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', '.clz4', '.lzo', '.lzop', '.clzo', '.lzma', '.xz', '.cxz'];
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -688,7 +689,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
     compresscheck = "zstd";
    if(fextname==".lz4" or fextname==".clz4"):
     compresscheck = "lz4";
-   if(fextname==".lzo" or fextname==".clzo"):
+   if(fextname==".lzo" or fextname==".lzop" or fextname==".clzo"):
     compresscheck = "lzo";
    if(fextname==".lzma" or fextname==".xz" or fextname==".cxz"):
     compresscheck = "lzma";
@@ -910,9 +911,9 @@ def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", follo
  return CatFileToArrayIndex(outarray, seekstart, seekend, listonly, skipchecksum, returnfp);
 
 def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", followlink=False, checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
- compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzma', 'xz'];
- outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'clzo', 'lzma', 'xz', 'cxz'];
- outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', '.clz4', '.lzo', '.clzo', '.lzma', '.xz', '.cxz'];
+ compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
+ outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'lzop', 'clz4', 'lzo', 'clzo', 'lzma', 'xz', 'cxz'];
+ outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', 'lzop', '.clz4', '.lzo', '.clzo', '.lzma', '.xz', '.cxz'];
  if(isinstance(infile, dict)):
   prelistcatfiles = CatFileToArrayIndex(infile, 0, 0, False, skipchecksum, returnfp);
   listcatfiles = prelistcatfiles['list'];
