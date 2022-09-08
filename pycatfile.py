@@ -565,20 +565,22 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   funame = "";
   try:
    import pwd;
-   userinfo = pwd.getpwuid(fstatinfo.st_uid);
-   funame = userinfo.pw_name;
+   try:
+    userinfo = pwd.getpwuid(fstatinfo.st_uid);
+    funame = userinfo.pw_name;
+   except KeyError:
+    funame = "";
   except ImportError:
-   funame = "";
-  except KeyError:
    funame = "";
   fgname = "";
   try:
    import grp;
-   groupinfo = grp.getgrgid(fstatinfo.st_gid);
-   fgname = groupinfo.gr_name;
+   try:
+    groupinfo = grp.getgrgid(fstatinfo.st_gid);
+    fgname = groupinfo.gr_name;
+   except KeyError:
+    fgname = "";
   except ImportError:
-   fgname = "";
-  except KeyError:
    fgname = "";
   fdev_minor = format(int(fdev_minor), 'x').upper();
   fdev_major = format(int(fdev_major), 'x').upper();
