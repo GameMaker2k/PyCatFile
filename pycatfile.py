@@ -123,6 +123,21 @@ def ListDir(dirpath, followlink=False, duplicates=False):
    retlist.append(RemoveWindowsPath(mydirfile));
  return retlist;
 
+def crc16(msg):
+ lo = hi = 0xff;
+ mask = 0xff;
+ for new in msg:
+  new ^= lo;
+  new ^= (new << 4) & mask;
+  tmp = new >> 5;
+  lo = hi;
+  hi = new ^ tmp;
+  lo ^= (new << 3) & mask;
+  lo ^= new >> 4;
+ lo ^= mask;
+ hi ^= mask;
+ return hi << 8 | lo;
+
 def ReadTillNullByte(fp):
  curbyte = "";
  curfullbyte = "";
@@ -217,15 +232,15 @@ def CheckCompressionType(infile, closefp=True):
  if(prefp==binascii.unhexlify("04224d18")):
   filetype = "lz4";
  catfp.seek(0, 0);
- prefp = catfp.read(9);
- if(prefp==binascii.unhexlify("894c5a4f000d0a1a0a")):
-  filetype = "lzo";
- catfp.seek(0, 0);
  prefp = catfp.read(7);
  if(prefp==binascii.unhexlify("fd377a585a0000")):
   filetype = "lzma";
  if(prefp==binascii.unhexlify("43617446696c65")):
   filetype = "catfile";
+ catfp.seek(0, 0);
+ prefp = catfp.read(9);
+ if(prefp==binascii.unhexlify("894c5a4f000d0a1a0a")):
+  filetype = "lzo";
  catfp.seek(0, 0);
  if(closefp):
   catfp.close();
@@ -382,19 +397,21 @@ def GetDevMajorMinor(fdev):
  return retdev;
 
 def CheckSumSupport(checkfor, checklist):
- if(checklist>5 or checklist<1):
+ if(checklist>5 or checklist<0):
   checklist = 1;
+ if(checklist==0):
+  checklistout = sorted(['crc16']);
  if(checklist==1):
-  checklist = sorted(['adler32']);
+  checklistout = sorted(['adler32']);
  if(checklist==2):
-  checklist = sorted(['crc32']);
+  checklistout = sorted(['crc32']);
  if(checklist==3):
-  checklist = sorted(['adler32', 'crc32']);
+  checklistout = sorted(['adler32', 'crc16', 'crc32']);
  if(checklist==4):
-  checklist = sorted(list(hashlib.algorithms_guaranteed));
+  checklistout = sorted(list(hashlib.algorithms_guaranteed));
  if(checklist==5):
-  checklist = sorted(list(hashlib.algorithms_guaranteed) + ['adler32', 'crc32', "none"]);
- if(checkfor in checklist):
+  checklistout = sorted(list(hashlib.algorithms_guaranteed) + ['adler32', 'crc16', 'crc32', 'none']);
+ if(checkfor in checklistout):
   return True;
  else:
   return False;
@@ -623,6 +640,9 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   if(checksumtype=="none"):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
+  if(CheckSumSupport(checksumtype, 0)):
+   catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
+   catfilecontentcshex = format(crc16(fcontents) & 0xffffffff, 'x').lower();
   if(CheckSumSupport(checksumtype, 1)):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').lower();
@@ -792,6 +812,8 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    hc = hc + 1;
   if(catfchecksumtype=="none"):
    catnewfcs = 0;
+  if(CheckSumSupport(catfchecksumtype, 0)):
+   catnewfcs = crc16(hout.encode()) & 0xffffffff;
   if(CheckSumSupport(catfchecksumtype, 1)):
    catnewfcs = zlib.adler32(hout.encode()) & 0xffffffff;
   if(CheckSumSupport(catfchecksumtype, 2)):
@@ -811,6 +833,8 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catfcontents = catfp.read(catfsize);
    if(catfchecksumtype=="none"):
     catnewfccs = 0;
+   if(CheckSumSupport(catfchecksumtype, 0)):
+    catnewfccs = crc16(catfcontents) & 0xffffffff;
    if(CheckSumSupport(catfchecksumtype, 1)):
     catnewfccs = zlib.adler32(catfcontents) & 0xffffffff;
    if(CheckSumSupport(catfchecksumtype, 2)):
@@ -1087,6 +1111,9 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
   if(checksumtype=="none"):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
+  if(CheckSumSupport(checksumtype, 0)):
+   catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
+   catfilecontentcshex = format(crc16(fcontents) & 0xffffffff, 'x').lower();
   if(CheckSumSupport(checksumtype, 1)):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').lower();
