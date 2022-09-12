@@ -62,11 +62,17 @@ if(__version_info__[3] is None):
 
 catfile_mimetype = "application/x-catfile";
 catfile_cat_mimetype = catfile_mimetype;
-catfile_gzip_mimetype = "application/catfile+bzip2";
-catfile_bzip2_mimetype = "application/catfile+lz4";
-catfile_zstandard_mimetype = "application/catfile+zstandard";
-catfile_lzma_mimetype = "application/catfile+lzma";
-catfile_xz_mimetype = "application/catfile+xz";
+catfile_gzip_mimetype = "application/x-catfile+gzip";
+catfile_gz_mimetype = catfile_gzip_mimetype;
+catfile_bzip2_mimetype = "application/x-catfile+bzip2";
+catfile_bz2_mimetype = catfile_bzip2_mimetype;
+catfile_lz4_mimetype = "application/x-catfile+lz4";
+catfile_lzop_mimetype = "application/x-catfile+lzop";
+catfile_lzo_mimetype = catfile_lzop_mimetype;
+catfile_zstandard_mimetype = "application/x-catfile+zstandard";
+catfile_zstd_mimetype = catfile_zstandard_mimetype;
+catfile_lzma_mimetype = "application/x-catfile+lzma";
+catfile_xz_mimetype = "application/x-catfile+xz";
 
 if __name__ == "__main__":
  import subprocess;
@@ -253,6 +259,28 @@ def CheckCompressionType(infile, closefp=True):
  if(closefp):
   catfp.close();
  return filetype;
+
+def GetCompressionMimeType(infile):
+ compresscheck = CheckCompressionType(fp, False);
+ if(compresscheck=="gzip"):
+  return catfile_gzip_mimetype;
+ if(compresscheck=="bzip2"):
+  return catfile_bzip2_mimetype;
+ if(compresscheck=="zstd"):
+  return catfile_zstandard_mimetype;
+ if(compresscheck=="lz4"):
+  return catfile_lz4_mimetype;
+ if(compresscheck=="lzo" or compresscheck=="lzop"):
+  return catfile_lzop_mimetype;
+ if(compresscheck=="lzma"):
+  return catfile_lzma_mimetype;
+ if(compresscheck=="xz"):
+  return catfile_xz_mimetype;
+ if(compresscheck=="catfile"):
+  return catfile_cat_mimetype;
+ if(not compresscheck):
+  return False;
+ return False;
 
 def UncompressCatFile(fp):
  if(not hasattr(fp, "read") and not hasattr(fp, "write")):
