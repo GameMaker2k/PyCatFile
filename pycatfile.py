@@ -62,11 +62,11 @@ if(__version_info__[3] is None):
 
 catfile_mimetype = "application/x-catfile";
 catfile_cat_mimetype = catfile_mimetype;
-catfile_gzip_mimetype = "application/tar+bzip2";
-catfile_bzip2_mimetype = "application/tar+lz4";
-catfile_zstandard_mimetype = "application/tar+zstandard";
-catfile_lzma_mimetype = "application/tar+lzma";
-catfile_xz_mimetype = "application/tar+xz";
+catfile_gzip_mimetype = "application/catfile+bzip2";
+catfile_bzip2_mimetype = "application/catfile+lz4";
+catfile_zstandard_mimetype = "application/catfile+zstandard";
+catfile_lzma_mimetype = "application/catfile+lzma";
+catfile_xz_mimetype = "application/catfile+xz";
 
 if __name__ == "__main__":
  import subprocess;
