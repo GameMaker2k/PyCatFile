@@ -60,6 +60,14 @@ if(__version_info__[3] is not None):
 if(__version_info__[3] is None):
  __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]);
 
+catfile_mimetype = "application/x-catfile";
+catfile_cat_mimetype = catfile_mimetype;
+catfile_gzip_mimetype = "application/tar+bzip2";
+catfile_bzip2_mimetype = "application/tar+lz4";
+catfile_zstandard_mimetype = "application/tar+zstandard";
+catfile_lzma_mimetype = "application/tar+lzma";
+catfile_xz_mimetype = "application/tar+xz";
+
 if __name__ == "__main__":
  import subprocess;
  curscrpath = os.path.dirname(sys.argv[0]);
