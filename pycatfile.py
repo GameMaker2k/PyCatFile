@@ -568,20 +568,8 @@ def PackCatFileFromTar(infile, outfile, compression="auto", followlink=False, ch
   curfid = curfid + 1;
   if(ftype==2):
    flinkname = member.linkname;
-  '''
-  fdev = fstatinfo.st_dev;
-  getfdev = GetDevMajorMinor(fdev);
-  '''
   fdev_minor = 0;
   fdev_major = 0;
-  '''
-  frdev = fstatinfo.st_dev;
-  if(hasattr(fstatinfo, "st_rdev")):
-   frdev = fstatinfo.st_rdev;
-  else:
-   frdev = fstatinfo.st_dev;
-  getfrdev = GetDevMajorMinor(frdev);
-  '''
   frdev_minor = 0;
   frdev_major = 0;
   if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
@@ -591,17 +579,7 @@ def PackCatFileFromTar(infile, outfile, compression="auto", followlink=False, ch
   fatime = format(int(member.mtime), 'x').lower();
   fmtime = format(int(member.mtime), 'x').lower();
   fctime = format(int(member.mtime), 'x').lower();
-  '''
-  if(hasattr(fstatinfo, "st_birthtime")):
-   fbtime = format(int(fstatinfo.st_birthtime), 'x').lower();
-  else:
-   fbtime = format(int(fstatinfo.st_ctime), 'x').lower();
-  '''
   fmode = format(int(member.mode), 'x').lower();
-  '''
-  fchmode = format(int(stat.S_IMODE(fstatinfo.st_mode)), 'x').lower();
-  ftypemod = format(int(stat.S_IFMT(fstatinfo.st_mode)), 'x').lower();
-  '''
   fuid = format(int(member.uid), 'x').lower();
   fgid = format(int(member.gid), 'x').lower();
   funame = member.uname;
