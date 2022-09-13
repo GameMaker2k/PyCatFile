@@ -21,6 +21,10 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import os, re, sys, stat, zlib, shutil, hashlib, logging, binascii, tempfile;
 
 os.environ["PYTHONIOENCODING"] = "UTF-8";
+os.environ["LANG"] = "UTF-8";
+os.environ["LC_ALL"] = "UTF-8";
+os.environ["LC_CTYPE"] = "UTF-8";
+os.environ["LC_CTYPE"] = "UTF-8";
 if(hasattr(sys, "setdefaultencoding")):
  sys.setdefaultencoding('UTF-8');
 
