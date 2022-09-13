@@ -572,10 +572,10 @@ def PackCatFileFromTar(infile, outfile, compression="auto", followlink=False, ch
   curfid = curfid + 1;
   if(ftype==2):
    flinkname = member.linkname;
-  fdev_minor = 0;
-  fdev_major = 0;
-  frdev_minor = 0;
-  frdev_major = 0;
+  fdev_minor = member.devminor;
+  fdev_major = member.devmajor;
+  frdev_minor = member.devminor;
+  frdev_major = member.devmajor;
   if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
    fsize = format(int("0"), 'x').lower();
   if(ftype==0 or ftype==7):
