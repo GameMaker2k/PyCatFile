@@ -58,7 +58,7 @@ __version_info__ = (0, 0, 1, "RC 1", 1);
 __version_date_info__ = (2018, 3, 28, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 __revision__ = __version_info__[3];
-__revision_id__ = "$Id$";
+__revision_id__ = "$Id: 464643210834f3bf09fa61b2e4632e0bf4814998 $";
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
 if(__version_info__[4] is None):
@@ -460,7 +460,7 @@ def CheckSumSupport(checkfor, checklist):
  else:
   return False;
 
-def PackCatFileFromTar(infiles, outfile, compression="auto", followlink=False, checksumtype="crc32", verbose=False, returnfp=False):
+def PackCatFileFromTar(infile, outfile, compression="auto", followlink=False, checksumtype="crc32", verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
  outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'lzop', 'clzo', 'lzma', 'xz', 'cxz'];
  outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', '.clz4', '.lzo', '.lzop', '.clzo', '.lzma', '.xz', '.cxz'];
@@ -540,11 +540,10 @@ def PackCatFileFromTar(infiles, outfile, compression="auto", followlink=False, c
   return False;
  tarfp = tarfile.open(infile, "r");
  for member in tarfp.getmembers():
-  fname = curfname;
+  fname = member.name;
   if(verbose):
    logging.info(fname);
   fpremode = member.mode;
-  finode = fstatinfo.st_ino;
   flinkcount = 0;
   ftype = 0;
   if(member.isreg()):
@@ -565,21 +564,26 @@ def PackCatFileFromTar(infiles, outfile, compression="auto", followlink=False, c
    ftype = 7;
   flinkname = "";
   fcurfid = format(int(curfid), 'x').lower();
+  fcurinode = format(int(0), 'x').lower();
   curfid = curfid + 1;
   if(ftype==2):
    flinkname = member.linkname;
+  '''
   fdev = fstatinfo.st_dev;
   getfdev = GetDevMajorMinor(fdev);
-  fdev_minor = getfdev[0];
-  fdev_major = getfdev[1];
+  '''
+  fdev_minor = 0;
+  fdev_major = 0;
+  '''
   frdev = fstatinfo.st_dev;
   if(hasattr(fstatinfo, "st_rdev")):
    frdev = fstatinfo.st_rdev;
   else:
    frdev = fstatinfo.st_dev;
   getfrdev = GetDevMajorMinor(frdev);
-  frdev_minor = getfrdev[0];
-  frdev_major = getfrdev[1];
+  '''
+  frdev_minor = 0;
+  frdev_major = 0;
   if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
    fsize = format(int("0"), 'x').lower();
   if(ftype==0 or ftype==7):
@@ -594,8 +598,10 @@ def PackCatFileFromTar(infiles, outfile, compression="auto", followlink=False, c
    fbtime = format(int(fstatinfo.st_ctime), 'x').lower();
   '''
   fmode = format(int(member.mode), 'x').lower();
+  '''
   fchmode = format(int(stat.S_IMODE(fstatinfo.st_mode)), 'x').lower();
   ftypemod = format(int(stat.S_IFMT(fstatinfo.st_mode)), 'x').lower();
+  '''
   fuid = format(int(member.uid), 'x').lower();
   fgid = format(int(member.gid), 'x').lower();
   funame = member.uname;
@@ -607,7 +613,7 @@ def PackCatFileFromTar(infiles, outfile, compression="auto", followlink=False, c
   flinkcount = format(int(flinkcount), 'x').lower();
   fcontents = "".encode();
   if(ftype==0 or ftype==7):
-   fpc = tar.extractfile(member);
+   fpc = tarfp.extractfile(member);
    fcontents = fpc.read(int(member.size));
    fpc.close();
   ftypehex = format(ftype, 'x').lower();
