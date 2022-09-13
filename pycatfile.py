@@ -460,7 +460,6 @@ def CheckSumSupport(checkfor, checklist):
  else:
   return False;
 
-'''
 def PackCatFileFromTar(infiles, outfile, compression="auto", followlink=False, checksumtype="crc32", verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
  outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'lzop', 'clzo', 'lzma', 'xz', 'cxz'];
@@ -546,7 +545,7 @@ def PackCatFileFromTar(infiles, outfile, compression="auto", followlink=False, c
    logging.info(fname);
   fpremode = member.mode;
   finode = fstatinfo.st_ino;
-  flinkcount = fstatinfo.st_nlink;
+  flinkcount = 0;
   ftype = 0;
   if(member.isreg()):
    ftype = 0;
@@ -566,24 +565,9 @@ def PackCatFileFromTar(infiles, outfile, compression="auto", followlink=False, c
    ftype = 7;
   flinkname = "";
   fcurfid = format(int(curfid), 'x').lower();
-  if(not followlink):
-   if(ftype!=1):
-    if(finode in inodelist):
-     ftype = 1;
-     flinkname = inodetofile[finode];
-     fcurinode = format(int(inodetocatinode[finode]), 'x').lower();
-    if(finode not in inodelist):
-     inodelist.append(finode);
-     inodetofile.update({finode: fname});
-     inodetocatinode.update({finode: curinode});
-     fcurinode = format(int(curinode), 'x').lower();
-     curinode = curinode + 1;
-  else:
-   fcurinode = format(int(curinode), 'x').lower();
-   curinode = curinode + 1;
   curfid = curfid + 1;
   if(ftype==2):
-   flinkname = os.readlink(fname);
+   flinkname = member.linkname;
   fdev = fstatinfo.st_dev;
   getfdev = GetDevMajorMinor(fdev);
   fdev_minor = getfdev[0];
@@ -599,54 +583,32 @@ def PackCatFileFromTar(infiles, outfile, compression="auto", followlink=False, c
   if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
    fsize = format(int("0"), 'x').lower();
   if(ftype==0 or ftype==7):
-   fsize = format(int(fstatinfo.st_size), 'x').lower();
-  fatime = format(int(fstatinfo.st_atime), 'x').lower();
-  fmtime = format(int(fstatinfo.st_mtime), 'x').lower();
-  fctime = format(int(fstatinfo.st_ctime), 'x').lower();
+   fsize = format(int(member.size), 'x').lower();
+  fatime = format(int(member.mtime), 'x').lower();
+  fmtime = format(int(member.mtime), 'x').lower();
+  fctime = format(int(member.mtime), 'x').lower();
+  '''
   if(hasattr(fstatinfo, "st_birthtime")):
    fbtime = format(int(fstatinfo.st_birthtime), 'x').lower();
   else:
    fbtime = format(int(fstatinfo.st_ctime), 'x').lower();
-  fmode = format(int(fstatinfo.st_mode), 'x').lower();
-  fchmode = format(int(member.S_IMODE(fstatinfo.st_mode)), 'x').lower();
-  ftypemod = format(int(member.S_IFMT(fstatinfo.st_mode)), 'x').lower();
-  fuid = format(int(fstatinfo.st_uid), 'x').lower();
-  fgid = format(int(fstatinfo.st_gid), 'x').lower();
-  funame = "";
-  try:
-   import pwd;
-   try:
-    userinfo = pwd.getpwuid(fstatinfo.st_uid);
-    funame = userinfo.pw_name;
-   except KeyError:
-    funame = "";
-  except ImportError:
-   funame = "";
-  fgname = "";
-  try:
-   import grp;
-   try:
-    groupinfo = grp.getgrgid(fstatinfo.st_gid);
-    fgname = groupinfo.gr_name;
-   except KeyError:
-    fgname = "";
-  except ImportError:
-   fgname = "";
+  '''
+  fmode = format(int(member.mode), 'x').lower();
+  fchmode = format(int(stat.S_IMODE(fstatinfo.st_mode)), 'x').lower();
+  ftypemod = format(int(stat.S_IFMT(fstatinfo.st_mode)), 'x').lower();
+  fuid = format(int(member.uid), 'x').lower();
+  fgid = format(int(member.gid), 'x').lower();
+  funame = member.uname;
+  fgname = member.gname;
   fdev_minor = format(int(fdev_minor), 'x').lower();
   fdev_major = format(int(fdev_major), 'x').lower();
   frdev_minor = format(int(frdev_minor), 'x').lower();
   frdev_major = format(int(frdev_major), 'x').lower();
-  finode = format(int(finode), 'x').lower();
   flinkcount = format(int(flinkcount), 'x').lower();
   fcontents = "".encode();
   if(ftype==0 or ftype==7):
-   fpc = open(fname, "rb");
-   fcontents = fpc.read(int(fstatinfo.st_size));
-   fpc.close();
-  if(followlink and (ftype==1 or ftype==2)):
-   flstatinfo = os.stat(flinkname);
-   fpc = open(flinkname, "rb");
-   fcontents = fpc.read(int(flstatinfo.st_size));
+   fpc = tar.extractfile(member);
+   fcontents = fpc.read(int(member.size));
    fpc.close();
   ftypehex = format(ftype, 'x').lower();
   catfileoutstr = AppendNullByte(ftypehex);
@@ -708,7 +670,6 @@ def PackCatFileFromTar(infiles, outfile, compression="auto", followlink=False, c
  else:
   catfp.close();
   return True;
-'''
 
 def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", followlink=False, checksumtype="crc32", verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
