@@ -20,6 +20,10 @@
 from __future__ import absolute_import, division, print_function, unicode_literals;
 import os, re, sys, stat, zlib, shutil, hashlib, logging, binascii, tempfile;
 
+os.environ["PYTHONIOENCODING"] = "UTF-8";
+if(hasattr(sys, "setdefaultencoding")):
+ sys.setdefaultencoding('UTF-8');
+
 if(sys.version[0]=="2"):
  from io import open as open;
 
@@ -461,6 +465,8 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
  checksumtype = checksumtype.lower();
  if(not CheckSumSupport(checksumtype, 5)):
   checksumtype="crc32";
+ if(checksumtype=="none"):
+  checksumtype = "";
  if(not compression or compression or compression=="catfile"):
   compression = None;
  if(compression not in compressionlist and compression is None):
@@ -673,7 +679,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
-  if(checksumtype=="none"):
+  if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
   if(CheckSumSupport(checksumtype, 0)):
@@ -831,7 +837,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catfrdev_minor = int(catheaderdata[17], 16);
   catfrdev_major = int(catheaderdata[18], 16);
   catfchecksumtype = catheaderdata[19].lower();
-  if(catfchecksumtype=="none"):
+  if(catfchecksumtype=="none" or catfchecksumtype==""):
    catfcs = int(catheaderdata[20]);
    catfccs = int(catheaderdata[21]);
   if(CheckSumSupport(catfchecksumtype, 3)):
@@ -846,7 +852,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   while(hc<hcmax):
    hout = hout + AppendNullByte(catheaderdata[hc]);
    hc = hc + 1;
-  if(catfchecksumtype=="none"):
+  if(catfchecksumtype=="none" or catfchecksumtype==""):
    catnewfcs = 0;
   if(CheckSumSupport(catfchecksumtype, 0)):
    catnewfcs = crc16(hout.encode()) & 0xffffffff;
@@ -867,7 +873,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   pyhascontents = False;
   if(catfsize>1 and not listonly):
    catfcontents = catfp.read(catfsize);
-   if(catfchecksumtype=="none"):
+   if(catfchecksumtype=="none" or catfchecksumtype==""):
     catnewfccs = 0;
    if(CheckSumSupport(catfchecksumtype, 0)):
     catnewfccs = crc16(catfcontents) & 0xffffffff;
@@ -990,6 +996,8 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
  checksumtype = checksumtype.lower();
  if(not CheckSumSupport(checksumtype, 5)):
   checksumtype="crc32";
+ if(checksumtype=="none"):
+  checksumtype = "";
  if(not compression or compression or compression=="catfile"):
   compression = None;
  if(compression not in compressionlist and compression is None):
@@ -1144,7 +1152,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
   catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
-  if(checksumtype=="none"):
+  if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
   if(CheckSumSupport(checksumtype, 0)):

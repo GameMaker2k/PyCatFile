@@ -103,8 +103,8 @@ function PackCatFile {
    echo -n -e '\x00' >> ${tmpfile}
    catfileheadercshex="0"
    catfilecontentcshex="0"
-  elif [ "${4}" == "crc32" ]; then
-   echo -n "${4}" >> ${tmpfile}
+  elif [ "${4}" == "crc32" ] || [ "${4}" == "" ]; then
+   echo -n "" >> ${tmpfile}
    echo -n -e '\x00' >> ${tmpfile}
    catfileheadercshex=$(crc32 ${tmpfile} | cut -d ' ' -f 1)
    if [ -f ${fname} ]; then
