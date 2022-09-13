@@ -260,6 +260,10 @@ def CheckCompressionType(infile, closefp=True):
  if(prefp==binascii.unhexlify("43617446696c65")):
   filetype = "catfile";
  catfp.seek(0, 0);
+ prefp = catfp.read(5);
+ if(prefp==binascii.unhexlify("7573746172")):
+  filetype = "tarfile";
+ catfp.seek(0, 0);
  prefp = catfp.read(9);
  if(prefp==binascii.unhexlify("894c5a4f000d0a1a0a")):
   filetype = "lzo";
