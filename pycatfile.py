@@ -17,8 +17,8 @@
     $FileInfo: pycatfile.py - Last Update: 3/28/2018 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
-from __future__ import absolute_import, division, print_function, unicode_literals, tarfile;
-import os, re, sys, stat, zlib, shutil, hashlib, logging, binascii, tempfile;
+from __future__ import absolute_import, division, print_function, unicode_literals;
+import os, re, sys, stat, zlib, shutil, hashlib, logging, binascii, tempfile, tarfile;
 
 os.environ["PYTHONIOENCODING"] = "UTF-8";
 os.environ["LANG"] = "UTF-8";
