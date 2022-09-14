@@ -61,7 +61,7 @@ __version_info__ = (0, 0, 1, "RC 1", 1);
 __version_date_info__ = (2018, 3, 28, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 __revision__ = __version_info__[3];
-__revision_id__ = "$Id$";
+__revision_id__ = "$Id: 829cc3b2e64e33935273d6e7970beaddd46fd6de $";
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
 if(__version_info__[4] is None):
@@ -71,6 +71,8 @@ if(__version_info__[3] is not None):
 if(__version_info__[3] is None):
  __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]);
 
+tarfile_mimetype = "application/tar";
+tarfile_tar_mimetype = tarfile_mimetype;
 catfile_mimetype = "application/x-catfile";
 catfile_cat_mimetype = catfile_mimetype;
 catfile_gzip_mimetype = "application/x-catfile+gzip";
@@ -164,15 +166,14 @@ def crc16(msg):
  return hi << 8 | lo;
 
 def ReadTillNullByte(fp):
- curbyte = "";
- curfullbyte = "";
- nullbyte = "\0".encode();
+ curbyte = b"";
+ curfullbyte = b"";
+ nullbyte = b"\0";
  while(curbyte!=nullbyte):
   curbyte = fp.read(1);
   if(curbyte!=nullbyte):
-   curbyted = curbyte.decode('ascii');
-   curfullbyte = curfullbyte + curbyted;
- return curfullbyte;
+   curfullbyte = curfullbyte + curbyte;
+ return curfullbyte.decode();
 
 def ReadUntilNullByte(fp):
  return ReadTillNullByte(fp);
