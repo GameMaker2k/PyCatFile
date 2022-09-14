@@ -27,11 +27,11 @@ os.environ["LC_CTYPE"] = "UTF-8";
 os.environ["LC_CTYPE"] = "UTF-8";
 if(hasattr(sys, "setdefaultencoding")):
  sys.setdefaultencoding('UTF-8');
+sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding = 'UTF-8');
+sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = 'UTF-8');
 
 if(sys.version[0]=="2"):
  from io import open as open;
- sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding = 'UTF-8');
- sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = 'UTF-8');
 
 teststringio = 0;
 if(teststringio<=0):
