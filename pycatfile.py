@@ -464,7 +464,7 @@ def CheckSumSupport(checkfor, checklist):
  else:
   return False;
 
-def PackCatFileFromTar(infile, outfile, compression="auto", followlink=False, checksumtype="crc32", verbose=False, returnfp=False):
+def PackCatFileFromTar(infile, outfile, compression="auto", checksumtype="crc32", verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
  outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'lzop', 'clzo', 'lzma', 'xz', 'cxz'];
  outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', '.clz4', '.lzo', '.lzop', '.clzo', '.lzma', '.xz', '.cxz'];
