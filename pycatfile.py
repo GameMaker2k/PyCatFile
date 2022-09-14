@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import os, re, sys, stat, zlib, shutil, hashlib, logging, binascii, tempfile, tarfile;
+import os, io, re, sys, stat, zlib, shutil, hashlib, logging, binascii, tempfile, tarfile;
 
 os.environ["PYTHONIOENCODING"] = "UTF-8";
 os.environ["LANG"] = "UTF-8";
