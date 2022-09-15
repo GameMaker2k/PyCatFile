@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import os, io, re, sys, stat, zlib, shutil, hashlib, logging, binascii, tempfile, tarfile;
+import os, re, sys, stat, zlib, shutil, hashlib, logging, binascii, tempfile, tarfile;
 
 os.environ["PYTHONIOENCODING"] = "UTF-8";
 os.environ["LANG"] = "UTF-8";
@@ -28,7 +28,10 @@ os.environ["LC_CTYPE"] = "UTF-8";
 if(hasattr(sys, "setdefaultencoding")):
  sys.setdefaultencoding('UTF-8');
 if(hasattr(sys.stdout, "detach")):
+ import io;
  sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding = 'UTF-8');
+if(hasattr(sys.stderr, "detach")):
+ import io;
  sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = 'UTF-8');
 
 if(sys.version[0]=="2"):
