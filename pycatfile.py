@@ -101,6 +101,8 @@ if __name__ == "__main__":
   scrcmd.wait();
 
 def RemoveWindowsPath(dpath):
+ if(dpath is None):
+  dpath = "";
  if(os.sep!="/"):
   dpath = dpath.replace(os.path.sep, "/");
  dpath = dpath.rstrip("/");
