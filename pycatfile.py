@@ -556,6 +556,8 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="cr
   ftype = 0;
   if(member.isreg()):
    ftype = 0;
+  if(member.isdev()):
+   ftype = 7;
   if(member.islnk()):
    ftype = 1;
   if(member.issym()):
@@ -568,8 +570,8 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="cr
    ftype = 5;
   if(member.isfifo()):
    ftype = 6;
-  #if(member.isdev()):
-  # ftype = 7;
+  if(member.issparse()):
+   ftype = 8;
   flinkname = "";
   fcurfid = format(int(curfid), 'x').lower();
   fcurinode = format(int(0), 'x').lower();
@@ -588,6 +590,8 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="cr
   fmtime = format(int(member.mtime), 'x').lower();
   fctime = format(int(member.mtime), 'x').lower();
   fmode = format(int(member.mode), 'x').lower();
+  fchmode = format(int(stat.S_IMODE(member.mode)), 'x').lower();
+  ftypemod = format(int(stat.S_IFMT(member.mode)), 'x').lower();
   fuid = format(int(member.uid), 'x').lower();
   fgid = format(int(member.gid), 'x').lower();
   funame = member.uname;
