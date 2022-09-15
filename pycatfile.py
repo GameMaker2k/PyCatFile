@@ -61,7 +61,7 @@ __version_info__ = (0, 0, 1, "RC 1", 1);
 __version_date_info__ = (2018, 3, 28, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 __revision__ = __version_info__[3];
-__revision_id__ = "$Id: 829cc3b2e64e33935273d6e7970beaddd46fd6de $";
+__revision_id__ = "$Id$";
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
 if(__version_info__[4] is None):
@@ -468,7 +468,7 @@ def CheckSumSupport(checkfor, checklist):
  else:
   return False;
 
-def PackCatFileFromTar(infile, outfile, compression="auto", checksumtype="crc32", verbose=False, returnfp=False):
+def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="crc32", verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
  outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'lzop', 'clzo', 'lzma', 'xz', 'cxz'];
  outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', '.clz4', '.lzo', '.lzop', '.clzo', '.lzma', '.xz', '.cxz'];
@@ -568,8 +568,8 @@ def PackCatFileFromTar(infile, outfile, compression="auto", checksumtype="crc32"
    ftype = 5;
   if(member.isfifo()):
    ftype = 6;
-  if(member.isdev()):
-   ftype = 7;
+  #if(member.isdev()):
+  # ftype = 7;
   flinkname = "";
   fcurfid = format(int(curfid), 'x').lower();
   fcurinode = format(int(0), 'x').lower();
