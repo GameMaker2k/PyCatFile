@@ -557,6 +557,8 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="cr
  inodetofile = {};
  filetoinode = {};
  inodetocatinode = {};
+ if(not os.path.exists(infile) or not os.path.isfile(infile)):
+  return False;
  if(not tarfile.is_tarfile(infile)):
   return False;
  tarfp = tarfile.open(infile, "r");
@@ -752,6 +754,8 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", checksumtype="cr
  inodetofile = {};
  filetoinode = {};
  inodetocatinode = {};
+ if(not os.path.exists(infile) or not os.path.isfile(infile)):
+  return False;
  if(not zipfile.is_zipfile(infile)):
   return False;
  zipfp = zipfile.ZipFile(infile, "r");
@@ -963,6 +967,8 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
    infilelist.append(line.strip());
   infilelist = list(filter(None, infilelist));
  elif(infiles!="-" and dirlistfromtxt and os.path.exists(infiles) and os.path.isfile(infiles)):
+  if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
+   return False;
   with open(infiles, "r") as finfile:
    for line in finfile:
     infilelist.append(line.strip());
