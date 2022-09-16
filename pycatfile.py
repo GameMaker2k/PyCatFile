@@ -786,12 +786,12 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", checksumtype="cr
   fctime = format(int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower();
   if(hasattr(member, "is_file") and member.is_file()):
    fmode = format(int(stat.S_IFREG + 438), 'x').lower();
-   fchmode = format(int(stat.S_IFREG + 438), 'x').lower();
-   ftypemod = format(int(stat.S_IFREG + 438), 'x').lower();
+   fchmode = format(int(stat.S_IMODE(int(stat.S_IFREG + 438))), 'x').lower();
+   ftypemod = format(int(stat.S_IFMT(int(stat.S_IFREG + 438))), 'x').lower();
   if(hasattr(member, "is_dir") and member.is_dir()):
    fmode = format(int(stat.S_IFDIR + 511), 'x').lower();
-   fchmode = format(int(stat.S_IFDIR + 511), 'x').lower();
-   ftypemod = format(int(stat.S_IFDIR + 511), 'x').lower();
+   fchmode = format(int(stat.S_IMODE(int(stat.S_IFDIR + 511))), 'x').lower();
+   ftypemod = format(int(stat.S_IFMT(int(stat.S_IFDIR + 511))), 'x').lower();
   try:
    fuid = format(int(os.getuid()), 'x').lower();
   except AttributeError:
@@ -1570,7 +1570,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
   catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
   catfileoutstr = catfileoutstr + AppendNullByte(fctime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmode);
-  catfileoutstr = catfileoutstr + AppendNullByte(fchmode);
+  #catfileoutstr = catfileoutstr + AppendNullByte(fchmode);
   catfileoutstr = catfileoutstr + AppendNullByte(fuid);
   catfileoutstr = catfileoutstr + AppendNullByte(funame);
   catfileoutstr = catfileoutstr + AppendNullByte(fgid);
