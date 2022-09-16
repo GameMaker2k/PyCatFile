@@ -1,0 +1,63 @@
+#!/bin/env bash
+
+if [[ -z "${1}" ]]; then
+ if [[ -z "${PYVERSION}" ]]; then
+  export PYVER="3"
+ else
+  export PYVER="${PYVERSION}"
+ fi
+else
+ export PYVER="${1}"
+fi
+
+#export PYTHONPATH="$(which python${PYVER})"
+export PYTHONPATH="$(command -v python${PYVER})"
+
+if [[ -z "${2}" ]]; then
+ infile="catfile.py"
+ outfilebin="${infile%.*}"
+ outfilezip="${infile%.*}.zip"
+else
+ if [[ -f "./${2}" ]]; then
+  infile="${2}"
+  outfilebin="${infile%.*}"
+  outfilezip="${infile%.*}.zip"
+ else
+  infile="catfile.py"
+  outfilebin="${infile%.*}"
+  outfilezip="${infile%.*}.zip"
+ fi
+fi
+
+if ! [ -x "$(command -v python${PYVER})" ]; then
+ echo "Error: python${PYVER} is not installed." >&2
+ exit 1
+fi
+
+if [[ -f "./catfile.py" ]]; then
+ ${PYTHONPATH} ./catfile.py "${infile}"
+ exit 0
+fi
+
+mkdir -p -v /tmp/pybundle
+cp -r -v ./${infile} /tmp/pybundle/__main__.py
+cp -r -v ./pycatfile.py   /tmp/pybundle/pycatfile.py
+export OLDPATH="$(pwd)"
+cd ./bundle/python${PYVER}
+rm -rfv *
+cd ${OLDPATH}
+cd /tmp/pybundle
+zip -v ./${outfilezip} -r .
+echo '#!/usr/bin/env python'${PYVER} > ./${outfilebin}
+echo '' >> ./${outfilebin}
+cat ./${outfilezip} >> ./${outfilebin}
+chmod -v +x ./${outfilebin}
+cd ${OLDPATH}
+mv -v /tmp/pybundle/${outfilebin} ./bundle/python${PYVER}/${outfilebin}
+rm -rfv /tmp/pybundle
+cd ./bundle/python${PYVER}
+if [[ ${infile} = "mkhockeydata.py" ]]; then
+ ${PYTHONPATH} ./${outfilebin} mksymlinks
+fi
+chmod -v +x ./${outfilebin}
+cd ${OLDPATH}
