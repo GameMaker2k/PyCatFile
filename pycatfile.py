@@ -81,6 +81,7 @@ if(__version_info__[3] is not None):
  __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]) + " " + str(__version_info__[3]);
 if(__version_info__[3] is None):
  __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]);
+__cat_header_ver__ = "001";
 
 tarfile_mimetype = "application/tar";
 tarfile_tar_mimetype = tarfile_mimetype;
@@ -549,7 +550,7 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="cr
    except ImportError:
     return False;
    catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=9);
- catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
+ catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
  catfp.write(fileheader.encode());
@@ -746,7 +747,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", checksumtype="cr
    except ImportError:
     return False;
    catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=9);
- catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
+ catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
  catfp.write(fileheader.encode());
@@ -959,7 +960,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
    except ImportError:
     return False;
    catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=9);
- catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
+ catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
  catfp.write(fileheader.encode());
@@ -1494,7 +1495,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
    except ImportError:
     return False;
    catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=9);
- catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
+ catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
  catfp.write(fileheader.encode());
