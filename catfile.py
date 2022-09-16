@@ -65,13 +65,15 @@ argparser.add_argument("-r", "--repack", action="store_true", help="reconcatenat
 argparser.add_argument("-o", "--output", default=None, help="extract concatenate files to or concatenate output name");
 argparser.add_argument("-compression", "--compression", default="auto", help="concatenate files with compression");
 argparser.add_argument("-t", "--converttar", action="store_true", help="convert tar file to catfile");
+argparser.add_argument("-z", "--convertzip", action="store_true", help="convert tar file to catfile");
 argparser.add_argument("-T", "--text", action="store_true", help="read file locations from text file");
 getargs = argparser.parse_args();
 
 should_extract = False;
 should_create = True;
 should_list = False;
-should_convert = False;
+should_convert_tar = False;
+should_convert_zip = False;
 if(not getargs.extract and getargs.create and not getargs.list):
  should_create = True;
  should_extract = False;
@@ -108,12 +110,18 @@ should_repack = False;
 if(should_create and getargs.repack):
  should_repack = True;
 if(getargs.converttar):
- should_convert = True;
+ should_convert_tar = True;
+ should_convert_zip = False;
+if(getargs.convertzip and not should_convert_tar):
+ should_convert_zip = True;
+ should_convert_tar = False;
 if(getargs.verbose):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
 if(should_create and not should_extract and not should_list and not should_repack):
- if(should_convert):
+ if(should_convert_tar):
   pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.compression, getargs.checksum, getargs.verbose, False);
+ elif(should_convert_zip and not should_convert_tar):
+  pycatfile.PackCatFileFromZipFile(getargs.input, getargs.output, getargs.compression, getargs.checksum, getargs.verbose, False);
  else:
   pycatfile.PackCatFile(getargs.input, getargs.output, getargs.text, getargs.compression, False, getargs.checksum, getargs.verbose, False);
 if(should_create and not should_extract and not should_list and should_repack):

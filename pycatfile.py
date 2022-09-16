@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import os, re, sys, stat, zlib, shutil, hashlib, logging, binascii, tempfile;
+import os, re, sys, time, stat, zlib, shutil, hashlib, logging, binascii, tempfile, zipfile;
 
 os.environ["PYTHONIOENCODING"] = "UTF-8";
 os.environ["LANG"] = "UTF-8";
@@ -609,16 +609,223 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="cr
   fgid = format(int(member.gid), 'x').lower();
   funame = member.uname;
   fgname = member.gname;
-  fdev_minor = format(int(fdev_minor), 'x').lower();
-  fdev_major = format(int(fdev_major), 'x').lower();
-  frdev_minor = format(int(frdev_minor), 'x').lower();
-  frdev_major = format(int(frdev_major), 'x').lower();
   flinkcount = format(int(flinkcount), 'x').lower();
   fcontents = "".encode();
   if(ftype==0 or ftype==7):
    fpc = tarfp.extractfile(member);
    fcontents = fpc.read(int(member.size));
    fpc.close();
+  ftypehex = format(ftype, 'x').lower();
+  catfileoutstr = AppendNullByte(ftypehex);
+  catfileoutstr = catfileoutstr + AppendNullByte(fname);
+  catfileoutstr = catfileoutstr + AppendNullByte(flinkname);
+  catfileoutstr = catfileoutstr + AppendNullByte(fsize);
+  catfileoutstr = catfileoutstr + AppendNullByte(fatime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fctime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fmode);
+  catfileoutstr = catfileoutstr + AppendNullByte(fuid);
+  catfileoutstr = catfileoutstr + AppendNullByte(funame);
+  catfileoutstr = catfileoutstr + AppendNullByte(fgid);
+  catfileoutstr = catfileoutstr + AppendNullByte(fgname);
+  catfileoutstr = catfileoutstr + AppendNullByte(fcurfid);
+  catfileoutstr = catfileoutstr + AppendNullByte(fcurinode);
+  catfileoutstr = catfileoutstr + AppendNullByte(flinkcount);
+  catfileoutstr = catfileoutstr + AppendNullByte(fdev_minor);
+  catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
+  catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
+  catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
+  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
+  if(checksumtype=="none" or checksumtype==""):
+   catfileheadercshex = format(0, 'x').lower();
+   catfilecontentcshex = format(0, 'x').lower();
+  if(CheckSumSupport(checksumtype, 0)):
+   catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
+   catfilecontentcshex = format(crc16(fcontents) & 0xffffffff, 'x').lower();
+  if(CheckSumSupport(checksumtype, 1)):
+   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
+   catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').lower();
+  if(CheckSumSupport(checksumtype, 2)):
+   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
+   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').lower();
+  if(CheckSumSupport(checksumtype, 4)):
+   checksumoutstr = hashlib.new(checksumtype);
+   checksumoutstr.update(catfileoutstr.encode());
+   catfileheadercshex = checksumoutstr.hexdigest().lower();
+   checksumoutstr = hashlib.new(checksumtype);
+   checksumoutstr.update(fcontents);
+   catfilecontentcshex = checksumoutstr.hexdigest().lower();
+  catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
+  catfileoutstr = catfileoutstr + AppendNullByte(catfilecontentcshex);
+  catfileoutstrecd = catfileoutstr.encode();
+  nullstrecd = "\0".encode();
+  catfileout = catfileoutstrecd + fcontents + nullstrecd;
+  catfp.write(catfileout);
+ if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+  catfp = CompressCatFile(catfp, compression);
+ if(outfile=="-"):
+  catfp.seek(0, 0);
+  if(hasattr(sys.stdout, "buffer")):
+   shutil.copyfileobj(catfp, sys.stdout.buffer);
+  else:
+   shutil.copyfileobj(catfp, sys.stdout);
+ if(returnfp):
+  catfp.seek(0, 0);
+  return catfp;
+ else:
+  catfp.close();
+  return True;
+
+def PackCatFileFromZipFile(infile, outfile, compression="auto", checksumtype="crc32", verbose=False, returnfp=False):
+ compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
+ outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'lzop', 'clzo', 'lzma', 'xz', 'cxz'];
+ outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', '.clz4', '.lzo', '.lzop', '.clzo', '.lzma', '.xz', '.cxz'];
+ if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+  outfile = RemoveWindowsPath(outfile);
+ checksumtype = checksumtype.lower();
+ if(not CheckSumSupport(checksumtype, 5)):
+  checksumtype="crc32";
+ if(checksumtype=="none"):
+  checksumtype = "";
+ if(not compression or compression or compression=="catfile"):
+  compression = None;
+ if(compression not in compressionlist and compression is None):
+  compression = "auto";
+ if(verbose):
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+ if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+  if(os.path.exists(outfile)):
+   os.unlink(outfile);
+ if(outfile=="-"):
+  verbose = False;
+  catfp = BytesIO();
+ elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
+  catfp = outfile;
+ else:
+  fbasename = os.path.splitext(outfile)[0];
+  fextname = os.path.splitext(outfile)[1];
+  if(fextname not in outextlistwd and (compression=="auto" or compression is None)):
+   catfp = open(outfile, "wb");
+  elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
+   try:
+    import gzip;
+   except ImportError:
+    return False;
+   catfp = gzip.open(outfile, "wb", 9);
+  elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
+   try:
+    import bz2;
+   except ImportError:
+    return False;
+   catfp = bz2.BZ2File(outfile, "wb", compresslevel=9);
+  elif(((fextname==".zst" or fextname==".czst") and compression=="auto") or compression=="bzip2"):
+   try:
+    import zstandard;
+   except ImportError:
+    return False;
+   catfp = zstandard.open(outfile, "wb", zstandard.ZstdCompressor(level=10));
+  elif(((fextname==".lz4" or fextname==".clz4") and compression=="auto") or compression=="lz4"):
+   try:
+    import lz4.frame;
+   except ImportError:
+    return False;
+   catfp = lz4.frame.open(outfile, "wb", compression_level=9);
+  elif(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
+   try:
+    import lzma;
+   except ImportError:
+    return False;
+   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=9);
+  elif((fextname==".lzma" and compression=="auto") or compression=="lzma"):
+   try:
+    import lzma;
+   except ImportError:
+    return False;
+   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=9);
+ catver = str(__version_info__[0]) + str(__version_info__[1]) + str(__version_info__[2]);
+ fileheaderver = str(int(catver.replace(".", "")));
+ fileheader = AppendNullByte("CatFile" + fileheaderver);
+ catfp.write(fileheader.encode());
+ curinode = 0;
+ curfid = 0;
+ inodelist = [];
+ inodetofile = {};
+ filetoinode = {};
+ inodetocatinode = {};
+ if(not zipfile.is_zipfile(infile)):
+  return False;
+ zipfp = zipfile.ZipFile(infile, "r");
+ for member in zipfp.infolist():
+  fname = member.filename;
+  if(verbose):
+   logging.info(fname);
+  if(hasattr(member, "is_file") and member.is_file()):
+   fpremode = format(int(stat.S_IFREG + 438), 'x').lower();
+  if(hasattr(member, "is_dir") and member.is_dir()):
+   fpremode = format(int(stat.S_IFDIR + 511), 'x').lower();
+  flinkcount = 0;
+  ftype = 0;
+  if(hasattr(member, "is_file") and member.is_file()):
+   ftype = 0;
+  if(hasattr(member, "is_dir") and member.is_dir()):
+   ftype = 5;
+  flinkname = "";
+  fcurfid = format(int(curfid), 'x').lower();
+  fcurinode = format(int(0), 'x').lower();
+  curfid = curfid + 1;
+  fdev_minor = format(int(0), 'x').lower();
+  fdev_major = format(int(0), 'x').lower();
+  frdev_minor = format(int(0), 'x').lower();
+  frdev_major = format(int(0), 'x').lower();
+  if(ftype==5):
+   fsize = format(int("0"), 'x').lower();
+  if(ftype==0):
+   fsize = format(int(member.file_size), 'x').lower();
+  fatime = format(int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower();
+  fmtime = format(int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower();
+  fctime = format(int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower();
+  if(hasattr(member, "is_file") and member.is_file()):
+   fmode = format(int(stat.S_IFREG + 438), 'x').lower();
+   fchmode = format(int(stat.S_IFREG + 438), 'x').lower();
+   ftypemod = format(int(stat.S_IFREG + 438), 'x').lower();
+  if(hasattr(member, "is_dir") and member.is_dir()):
+   fmode = format(int(stat.S_IFDIR + 511), 'x').lower();
+   fchmode = format(int(stat.S_IFDIR + 511), 'x').lower();
+   ftypemod = format(int(stat.S_IFDIR + 511), 'x').lower();
+  try:
+   fuid = format(int(os.getuid()), 'x').lower();
+  except AttributeError:
+   fuid = format(int(0), 'x').lower();
+  try:
+   fgid = format(int(os.getgid()), 'x').lower();
+  except AttributeError:
+   fgid = format(int(0), 'x').lower();
+  try:
+   import pwd;
+   try:
+    userinfo = pwd.getpwuid(getuid());
+    funame = userinfo.pw_name;
+   except KeyError:
+    funame = "";
+   except AttributeError:
+    funame = "";
+  except ImportError:
+   funame = "";
+  fgname = "";
+  try:
+   import grp;
+   try:
+    groupinfo = grp.getgrgid(getgid());
+    fgname = groupinfo.gr_name;
+   except KeyError:
+    fgname = "";
+   except AttributeError:
+    fgname = "";
+  except ImportError:
+   fgname = "";
+  fcontents = "".encode();
+  if(ftype==0):
+   fcontents = zipfp.read(fname);
   ftypehex = format(ftype, 'x').lower();
   catfileoutstr = AppendNullByte(ftypehex);
   catfileoutstr = catfileoutstr + AppendNullByte(fname);
