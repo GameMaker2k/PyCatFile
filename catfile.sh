@@ -50,6 +50,7 @@ function PackCatFile {
   fatime=$(printf "%x" $(stat -c %X ${fname}))
   fmtime=$(printf "%x" $(stat -c %Y ${fname}))
   fctime=$(printf "%x" $(stat -c %Z ${fname}))
+  fbtime=$(printf "%x" $(stat -c %Z ${fname}))
   fmode=$(stat -c %f ${fname})
   fchmode=$(printf "%x" 0$(stat -c %a ${fname}))
   fuid=$(printf "%x" $(stat -c %u ${fname}))
@@ -73,6 +74,8 @@ function PackCatFile {
   echo -n "${fmtime}" >> ${tmpfile}
   echo -n -e '\x00' >> ${tmpfile}
   echo -n "${fctime}" >> ${tmpfile}
+  echo -n -e '\x00' >> ${tmpfile}
+  echo -n "${fbtime}" >> ${tmpfile}
   echo -n -e '\x00' >> ${tmpfile}
   echo -n "${fmode}" >> ${tmpfile}
   echo -n -e '\x00' >> ${tmpfile}
