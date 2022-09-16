@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import os, re, sys, stat, zlib, shutil, hashlib, logging, binascii, tempfile, tarfile;
+import os, re, sys, stat, zlib, shutil, hashlib, logging, binascii, tempfile;
 
 os.environ["PYTHONIOENCODING"] = "UTF-8";
 os.environ["LANG"] = "UTF-8";
@@ -36,6 +36,14 @@ if(hasattr(sys.stderr, "detach")):
 
 if(sys.version[0]=="2"):
  from io import open as open;
+
+testsafetar = 0;
+try:
+ import safetar as tarfile;
+ testsafetar = 1;
+except ImportError:
+ import tarfile;
+ testsafetar = 0;
 
 teststringio = 0;
 if(teststringio<=0):
