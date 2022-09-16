@@ -10,10 +10,11 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     Revised BSD License for more details.
 
-    Copyright 2015-2021 Game Maker 2k - https://github.com/GameMaker2k
-    Copyright 2015-2021 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
+    Copyright 2018-2022 Cool Dude 2k - http://idb.berlios.de/
+    Copyright 2018-2022 Game Maker 2k - http://intdb.sourceforge.net/
+    Copyright 2018-2022 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: mkbundle.py - Last Update: 3/17/2021 Ver. 0.6.0 RC 1 - Author: cooldude2k $
+    $FileInfo: mkbundle.py - Last Update: 9/16/2022 Ver. 0.0.1 RC 1 - Author: cooldude2k $
 '''
 
 import os, sys, shutil, subprocess, tempfile, subprocess, platform;
