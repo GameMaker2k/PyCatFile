@@ -33,9 +33,7 @@ if(hasattr(sys.stdout, "detach")):
 if(hasattr(sys.stderr, "detach")):
  import io;
  sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = 'UTF-8');
-
-if(sys.version[0]=="2"):
- from io import open as open;
+from io import open as open;
 
 testsafetar = 0;
 try:
@@ -607,6 +605,7 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="cr
   fatime = format(int(member.mtime), 'x').lower();
   fmtime = format(int(member.mtime), 'x').lower();
   fctime = format(int(member.mtime), 'x').lower();
+  fbtime = format(int(member.mtime), 'x').lower();
   fmode = format(int(member.mode), 'x').lower();
   fchmode = format(int(stat.S_IMODE(member.mode)), 'x').lower();
   ftypemod = format(int(stat.S_IFMT(member.mode)), 'x').lower();
@@ -628,6 +627,7 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="cr
   catfileoutstr = catfileoutstr + AppendNullByte(fatime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
   catfileoutstr = catfileoutstr + AppendNullByte(fctime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fbtime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmode);
   catfileoutstr = catfileoutstr + AppendNullByte(fuid);
   catfileoutstr = catfileoutstr + AppendNullByte(funame);
@@ -791,6 +791,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", checksumtype="cr
   fatime = format(int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower();
   fmtime = format(int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower();
   fctime = format(int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower();
+  fbtime = format(int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower();
   if(hasattr(member, "is_file") and member.is_file()):
    fmode = format(int(stat.S_IFREG + 438), 'x').lower();
    fchmode = format(int(stat.S_IMODE(int(stat.S_IFREG + 438))), 'x').lower();
@@ -841,6 +842,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", checksumtype="cr
   catfileoutstr = catfileoutstr + AppendNullByte(fatime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
   catfileoutstr = catfileoutstr + AppendNullByte(fctime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fbtime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmode);
   catfileoutstr = catfileoutstr + AppendNullByte(fuid);
   catfileoutstr = catfileoutstr + AppendNullByte(funame);
@@ -1106,6 +1108,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   catfileoutstr = catfileoutstr + AppendNullByte(fatime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
   catfileoutstr = catfileoutstr + AppendNullByte(fctime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fbtime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmode);
   catfileoutstr = catfileoutstr + AppendNullByte(fuid);
   catfileoutstr = catfileoutstr + AppendNullByte(funame);
@@ -1255,7 +1258,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   seekend = CatSizeEnd;
  while(seekstart<seekend):
   catfhstart = catfp.tell();
-  catheaderdata = ReadFileHeaderData(catfp, 22);
+  catheaderdata = ReadFileHeaderData(catfp, 23);
   catftype = int(catheaderdata[0], 16);
   catfname = catheaderdata[1];
   catflinkname = catheaderdata[2];
@@ -1263,29 +1266,30 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catfatime = int(catheaderdata[4], 16);
   catfmtime = int(catheaderdata[5], 16);
   catfctime = int(catheaderdata[6], 16);
-  catfmode = int(catheaderdata[7], 16);
+  catfbtime = int(catheaderdata[7], 16);
+  catfmode = int(catheaderdata[8], 16);
   catfchmod = stat.S_IMODE(catfmode);
-  catfuid = int(catheaderdata[8], 16);
-  catfuname = catheaderdata[9];
-  catfgid = int(catheaderdata[10], 16);
-  catfgname = catheaderdata[11];
-  fid = int(catheaderdata[12], 16);
-  finode = int(catheaderdata[13], 16);
-  flinkcount = int(catheaderdata[14], 16);
-  catfdev_minor = int(catheaderdata[15], 16);
-  catfdev_major = int(catheaderdata[16], 16);
-  catfrdev_minor = int(catheaderdata[17], 16);
-  catfrdev_major = int(catheaderdata[18], 16);
-  catfchecksumtype = catheaderdata[19].lower();
+  catfuid = int(catheaderdata[9], 16);
+  catfuname = catheaderdata[10];
+  catfgid = int(catheaderdata[11], 16);
+  catfgname = catheaderdata[12];
+  fid = int(catheaderdata[13], 16);
+  finode = int(catheaderdata[14], 16);
+  flinkcount = int(catheaderdata[15], 16);
+  catfdev_minor = int(catheaderdata[16], 16);
+  catfdev_major = int(catheaderdata[17], 16);
+  catfrdev_minor = int(catheaderdata[18], 16);
+  catfrdev_major = int(catheaderdata[19], 16);
+  catfchecksumtype = catheaderdata[20].lower();
   if(catfchecksumtype=="none" or catfchecksumtype==""):
-   catfcs = int(catheaderdata[20]);
-   catfccs = int(catheaderdata[21]);
+   catfcs = int(catheaderdata[21]);
+   catfccs = int(catheaderdata[22]);
   if(CheckSumSupport(catfchecksumtype, 3)):
-   catfcs = int(catheaderdata[20], 16);
-   catfccs = int(catheaderdata[21], 16);
+   catfcs = int(catheaderdata[21], 16);
+   catfccs = int(catheaderdata[22], 16);
   if(CheckSumSupport(catfchecksumtype, 4)):
-   catfcs = catheaderdata[20].lower();
-   catfccs = catheaderdata[21].lower();
+   catfcs = catheaderdata[21].lower();
+   catfccs = catheaderdata[22].lower();
   hc = 0;
   hcmax = len(catheaderdata) - 2;
   hout = "";
@@ -1333,7 +1337,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catfp.seek(catfsize, 1);
    pyhascontents = False;
   catfcontentend = catfp.tell();
-  catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fmode': catfmode, 'fchmod': catfchmod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
+  catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmod': catfchmod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
   catfp.seek(1, 1);
   seekstart = catfp.tell();
   fileidnum = fileidnum + 1;
@@ -1515,6 +1519,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
   fatime = format(int(listcatfiles[lcfi]['fatime']), 'x').lower();
   fmtime = format(int(listcatfiles[lcfi]['fmtime']), 'x').lower();
   fctime = format(int(listcatfiles[lcfi]['fctime']), 'x').lower();
+  fbtime = format(int(listcatfiles[lcfi]['fbtime']), 'x').lower();
   fmode = format(int(int(listcatfiles[lcfi]['fmode'], 8)), 'x').lower();
   fchmode = format(int(int(listcatfiles[lcfi]['fchmode'], 8)), 'x').lower();
   fuid = format(int(listcatfiles[lcfi]['fuid']), 'x').lower();
@@ -1538,6 +1543,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
     fatime = format(int(flinkinfo['fatime']), 'x').lower();
     fmtime = format(int(flinkinfo['fmtime']), 'x').lower();
     fctime = format(int(flinkinfo['fctime']), 'x').lower();
+    fbtime = format(int(flinkinfo['fbtime']), 'x').lower();
     fmode = format(int(int(flinkinfo['fmode'], 8)), 'x').lower();
     fchmode = format(int(int(flinkinfo['fchmode'], 8)), 'x').lower();
     fuid = format(int(flinkinfo['fuid']), 'x').lower();
@@ -1578,8 +1584,8 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
   catfileoutstr = catfileoutstr + AppendNullByte(fatime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
   catfileoutstr = catfileoutstr + AppendNullByte(fctime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fbtime);
   catfileoutstr = catfileoutstr + AppendNullByte(fmode);
-  #catfileoutstr = catfileoutstr + AppendNullByte(fchmode);
   catfileoutstr = catfileoutstr + AppendNullByte(fuid);
   catfileoutstr = catfileoutstr + AppendNullByte(funame);
   catfileoutstr = catfileoutstr + AppendNullByte(fgid);
