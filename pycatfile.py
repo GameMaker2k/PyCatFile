@@ -1890,7 +1890,7 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose
    fuprint = listcatfiles[lcfi]['funame'];
    if(len(fuprint)<=0):
     fuprint = listcatfiles[lcfi]['fuid'];
-   fgprint = listcatfiles[lcfi]['fgname']
+   fgprint = listcatfiles[lcfi]['fgname'];
    if(len(fgprint)<=0):
     fgprint = listcatfiles[lcfi]['fgid'];
    logging.info(permissionstr + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(listcatfiles[lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname));
@@ -1904,6 +1904,57 @@ def CatStringListFiles(catstr, seekstart=0, seekend=0, skipchecksum=False, verbo
  catfp = BytesIO(catstr);
  listcatfiles = UnPackCatFile(catfp, seekstart, seekend, verbose, skipchecksum, returnfp);
  return listcatfiles;
+
+def TarFileListFiles(infile, verbose=False, returnfp=False):
+ import datetime;
+ logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+ if(not os.path.exists(infile) or not os.path.isfile(infile)):
+  return False;
+ if(not tarfile.is_tarfile(infile)):
+  return False;
+ lcfi = 0;
+ returnval = {};
+ tarfp = tarfile.open(infile, "r");
+ for member in tarfp.getmembers():
+  returnval.update({lcfi: member.name});
+  if(not verbose):
+   logging.info(member.name);
+  if(verbose):
+   permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
+   permissionstr = "";
+   for fmodval in str(oct(member.mode))[-3:]:
+    permissionstr = permissionstr + permissions['access'].get(fmodval, '---');
+   if(member.isreg()):
+    permissionstr = "-" + permissionstr;
+   if(member.islnk()):
+    permissionstr = "h" + permissionstr;
+   if(member.issym()==2):
+    permissionstr = "l" + permissionstr;
+   if(member.ischr()):
+    permissionstr = "c" + permissionstr;
+   if(member.isblk()):
+    permissionstr = "b" + permissionstr;
+   if(member.isdir()):
+    permissionstr = "d" + permissionstr;
+   if(member.isfifo()):
+    permissionstr = "f" + permissionstr;
+   printfname = member.name;
+   if(member.islnk()):
+    printfname = member.name + " link to " + member.linkname;
+   if(member.issym()):
+    printfname = member.name + " -> " + member.linkname;
+   fuprint = member.uname;
+   if(len(fuprint)<=0):
+    fuprint = member.uid;
+   fgprint = member.gname;
+   if(len(fgprint)<=0):
+    fgprint = member.gid;
+   logging.info(permissionstr + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.size).rjust(15) + " " + datetime.datetime.utcfromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + " " + printfname));
+  lcfi = lcfi + 1;
+ if(returnfp):
+  return listcatfiles['catfp'];
+ else:
+  return True;
 
 def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
  outarray = BytesIO();

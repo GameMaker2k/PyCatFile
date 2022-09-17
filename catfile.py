@@ -130,4 +130,7 @@ if(should_create and not should_extract and not should_list and should_repack):
 if(not should_create and should_extract and not should_list):
  pycatfile.UnPackCatFile(getargs.input, getargs.output, False, False, getargs.verbose, False);
 if(not should_create and not should_extract and should_list):
- pycatfile.CatFileListFiles(getargs.input, 0, 0, False, getargs.verbose, False);
+ if(not should_convert_tar):
+  pycatfile.CatFileListFiles(getargs.input, 0, 0, False, getargs.verbose, False);
+ else:
+  pycatfile.TarFileListFiles(getargs.input, getargs.verbose, False);
