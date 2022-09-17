@@ -1353,19 +1353,22 @@ def CatStringToArray(catstr, seekstart=0, seekend=0, listonly=False, skipchecksu
  return listcatfiles;
 
 def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
- catfp = PackCatFileFromTarFile(infile, "-", "auto", "crc32", False, True);
+ catfp = BytesIO();
+ catfp = PackCatFileFromTarFile(infile, catfp, "auto", "crc32", False, True);
  catout = CatFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
  return catout;
 
 def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
- catfp = PackCatFileFromZipFile(infile, "-", "auto", "crc32", False, True);
+ catfp = BytesIO();
+ catfp = PackCatFileFromZipFile(infile, catfp, "auto", "crc32", False, True);
  catout = CatFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
  return catout;
 
 def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
  outarray = BytesIO();
  packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, followlink, checksumtype, verbose, True);
- return CatFileToArray(outarray, seekstart, seekend, listonly, skipchecksum, returnfp);
+ catout = CatFileToArray(outarray, seekstart, seekend, listonly, skipchecksum, returnfp);
+ return catout;
 
 def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
  if(isinstance(infile, dict)):
@@ -1426,19 +1429,22 @@ def CatStringToArrayIndex(catstr, seekstart=0, seekend=0, listonly=False, skipch
  return listcatfiles;
 
 def TarFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
- catfp = PackCatFileFromTarFile(infile, "-", "auto", "crc32", False, True);
+ catfp = BytesIO();
+ catfp = PackCatFileFromTarFile(infile, catfp, "auto", "crc32", False, True);
  catout = CatFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
  return catout;
 
 def ZipFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
- catfp = PackCatFileFromZipFile(infile, "-", "auto", "crc32", False, True);
+ catfp = BytesIO();
+ catfp = PackCatFileFromZipFile(infile, catfp, "auto", "crc32", False, True);
  catout = CatFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
  return catout;
 
 def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
  outarray = BytesIO();
  packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, followlink, checksumtype, verbose, True);
- return CatFileToArrayIndex(outarray, seekstart, seekend, listonly, skipchecksum, returnfp);
+ catout = CatFileToArrayIndex(outarray, seekstart, seekend, listonly, skipchecksum, returnfp)
+ return catout;
 
 def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", followlink=False, checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
@@ -1667,7 +1673,8 @@ def RePackCatFileFromString(catstr, outfile, seekstart=0, seekend=0, compression
 def PackCatFileFromListDir(infiles, outfile, dirlistfromtxt=False, seekstart=0, seekend=0, compression="auto", followlink=False, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
  outarray = BytesIO();
  packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, followlink, checksumtype, verbose, True);
- return RePackCatFile(outarray, outfile, seekstart, seekend, compression, checksumtype, skipchecksum, verbose, returnfp);
+ catout = RePackCatFile(outarray, outfile, seekstart, seekend, compression, checksumtype, skipchecksum, verbose, returnfp)
+ return catout;
 
 def UnPackCatFile(infile, outdir=None, followlink=False, skipchecksum=False, verbose=False, returnfp=False):
  if(outdir is not None):
@@ -1896,4 +1903,5 @@ def CatStringListFiles(catstr, seekstart=0, seekend=0, skipchecksum=False, verbo
 def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
  outarray = BytesIO();
  packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, followlink, checksumtype, False, True);
- return CatFileListFiles(outarray, seekstart, seekend, skipchecksum, verbose, returnfp);
+ listcatfiles = CatFileListFiles(outarray, seekstart, seekend, skipchecksum, verbose, returnfp);
+ return listcatfiles;
