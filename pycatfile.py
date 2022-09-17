@@ -1274,6 +1274,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catfbtime = int(catheaderdata[7], 16);
   catfmode = int(catheaderdata[8], 16);
   catfchmod = stat.S_IMODE(catfmode);
+  catftypemod = stat.S_IFMT(catfmode);
   catfuid = int(catheaderdata[9], 16);
   catfuname = catheaderdata[10];
   catfgid = int(catheaderdata[11], 16);
@@ -1336,13 +1337,13 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
     catnewfccs = checksumoutstr.hexdigest().lower();
    pyhascontents = True;
    if(catfccs!=catnewfccs and skipchecksum):
-    logging.info("File Content Checksum Error with file " + catfname + " at offset " + str(catfcontentstart));
+    logging.info("File Content Checksum Error with file " + catfname + " at offset " + str(catfhstart));
     return False;
   if(catfsize>1 and listonly):
    catfp.seek(catfsize, 1);
    pyhascontents = False;
   catfcontentend = catfp.tell();
-  catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmod': catfchmod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
+  catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmod': catfchmod, 'ftypemod': catftypemod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
   catfp.seek(1, 1);
   seekstart = catfp.tell();
   fileidnum = fileidnum + 1;
