@@ -1352,6 +1352,16 @@ def CatStringToArray(catstr, seekstart=0, seekend=0, listonly=False, skipchecksu
  listcatfiles = CatFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
  return listcatfiles;
 
+def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
+ catfp = PackCatFileFromTarFile(infile, "-", "auto", "crc32", False, True);
+ catout = CatFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
+ return catout;
+
+def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
+ catfp = PackCatFileFromZipFile(infile, "-", "auto", "crc32", False, True);
+ catout = CatFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
+ return catout;
+
 def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
  outarray = BytesIO();
  packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, followlink, checksumtype, verbose, True);
@@ -1414,6 +1424,16 @@ def CatStringToArrayIndex(catstr, seekstart=0, seekend=0, listonly=False, skipch
  catfp = BytesIO(catstr);
  listcatfiles = CatFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
  return listcatfiles;
+
+def TarFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
+ catfp = PackCatFileFromTarFile(infile, "-", "auto", "crc32", False, True);
+ catout = CatFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
+ return catout;
+
+def ZipFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, returnfp=False):
+ catfp = PackCatFileFromZipFile(infile, "-", "auto", "crc32", False, True);
+ catout = CatFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
+ return catout;
 
 def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
  outarray = BytesIO();
