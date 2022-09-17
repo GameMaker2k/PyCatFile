@@ -83,6 +83,8 @@ __cat_header_ver__ = "001";
 
 tarfile_mimetype = "application/tar";
 tarfile_tar_mimetype = tarfile_mimetype;
+zipfile_mimetype = "application/zip";
+zipfile_tar_mimetype = zipfile_mimetype;
 catfile_mimetype = "application/x-catfile";
 catfile_cat_mimetype = catfile_mimetype;
 catfile_gzip_mimetype = "application/x-catfile+gzip";
@@ -217,11 +219,13 @@ def CompressionSupport():
  compression_list = [];
  try:
   import gzip;
+  compression_list.append("gz");
   compression_list.append("gzip");
  except ImportError:
   '''return False;'''
  try:
   import bz2;
+  compression_list.append("bz2");
   compression_list.append("bzip2");
  except ImportError:
   '''return False;'''
@@ -238,6 +242,7 @@ def CompressionSupport():
   '''return False;'''
  try:
   import zstandard;
+  compression_list.append("zstd");
   compression_list.append("zstandard");
  except ImportError:
   '''return False;'''
@@ -292,11 +297,11 @@ def CheckCompressionType(infile, closefp=True):
 
 def GetCompressionMimeType(infile):
  compresscheck = CheckCompressionType(fp, False);
- if(compresscheck=="gzip"):
+ if(compresscheck=="gzip" or compresscheck=="gz"):
   return catfile_gzip_mimetype;
- if(compresscheck=="bzip2"):
+ if(compresscheck=="bzip2" or compresscheck=="bz2"):
   return catfile_bzip2_mimetype;
- if(compresscheck=="zstd"):
+ if(compresscheck=="zstd" or compresscheck=="zstandard"):
   return catfile_zstandard_mimetype;
  if(compresscheck=="lz4"):
   return catfile_lz4_mimetype;
@@ -306,7 +311,7 @@ def GetCompressionMimeType(infile):
   return catfile_lzma_mimetype;
  if(compresscheck=="xz"):
   return catfile_xz_mimetype;
- if(compresscheck=="catfile"):
+ if(compresscheck=="catfile" or compresscheck=="cat"):
   return catfile_cat_mimetype;
  if(not compresscheck):
   return False;
