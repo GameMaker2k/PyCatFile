@@ -40,8 +40,12 @@ try:
  import safetar as tarfile;
  testsafetar = 1;
 except ImportError:
- import tarfile;
- testsafetar = 0;
+ try:
+  import xtarfile as tarfile;
+  testsafetar = 2;
+ except ImportError:
+  import tarfile;
+  testsafetar = 0;
 
 teststringio = 0;
 if(teststringio<=0):
