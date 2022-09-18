@@ -766,20 +766,22 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", checksumtype="cr
   return False;
  if(not zipfile.is_zipfile(infile)):
   return False;
- zipfp = zipfile.ZipFile(infile, "r");
+ zipfp = zipfile.ZipFile(infile, "r", allowZip64=True);
+ ziptest = zipfp.testzip();
  for member in zipfp.infolist():
   fname = member.filename;
+  zipinfo = zipfp.getinfo(fname);
   if(verbose):
    logging.info(fname);
-  if(hasattr(member, "is_file") and member.is_file()):
+  if(not member.is_dir()):
    fpremode = format(int(stat.S_IFREG + 438), 'x').lower();
-  if(hasattr(member, "is_dir") and member.is_dir()):
+  if(member.is_dir()):
    fpremode = format(int(stat.S_IFDIR + 511), 'x').lower();
   flinkcount = 0;
   ftype = 0;
-  if(hasattr(member, "is_file") and member.is_file()):
+  if(not member.is_dir()):
    ftype = 0;
-  if(hasattr(member, "is_dir") and member.is_dir()):
+  if(member.is_dir()):
    ftype = 5;
   flinkname = "";
   fcurfid = format(int(curfid), 'x').lower();
@@ -797,13 +799,11 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", checksumtype="cr
   fmtime = format(int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower();
   fctime = format(int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower();
   fbtime = format(int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower();
-  if(hasattr(member, "is_file") and member.is_file()):
-   #33206
+  if(not member.is_dir()):
    fmode = format(int(stat.S_IFREG + 438), 'x').lower();
    fchmode = format(int(stat.S_IMODE(int(stat.S_IFREG + 438))), 'x').lower();
    ftypemod = format(int(stat.S_IFMT(int(stat.S_IFREG + 438))), 'x').lower();
-  if(hasattr(member, "is_dir") and member.is_dir()):
-   #16895
+  if(member.is_dir()):
    fmode = format(int(stat.S_IFDIR + 511), 'x').lower();
    fchmode = format(int(stat.S_IMODE(int(stat.S_IFDIR + 511))), 'x').lower();
    ftypemod = format(int(stat.S_IFMT(int(stat.S_IFDIR + 511))), 'x').lower();
@@ -1896,7 +1896,7 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose
    fgprint = listcatfiles[lcfi]['fgname'];
    if(len(fgprint)<=0):
     fgprint = listcatfiles[lcfi]['fgid'];
-   logging.info(permissionstr + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(listcatfiles[lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname));
+   logging.info(stat.filemode(listcatfiles[lcfi]['fmode']) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(listcatfiles[lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname));
   lcfi = lcfi + 1;
  if(returnfp):
   return listcatfiles['catfp'];
@@ -1952,7 +1952,7 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
    fgprint = member.gname;
    if(len(fgprint)<=0):
     fgprint = member.gid;
-   logging.info(permissionstr + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.size).rjust(15) + " " + datetime.datetime.utcfromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + " " + printfname));
+   logging.info(stat.filemode(member.mode) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.size).rjust(15) + " " + datetime.datetime.utcfromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + " " + printfname));
   lcfi = lcfi + 1;
  if(returnfp):
   return listcatfiles['catfp'];
