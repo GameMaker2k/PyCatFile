@@ -1963,6 +1963,88 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
  else:
   return True;
 
+def TarFileListFiles(infile, verbose=False, returnfp=False):
+ import datetime;
+ logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+ if(not os.path.exists(infile) or not os.path.isfile(infile)):
+  return False;
+ if(not tarfile.is_tarfile(infile)):
+  return False;
+ lcfi = 0;
+ returnval = {};
+
+ zipfp = zipfile.ZipFile(infile, "r", allowZip64=True);
+ ziptest = zipfp.testzip();
+ for member in zipfp.infolist():
+  if(not member.is_dir()):
+   fpremode = int(stat.S_IFREG + 438);
+  if(member.is_dir()):
+   fpremode = int(stat.S_IFDIR + 511);
+  if(not member.is_dir()):
+   fmode = int(stat.S_IFREG + 438);
+   fchmode = int(stat.S_IMODE(int(stat.S_IFREG + 438)));
+   ftypemod = int(stat.S_IFMT(int(stat.S_IFREG + 438)));
+  if(member.is_dir()):
+   fmode = int(stat.S_IFDIR + 511);
+   fchmode = int(stat.S_IMODE(int(stat.S_IFDIR + 511)));
+   ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)));
+  returnval.update({lcfi: member.filename});
+  if(not verbose):
+   logging.info(member.filename);
+  if(verbose):
+   permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
+   permissionstr = "";
+   for fmodval in str(oct(fmode))[-3:]:
+    permissionstr = permissionstr + permissions['access'].get(fmodval, '---');
+   if(not member.is_dir()):
+    permissionstr = "-" + permissionstr;
+   if(member.is_dir()):
+    permissionstr = "d" + permissionstr;
+   printfname = member.filename;
+   try:
+    fuid = int(os.getuid());
+   except AttributeError:
+    fuid = int(0);
+   try:
+    fgid = int(os.getgid());
+   except AttributeError:
+    fgid = int(0);
+   try:
+    import pwd;
+    try:
+     userinfo = pwd.getpwuid(getuid());
+     funame = userinfo.pw_name;
+    except KeyError:
+     funame = "";
+    except AttributeError:
+     funame = "";
+   except ImportError:
+    funame = "";
+   fgname = "";
+   try:
+    import grp;
+    try:
+     groupinfo = grp.getgrgid(getgid());
+     fgname = groupinfo.gr_name;
+    except KeyError:
+     fgname = "";
+    except AttributeError:
+     fgname = "";
+   except ImportError:
+    fgname = "";
+   fuprint = funame;
+   if(len(fuprint)<=0):
+    fuprint = str(fuid);
+   fgprint = fgname;
+   if(len(fgprint)<=0):
+    fgprint = str(fgid);
+   logging.info(stat.filemode(fmode) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.file_size).rjust(15) + " " + datetime.datetime.utcfromtimestamp(int(time.mktime(member.date_time + (0, 0, -1)))).strftime('%Y-%m-%d %H:%M') + " " + printfname));
+  lcfi = lcfi + 1;
+ if(returnfp):
+  return listcatfiles['catfp'];
+ else:
+  return True;
+
 def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
  outarray = BytesIO();
  packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, followlink, checksumtype, False, True);
