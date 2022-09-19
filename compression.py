@@ -392,7 +392,6 @@ if __name__ == "__main__":
  argparser.add_argument("-compression", "--compression", default="auto", help="File compression to use for compress/decompress");
  getargs = argparser.parse_args();
  chkcompression = CompressionSupport();
- print(getargs.keep);
  if(getargs.compression not in chkcompression):
   exit();
  if(not getargs.compress and not getargs.decompress):
