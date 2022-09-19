@@ -685,6 +685,10 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   frdev_major = format(int(frdev_major), 'x').lower();
   finode = format(int(finode), 'x').lower();
   flinkcount = format(int(flinkcount), 'x').lower();
+  if(hasattr(fstatinfo, "st_file_attributes")):
+   fwinattributes = format(int(fstatinfo.st_file_attributes), 'x').lower();
+  else:
+   fwinattributes = format(int(0), 'x').lower();
   fcontents = "".encode();
   if(ftype==0 or ftype==7):
    fpc = open(fname, "rb");
