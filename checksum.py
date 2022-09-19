@@ -85,10 +85,22 @@ if __name__ == "__main__":
   exit();
  if(getargs.checksum in chksum_list):
   if(getargs.checksum=="crc16"):
-   print(str(crc16_file(getargs.input))+" *"+getargs.input);
+   outchck = crc16_file(getargs.input);
+   if(not outchck):
+    exit();
+   print(str(outchck)+" *"+getargs.input);
   if(getargs.checksum=="crc32"):
-   print(str(crc32_file(getargs.input))+" *"+getargs.input);
+   outchck = crc32_file(getargs.input);
+   if(not outchck):
+    exit();
+   print(str(outchck)+" *"+getargs.input);
   if(getargs.checksum=="adler32"):
-   print(str(adler32_file(getargs.input))+" *"+getargs.input);
+   outchck = adler32_file(getargs.input);
+   if(not outchck):
+    exit();
+   print(str(outchck)+" *"+getargs.input);
  if(getargs.checksum in chksum_list_hash):
-   print(str(hash_file(getargs.input, getargs.checksum))+" *"+getargs.input);
+  outchck = hash_file(getargs.input, getargs.checksum);
+  if(not outchck):
+   exit();
+  print(str(outchck)+" *"+getargs.input);
