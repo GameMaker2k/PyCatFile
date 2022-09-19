@@ -80,6 +80,7 @@ if __name__ == "__main__":
  argparser.add_argument("-V", "--version", action="version", version="PyChecksum 0.0.1");
  argparser.add_argument("-i", "-f", "--input", help="Files to checksum", required=True);
  argparser.add_argument("-c", "-checksum", "--checksum", default="auto", help="Checksum to use", required=True);
+ argparser.add_argument("-q", "--quiet", action="store_true", help="Print only checksum");
  getargs = argparser.parse_args();
  if(getargs.checksum not in chksum_list + chksum_list_hash):
   exit();
@@ -88,19 +89,31 @@ if __name__ == "__main__":
    outchck = crc16_file(getargs.input);
    if(not outchck):
     exit();
-   print(str(outchck)+" *"+getargs.input);
+   if(not getargs.quiet):
+    print(str(outchck)+" *"+getargs.input);
+   else:
+    print(str(outchck));
   if(getargs.checksum=="crc32"):
    outchck = crc32_file(getargs.input);
    if(not outchck):
     exit();
-   print(str(outchck)+" *"+getargs.input);
+   if(not getargs.quiet):
+    print(str(outchck)+" *"+getargs.input);
+   else:
+    print(str(outchck));
   if(getargs.checksum=="adler32"):
    outchck = adler32_file(getargs.input);
    if(not outchck):
     exit();
-   print(str(outchck)+" *"+getargs.input);
+   if(not getargs.quiet):
+    print(str(outchck)+" *"+getargs.input);
+   else:
+    print(str(outchck));
  if(getargs.checksum in chksum_list_hash):
   outchck = hash_file(getargs.input, getargs.checksum);
   if(not outchck):
    exit();
-  print(str(outchck)+" *"+getargs.input);
+  if(not getargs.quiet):
+   print(str(outchck)+" *"+getargs.input);
+  else:
+   print(str(outchck));
