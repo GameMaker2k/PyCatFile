@@ -77,7 +77,7 @@ def hash_file(infile, checksumtype):
 
 if __name__ == "__main__":
  argparser = argparse.ArgumentParser(description="Get File Checksum", conflict_handler="resolve", add_help=True);
- argparser.add_argument("-V", "--version", action="version", version="PyCompress 0.0.1");
+ argparser.add_argument("-V", "--version", action="version", version="PyChecksum 0.0.1");
  argparser.add_argument("-i", "-f", "--input", help="Files to checksum", required=True);
  argparser.add_argument("-c", "-checksum", "--checksum", default="auto", help="Checksum to use", required=True);
  getargs = argparser.parse_args();
