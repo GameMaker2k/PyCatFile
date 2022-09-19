@@ -491,6 +491,272 @@ def CheckSumSupport(checkfor, checklist):
  else:
   return False;
 
+def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", followlink=False, checksumtype="crc32", verbose=False, returnfp=False):
+ compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
+ outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'lzop', 'clzo', 'lzma', 'xz', 'cxz'];
+ outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', '.clz4', '.lzo', '.lzop', '.clzo', '.lzma', '.xz', '.cxz'];
+ if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+  outfile = RemoveWindowsPath(outfile);
+ checksumtype = checksumtype.lower();
+ if(not CheckSumSupport(checksumtype, 5)):
+  checksumtype="crc32";
+ if(checksumtype=="none"):
+  checksumtype = "";
+ if(not compression or compression or compression=="catfile"):
+  compression = None;
+ if(compression not in compressionlist and compression is None):
+  compression = "auto";
+ if(verbose):
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+ if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+  if(os.path.exists(outfile)):
+   os.unlink(outfile);
+ if(outfile=="-"):
+  verbose = False;
+  catfp = BytesIO();
+ elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
+  catfp = outfile;
+ else:
+  fbasename = os.path.splitext(outfile)[0];
+  fextname = os.path.splitext(outfile)[1];
+  if(fextname not in outextlistwd and (compression=="auto" or compression is None)):
+   catfp = open(outfile, "wb");
+  elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
+   try:
+    import gzip;
+   except ImportError:
+    return False;
+   catfp = gzip.open(outfile, "wb", 9);
+  elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
+   try:
+    import bz2;
+   except ImportError:
+    return False;
+   catfp = bz2.BZ2File(outfile, "wb", compresslevel=9);
+  elif(((fextname==".zst" or fextname==".czst") and compression=="auto") or compression=="bzip2"):
+   try:
+    import zstandard;
+   except ImportError:
+    return False;
+   catfp = zstandard.open(outfile, "wb", zstandard.ZstdCompressor(level=10));
+  elif(((fextname==".lz4" or fextname==".clz4") and compression=="auto") or compression=="lz4"):
+   try:
+    import lz4.frame;
+   except ImportError:
+    return False;
+   catfp = lz4.frame.open(outfile, "wb", compression_level=9);
+  elif(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
+   try:
+    import lzma;
+   except ImportError:
+    return False;
+   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=9);
+  elif((fextname==".lzma" and compression=="auto") or compression=="lzma"):
+   try:
+    import lzma;
+   except ImportError:
+    return False;
+   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=9);
+ catver = __cat_header_ver__;
+ fileheaderver = str(int(catver.replace(".", "")));
+ fileheader = AppendNullByte("CatFile" + fileheaderver);
+ catfp.write(fileheader.encode());
+ infilelist = [];
+ if(infiles=="-"):
+  for line in sys.stdin:
+   infilelist.append(line.strip());
+  infilelist = list(filter(None, infilelist));
+ elif(infiles!="-" and dirlistfromtxt and os.path.exists(infiles) and os.path.isfile(infiles)):
+  if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
+   return False;
+  with open(infiles, "r") as finfile:
+   for line in finfile:
+    infilelist.append(line.strip());
+  infilelist = list(filter(None, infilelist));
+ else:
+  if(isinstance(infiles, (list, tuple, ))):
+   infilelist = list(filter(None, infiles));
+  elif(isinstance(infiles, (str, ))):
+   infilelist = list(filter(None, [infiles]));
+ GetDirList = ListDir(infilelist, followlink, False);
+ if(not GetDirList):
+  return False;
+ curinode = 0;
+ curfid = 0;
+ inodelist = [];
+ inodetofile = {};
+ filetoinode = {};
+ inodetocatinode = {};
+ for curfname in GetDirList:
+  fname = curfname;
+  if(verbose):
+   logging.info(fname);
+  if(not followlink or followlink is None):
+   fstatinfo = os.lstat(fname);
+  else:
+   fstatinfo = os.stat(fname);
+  fpremode = fstatinfo.st_mode;
+  finode = fstatinfo.st_ino;
+  flinkcount = fstatinfo.st_nlink;
+  ftype = 0;
+  if(stat.S_ISREG(fpremode)):
+   ftype = 0;
+  if(stat.S_ISLNK(fpremode)):
+   ftype = 2;
+  if(stat.S_ISCHR(fpremode)):
+   ftype = 3;
+  if(stat.S_ISBLK(fpremode)):
+   ftype = 4;
+  if(stat.S_ISDIR(fpremode)):
+   ftype = 5;
+  if(stat.S_ISFIFO(fpremode)):
+   ftype = 6;
+  flinkname = "";
+  fcurfid = format(int(curfid), 'x').lower();
+  if(not followlink):
+   if(ftype!=1):
+    if(finode in inodelist):
+     ftype = 1;
+     flinkname = inodetofile[finode];
+     fcurinode = format(int(inodetocatinode[finode]), 'x').lower();
+    if(finode not in inodelist):
+     inodelist.append(finode);
+     inodetofile.update({finode: fname});
+     inodetocatinode.update({finode: curinode});
+     fcurinode = format(int(curinode), 'x').lower();
+     curinode = curinode + 1;
+  else:
+   fcurinode = format(int(curinode), 'x').lower();
+   curinode = curinode + 1;
+  curfid = curfid + 1;
+  if(ftype==2):
+   flinkname = os.readlink(fname);
+  fdev = fstatinfo.st_dev;
+  getfdev = GetDevMajorMinor(fdev);
+  fdev_minor = getfdev[0];
+  fdev_major = getfdev[1];
+  frdev = fstatinfo.st_dev;
+  if(hasattr(fstatinfo, "st_rdev")):
+   frdev = fstatinfo.st_rdev;
+  else:
+   frdev = fstatinfo.st_dev;
+  getfrdev = GetDevMajorMinor(frdev);
+  frdev_minor = getfrdev[0];
+  frdev_major = getfrdev[1];
+  if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
+   fsize = format(int("0"), 'x').lower();
+  if(ftype==0 or ftype==7):
+   fsize = format(int(fstatinfo.st_size), 'x').lower();
+  fatime = format(int(fstatinfo.st_atime), 'x').lower();
+  fmtime = format(int(fstatinfo.st_mtime), 'x').lower();
+  fctime = format(int(fstatinfo.st_ctime), 'x').lower();
+  if(hasattr(fstatinfo, "st_birthtime")):
+   fbtime = format(int(fstatinfo.st_birthtime), 'x').lower();
+  else:
+   fbtime = format(int(fstatinfo.st_ctime), 'x').lower();
+  fmode = format(int(fstatinfo.st_mode), 'x').lower();
+  fchmode = format(int(stat.S_IMODE(fstatinfo.st_mode)), 'x').lower();
+  ftypemod = format(int(stat.S_IFMT(fstatinfo.st_mode)), 'x').lower();
+  fuid = format(int(fstatinfo.st_uid), 'x').lower();
+  fgid = format(int(fstatinfo.st_gid), 'x').lower();
+  funame = "";
+  try:
+   import pwd;
+   try:
+    userinfo = pwd.getpwuid(fstatinfo.st_uid);
+    funame = userinfo.pw_name;
+   except KeyError:
+    funame = "";
+  except ImportError:
+   funame = "";
+  fgname = "";
+  try:
+   import grp;
+   try:
+    groupinfo = grp.getgrgid(fstatinfo.st_gid);
+    fgname = groupinfo.gr_name;
+   except KeyError:
+    fgname = "";
+  except ImportError:
+   fgname = "";
+  fdev_minor = format(int(fdev_minor), 'x').lower();
+  fdev_major = format(int(fdev_major), 'x').lower();
+  frdev_minor = format(int(frdev_minor), 'x').lower();
+  frdev_major = format(int(frdev_major), 'x').lower();
+  finode = format(int(finode), 'x').lower();
+  flinkcount = format(int(flinkcount), 'x').lower();
+  fcontents = "".encode();
+  if(ftype==0 or ftype==7):
+   fpc = open(fname, "rb");
+   fcontents = fpc.read(int(fstatinfo.st_size));
+   fpc.close();
+  if(followlink and (ftype==1 or ftype==2)):
+   flstatinfo = os.stat(flinkname);
+   fpc = open(flinkname, "rb");
+   fcontents = fpc.read(int(flstatinfo.st_size));
+   fpc.close();
+  ftypehex = format(ftype, 'x').lower();
+  catfileoutstr = AppendNullByte(ftypehex);
+  catfileoutstr = catfileoutstr + AppendNullByte(fname);
+  catfileoutstr = catfileoutstr + AppendNullByte(flinkname);
+  catfileoutstr = catfileoutstr + AppendNullByte(fsize);
+  catfileoutstr = catfileoutstr + AppendNullByte(fatime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fctime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fbtime);
+  catfileoutstr = catfileoutstr + AppendNullByte(fmode);
+  catfileoutstr = catfileoutstr + AppendNullByte(fuid);
+  catfileoutstr = catfileoutstr + AppendNullByte(funame);
+  catfileoutstr = catfileoutstr + AppendNullByte(fgid);
+  catfileoutstr = catfileoutstr + AppendNullByte(fgname);
+  catfileoutstr = catfileoutstr + AppendNullByte(fcurfid);
+  catfileoutstr = catfileoutstr + AppendNullByte(fcurinode);
+  catfileoutstr = catfileoutstr + AppendNullByte(flinkcount);
+  catfileoutstr = catfileoutstr + AppendNullByte(fdev_minor);
+  catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
+  catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
+  catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
+  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
+  if(checksumtype=="none" or checksumtype==""):
+   catfileheadercshex = format(0, 'x').lower();
+   catfilecontentcshex = format(0, 'x').lower();
+  if(CheckSumSupport(checksumtype, 0)):
+   catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
+   catfilecontentcshex = format(crc16(fcontents) & 0xffffffff, 'x').lower();
+  if(CheckSumSupport(checksumtype, 1)):
+   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
+   catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').lower();
+  if(CheckSumSupport(checksumtype, 2)):
+   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
+   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').lower();
+  if(CheckSumSupport(checksumtype, 4)):
+   checksumoutstr = hashlib.new(checksumtype);
+   checksumoutstr.update(catfileoutstr.encode());
+   catfileheadercshex = checksumoutstr.hexdigest().lower();
+   checksumoutstr = hashlib.new(checksumtype);
+   checksumoutstr.update(fcontents);
+   catfilecontentcshex = checksumoutstr.hexdigest().lower();
+  catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
+  catfileoutstr = catfileoutstr + AppendNullByte(catfilecontentcshex);
+  catfileoutstrecd = catfileoutstr.encode();
+  nullstrecd = "\0".encode();
+  catfileout = catfileoutstrecd + fcontents + nullstrecd;
+  catfp.write(catfileout);
+ if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+  catfp = CompressCatFile(catfp, compression);
+ if(outfile=="-"):
+  catfp.seek(0, 0);
+  if(hasattr(sys.stdout, "buffer")):
+   shutil.copyfileobj(catfp, sys.stdout.buffer);
+  else:
+   shutil.copyfileobj(catfp, sys.stdout);
+ if(returnfp):
+  catfp.seek(0, 0);
+  return catfp;
+ else:
+  catfp.close();
+  return True;
+
 def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="crc32", verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
  outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'lzop', 'clzo', 'lzma', 'xz', 'cxz'];
@@ -845,272 +1111,6 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", checksumtype="cr
   fcontents = "".encode();
   if(ftype==0):
    fcontents = zipfp.read(fname);
-  ftypehex = format(ftype, 'x').lower();
-  catfileoutstr = AppendNullByte(ftypehex);
-  catfileoutstr = catfileoutstr + AppendNullByte(fname);
-  catfileoutstr = catfileoutstr + AppendNullByte(flinkname);
-  catfileoutstr = catfileoutstr + AppendNullByte(fsize);
-  catfileoutstr = catfileoutstr + AppendNullByte(fatime);
-  catfileoutstr = catfileoutstr + AppendNullByte(fmtime);
-  catfileoutstr = catfileoutstr + AppendNullByte(fctime);
-  catfileoutstr = catfileoutstr + AppendNullByte(fbtime);
-  catfileoutstr = catfileoutstr + AppendNullByte(fmode);
-  catfileoutstr = catfileoutstr + AppendNullByte(fuid);
-  catfileoutstr = catfileoutstr + AppendNullByte(funame);
-  catfileoutstr = catfileoutstr + AppendNullByte(fgid);
-  catfileoutstr = catfileoutstr + AppendNullByte(fgname);
-  catfileoutstr = catfileoutstr + AppendNullByte(fcurfid);
-  catfileoutstr = catfileoutstr + AppendNullByte(fcurinode);
-  catfileoutstr = catfileoutstr + AppendNullByte(flinkcount);
-  catfileoutstr = catfileoutstr + AppendNullByte(fdev_minor);
-  catfileoutstr = catfileoutstr + AppendNullByte(fdev_major);
-  catfileoutstr = catfileoutstr + AppendNullByte(frdev_minor);
-  catfileoutstr = catfileoutstr + AppendNullByte(frdev_major);
-  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
-  if(checksumtype=="none" or checksumtype==""):
-   catfileheadercshex = format(0, 'x').lower();
-   catfilecontentcshex = format(0, 'x').lower();
-  if(CheckSumSupport(checksumtype, 0)):
-   catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
-   catfilecontentcshex = format(crc16(fcontents) & 0xffffffff, 'x').lower();
-  if(CheckSumSupport(checksumtype, 1)):
-   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
-   catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').lower();
-  if(CheckSumSupport(checksumtype, 2)):
-   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
-   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, 'x').lower();
-  if(CheckSumSupport(checksumtype, 4)):
-   checksumoutstr = hashlib.new(checksumtype);
-   checksumoutstr.update(catfileoutstr.encode());
-   catfileheadercshex = checksumoutstr.hexdigest().lower();
-   checksumoutstr = hashlib.new(checksumtype);
-   checksumoutstr.update(fcontents);
-   catfilecontentcshex = checksumoutstr.hexdigest().lower();
-  catfileoutstr = catfileoutstr + AppendNullByte(catfileheadercshex);
-  catfileoutstr = catfileoutstr + AppendNullByte(catfilecontentcshex);
-  catfileoutstrecd = catfileoutstr.encode();
-  nullstrecd = "\0".encode();
-  catfileout = catfileoutstrecd + fcontents + nullstrecd;
-  catfp.write(catfileout);
- if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
-  catfp = CompressCatFile(catfp, compression);
- if(outfile=="-"):
-  catfp.seek(0, 0);
-  if(hasattr(sys.stdout, "buffer")):
-   shutil.copyfileobj(catfp, sys.stdout.buffer);
-  else:
-   shutil.copyfileobj(catfp, sys.stdout);
- if(returnfp):
-  catfp.seek(0, 0);
-  return catfp;
- else:
-  catfp.close();
-  return True;
-
-def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", followlink=False, checksumtype="crc32", verbose=False, returnfp=False):
- compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
- outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'lzop', 'clzo', 'lzma', 'xz', 'cxz'];
- outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', '.clz4', '.lzo', '.lzop', '.clzo', '.lzma', '.xz', '.cxz'];
- if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
-  outfile = RemoveWindowsPath(outfile);
- checksumtype = checksumtype.lower();
- if(not CheckSumSupport(checksumtype, 5)):
-  checksumtype="crc32";
- if(checksumtype=="none"):
-  checksumtype = "";
- if(not compression or compression or compression=="catfile"):
-  compression = None;
- if(compression not in compressionlist and compression is None):
-  compression = "auto";
- if(verbose):
-  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
- if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
-  if(os.path.exists(outfile)):
-   os.unlink(outfile);
- if(outfile=="-"):
-  verbose = False;
-  catfp = BytesIO();
- elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
-  catfp = outfile;
- else:
-  fbasename = os.path.splitext(outfile)[0];
-  fextname = os.path.splitext(outfile)[1];
-  if(fextname not in outextlistwd and (compression=="auto" or compression is None)):
-   catfp = open(outfile, "wb");
-  elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
-   try:
-    import gzip;
-   except ImportError:
-    return False;
-   catfp = gzip.open(outfile, "wb", 9);
-  elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
-   try:
-    import bz2;
-   except ImportError:
-    return False;
-   catfp = bz2.BZ2File(outfile, "wb", compresslevel=9);
-  elif(((fextname==".zst" or fextname==".czst") and compression=="auto") or compression=="bzip2"):
-   try:
-    import zstandard;
-   except ImportError:
-    return False;
-   catfp = zstandard.open(outfile, "wb", zstandard.ZstdCompressor(level=10));
-  elif(((fextname==".lz4" or fextname==".clz4") and compression=="auto") or compression=="lz4"):
-   try:
-    import lz4.frame;
-   except ImportError:
-    return False;
-   catfp = lz4.frame.open(outfile, "wb", compression_level=9);
-  elif(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
-   try:
-    import lzma;
-   except ImportError:
-    return False;
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=9);
-  elif((fextname==".lzma" and compression=="auto") or compression=="lzma"):
-   try:
-    import lzma;
-   except ImportError:
-    return False;
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=9);
- catver = __cat_header_ver__;
- fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte("CatFile" + fileheaderver);
- catfp.write(fileheader.encode());
- infilelist = [];
- if(infiles=="-"):
-  for line in sys.stdin:
-   infilelist.append(line.strip());
-  infilelist = list(filter(None, infilelist));
- elif(infiles!="-" and dirlistfromtxt and os.path.exists(infiles) and os.path.isfile(infiles)):
-  if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
-   return False;
-  with open(infiles, "r") as finfile:
-   for line in finfile:
-    infilelist.append(line.strip());
-  infilelist = list(filter(None, infilelist));
- else:
-  if(isinstance(infiles, (list, tuple, ))):
-   infilelist = list(filter(None, infiles));
-  elif(isinstance(infiles, (str, ))):
-   infilelist = list(filter(None, [infiles]));
- GetDirList = ListDir(infilelist, followlink, False);
- if(not GetDirList):
-  return False;
- curinode = 0;
- curfid = 0;
- inodelist = [];
- inodetofile = {};
- filetoinode = {};
- inodetocatinode = {};
- for curfname in GetDirList:
-  fname = curfname;
-  if(verbose):
-   logging.info(fname);
-  if(not followlink or followlink is None):
-   fstatinfo = os.lstat(fname);
-  else:
-   fstatinfo = os.stat(fname);
-  fpremode = fstatinfo.st_mode;
-  finode = fstatinfo.st_ino;
-  flinkcount = fstatinfo.st_nlink;
-  ftype = 0;
-  if(stat.S_ISREG(fpremode)):
-   ftype = 0;
-  if(stat.S_ISLNK(fpremode)):
-   ftype = 2;
-  if(stat.S_ISCHR(fpremode)):
-   ftype = 3;
-  if(stat.S_ISBLK(fpremode)):
-   ftype = 4;
-  if(stat.S_ISDIR(fpremode)):
-   ftype = 5;
-  if(stat.S_ISFIFO(fpremode)):
-   ftype = 6;
-  flinkname = "";
-  fcurfid = format(int(curfid), 'x').lower();
-  if(not followlink):
-   if(ftype!=1):
-    if(finode in inodelist):
-     ftype = 1;
-     flinkname = inodetofile[finode];
-     fcurinode = format(int(inodetocatinode[finode]), 'x').lower();
-    if(finode not in inodelist):
-     inodelist.append(finode);
-     inodetofile.update({finode: fname});
-     inodetocatinode.update({finode: curinode});
-     fcurinode = format(int(curinode), 'x').lower();
-     curinode = curinode + 1;
-  else:
-   fcurinode = format(int(curinode), 'x').lower();
-   curinode = curinode + 1;
-  curfid = curfid + 1;
-  if(ftype==2):
-   flinkname = os.readlink(fname);
-  fdev = fstatinfo.st_dev;
-  getfdev = GetDevMajorMinor(fdev);
-  fdev_minor = getfdev[0];
-  fdev_major = getfdev[1];
-  frdev = fstatinfo.st_dev;
-  if(hasattr(fstatinfo, "st_rdev")):
-   frdev = fstatinfo.st_rdev;
-  else:
-   frdev = fstatinfo.st_dev;
-  getfrdev = GetDevMajorMinor(frdev);
-  frdev_minor = getfrdev[0];
-  frdev_major = getfrdev[1];
-  if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
-   fsize = format(int("0"), 'x').lower();
-  if(ftype==0 or ftype==7):
-   fsize = format(int(fstatinfo.st_size), 'x').lower();
-  fatime = format(int(fstatinfo.st_atime), 'x').lower();
-  fmtime = format(int(fstatinfo.st_mtime), 'x').lower();
-  fctime = format(int(fstatinfo.st_ctime), 'x').lower();
-  if(hasattr(fstatinfo, "st_birthtime")):
-   fbtime = format(int(fstatinfo.st_birthtime), 'x').lower();
-  else:
-   fbtime = format(int(fstatinfo.st_ctime), 'x').lower();
-  fmode = format(int(fstatinfo.st_mode), 'x').lower();
-  fchmode = format(int(stat.S_IMODE(fstatinfo.st_mode)), 'x').lower();
-  ftypemod = format(int(stat.S_IFMT(fstatinfo.st_mode)), 'x').lower();
-  fuid = format(int(fstatinfo.st_uid), 'x').lower();
-  fgid = format(int(fstatinfo.st_gid), 'x').lower();
-  funame = "";
-  try:
-   import pwd;
-   try:
-    userinfo = pwd.getpwuid(fstatinfo.st_uid);
-    funame = userinfo.pw_name;
-   except KeyError:
-    funame = "";
-  except ImportError:
-   funame = "";
-  fgname = "";
-  try:
-   import grp;
-   try:
-    groupinfo = grp.getgrgid(fstatinfo.st_gid);
-    fgname = groupinfo.gr_name;
-   except KeyError:
-    fgname = "";
-  except ImportError:
-   fgname = "";
-  fdev_minor = format(int(fdev_minor), 'x').lower();
-  fdev_major = format(int(fdev_major), 'x').lower();
-  frdev_minor = format(int(frdev_minor), 'x').lower();
-  frdev_major = format(int(frdev_major), 'x').lower();
-  finode = format(int(finode), 'x').lower();
-  flinkcount = format(int(flinkcount), 'x').lower();
-  fcontents = "".encode();
-  if(ftype==0 or ftype==7):
-   fpc = open(fname, "rb");
-   fcontents = fpc.read(int(fstatinfo.st_size));
-   fpc.close();
-  if(followlink and (ftype==1 or ftype==2)):
-   flstatinfo = os.stat(flinkname);
-   fpc = open(flinkname, "rb");
-   fcontents = fpc.read(int(flstatinfo.st_size));
-   fpc.close();
   ftypehex = format(ftype, 'x').lower();
   catfileoutstr = AppendNullByte(ftypehex);
   catfileoutstr = catfileoutstr + AppendNullByte(fname);
