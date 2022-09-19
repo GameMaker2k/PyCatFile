@@ -1963,7 +1963,7 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
  else:
   return True;
 
-def TarFileListFiles(infile, verbose=False, returnfp=False):
+def ZipFileListFiles(infile, verbose=False, returnfp=False):
  import datetime;
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(not os.path.exists(infile) or not os.path.isfile(infile)):
@@ -1972,7 +1972,6 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
   return False;
  lcfi = 0;
  returnval = {};
-
  zipfp = zipfile.ZipFile(infile, "r", allowZip64=True);
  ziptest = zipfp.testzip();
  for member in zipfp.infolist():
