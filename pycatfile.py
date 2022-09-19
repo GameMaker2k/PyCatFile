@@ -1968,7 +1968,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(not os.path.exists(infile) or not os.path.isfile(infile)):
   return False;
- if(not tarfile.is_tarfile(infile)):
+ if(not zipfile.is_zipfile(infile)):
   return False;
  lcfi = 0;
  returnval = {};
