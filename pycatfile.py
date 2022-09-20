@@ -614,6 +614,12 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
    ftype = 5;
   if(stat.S_ISFIFO(fpremode)):
    ftype = 6;
+  if(hasattr(stat, "S_ISDOOR") and stat.S_ISDOOR(fpremode)):
+   ftype = 8;
+  if(hasattr(stat, "S_ISPORT") and stat.S_ISPORT(fpremode)):
+   ftype = 9;
+  if(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
+   ftype = 10;
   flinkname = "";
   fcurfid = format(int(curfid), 'x').lower();
   if(not followlink):
