@@ -1566,7 +1566,10 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
  inodetofile = {};
  filetoinode = {};
  while(lcfi < lcfx):
-  fname = listcatfiles[lcfi]['fname'];
+  if(re.findall("^[.|/]", listcatfiles[lcfi]['fname'])):
+   fname = listcatfiles[lcfi]['fname'];
+  else:
+   fname = "./"+listcatfiles[lcfi]['fname'];
   if(verbose):
    logging.info(fname);
   fsize = format(int(listcatfiles[lcfi]['fsize']), 'x').lower();
