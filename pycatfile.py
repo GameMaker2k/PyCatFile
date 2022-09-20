@@ -588,7 +588,10 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
  filetoinode = {};
  inodetocatinode = {};
  for curfname in GetDirList:
-  fname = curfname;
+  if(re.findall("^[.|/]", curfname)):
+   fname = curfname;
+  else:
+   fname = "./"+curfname;
   if(verbose):
    logging.info(fname);
   if(not followlink or followlink is None):
@@ -843,7 +846,10 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="cr
   return False;
  tarfp = tarfile.open(infile, "r");
  for member in tarfp.getmembers():
-  fname = member.name;
+  if(re.findall("^[.|/]", member.name)):
+   fname = member.name;
+  else:
+   fname = "./"+member.name;
   if(verbose):
    logging.info(fname);
   fpremode = member.mode;
@@ -1043,7 +1049,10 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", checksumtype="cr
  zipfp = zipfile.ZipFile(infile, "r", allowZip64=True);
  ziptest = zipfp.testzip();
  for member in zipfp.infolist():
-  fname = member.filename;
+  if(re.findall("^[.|/]", member.filename)):
+   fname = member.filename;
+  else:
+   fname = "./"+member.filename;
   zipinfo = zipfp.getinfo(fname);
   if(verbose):
    logging.info(fname);
@@ -1275,7 +1284,11 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catfhstart = catfp.tell();
   catheaderdata = ReadFileHeaderData(catfp, 23);
   catftype = int(catheaderdata[0], 16);
-  catfname = catheaderdata[1];
+  if(re.findall("^[.|/]", catheaderdata[1])):
+   catfname = catheaderdata[1];
+  else:
+   catfname = "./"+catheaderdata[1];
+  catfbasedir = os.path.dirname(catfname);
   catflinkname = catheaderdata[2];
   catfsize = int(catheaderdata[3], 16);
   catfatime = int(catheaderdata[4], 16);
@@ -1353,7 +1366,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catfp.seek(catfsize, 1);
    pyhascontents = False;
   catfcontentend = catfp.tell();
-  catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmod': catfchmod, 'ftypemod': catftypemod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
+  catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmod': catfchmod, 'ftypemod': catftypemod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
   catfp.seek(1, 1);
   seekstart = catfp.tell();
   fileidnum = fileidnum + 1;
