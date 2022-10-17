@@ -1107,7 +1107,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", checksumtype="cr
   try:
    import pwd;
    try:
-    userinfo = pwd.getpwuid(getuid());
+    userinfo = pwd.getpwuid(os.getuid());
     funame = userinfo.pw_name;
    except KeyError:
     funame = "";
@@ -1119,7 +1119,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", checksumtype="cr
   try:
    import grp;
    try:
-    groupinfo = grp.getgrgid(getgid());
+    groupinfo = grp.getgrgid(os.getgid());
     fgname = groupinfo.gr_name;
    except KeyError:
     fgname = "";
@@ -2037,7 +2037,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
    try:
     import pwd;
     try:
-     userinfo = pwd.getpwuid(getuid());
+     userinfo = pwd.getpwuid(os.getuid());
      funame = userinfo.pw_name;
     except KeyError:
      funame = "";
@@ -2049,7 +2049,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
    try:
     import grp;
     try:
-     groupinfo = grp.getgrgid(getgid());
+     groupinfo = grp.getgrgid(os.getgid());
      fgname = groupinfo.gr_name;
     except KeyError:
      fgname = "";
