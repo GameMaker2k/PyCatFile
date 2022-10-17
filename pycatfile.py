@@ -859,25 +859,35 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="cr
   if(verbose):
    logging.info(fname);
   fpremode = member.mode;
+  ffullmode = member.mode;
   flinkcount = 0;
   ftype = 0;
   if(member.isreg()):
+   ffullmode = member.mode + stat.S_IFREG;
    ftype = 0;
   if(member.isdev()):
+   ffullmode = member.mode;
    ftype = 7;
   if(member.islnk()):
+   ffullmode = member.mode + stat.S_IFREG;
    ftype = 1;
   if(member.issym()):
+   ffullmode = member.mode + stat.S_IFLNK;
    ftype = 2;
   if(member.ischr()):
+   ffullmode = member.mode + stat.S_IFCHR;
    ftype = 3;
   if(member.isblk()):
+   ffullmode = member.mode + stat.S_IFBLK;
    ftype = 4;
   if(member.isdir()):
+   ffullmode = member.mode + stat.S_IFDIR;
    ftype = 5;
   if(member.isfifo()):
+   ffullmode = member.mode + stat.S_IFIFO;
    ftype = 6;
   if(member.issparse()):
+   ffullmode = member.mode;
    ftype = 8;
   flinkname = "";
   fcurfid = format(int(curfid), 'x').lower();
@@ -897,9 +907,9 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="cr
   fmtime = format(int(member.mtime), 'x').lower();
   fctime = format(int(member.mtime), 'x').lower();
   fbtime = format(int(member.mtime), 'x').lower();
-  fmode = format(int(member.mode), 'x').lower();
-  fchmode = format(int(stat.S_IMODE(member.mode)), 'x').lower();
-  ftypemod = format(int(stat.S_IFMT(member.mode)), 'x').lower();
+  fmode = format(int(ffullmode), 'x').lower();
+  fchmode = format(int(stat.S_IMODE(ffullmode)), 'x').lower();
+  ftypemod = format(int(stat.S_IFMT(ffullmode)), 'x').lower();
   fuid = format(int(member.uid), 'x').lower();
   fgid = format(int(member.gid), 'x').lower();
   funame = member.uname;
@@ -1950,12 +1960,43 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
  tarfp = tarfile.open(infile, "r");
  for member in tarfp.getmembers():
   returnval.update({lcfi: member.name});
+  fpremode = member.mode;
+  ffullmode = member.mode;
+  flinkcount = 0;
+  ftype = 0;
+  if(member.isreg()):
+   ffullmode = member.mode + stat.S_IFREG;
+   ftype = 0;
+  if(member.isdev()):
+   ffullmode = member.mode;
+   ftype = 7;
+  if(member.islnk()):
+   ffullmode = member.mode + stat.S_IFREG;
+   ftype = 1;
+  if(member.issym()):
+   ffullmode = member.mode + stat.S_IFLNK;
+   ftype = 2;
+  if(member.ischr()):
+   ffullmode = member.mode + stat.S_IFCHR;
+   ftype = 3;
+  if(member.isblk()):
+   ffullmode = member.mode + stat.S_IFBLK;
+   ftype = 4;
+  if(member.isdir()):
+   ffullmode = member.mode + stat.S_IFDIR;
+   ftype = 5;
+  if(member.isfifo()):
+   ffullmode = member.mode + stat.S_IFIFO;
+   ftype = 6;
+  if(member.issparse()):
+   ffullmode = member.mode;
+   ftype = 8;
   if(not verbose):
    logging.info(member.name);
   if(verbose):
    permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
    permissionstr = "";
-   for fmodval in str(oct(member.mode))[-3:]:
+   for fmodval in str(oct(ffullmode))[-3:]:
     permissionstr = permissionstr + permissions['access'].get(fmodval, '---');
    if(member.isreg()):
     permissionstr = "-" + permissionstr;
@@ -1982,7 +2023,7 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
    fgprint = member.gname;
    if(len(fgprint)<=0):
     fgprint = member.gid;
-   logging.info(stat.filemode(member.mode) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.size).rjust(15) + " " + datetime.datetime.utcfromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + " " + printfname));
+   logging.info(stat.filemode(ffullmode) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.size).rjust(15) + " " + datetime.datetime.utcfromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + " " + printfname));
   lcfi = lcfi + 1;
  if(returnfp):
   return listcatfiles['catfp'];
