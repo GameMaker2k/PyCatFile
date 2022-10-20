@@ -649,7 +649,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   for line in sys.stdin:
    infilelist.append(line.strip());
   infilelist = list(filter(None, infilelist));
- elif(infiles!="-" and dirlistfromtxt and os.path.exists(infiles) and os.path.isfile(infiles)):
+ elif(infiles!="-" and dirlistfromtxt and os.path.exists(infiles) and (os.path.isfile(infiles) or infiles=="/dev/null")):
   if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
    return False;
   with open(infiles, "r") as finfile:
