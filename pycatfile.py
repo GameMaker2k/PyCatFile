@@ -228,6 +228,39 @@ def AppendNullBytes(indata=[]):
   inum = inum + 1;
  return outdata;
 
+def PrintPermissionString(fmod, ftype):
+ permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
+ permissionstr = "";
+ for fmodval in str(oct(listcatfiles[lcfi]['fchmod']))[-3:]:
+  permissionstr = permissionstr + permissions['access'].get(fmodval, '---');
+ if(ftype==0 or ftype==7):
+  permissionstr = "-" + permissionstr;
+ if(ftype==1):
+  permissionstr = "h" + permissionstr;
+ if(ftype==2):
+  permissionstr = "l" + permissionstr;
+ if(ftype==3):
+  permissionstr = "c" + permissionstr;
+ if(ftype==4):
+  permissionstr = "b" + permissionstr;
+ if(ftype==5):
+  permissionstr = "d" + permissionstr;
+ if(ftype==6):
+  permissionstr = "f" + permissionstr;
+ if(ftype==8):
+  permissionstr = "D" + permissionstr;
+ if(ftype==9):
+  permissionstr = "p" + permissionstr;
+ if(ftype==10):
+  permissionstr = "w" + permissionstr;
+ try:
+  permissionoutstr = stat.filemode(fmod);
+ except AttributeError:
+  permissionoutstr = permissionstr;
+ except KeyError:
+  permissionoutstr = permissionstr;
+ retrun permissionoutstr;
+
 def CompressionSupport():
  compression_list = [];
  try:
@@ -678,7 +711,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
   for line in sys.stdin:
    infilelist.append(line.strip());
   infilelist = list(filter(None, infilelist));
- elif(infiles!="-" and dirlistfromtxt and os.path.exists(infiles) and (os.path.isfile(infiles) or infiles=="/dev/null")):
+ elif(infiles!="-" and dirlistfromtxt and os.path.exists(infiles) and (os.path.isfile(infiles) or infiles=="/dev/null" or infiles=="NUL")):
   if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
    return False;
   with open(infiles, "r") as finfile:
@@ -2021,6 +2054,14 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose
     permissionstr = "d" + permissionstr;
    if(listcatfiles[lcfi]['ftype']==6):
     permissionstr = "f" + permissionstr;
+   if(listcatfiles[lcfi]['ftype']==7):
+    permissionstr = "-" + permissionstr;
+   if(listcatfiles[lcfi]['ftype']==8):
+    permissionstr = "D" + permissionstr;
+   if(listcatfiles[lcfi]['ftype']==9):
+    permissionstr = "p" + permissionstr;
+   if(listcatfiles[lcfi]['ftype']==10):
+    permissionstr = "w" + permissionstr;
    printfname = listcatfiles[lcfi]['fname'];
    if(listcatfiles[lcfi]['ftype']==1):
     printfname = listcatfiles[lcfi]['fname'] + " link to " + listcatfiles[lcfi]['flinkname'];
@@ -2032,7 +2073,7 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose
    fgprint = listcatfiles[lcfi]['fgname'];
    if(len(fgprint)<=0):
     fgprint = listcatfiles[lcfi]['fgid'];
-   logging.info(stat.filemode(listcatfiles[lcfi]['fmode']) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(listcatfiles[lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname));
+   logging.info(PrintPermissionString(listcatfiles[lcfi]['fmode'], listcatfiles[lcfi]['ftype']) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(listcatfiles[lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname));
   lcfi = lcfi + 1;
  if(returnfp):
   return listcatfiles['catfp'];
@@ -2119,7 +2160,7 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
    fgprint = member.gname;
    if(len(fgprint)<=0):
     fgprint = member.gid;
-   logging.info(stat.filemode(ffullmode) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.size).rjust(15) + " " + datetime.datetime.utcfromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + " " + printfname));
+   logging.info(PrintPermissionString(ffullmode, ftype) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.size).rjust(15) + " " + datetime.datetime.utcfromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + " " + printfname));
   lcfi = lcfi + 1;
  if(returnfp):
   return listcatfiles['catfp'];
@@ -2159,8 +2200,10 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
    for fmodval in str(oct(fmode))[-3:]:
     permissionstr = permissionstr + permissions['access'].get(fmodval, '---');
    if(not member.is_dir()):
+    ftype = 0;
     permissionstr = "-" + permissionstr;
    if(member.is_dir()):
+    ftype = 5;
     permissionstr = "d" + permissionstr;
    printfname = member.filename;
    try:
@@ -2204,7 +2247,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
    fgprint = fgname;
    if(len(fgprint)<=0):
     fgprint = str(fgid);
-   logging.info(stat.filemode(fmode) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.file_size).rjust(15) + " " + datetime.datetime.utcfromtimestamp(int(time.mktime(member.date_time + (0, 0, -1)))).strftime('%Y-%m-%d %H:%M') + " " + printfname));
+   logging.info(PrintPermissionString(fmode, ftype) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.file_size).rjust(15) + " " + datetime.datetime.utcfromtimestamp(int(time.mktime(member.date_time + (0, 0, -1)))).strftime('%Y-%m-%d %H:%M') + " " + printfname));
   lcfi = lcfi + 1;
  if(returnfp):
   return listcatfiles['catfp'];
