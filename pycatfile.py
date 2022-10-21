@@ -482,7 +482,7 @@ def GZipCompress(data, compresslevel=9):
  catfp.close();
  return catdata;
 
-def CompressCatFile(fp, compression="auto"):
+def CompressCatFile(fp, compression="auto", compressionlevel=None):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
  if(not hasattr(fp, "read") and not hasattr(fp, "write")):
   return False;
@@ -497,49 +497,63 @@ def CompressCatFile(fp, compression="auto"):
   except ImportError:
    return False;
   catfp = BytesIO();
-  catfp.write(GZipCompress(fp.read(), compresslevel=9));
+  if(compressionlevel==None):
+   compressionlevel = 9;
+  catfp.write(GZipCompress(fp.read(), compresslevel=compressionlevel));
  if(compression=="bzip2"):
   try:
    import bz2;
   except ImportError:
    return False;
   catfp = BytesIO();
-  catfp.write(bz2.compress(fp.read(), compresslevel=9));
+  if(compressionlevel==None):
+   compressionlevel = 9;
+  catfp.write(bz2.compress(fp.read(), compresslevel=compressionlevel));
  if(compression=="lz4"):
   try:
    import lz4.frame;
   except ImportError:
    return False;
   catfp = BytesIO();
-  catfp.write(lz4.frame.compress(fp.read(), compression_level=9));
+  if(compressionlevel==None):
+   compressionlevel = 9;
+  catfp.write(lz4.frame.compress(fp.read(), compression_level=compressionlevel));
  if(compression=="lzo" or compression=="lzop"):
   try:
    import lzo;
   except ImportError:
    return False;
   catfp = BytesIO();
-  catfp.write(lzo.compress(fp.read(), compresslevel=9));
+  if(compressionlevel==None):
+   compressionlevel = 9;
+  catfp.write(lzo.compress(fp.read(), compresslevel=compressionlevel));
  if(compression=="zstd"):
   try:
    import zstandard;
   except ImportError:
    return False;
   catfp = BytesIO();
-  catfp.write(zstandard.compress(fp.read(), level=10));
+  if(compressionlevel==None):
+   compressionlevel = 10;
+  catfp.write(zstandard.compress(fp.read(), level=compressionlevel));
  if(compression=="lzma"):
   try:
    import lzma;
   except ImportError:
    return False;
   catfp = BytesIO();
-  catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE, preset=9));
+  if(compressionlevel==None):
+   compressionlevel = 9;
+  catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE, preset=compressionlevel));
  if(compression=="xz"):
   try:
    import lzma;
   except ImportError:
    return False;
   catfp = BytesIO();
-  catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ, preset=9));
+  if(compressionlevel==None):
+   compressionlevel = 9;
+  catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ, preset=compressionlevel));
  if(compression=="auto" or compression is None):
   catfp = fp;
  catfp.seek(0, 0);
@@ -577,7 +591,7 @@ def CheckSumSupport(checkfor, checklist):
  else:
   return False;
 
-def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", followlink=False, checksumtype="crc32", verbose=False, returnfp=False):
+def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, checksumtype="crc32", verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
  outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'lzop', 'clzo', 'lzma', 'xz', 'cxz'];
  outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', '.clz4', '.lzo', '.lzop', '.clzo', '.lzma', '.xz', '.cxz'];
@@ -612,37 +626,49 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
     import gzip;
    except ImportError:
     return False;
-   catfp = gzip.open(outfile, "wb", 9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = gzip.open(outfile, "wb", compresslevel=compressionlevel);
   elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
    try:
     import bz2;
    except ImportError:
     return False;
-   catfp = bz2.BZ2File(outfile, "wb", compresslevel=9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = bz2.BZ2File(outfile, "wb", compresslevel=compressionlevel);
   elif(((fextname==".zst" or fextname==".czst") and compression=="auto") or compression=="zstd"):
    try:
     import zstandard;
    except ImportError:
     return False;
-   catfp = zstandard.open(outfile, "wb", zstandard.ZstdCompressor(level=10));
+   if(compressionlevel==None):
+    compressionlevel = 10;
+   catfp = zstandard.open(outfile, "wb", zstandard.ZstdCompressor(level=compressionlevel));
   elif(((fextname==".lz4" or fextname==".clz4") and compression=="auto") or compression=="lz4"):
    try:
     import lz4.frame;
    except ImportError:
     return False;
-   catfp = lz4.frame.open(outfile, "wb", compression_level=9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = lz4.frame.open(outfile, "wb", compression_level=compressionlevel);
   elif(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
    try:
     import lzma;
    except ImportError:
     return False;
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=compressionlevel);
   elif((fextname==".lzma" and compression=="auto") or compression=="lzma"):
    try:
     import lzma;
    except ImportError:
     return False;
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=compressionlevel);
  catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
@@ -835,7 +861,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", foll
   catfp.close();
   return True;
 
-def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="crc32", verbose=False, returnfp=False):
+def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
  outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'lzop', 'clzo', 'lzma', 'xz', 'cxz'];
  outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', '.clz4', '.lzo', '.lzop', '.clzo', '.lzma', '.xz', '.cxz'];
@@ -870,37 +896,49 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="cr
     import gzip;
    except ImportError:
     return False;
-   catfp = gzip.open(outfile, "wb", 9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = gzip.open(outfile, "wb", compresslevel=compressionlevel);
   elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
    try:
     import bz2;
    except ImportError:
     return False;
-   catfp = bz2.BZ2File(outfile, "wb", compresslevel=9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = bz2.BZ2File(outfile, "wb", compresslevel=compressionlevel);
   elif(((fextname==".zst" or fextname==".czst") and compression=="auto") or compression=="zstd"):
    try:
     import zstandard;
    except ImportError:
     return False;
-   catfp = zstandard.open(outfile, "wb", zstandard.ZstdCompressor(level=10));
+   if(compressionlevel==None):
+    compressionlevel = 10;
+   catfp = zstandard.open(outfile, "wb", zstandard.ZstdCompressor(level=compressionlevel));
   elif(((fextname==".lz4" or fextname==".clz4") and compression=="auto") or compression=="lz4"):
    try:
     import lz4.frame;
    except ImportError:
     return False;
-   catfp = lz4.frame.open(outfile, "wb", compression_level=9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = lz4.frame.open(outfile, "wb", compression_level=compressionlevel);
   elif(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
    try:
     import lzma;
    except ImportError:
     return False;
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=compressionlevel);
   elif((fextname==".lzma" and compression=="auto") or compression=="lzma"):
    try:
     import lzma;
    except ImportError:
     return False;
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=compressionlevel);
  catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
@@ -1026,7 +1064,7 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", checksumtype="cr
   catfp.close();
   return True;
 
-def PackCatFileFromZipFile(infile, outfile, compression="auto", checksumtype="crc32", verbose=False, returnfp=False):
+def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
  outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'lzop', 'clzo', 'lzma', 'xz', 'cxz'];
  outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', '.clz4', '.lzo', '.lzop', '.clzo', '.lzma', '.xz', '.cxz'];
@@ -1061,37 +1099,49 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", checksumtype="cr
     import gzip;
    except ImportError:
     return False;
-   catfp = gzip.open(outfile, "wb", 9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = gzip.open(outfile, "wb", compresslevel=compressionlevel);
   elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
    try:
     import bz2;
    except ImportError:
     return False;
-   catfp = bz2.BZ2File(outfile, "wb", compresslevel=9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = bz2.BZ2File(outfile, "wb", compresslevel=compressionlevel);
   elif(((fextname==".zst" or fextname==".czst") and compression=="auto") or compression=="zstd"):
    try:
     import zstandard;
    except ImportError:
     return False;
-   catfp = zstandard.open(outfile, "wb", zstandard.ZstdCompressor(level=10));
+   if(compressionlevel==None):
+    compressionlevel = 10;
+   catfp = zstandard.open(outfile, "wb", zstandard.ZstdCompressor(level=compressionlevel));
   elif(((fextname==".lz4" or fextname==".clz4") and compression=="auto") or compression=="lz4"):
    try:
     import lz4.frame;
    except ImportError:
     return False;
-   catfp = lz4.frame.open(outfile, "wb", compression_level=9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = lz4.frame.open(outfile, "wb", compression_level=compressionlevel);
   elif(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
    try:
     import lzma;
    except ImportError:
     return False;
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=compressionlevel);
   elif((fextname==".lzma" and compression=="auto") or compression=="lzma"):
    try:
     import lzma;
    except ImportError:
     return False;
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=compressionlevel);
  catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
@@ -1450,9 +1500,9 @@ def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  catout = CatFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
  return catout;
 
-def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
+def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
  outarray = BytesIO();
- packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, followlink, checksumtype, verbose, True);
+ packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, verbose, True);
  catout = CatFileToArray(outarray, seekstart, seekend, listonly, skipchecksum, returnfp);
  return catout;
 
@@ -1526,13 +1576,13 @@ def ZipFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
  catout = CatFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
  return catout;
 
-def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
+def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
  outarray = BytesIO();
- packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, followlink, checksumtype, verbose, True);
+ packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, verbose, True);
  catout = CatFileToArrayIndex(outarray, seekstart, seekend, listonly, skipchecksum, returnfp)
  return catout;
 
-def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", followlink=False, checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
+def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", compressionlevel=None, followlink=False, checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
  outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'lzop', 'clz4', 'lzo', 'clzo', 'lzma', 'xz', 'cxz'];
  outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', 'lzop', '.clz4', '.lzo', '.clzo', '.lzma', '.xz', '.cxz'];
@@ -1580,31 +1630,41 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
     import gzip;
    except ImportError:
     return False;
-   catfp = gzip.open(outfile, "wb", 9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = gzip.open(outfile, "wb", compresslevel=compressionlevel);
   elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
    try:
     import bz2;
    except ImportError:
     return False;
-   catfp = bz2.BZ2File(outfile, "wb", compresslevel=9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = bz2.BZ2File(outfile, "wb", compresslevel=compressionlevel);
   elif(((fextname==".zst" or fextname==".czst") and compression=="auto") or compression=="zstd"):
    try:
     import zstandard;
    except ImportError:
     return False;
-   catfp = zstandard.open(outfile, "wb", zstandard.ZstdCompressor(level=10));
+   if(compressionlevel==None):
+    compressionlevel = 10;
+   catfp = zstandard.open(outfile, "wb", zstandard.ZstdCompressor(level=compressionlevel));
   elif(((fextname==".lz4" or fextname==".clz4") and compression=="auto") or compression=="lz4"):
    try:
     import lz4.frame;
    except ImportError:
     return False;
-   catfp = lz4.frame.open(outfile, "wb", compression_level=9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = lz4.frame.open(outfile, "wb", compression_level=compressionlevel);
   elif(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
    try:
     import lzma;
    except ImportError:
     return False;
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=9);
+   if(compressionlevel==None):
+    compressionlevel = 9;
+   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=compressionlevel);
   elif((fextname==".lzma" and compression=="auto") or compression=="lzma"):
    try:
     import lzma;
@@ -1733,15 +1793,15 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", f
   catfp.close();
   return True;
 
-def RePackCatFileFromString(catstr, outfile, seekstart=0, seekend=0, compression="auto", checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
+def RePackCatFileFromString(catstr, outfile, seekstart=0, seekend=0, compression="auto", compressionlevel=None, checksumtype="crc32", skipchecksum=False, verbose=False, returnfp=False):
  catfp = BytesIO(catstr);
- listcatfiles = RePackCatFile(catfp, seekstart, seekend, compression, checksumtype, skipchecksum, verbose, returnfp);
+ listcatfiles = RePackCatFile(catfp, seekstart, seekend, compression, compressionlevel, checksumtype, skipchecksum, verbose, returnfp);
  return listcatfiles;
 
-def PackCatFileFromListDir(infiles, outfile, dirlistfromtxt=False, seekstart=0, seekend=0, compression="auto", followlink=False, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
+def PackCatFileFromListDir(infiles, outfile, dirlistfromtxt=False, seekstart=0, seekend=0, compression="auto", compressionlevel=None, followlink=False, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
  outarray = BytesIO();
- packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, followlink, checksumtype, verbose, True);
- catout = RePackCatFile(outarray, outfile, seekstart, seekend, compression, checksumtype, skipchecksum, verbose, returnfp)
+ packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, verbose, True);
+ catout = RePackCatFile(outarray, outfile, seekstart, seekend, compression, compressionlevel, checksumtype, skipchecksum, verbose, returnfp)
  return catout;
 
 def UnPackCatFile(infile, outdir=None, followlink=False, skipchecksum=False, verbose=False, returnfp=False):
@@ -2135,8 +2195,8 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
  else:
   return True;
 
-def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
+def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
  outarray = BytesIO();
- packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, followlink, checksumtype, False, True);
+ packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, False, True);
  listcatfiles = CatFileListFiles(outarray, seekstart, seekend, skipchecksum, verbose, returnfp);
  return listcatfiles;
