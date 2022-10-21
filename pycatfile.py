@@ -700,6 +700,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
  filetoinode = {};
  inodetocatinode = {};
  for curfname in GetDirList:
+  catfhstart = catfp.tell();
   if(re.findall("^[.|/]", curfname)):
    fname = curfname;
   else:
@@ -842,9 +843,12 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
    checksumoutstr.update(fcontents);
    catfilecontentcshex = checksumoutstr.hexdigest().lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex]);
+  catfhend = (catfp.tell() - 1) + len(catfileoutstr);
+  catfcontentstart = catfp.tell() + len(catfileoutstr);
   catfileoutstrecd = catfileoutstr.encode();
   nullstrecd = "\0".encode();
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
+  catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressCatFile(catfp, compression);
@@ -955,6 +959,7 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
   return False;
  tarfp = tarfile.open(infile, "r");
  for member in tarfp.getmembers():
+  catfhstart = catfp.tell();
   if(re.findall("^[.|/]", member.name)):
    fname = member.name;
   else:
@@ -1025,6 +1030,8 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
    fpc.close();
   ftypehex = format(ftype, 'x').lower();
   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, checksumtype]);
+  catfhend = (catfp.tell() - 1) + len(catfileoutstr);
+  catfcontentstart = catfp.tell() + len(catfileoutstr);
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
@@ -1048,6 +1055,7 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
   catfileoutstrecd = catfileoutstr.encode();
   nullstrecd = "\0".encode();
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
+  catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressCatFile(catfp, compression);
@@ -1159,6 +1167,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
  zipfp = zipfile.ZipFile(infile, "r", allowZip64=True);
  ziptest = zipfp.testzip();
  for member in zipfp.infolist():
+  catfhstart = catfp.tell();
   if(re.findall("^[.|/]", member.filename)):
    fname = member.filename;
   else:
@@ -1240,6 +1249,8 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
    fcontents = zipfp.read(member.filename);
   ftypehex = format(ftype, 'x').lower();
   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, checksumtype]);
+  catfhend = (catfp.tell() - 1) + len(catfileoutstr);
+  catfcontentstart = catfp.tell() + len(catfileoutstr);
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
@@ -1263,6 +1274,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
   catfileoutstrecd = catfileoutstr.encode();
   nullstrecd = "\0".encode();
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
+  catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressCatFile(catfp, compression);
@@ -1472,7 +1484,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   if(catfsize>1 and listonly):
    catfp.seek(catfsize, 1);
    pyhascontents = False;
-  catfcontentend = catfp.tell();
+  catfcontentend = catfp.tell() - 1;
   catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmod': catfchmod, 'ftypemod': catftypemod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
   catfp.seek(1, 1);
   seekstart = catfp.tell();
@@ -1683,6 +1695,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
  inodetofile = {};
  filetoinode = {};
  while(lcfi < lcfx):
+  catfhstart = catfp.tell();
   if(re.findall("^[.|/]", listcatfiles[lcfi]['fname'])):
    fname = listcatfiles[lcfi]['fname'];
   else:
@@ -1753,6 +1766,8 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
     curinode = curinode + 1;
   curfid = curfid + 1;
   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, checksumtype]);
+  catfhend = (catfp.tell() - 1) + len(catfileoutstr);
+  catfcontentstart = catfp.tell() + len(catfileoutstr);
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
@@ -1776,6 +1791,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   catfileoutstrecd = catfileoutstr.encode();
   nullstrecd = "\0".encode();
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
+  catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
   lcfi = lcfi + 1;
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
