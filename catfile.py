@@ -63,7 +63,7 @@ argparser.add_argument("-l", "-t", "--list", action="store_true", help="list fil
 argparser.add_argument("-r", "--repack", action="store_true", help="reconcatenate files only fixing checksum errors");
 argparser.add_argument("-o", "--output", default=None, help="extract concatenate files to or concatenate output name");
 argparser.add_argument("-compression", "--compression", default="auto", help="concatenate files with compression");
-argparser.add_argument("-level", "--level", default="auto", help="concatenate files with compression level");
+argparser.add_argument("-level", "--level", default=None, help="concatenate files with compression level");
 argparser.add_argument("-t", "--converttar", action="store_true", help="convert tar file to catfile");
 argparser.add_argument("-z", "--convertzip", action="store_true", help="convert tar file to catfile");
 argparser.add_argument("-T", "--text", action="store_true", help="read file locations from text file");
