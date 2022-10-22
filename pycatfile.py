@@ -228,10 +228,10 @@ def AppendNullBytes(indata=[]):
   inum = inum + 1;
  return outdata;
 
-def PrintPermissionString(fmod, ftype):
+def PrintPermissionString(fchmod, ftype):
  permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
  permissionstr = "";
- for fmodval in str(oct(listcatfiles[lcfi]['fchmod']))[-3:]:
+ for fmodval in str(oct(fchmod))[-3:]:
   permissionstr = permissionstr + permissions['access'].get(fmodval, '---');
  if(ftype==0 or ftype==7):
   permissionstr = "-" + permissionstr;
@@ -254,7 +254,7 @@ def PrintPermissionString(fmod, ftype):
  if(ftype==10):
   permissionstr = "w" + permissionstr;
  try:
-  permissionoutstr = stat.filemode(fmod);
+  permissionoutstr = stat.filemode(fchmod);
  except AttributeError:
   permissionoutstr = permissionstr;
  except KeyError:
@@ -2097,31 +2097,6 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose
    logging.info(listcatfiles[lcfi]['fname']);
   if(verbose):
    permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
-   permissionstr = "";
-   for fmodval in str(oct(listcatfiles[lcfi]['fchmod']))[-3:]:
-    permissionstr = permissionstr + permissions['access'].get(fmodval, '---');
-   if(listcatfiles[lcfi]['ftype']==0 or listcatfiles[lcfi]['ftype']==7):
-    permissionstr = "-" + permissionstr;
-   if(listcatfiles[lcfi]['ftype']==1):
-    permissionstr = "h" + permissionstr;
-   if(listcatfiles[lcfi]['ftype']==2):
-    permissionstr = "l" + permissionstr;
-   if(listcatfiles[lcfi]['ftype']==3):
-    permissionstr = "c" + permissionstr;
-   if(listcatfiles[lcfi]['ftype']==4):
-    permissionstr = "b" + permissionstr;
-   if(listcatfiles[lcfi]['ftype']==5):
-    permissionstr = "d" + permissionstr;
-   if(listcatfiles[lcfi]['ftype']==6):
-    permissionstr = "f" + permissionstr;
-   if(listcatfiles[lcfi]['ftype']==7):
-    permissionstr = "-" + permissionstr;
-   if(listcatfiles[lcfi]['ftype']==8):
-    permissionstr = "D" + permissionstr;
-   if(listcatfiles[lcfi]['ftype']==9):
-    permissionstr = "p" + permissionstr;
-   if(listcatfiles[lcfi]['ftype']==10):
-    permissionstr = "w" + permissionstr;
    printfname = listcatfiles[lcfi]['fname'];
    if(listcatfiles[lcfi]['ftype']==1):
     printfname = listcatfiles[lcfi]['fname'] + " link to " + listcatfiles[lcfi]['flinkname'];
@@ -2192,23 +2167,6 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
    logging.info(member.name);
   if(verbose):
    permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
-   permissionstr = "";
-   for fmodval in str(oct(ffullmode))[-3:]:
-    permissionstr = permissionstr + permissions['access'].get(fmodval, '---');
-   if(member.isreg()):
-    permissionstr = "-" + permissionstr;
-   if(member.islnk()):
-    permissionstr = "h" + permissionstr;
-   if(member.issym()==2):
-    permissionstr = "l" + permissionstr;
-   if(member.ischr()):
-    permissionstr = "c" + permissionstr;
-   if(member.isblk()):
-    permissionstr = "b" + permissionstr;
-   if(member.isdir()):
-    permissionstr = "d" + permissionstr;
-   if(member.isfifo()):
-    permissionstr = "f" + permissionstr;
    printfname = member.name;
    if(member.islnk()):
     printfname = member.name + " link to " + member.linkname;
