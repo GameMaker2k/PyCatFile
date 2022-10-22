@@ -259,7 +259,7 @@ def PrintPermissionString(fmod, ftype):
   permissionoutstr = permissionstr;
  except KeyError:
   permissionoutstr = permissionstr;
- retrun permissionoutstr;
+ return permissionoutstr;
 
 def CompressionSupport():
  compression_list = [];
