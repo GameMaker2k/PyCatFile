@@ -121,7 +121,7 @@ def VerbosePrintOut(dbgtxt, outtype="log", dbgenable=True, dgblevel=20):
   print(dbgtxt);
   return True;
  elif(outtype=="log" and dbgenable):
-  VerbosePrintOut(dbgtxt);
+  logging.info(dbgtxt);
   return True;
  elif(outtype=="warning" and dbgenable):
   logging.warning(dbgtxt);
