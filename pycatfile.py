@@ -116,6 +116,41 @@ if __name__ == "__main__":
   scrcmd = subprocess.Popen([sys.executable, scrfile] + sys.argv[1:]);
   scrcmd.wait();
 
+def VerbosePrintOut(dbgtxt, outtype="log", dbgenable=True, dgblevel=20):
+ if(outtype=="print" and dbgenable):
+  print(dbgtxt);
+  return True;
+ elif(outtype=="log" and dbgenable):
+  VerbosePrintOut(dbgtxt);
+  return True;
+ elif(outtype=="warning" and dbgenable):
+  logging.warning(dbgtxt);
+  return True;
+ elif(outtype=="error" and dbgenable):
+  logging.error(dbgtxt);
+  return True;
+ elif(outtype=="critical" and dbgenable):
+  logging.critical(dbgtxt);
+  return True;
+ elif(outtype=="exception" and dbgenable):
+  logging.exception(dbgtxt);
+  return True;
+ elif(outtype=="logalt" and dbgenable):
+  logging.log(dgblevel, dbgtxt);
+  return True;
+ elif(outtype=="debug" and dbgenable):
+  logging.debug(dbgtxt);
+  return True;
+ elif(not dbgenable):
+  return True;
+ else:
+  return False;
+ return False;
+
+def VerbosePrintOutReturn(dbgtxt, outtype="log", dbgenable=True, dgblevel=20):
+ VerbosePrintOut(dbgtxt, outtype, dbgenable, dgblevel);
+ return dbgtxt;
+
 def RemoveWindowsPath(dpath):
  if(dpath is None):
   dpath = "";
@@ -765,7 +800,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
   else:
    fname = "./"+curfname;
   if(verbose):
-   logging.info(fname);
+   VerbosePrintOut(fname);
   if(not followlink or followlink is None):
    fstatinfo = os.lstat(fname);
   else:
@@ -1036,7 +1071,7 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
   else:
    fname = "./"+member.name;
   if(verbose):
-   logging.info(fname);
+   VerbosePrintOut(fname);
   fpremode = member.mode;
   ffullmode = member.mode;
   flinkcount = 0;
@@ -1257,7 +1292,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
    fname = "./"+member.filename;
   zipinfo = zipfp.getinfo(member.filename);
   if(verbose):
-   logging.info(fname);
+   VerbosePrintOut(fname);
   if(not member.is_dir()):
    fpremode = format(int(stat.S_IFREG + 438), 'x').lower();
   if(member.is_dir()):
@@ -1540,7 +1575,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    checksumoutstr.update(hout.encode());
    catnewfcs = checksumoutstr.hexdigest().lower();
   if(catfcs!=catnewfcs and not skipchecksum):
-   logging.info("File Header Checksum Error with file " + catfname + " at offset " + str(catfhstart));
+   VerbosePrintOut("File Header Checksum Error with file " + catfname + " at offset " + str(catfhstart));
    return False;
   catfhend = catfp.tell() - 1;
   catfcontentstart = catfp.tell();
@@ -1562,7 +1597,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
     catnewfccs = checksumoutstr.hexdigest().lower();
    pyhascontents = True;
    if(catfccs!=catnewfccs and skipchecksum):
-    logging.info("File Content Checksum Error with file " + catfname + " at offset " + str(catfhstart));
+    VerbosePrintOut("File Content Checksum Error with file " + catfname + " at offset " + str(catfhstart));
     return False;
   if(catfsize>1 and listonly):
    catfp.seek(catfsize, 1);
@@ -1794,7 +1829,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   else:
    fname = "./"+listcatfiles[lcfi]['fname'];
   if(verbose):
-   logging.info(fname);
+   VerbosePrintOut(fname);
   fsize = format(int(listcatfiles[lcfi]['fsize']), 'x').lower();
   flinkname = listcatfiles[lcfi]['flinkname'];
   fatime = format(int(listcatfiles[lcfi]['fatime']), 'x').lower();
@@ -1955,7 +1990,7 @@ def UnPackCatFile(infile, outdir=None, followlink=False, skipchecksum=False, ver
   except ImportError:
    fgname = "";
   if(verbose):
-   logging.info(listcatfiles[lcfi]['fname']);
+   VerbosePrintOut(listcatfiles[lcfi]['fname']);
   if(listcatfiles[lcfi]['ftype']==0 or listcatfiles[lcfi]['ftype']==7):
    fpc = open(listcatfiles[lcfi]['fname'], "wb");
    fpc.write(listcatfiles[lcfi]['fcontents']);
@@ -2094,7 +2129,7 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose
  while(lcfi < lcfx):
   returnval.update({lcfi: listcatfiles[lcfi]['fname']});
   if(not verbose):
-   logging.info(listcatfiles[lcfi]['fname']);
+   VerbosePrintOut(listcatfiles[lcfi]['fname']);
   if(verbose):
    permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
    printfname = listcatfiles[lcfi]['fname'];
@@ -2108,7 +2143,7 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose
    fgprint = listcatfiles[lcfi]['fgname'];
    if(len(fgprint)<=0):
     fgprint = listcatfiles[lcfi]['fgid'];
-   logging.info(PrintPermissionString(listcatfiles[lcfi]['fmode'], listcatfiles[lcfi]['ftype']) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(listcatfiles[lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname));
+   VerbosePrintOut(PrintPermissionString(listcatfiles[lcfi]['fmode'], listcatfiles[lcfi]['ftype']) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(listcatfiles[lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles[lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname));
   lcfi = lcfi + 1;
  if(returnfp):
   return listcatfiles['catfp'];
@@ -2164,7 +2199,7 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
    ffullmode = member.mode;
    ftype = 8;
   if(not verbose):
-   logging.info(member.name);
+   VerbosePrintOut(member.name);
   if(verbose):
    permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
    printfname = member.name;
@@ -2178,7 +2213,7 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
    fgprint = member.gname;
    if(len(fgprint)<=0):
     fgprint = member.gid;
-   logging.info(PrintPermissionString(ffullmode, ftype) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.size).rjust(15) + " " + datetime.datetime.utcfromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + " " + printfname));
+   VerbosePrintOut(PrintPermissionString(ffullmode, ftype) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.size).rjust(15) + " " + datetime.datetime.utcfromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + " " + printfname));
   lcfi = lcfi + 1;
  if(returnfp):
   return listcatfiles['catfp'];
@@ -2211,7 +2246,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
    ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)));
   returnval.update({lcfi: member.filename});
   if(not verbose):
-   logging.info(member.filename);
+   VerbosePrintOut(member.filename);
   if(verbose):
    permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
    permissionstr = "";
@@ -2265,7 +2300,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
    fgprint = fgname;
    if(len(fgprint)<=0):
     fgprint = str(fgid);
-   logging.info(PrintPermissionString(fmode, ftype) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.file_size).rjust(15) + " " + datetime.datetime.utcfromtimestamp(int(time.mktime(member.date_time + (0, 0, -1)))).strftime('%Y-%m-%d %H:%M') + " " + printfname));
+   VerbosePrintOut(PrintPermissionString(fmode, ftype) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.file_size).rjust(15) + " " + datetime.datetime.utcfromtimestamp(int(time.mktime(member.date_time + (0, 0, -1)))).strftime('%Y-%m-%d %H:%M') + " " + printfname));
   lcfi = lcfi + 1;
  if(returnfp):
   return listcatfiles['catfp'];
