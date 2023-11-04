@@ -1,5 +1,5 @@
 import unittest
-from catfilepacker import CatFilePacker  # Assuming the script above is named catfilepacker.py
+from catfilepacker import pycatfilealt  # Assuming the script above is named pycatfilealt.py
 import os
 
 class TestCatFilePacker(unittest.TestCase):
