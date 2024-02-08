@@ -74,7 +74,7 @@ __version_info__ = (0, 0, 1, "RC 1", 1);
 __version_date_info__ = (2022, 10, 17, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 __revision__ = __version_info__[3];
-__revision_id__ = "$Id$";
+__revision_id__ = "$Id: 0257dfd7846d177c538c66830dc90c537afe3da0 $";
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
 if(__version_info__[4] is None):
@@ -921,8 +921,8 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
   if(CheckSumSupport(checksumtype, 0)):
-   catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
-   catfilecontentcshex = format(crc16(fcontents) & 0xffffffff, 'x').lower();
+   catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffff, 'x').lower();
+   catfilecontentcshex = format(crc16(fcontents) & 0xffff, 'x').lower();
   if(CheckSumSupport(checksumtype, 1)):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').lower();
@@ -1142,8 +1142,8 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
   if(CheckSumSupport(checksumtype, 0)):
-   catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
-   catfilecontentcshex = format(crc16(fcontents) & 0xffffffff, 'x').lower();
+   catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffff, 'x').lower();
+   catfilecontentcshex = format(crc16(fcontents) & 0xffff, 'x').lower();
   if(CheckSumSupport(checksumtype, 1)):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').lower();
@@ -1373,8 +1373,8 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
   if(CheckSumSupport(checksumtype, 0)):
-   catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
-   catfilecontentcshex = format(crc16(fcontents) & 0xffffffff, 'x').lower();
+   catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffff, 'x').lower();
+   catfilecontentcshex = format(crc16(fcontents) & 0xffff, 'x').lower();
   if(CheckSumSupport(checksumtype, 1)):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').lower();
@@ -1508,7 +1508,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  except ValueError:
   return False;
  catstring = ReadFileHeaderData(catfp, 1)[0];
- catversion = int(re.findall("([\d]+)$", catstring)[0], 16);
+ catversion = int(re.findall(r"([\d]+)$", catstring)[0], 16);
  catlist = {};
  fileidnum = 0;
  if(seekstart!=0):
@@ -1565,7 +1565,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   if(catfchecksumtype=="none" or catfchecksumtype==""):
    catnewfcs = 0;
   if(CheckSumSupport(catfchecksumtype, 0)):
-   catnewfcs = crc16(hout.encode()) & 0xffffffff;
+   catnewfcs = crc16(hout.encode()) & 0xffff;
   if(CheckSumSupport(catfchecksumtype, 1)):
    catnewfcs = zlib.adler32(hout.encode()) & 0xffffffff;
   if(CheckSumSupport(catfchecksumtype, 2)):
@@ -1586,7 +1586,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    if(catfchecksumtype=="none" or catfchecksumtype==""):
     catnewfccs = 0;
    if(CheckSumSupport(catfchecksumtype, 0)):
-    catnewfccs = crc16(catfcontents) & 0xffffffff;
+    catnewfccs = crc16(catfcontents) & 0xffff;
    if(CheckSumSupport(catfchecksumtype, 1)):
     catnewfccs = zlib.adler32(catfcontents) & 0xffffffff;
    if(CheckSumSupport(catfchecksumtype, 2)):
@@ -1900,8 +1900,8 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
   if(CheckSumSupport(checksumtype, 0)):
-   catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
-   catfilecontentcshex = format(crc16(fcontents) & 0xffffffff, 'x').lower();
+   catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffff, 'x').lower();
+   catfilecontentcshex = format(crc16(fcontents) & 0xffff, 'x').lower();
   if(CheckSumSupport(checksumtype, 1)):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, 'x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, 'x').lower();
