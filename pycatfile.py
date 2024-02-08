@@ -35,6 +35,7 @@ if(hasattr(sys.stderr, "detach")):
  sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = 'UTF-8');
 from io import open as open;
 
+from tarfile import is_tarfile;
 testsafetar = 0;
 try:
  import safetar as tarfile;
@@ -1061,8 +1062,12 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
  inodetocatinode = {};
  if(not os.path.exists(infile) or not os.path.isfile(infile)):
   return False;
- if(not tarfile.is_tarfile(infile)):
-  return False;
+ try:
+  if(not tarfile.is_tarfile(infile)):
+   return False;
+ except AttributeError:
+  if(not is_tarfile(infile)):
+   return False;
  tarfp = tarfile.open(infile, "r");
  for member in tarfp.getmembers():
   catfhstart = catfp.tell();
@@ -2160,8 +2165,12 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(not os.path.exists(infile) or not os.path.isfile(infile)):
   return False;
- if(not tarfile.is_tarfile(infile)):
-  return False;
+ try:
+  if(not tarfile.is_tarfile(infile)):
+   return False;
+ except AttributeError:
+   if(not is_tarfile(infile)):
+    return False;
  lcfi = 0;
  returnval = {};
  tarfp = tarfile.open(infile, "r");
