@@ -89,17 +89,17 @@ function CheckFileType($infile) {
  fseek($catfp, 0, 0);
  $prefp = fread($catfp, 2);
  $filetype = False;
- if($prefp==pack("H*", "1f8b")) {
+ if($prefp==hex2bin("1f8b")) {
   $filetype = "gzip"; }
  fseek($catfp, 0, 0);
  $prefp = fread($catfp, 3);
- if($prefp==pack("H*", "425a68")) {
+ if($prefp==hex2bin("425a68")) {
   $filetype = "bzip2"; }
  fseek($catfp, 0, 0);
  $prefp = fread($catfp, 7);
- /*if($prefp==pack("H*", "fd377a585a0000")) {
+ /*if($prefp==hex2bin("fd377a585a0000")) {
   $filetype = "lzma"; }*/
- if($prefp==pack("H*", "43617446696c65")) {
+ if($prefp==hex2bin("43617446696c65")) {
   $filetype = "catfile"; }
  fclose($catfp);
  return $filetype; }
