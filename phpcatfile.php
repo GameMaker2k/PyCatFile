@@ -33,6 +33,18 @@ if($info['version_info'][3]!==Null) {
 if($info['version_info'][3]===Null) {
  $info['version'] = $info['version_info'][0].".".$info['version_info'][1].".".$info['version_info'][2]; }
 
+if ( !function_exists( 'hex2bin' ) ) {
+    function hex2bin( $str ) {
+        $sbin = "";
+        $len = strlen( $str );
+        for ( $i = 0; $i < $len; $i += 2 ) {
+            $sbin .= pack( "H*", substr( $str, $i, 2 ) );
+        }
+
+        return $sbin;
+    }
+}
+
 function RemoveWindowsPath($dpath) {
  if(DIRECTORY_SEPARATOR=="\\") {
   $dpath = str_replace(DIRECTORY_SEPARATOR, "/", $dpath); }
