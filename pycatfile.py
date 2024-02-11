@@ -963,10 +963,10 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
    catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
   if(CheckSumSupport(checksumtype, 3)):
-   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
   if(CheckSumSupport(checksumtype, 4)):
-   catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   if(CheckSumSupport(checksumtype, 6)):
    checksumoutstr = hashlib.new(checksumtype);
@@ -1194,10 +1194,10 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
    catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
   if(CheckSumSupport(checksumtype, 3)):
-   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
   if(CheckSumSupport(checksumtype, 4)):
-   catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   if(CheckSumSupport(checksumtype, 6)):
    checksumoutstr = hashlib.new(checksumtype);
@@ -1431,10 +1431,10 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
    catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
   if(CheckSumSupport(checksumtype, 3)):
-   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
   if(CheckSumSupport(checksumtype, 4)):
-   catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   if(CheckSumSupport(checksumtype, 6)):
    checksumoutstr = hashlib.new(checksumtype);
@@ -1626,9 +1626,9 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   if(CheckSumSupport(catfchecksumtype, 2)):
    catnewfcs = format(zlib.crc32(hout.encode()) & 0xffffffff, '08x').lower();
   if(CheckSumSupport(catfchecksumtype, 3)):
-   catnewfcs = format(crc64_ecma(hout.encode()) & 0xffffffff, '08x').lower();
+   catnewfcs = format(crc64_ecma(hout.encode()) & 0xffffffffffffffff, '016x').lower();
   if(CheckSumSupport(catfchecksumtype, 4)):
-   catnewfcs = format(crc64_iso(hout.encode()) & 0xffffffff, '08x').lower();
+   catnewfcs = format(crc64_iso(hout.encode()) & 0xffffffffffffffff, '016x').lower();
   if(CheckSumSupport(catfchecksumtype, 6)):
    checksumoutstr = hashlib.new(catfchecksumtype);
    checksumoutstr.update(hout.encode());
@@ -1651,9 +1651,9 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    if(CheckSumSupport(catfchecksumtype, 2)):
     catnewfccs = format(zlib.crc32(catfcontents) & 0xffffffff, '08x').lower();
    if(CheckSumSupport(catfchecksumtype, 3)):
-    catnewfcs = format(crc64_ecma(catfcontents) & 0xffffffff, '08x').lower();
+    catnewfcs = format(crc64_ecma(catfcontents) & 0xffffffffffffffff, '016x').lower();
    if(CheckSumSupport(catfchecksumtype, 4)):
-    catnewfcs = format(crc64_iso(catfcontents) & 0xffffffff, '08x').lower();
+    catnewfcs = format(crc64_iso(catfcontents) & 0xffffffffffffffff, '016x').lower();
    if(CheckSumSupport(catfchecksumtype, 6)):
     checksumoutstr = hashlib.new(catfchecksumtype);
     checksumoutstr.update(catfcontents);
@@ -1972,10 +1972,10 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
    catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
   if(CheckSumSupport(checksumtype, 3)):
-   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
   if(CheckSumSupport(checksumtype, 4)):
-   catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   if(CheckSumSupport(checksumtype, 6)):
    checksumoutstr = hashlib.new(checksumtype);
