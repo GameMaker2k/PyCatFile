@@ -41,7 +41,7 @@ def crc16_file(infile):
  if(not os.path.exists(infile) or not os.path.isfile(infile)):
   return False;
  filefp = open(infile, "rb");
- checksum = crc16(filefp.read()) & 0xffff;
+ checksum = format(crc16(filefp.read()) & 0xffff, '04x').lower();
  filefp.close();
  return checksum;
 
@@ -49,7 +49,7 @@ def adler32_file(infile):
  if(not os.path.exists(infile) or not os.path.isfile(infile)):
   return False;
  filefp = open(infile, "rb");
- checksum = zlib.adler32(filefp.read()) & 0xffffffff;
+ checksum = format(zlib.adler32(filefp.read()) & 0xffffffff, '08x').lower();
  filefp.close();
  return checksum;
 
@@ -57,7 +57,7 @@ def crc32_file(infile):
  if(not os.path.exists(infile) or not os.path.isfile(infile)):
   return False;
  filefp = open(infile, "rb");
- checksum = zlib.crc32(filefp.read()) & 0xffffffff;
+ checksum = format(zlib.crc32(filefp.read()) & 0xffffffff, '08x').lower();
  filefp.close();
  return checksum;
 
