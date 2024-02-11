@@ -205,6 +205,7 @@ def ListDir(dirpath, followlink=False, duplicates=False):
  return retlist;
 
 def crc16(msg):
+ # CRC-16-IBM / CRC-16-ANSI polynomial and initial value
  poly = 0x8005;  # Polynomial for CRC-16-IBM / CRC-16-ANSI
  crc = 0xFFFF;  # Initial value
  for b in msg:
@@ -216,6 +217,35 @@ def crc16(msg):
     crc = crc << 1;  # Just shift left
    crc &= 0xFFFF;  # Ensure CRC remains 16-bit
  return crc;
+
+def crc64_ecma(msg):
+ # CRC-64-ECMA polynomial and initial value
+ poly = 0x42F0E1EBA9EA3693;
+ crc = 0x0000000000000000;  # Initial value for CRC-64-ECMA
+ for b in msg:
+  crc ^= b << 56;  # XOR byte into the most significant byte of the CRC
+  for _ in range(8):  # Process each bit
+   if crc & (1 << 63):  # Check if the leftmost (most significant) bit is set
+    crc = (crc << 1) ^ poly;  # Shift left and XOR with poly if the MSB is 1
+   else:
+    crc <<= 1;  # Just shift left if the MSB is 0
+   crc &= 0xFFFFFFFFFFFFFFFF;  # Ensure CRC remains 64-bit
+ return crc;
+
+def crc64_iso(msg):
+ # CRC-64-ISO polynomial and initial value
+ poly = 0x000000000000001B;
+ crc = 0xFFFFFFFFFFFFFFFF;  # Common initial value for CRC-64-ISO
+ for b in msg:
+  crc ^= b << 56;  # XOR byte into the most significant byte of the CRC
+  for _ in range(8):  # Process each bit
+   if crc & (1 << 63):  # Check if the leftmost (most significant) bit is set
+    crc = (crc << 1) ^ poly;  # Shift left and XOR with poly if the MSB is 1
+   else:
+    crc <<= 1;  # Just shift left if the MSB is 0
+   crc &= 0xFFFFFFFFFFFFFFFF;  # Ensure CRC remains 64-bit
+ return crc;
+
 
 def ReadTillNullByte(fp):
  curbyte = b"";
@@ -662,11 +692,15 @@ def CheckSumSupport(checkfor, checklist):
  if(checklist==2):
   checklistout = sorted(['crc32']);
  if(checklist==3):
-  checklistout = sorted(['adler32', 'crc16', 'crc32']);
+  checklistout = sorted(['crc64_ecma']);
  if(checklist==4):
-  checklistout = sorted(list(hashlib.algorithms_guaranteed));
+  checklistout = sorted(['crc64_iso']);
  if(checklist==5):
-  checklistout = sorted(list(hashlib.algorithms_guaranteed) + ['adler32', 'crc16', 'crc32', 'none']);
+  checklistout = sorted(['adler32', 'crc16', 'crc32', 'crc64_ecma', 'crc64_iso']);
+ if(checklist==6):
+  checklistout = sorted(list(hashlib.algorithms_guaranteed));
+ if(checklist==7):
+  checklistout = sorted(list(hashlib.algorithms_guaranteed) + ['adler32', 'crc16', 'crc32', 'crc64_ecma', 'crc64_iso', 'none']);
  if(checkfor in checklistout):
   return True;
  else:
@@ -679,7 +713,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
- if(not CheckSumSupport(checksumtype, 5)):
+ if(not CheckSumSupport(checksumtype, 7)):
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
@@ -928,7 +962,13 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
   if(CheckSumSupport(checksumtype, 2)):
    catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
+  if(CheckSumSupport(checksumtype, 3)):
+   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
   if(CheckSumSupport(checksumtype, 4)):
+   catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
+  if(CheckSumSupport(checksumtype, 6)):
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode());
    catfileheadercshex = checksumoutstr.hexdigest().lower();
@@ -965,7 +1005,7 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
- if(not CheckSumSupport(checksumtype, 5)):
+ if(not CheckSumSupport(checksumtype, 7)):
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
@@ -1153,7 +1193,13 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
   if(CheckSumSupport(checksumtype, 2)):
    catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
+  if(CheckSumSupport(checksumtype, 3)):
+   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
   if(CheckSumSupport(checksumtype, 4)):
+   catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
+  if(CheckSumSupport(checksumtype, 6)):
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode());
    catfileheadercshex = checksumoutstr.hexdigest().lower();
@@ -1188,7 +1234,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
- if(not CheckSumSupport(checksumtype, 5)):
+ if(not CheckSumSupport(checksumtype, 7)):
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
@@ -1384,7 +1430,13 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
   if(CheckSumSupport(checksumtype, 2)):
    catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
+  if(CheckSumSupport(checksumtype, 3)):
+   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
   if(CheckSumSupport(checksumtype, 4)):
+   catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
+  if(CheckSumSupport(checksumtype, 6)):
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode());
    catfileheadercshex = checksumoutstr.hexdigest().lower();
@@ -1553,10 +1605,10 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   if(catfchecksumtype=="none" or catfchecksumtype==""):
    catfcs = int(catheaderdata[21]);
    catfccs = int(catheaderdata[22]);
-  if(CheckSumSupport(catfchecksumtype, 3)):
+  if(CheckSumSupport(catfchecksumtype, 5)):
    catfcs = int(catheaderdata[21], 16);
    catfccs = int(catheaderdata[22], 16);
-  if(CheckSumSupport(catfchecksumtype, 4)):
+  if(CheckSumSupport(catfchecksumtype, 6)):
    catfcs = catheaderdata[21].lower();
    catfccs = catheaderdata[22].lower();
   hc = 0;
@@ -1573,7 +1625,11 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catnewfcs = format(zlib.adler32(hout.encode()) & 0xffffffff, '08x').lower();
   if(CheckSumSupport(catfchecksumtype, 2)):
    catnewfcs = format(zlib.crc32(hout.encode()) & 0xffffffff, '08x').lower();
+  if(CheckSumSupport(catfchecksumtype, 3)):
+   catnewfcs = format(crc64_ecma(hout.encode()) & 0xffffffff, '08x').lower();
   if(CheckSumSupport(catfchecksumtype, 4)):
+   catnewfcs = format(crc64_iso(hout.encode()) & 0xffffffff, '08x').lower();
+  if(CheckSumSupport(catfchecksumtype, 6)):
    checksumoutstr = hashlib.new(catfchecksumtype);
    checksumoutstr.update(hout.encode());
    catnewfcs = checksumoutstr.hexdigest().lower();
@@ -1594,7 +1650,11 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
     catnewfccs = format(zlib.adler32(catfcontents) & 0xffffffff, '08x').lower();
    if(CheckSumSupport(catfchecksumtype, 2)):
     catnewfccs = format(zlib.crc32(catfcontents) & 0xffffffff, '08x').lower();
+   if(CheckSumSupport(catfchecksumtype, 3)):
+    catnewfcs = format(crc64_ecma(catfcontents) & 0xffffffff, '08x').lower();
    if(CheckSumSupport(catfchecksumtype, 4)):
+    catnewfcs = format(crc64_iso(catfcontents) & 0xffffffff, '08x').lower();
+   if(CheckSumSupport(catfchecksumtype, 6)):
     checksumoutstr = hashlib.new(catfchecksumtype);
     checksumoutstr.update(catfcontents);
     catnewfccs = checksumoutstr.hexdigest().lower();
@@ -1733,7 +1793,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
  if(outfile!="-" and not hasattr(infile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
- if(not CheckSumSupport(checksumtype, 5)):
+ if(not CheckSumSupport(checksumtype, 7)):
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
@@ -1911,7 +1971,13 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   if(CheckSumSupport(checksumtype, 2)):
    catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
+  if(CheckSumSupport(checksumtype, 3)):
+   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
   if(CheckSumSupport(checksumtype, 4)):
+   catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
+  if(CheckSumSupport(checksumtype, 6)):
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode());
    catfileheadercshex = checksumoutstr.hexdigest().lower();
