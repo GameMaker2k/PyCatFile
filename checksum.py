@@ -10,11 +10,11 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     Revised BSD License for more details.
 
-    Copyright 2018-2022 Cool Dude 2k - http://idb.berlios.de/
-    Copyright 2018-2022 Game Maker 2k - http://intdb.sourceforge.net/
-    Copyright 2018-2022 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
+    Copyright 2018-2024 Cool Dude 2k - http://idb.berlios.de/
+    Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
+    Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: checksum.py - Last Update: 10/17/2022 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: checksum.py - Last Update: 2/11/2024 Ver. 0.0.2 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;

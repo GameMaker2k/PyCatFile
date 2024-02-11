@@ -10,11 +10,11 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     Revised BSD License for more details.
 
-    Copyright 2018-2022 Cool Dude 2k - http://idb.berlios.de/
-    Copyright 2018-2022 Game Maker 2k - http://intdb.sourceforge.net/
-    Copyright 2018-2022 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
+    Copyright 2018-2024 Cool Dude 2k - http://idb.berlios.de/
+    Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
+    Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 10/17/2022 Ver. 0.0.1 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 2/11/2024 Ver. 0.0.2 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
@@ -71,8 +71,8 @@ if(teststringio<=0):
 __program_name__ = "PyCatFile";
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
-__version_info__ = (0, 0, 1, "RC 1", 1);
-__version_date_info__ = (2022, 10, 17, "RC 1", 1);
+__version_info__ = (0, 0, 2, "RC 1", 1);
+__version_date_info__ = (2024, 2, 11, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 __revision__ = __version_info__[3];
 __revision_id__ = "$Id$";
