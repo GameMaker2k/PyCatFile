@@ -25,25 +25,23 @@ chksum_list = sorted(['adler32', 'crc16', 'crc32']);
 chksum_list_hash = sorted(list(hashlib.algorithms_guaranteed));
 
 def crc16(msg):
- lo = hi = 0xff;
- mask = 0xff;
- for new in msg:
-  new ^= lo;
-  new ^= (new << 4) & mask;
-  tmp = new >> 5;
-  lo = hi;
-  hi = new ^ tmp;
-  lo ^= (new << 3) & mask;
-  lo ^= new >> 4;
- lo ^= mask;
- hi ^= mask;
- return hi << 8 | lo;
+ poly = 0x8005;  # Polynomial for CRC-16-IBM / CRC-16-ANSI
+ crc = 0xFFFF;  # Initial value
+ for b in msg:
+  crc ^= b << 8;  # XOR byte into CRC top byte
+  for _ in range(8):  # Process each bit
+   if crc & 0x8000:  # If the top bit is set
+    crc = (crc << 1) ^ poly;  # Shift left and XOR with the polynomial
+   else:
+    crc = crc << 1;  # Just shift left
+   crc &= 0xFFFF;  # Ensure CRC remains 16-bit
+ return crc;
 
 def crc16_file(infile):
  if(not os.path.exists(infile) or not os.path.isfile(infile)):
   return False;
  filefp = open(infile, "rb");
- checksum = crc16(filefp.read()) & 0xffffffff;
+ checksum = crc16(filefp.read()) & 0xffff;
  filefp.close();
  return checksum;
 
