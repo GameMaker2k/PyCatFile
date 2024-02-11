@@ -25,6 +25,7 @@ chksum_list = sorted(['adler32', 'crc16', 'crc32']);
 chksum_list_hash = sorted(list(hashlib.algorithms_guaranteed));
 
 def crc16(msg):
+ # CRC-16-IBM / CRC-16-ANSI polynomial and initial value
  poly = 0x8005;  # Polynomial for CRC-16-IBM / CRC-16-ANSI
  crc = 0xFFFF;  # Initial value
  for b in msg:
@@ -35,6 +36,34 @@ def crc16(msg):
    else:
     crc = crc << 1;  # Just shift left
    crc &= 0xFFFF;  # Ensure CRC remains 16-bit
+ return crc;
+
+def crc64_ecma(msg):
+ # CRC-64-ECMA polynomial and initial value
+ poly = 0x42F0E1EBA9EA3693;
+ crc = 0x0000000000000000;  # Initial value for CRC-64-ECMA
+ for b in msg:
+  crc ^= b << 56;  # XOR byte into the most significant byte of the CRC
+  for _ in range(8):  # Process each bit
+   if crc & (1 << 63):  # Check if the leftmost (most significant) bit is set
+    crc = (crc << 1) ^ poly;  # Shift left and XOR with poly if the MSB is 1
+   else:
+    crc <<= 1;  # Just shift left if the MSB is 0
+   crc &= 0xFFFFFFFFFFFFFFFF;  # Ensure CRC remains 64-bit
+ return crc;
+
+def crc64_iso(msg):
+ # CRC-64-ISO polynomial and initial value
+ poly = 0x000000000000001B;
+ crc = 0xFFFFFFFFFFFFFFFF;  # Common initial value for CRC-64-ISO
+ for b in msg:
+  crc ^= b << 56;  # XOR byte into the most significant byte of the CRC
+  for _ in range(8):  # Process each bit
+   if crc & (1 << 63):  # Check if the leftmost (most significant) bit is set
+    crc = (crc << 1) ^ poly;  # Shift left and XOR with poly if the MSB is 1
+   else:
+    crc <<= 1;  # Just shift left if the MSB is 0
+   crc &= 0xFFFFFFFFFFFFFFFF;  # Ensure CRC remains 64-bit
  return crc;
 
 def crc16_file(infile):
@@ -58,6 +87,22 @@ def crc32_file(infile):
   return False;
  filefp = open(infile, "rb");
  checksum = format(zlib.crc32(filefp.read()) & 0xffffffff, '08x').lower();
+ filefp.close();
+ return checksum;
+
+def crc64_ecma_file(infile):
+ if(not os.path.exists(infile) or not os.path.isfile(infile)):
+  return False;
+ filefp = open(infile, "rb");
+ checksum = format(crc64_ecma(filefp.read()) & 0xffffffffffffffff, '016x').lower();
+ filefp.close();
+ return checksum;
+
+def crc64_iso_file(infile):
+ if(not os.path.exists(infile) or not os.path.isfile(infile)):
+  return False;
+ filefp = open(infile, "rb");
+ checksum = format(crc64_iso(filefp.read()) & 0xffffffffffffffff, '016x').lower();
  filefp.close();
  return checksum;
 
@@ -101,6 +146,22 @@ if __name__ == "__main__":
     print(str(outchck));
   if(getargs.checksum=="adler32"):
    outchck = adler32_file(getargs.input);
+   if(not outchck):
+    exit();
+   if(not getargs.quiet):
+    print(str(outchck)+" *"+getargs.input);
+   else:
+    print(str(outchck));
+  if(getargs.checksum=="crc64_ecma"):
+   outchck = crc64_ecma_file(getargs.input);
+   if(not outchck):
+    exit();
+   if(not getargs.quiet):
+    print(str(outchck)+" *"+getargs.input);
+   else:
+    print(str(outchck));
+  if(getargs.checksum=="crc64_iso"):
+   outchck = crc64_iso_file(getargs.input);
    if(not outchck):
     exit();
    if(not getargs.quiet):
