@@ -743,6 +743,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
  outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'lzop', 'clzo', 'lzma', 'xz', 'cxz'];
  outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', '.clz4', '.lzo', '.lzop', '.clzo', '.lzma', '.xz', '.cxz'];
+ advancedlist = True;
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -850,7 +851,10 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
    infilelist = list(filter(None, infiles));
   elif(isinstance(infiles, (str, ))):
    infilelist = list(filter(None, [infiles]));
- GetDirList = ListDir(infilelist, followlink, False);
+ if(advancedlist):
+  GetDirList = ListDirAdvanced(infilelist, followlink, False);
+ else:
+  GetDirList = ListDir(infilelist, followlink, False);
  if(not GetDirList):
   return False;
  curinode = 0;
