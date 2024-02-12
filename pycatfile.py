@@ -237,10 +237,11 @@ def ListDirAdvanced(dirpath, followlink=False, duplicates=False):
    retlist.append(RemoveWindowsPath(mydirfile));
  return retlist;
 
-def crc16(msg):
+# initial_value can be 0xFFFF or 0x0000
+def crc16_ansi(msg, initial_value=0xFFFF):
  # CRC-16-IBM / CRC-16-ANSI polynomial and initial value
  poly = 0x8005;  # Polynomial for CRC-16-IBM / CRC-16-ANSI
- crc = 0xFFFF;  # Initial value
+ crc = initial_value;  # Initial value
  for b in msg:
   crc ^= b << 8;  # XOR byte into CRC top byte
   for _ in range(8):  # Process each bit
@@ -251,10 +252,35 @@ def crc16(msg):
    crc &= 0xFFFF;  # Ensure CRC remains 16-bit
  return crc;
 
-def crc64_ecma(msg):
+# initial_value can be 0xFFFF or 0x0000
+def crc16_ibm(msg, initial_value=0xFFFF):
+ return crc16_ansi(msg, initial_value);
+
+# initial_value is 0xFFFF
+def crc16(msg):
+ return crc16_ansi(msg, 0xFFFF);
+
+# initial_value can be 0xFFFF, 0x1D0F or 0x0000
+def crc16_ccitt(msg, initial_value=0xFFFF):
+ # CRC-16-CCITT polynomial
+ poly = 0x1021;  # Polynomial for CRC-16-CCITT
+ # Use the specified initial value
+ crc = initial_value;
+ for b in msg:
+  crc ^= b << 8;  # XOR byte into CRC top byte
+  for _ in range(8):  # Process each bit
+   if crc & 0x8000:  # If the top bit is set
+    crc = (crc << 1) ^ poly;  # Shift left and XOR with the polynomial
+   else:
+    crc = crc << 1;  # Just shift left
+   crc &= 0xFFFF;  # Ensure CRC remains 16-bit
+ return crc;
+
+# initial_value can be 0x42F0E1EBA9EA3693 or 0x0000000000000000
+def crc64_ecma(msg, initial_value=0x0000000000000000):
  # CRC-64-ECMA polynomial and initial value
  poly = 0x42F0E1EBA9EA3693;
- crc = 0x0000000000000000;  # Initial value for CRC-64-ECMA
+ crc = initial_value;  # Initial value for CRC-64-ECMA
  for b in msg:
   crc ^= b << 56;  # XOR byte into the most significant byte of the CRC
   for _ in range(8):  # Process each bit
@@ -265,10 +291,11 @@ def crc64_ecma(msg):
    crc &= 0xFFFFFFFFFFFFFFFF;  # Ensure CRC remains 64-bit
  return crc;
 
-def crc64_iso(msg):
+# initial_value can be 0x000000000000001B or 0xFFFFFFFFFFFFFFFF
+def crc64_iso(msg, initial_value=0xFFFFFFFFFFFFFFFF):
  # CRC-64-ISO polynomial and initial value
  poly = 0x000000000000001B;
- crc = 0xFFFFFFFFFFFFFFFF;  # Common initial value for CRC-64-ISO
+ crc = initial_value;  # Common initial value for CRC-64-ISO
  for b in msg:
   crc ^= b << 56;  # XOR byte into the most significant byte of the CRC
   for _ in range(8):  # Process each bit
