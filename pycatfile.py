@@ -279,7 +279,6 @@ def crc64_iso(msg):
    crc &= 0xFFFFFFFFFFFFFFFF;  # Ensure CRC remains 64-bit
  return crc;
 
-
 def ReadTillNullByte(fp):
  curbyte = b"";
  curfullbyte = b"";
