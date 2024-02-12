@@ -46,55 +46,124 @@ if ( !function_exists( 'hex2bin' ) ) {
 }
 
 function RemoveWindowsPath($dpath) {
- if(DIRECTORY_SEPARATOR=="\\") {
-  $dpath = str_replace(DIRECTORY_SEPARATOR, "/", $dpath); }
- $dpath = rtrim($dpath, '/');
- if($dpath=="." or $dpath=="..") {
-  $dpath = $dpath."/"; }
- return $dpath; }
+    if ($dpath === null) {
+        $dpath = "";
+    }
+    $dpath = str_replace(DIRECTORY_SEPARATOR, "/", $dpath);
+    $dpath = rtrim($dpath, "/");
+    if ($dpath == "." || $dpath == "..") {
+        $dpath .= "/";
+    }
+    return $dpath;
+}
 
-function ListDir($dirname) {
- if(DIRECTORY_SEPARATOR=="\\") {
-  $dirname = str_replace(DIRECTORY_SEPARATOR, "/", $dirname); }
- $fulllist[] = $dirname;
- if(is_dir($dirname)) {
-  if($dh = opendir($dirname)) {
-   while(($file = readdir($dh)) !== False) {
-    if($file!="." && $file!=".." && is_dir($dirname."/".$file)) {
-     $fulllistnew = ListDir($dirname."/".$file);
-     foreach($fulllistnew as $fulllistary) {
-      $fulllist[] = $fulllistary; } }
-    if(!is_dir($dirname."/".$file)) {
-     $fulllist[] = $dirname."/".$file; } } }
-    closedir($dh); }
- return $fulllist; }
+function NormalizeRelativePath($inpath) {
+    $inpath = RemoveWindowsPath($inpath);
+    if (strpos($inpath, '/') !== 0) { // Checks if not an absolute path
+        if (!str_starts_with($inpath, "./") && !str_starts_with($inpath, "../")) {
+            $inpath = "./" . $inpath;
+        }
+    }
+    return $inpath;
+}
+
+function ListDir($dirpath, $followlink = false, $duplicates = false) {
+    if (is_array($dirpath) || is_object($dirpath)) {
+        $dirpath = array_filter((array)$dirpath);
+    } else {
+        $dirpath = array_filter([$dirpath]);
+    }
+    $retlist = [];
+    foreach ($dirpath as $mydirfile) {
+        if (!file_exists($mydirfile)) {
+            return false;
+        }
+        $mydirfile = NormalizeRelativePath($mydirfile);
+        if (file_exists($mydirfile) && is_link($mydirfile) && $followlink) {
+            $mydirfile = RemoveWindowsPath(realpath($mydirfile));
+        }
+        if (file_exists($mydirfile) && is_dir($mydirfile)) {
+            $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($mydirfile));
+            foreach ($files as $file) {
+                if ($file->isDir()) continue;
+                $fpath = RemoveWindowsPath($file->getPathname());
+                if (!$duplicates && !in_array($fpath, $retlist)) {
+                    $retlist[] = $fpath;
+                } elseif ($duplicates) {
+                    $retlist[] = $fpath;
+                }
+            }
+        } else {
+            $retlist[] = RemoveWindowsPath($mydirfile);
+        }
+    }
+    return $retlist;
+}
 
 function ReadTillNullByte($fp) {
- $curbyte = "";
- $curfullbyte = "";
- $Nullbyte = "\0";
- while($curbyte!=$Nullbyte) {
-  $curbyte = fread($fp, 1);
-  if($curbyte!=$Nullbyte) {
-   $curbyted = $curbyte;
-   $curfullbyte = $curfullbyte.$curbyted; } }
- return $curfullbyte; }
+    $curFullByte = "";
+    while(($curByte = fgetc($fp)) !== "\0" && $curByte !== false) {
+        $curFullByte .= $curByte;
+    }
+    return $curFullByte;
+}
 
 function ReadUntilNullByte($fp) {
- return ReadTillNullByte($fp); }
+    return readTillNullByte($fp);
+}
 
-function ReadFileHeaderData($fp, $rounds=0) {
- $rocount = 0;
- $roend = intval($rounds);
- $HeaderOut = array();
- while($rocount<$roend) {
-  $HeaderOut[$rocount] = ReadTillNullByte($fp);
-  $rocount = $rocount + 1; }
- return $HeaderOut; }
+function SeekToEndOfFile($fp) {
+    fseek($fp, 0, SEEK_END);
+    return true;
+}
+
+function ReadFileHeaderData($fp, $rounds = 0) {
+    $headerOut = [];
+    for ($roCount = 0; $roCount < $rounds; $roCount++) {
+        $headerOut[$roCount] = ReadTillNullByte($fp);
+    }
+    return $headerOut;
+}
 
 function AppendNullByte($indata) {
- $outdata = $indata."\0";
- return $outdata; }
+    return $indata . "\0";
+}
+
+function AppendNullBytes($indata = []) {
+    $outData = "";
+    foreach ($indata as $item) {
+        $outData .= AppendNullByte($item);
+    }
+    return $outData;
+}
+
+function ReadTillNullByteAlt($fp) {
+    $bytesList = "";
+    while (($curByte = fgetc($fp)) !== "\0" && $curByte !== false) {
+        $bytesList .= $curByte;
+    }
+    return $bytesList;
+}
+
+function readUntilNullByteAlt($fp) {
+    return readTillNullByteAlt($fp);
+}
+
+function ReadFileHeaderDataAlt($fp, $rounds = 0) {
+    $headerOut = [];
+    for ($roundCount = 0; $roundCount < $rounds; $roundCount++) {
+        $headerOut[$roundCount] = ReadTillNullByteAlt($fp);
+    }
+    return $headerOut;
+}
+
+function AppendNullByteAlt($indata) {
+    return $indata . "\0";
+}
+
+function AppendNullBytesAlt($indata = []) {
+    return implode("\0", array_map('strval', $indata)) . "\0";
+}
 
 function CheckFileType($infile) {
  $catfp = fopen($infile, "rb");
