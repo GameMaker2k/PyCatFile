@@ -324,6 +324,34 @@ def AppendNullBytes(indata=[]):
   inum = inum + 1;
  return outdata;
 
+def ReadTillNullByteAlt(fp):
+ """Read bytes from file pointer until a null byte is encountered."""
+ bytes_list = []  # Use list for efficient append operation.
+ while True:
+  cur_byte = fp.read(1);
+  if cur_byte == b"\0" or not cur_byte:
+   break;
+  bytes_list.append(cur_byte);
+ return b''.join(bytes_list).decode();
+
+def ReadUntilNullByteAlt(fp):
+ return ReadTillNullByteAlt(fp);
+
+def ReadFileHeaderDataAlt(fp, rounds=0):
+ """Read multiple null-byte terminated strings from a file."""
+ header_out = {}
+ for round_count in range(rounds):
+  header_out[round_count] = read_till_null_byte(fp);
+ return header_out;
+
+def AppendNullByteAlt(indata):
+ """Append a null byte to the given data."""
+ return str(indata) + "\0";
+
+def AppendNullBytesAlt(indata=[]):
+ """Append a null byte to each element in the list and concatenate."""
+ return '\0'.join(map(str, indata)) + "\0";  # Efficient concatenation with null byte.
+
 def PrintPermissionString(fchmod, ftype):
  permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
  permissionstr = "";
