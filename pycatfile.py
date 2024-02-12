@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -199,6 +200,39 @@ def ListDir(dirpath, followlink=False, duplicates=False):
      if(fpath not in retlist and not duplicates):
       retlist.append(fpath);
      if(duplicates):
+      retlist.append(fpath);
+  else:
+   retlist.append(RemoveWindowsPath(mydirfile));
+ return retlist;
+
+def ListDirAdvanced(dirpath, followlink=False, duplicates=False):
+ if isinstance(dirpath, (list, tuple)):
+  dirpath = list(filter(None, dirpath));
+ elif isinstance(dirpath, str):
+  dirpath = list(filter(None, [dirpath]));
+ retlist = []
+ for mydirfile in dirpath:
+  if not os.path.exists(mydirfile):
+   return False;
+  mydirfile = NormalizeRelativePath(mydirfile);
+  if os.path.exists(mydirfile) and os.path.islink(mydirfile) and followlink:
+   mydirfile = RemoveWindowsPath(os.path.realpath(mydirfile))
+  if os.path.exists(mydirfile) and os.path.isdir(mydirfile):
+   for root, dirs, filenames in os.walk(mydirfile):
+    # Sort dirs and filenames alphabetically in place
+    dirs.sort(key=lambda x: x.lower());
+    filenames.sort(key=lambda x: x.lower());
+    dpath = RemoveWindowsPath(root);
+    if not duplicates and dpath not in retlist:
+     retlist.append(dpath);
+    elif duplicates:
+     retlist.append(dpath);
+    for file in filenames:
+     fpath = os.path.join(root, file);
+     fpath = RemoveWindowsPath(fpath);
+     if not duplicates and fpath not in retlist:
+      retlist.append(fpath);
+     elif duplicates:
       retlist.append(fpath);
   else:
    retlist.append(RemoveWindowsPath(mydirfile));
