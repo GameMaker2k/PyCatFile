@@ -743,7 +743,7 @@ def GetDevMajorMinor(fdev):
  return retdev;
 
 def CheckSumSupport(checkfor, checklist):
- if(checklist>5 or checklist<0):
+ if(checklist>7 or checklist<0):
   checklist = 1;
  if(checklist==0):
   checklistout = sorted(['crc16']);
