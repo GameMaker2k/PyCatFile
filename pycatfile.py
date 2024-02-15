@@ -1784,7 +1784,7 @@ def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  catout = CatFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, returnfp);
  return catout;
 
-def ListDirToArray(infiles, dirlistfromtxt=False, followlink=False, listonly=False, checksumtype="crc32", verbose=False):
+def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, checksumtype="crc32", verbose=False):
  catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
@@ -2050,8 +2050,8 @@ def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
   lcfi = lcfi + 1;
  return catarray;
 
-def ListDirToArrayIndex(infiles, dirlistfromtxt=False, followlink=False, listonly=False, checksumtype="crc32", verbose=False):
- listcatfiles = ListDirToArray(infiles, dirlistfromtxt, followlink, listonly, checksumtype, verbose);
+def ListDirToArrayIndexAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, checksumtype="crc32", verbose=False):
+ listcatfiles = ListDirToArrayAlt(infiles, dirlistfromtxt, followlink, listonly, checksumtype, verbose);
  print(listcatfiles);
  if(not listcatfiles):
   return False;
