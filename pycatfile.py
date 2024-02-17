@@ -48,37 +48,46 @@ except ImportError:
  except ImportError:
   from tarfile import is_tarfile;
 
-testsafetar = 0;
 try:
  import safetar as tarfile;
- testsafetar = 1;
 except ImportError:
  try:
   import xtarfile as tarfile;
-  testsafetar = 2;
  except ImportError:
   import tarfile;
-  testsafetar = 0;
 
-teststringio = 0;
-if(teststringio<=0):
+if(sys.version[0]=="2"):
  try:
-  from cStringIO import StringIO as BytesIO;
-  teststringio = 1;
+  from io import StringIO, BytesIO;
  except ImportError:
-  teststringio = 0;
-if(teststringio<=0):
- try:
-  from StringIO import StringIO as BytesIO;
-  teststringio = 2;
- except ImportError:
-  teststringio = 0;
-if(teststringio<=0):
- try:
-  from io import BytesIO;
-  teststringio = 3;
- except ImportError:
-  teststringio = 0;
+  try:
+   from cStringIO import StringIO;
+   from cStringIO import StringIO as BytesIO;
+  except ImportError:
+   from StringIO import StringIO;
+   from StringIO import StringIO as BytesIO;
+elif(sys.version[0]>="3"):
+ from io import StringIO, BytesIO;
+else:
+ teststringio = 0;
+ if(teststringio<=0):
+  try:
+   from cStringIO import StringIO as BytesIO;
+   teststringio = 1;
+  except ImportError:
+   teststringio = 0;
+ if(teststringio<=0):
+  try:
+   from StringIO import StringIO as BytesIO;
+   teststringio = 2;
+  except ImportError:
+   teststringio = 0;
+ if(teststringio<=0):
+  try:
+   from io import BytesIO;
+   teststringio = 3;
+  except ImportError:
+   teststringio = 0;
 
 __program_name__ = "PyCatFile";
 __project__ = __program_name__;
