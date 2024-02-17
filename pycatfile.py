@@ -35,7 +35,14 @@ if(hasattr(sys.stderr, "detach")):
  sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = 'UTF-8');
 from io import open as open;
 
-from tarfile import is_tarfile;
+try:
+ from safetar import is_tarfile;
+except ImportError:
+ try:
+  from xtarfile import is_tarfile;
+ except ImportError:
+  from tarfile import is_tarfile;
+
 testsafetar = 0;
 try:
  import safetar as tarfile;
