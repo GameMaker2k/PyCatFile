@@ -1991,6 +1991,297 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   fileidnum = fileidnum + 1;
  return catlist;
 
+def TarFileToArrayAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtype="crc32", verbose=False):
+ catver = __cat_header_ver__;
+ fileheaderver = str(int(catver.replace(".", "")));
+ fileheader = AppendNullByte("CatFile" + fileheaderver);
+ catversion = fileheaderver;
+ curinode = 0;
+ curfid = 0;
+ inodelist = [];
+ inodetofile = {};
+ filetoinode = {};
+ inodetocatinode = {};
+ catlist = {};
+ fileidnum = 0;
+ fheadtell = 0;
+ if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
+  return False;
+ try:
+  if(not tarfile.is_tarfile(infiles)):
+   return False;
+ except AttributeError:
+  if(not is_tarfile(infiles)):
+   return False;
+ tarfp = tarfile.open(infiles, "r");
+ for member in tarfp.getmembers():
+  if(re.findall("^[.|/]", member.name)):
+   fname = member.name;
+  else:
+   fname = "./"+member.name;
+  if(verbose):
+   VerbosePrintOut(fname);
+  fpremode = member.mode;
+  ffullmode = member.mode;
+  flinkcount = 0;
+  ftype = 0;
+  if(member.isreg()):
+   ffullmode = member.mode + stat.S_IFREG;
+   ftype = 0;
+  if(member.isdev()):
+   ffullmode = member.mode;
+   ftype = 7;
+  if(member.islnk()):
+   ffullmode = member.mode + stat.S_IFREG;
+   ftype = 1;
+  if(member.issym()):
+   ffullmode = member.mode + stat.S_IFLNK;
+   ftype = 2;
+  if(member.ischr()):
+   ffullmode = member.mode + stat.S_IFCHR;
+   ftype = 3;
+  if(member.isblk()):
+   ffullmode = member.mode + stat.S_IFBLK;
+   ftype = 4;
+  if(member.isdir()):
+   ffullmode = member.mode + stat.S_IFDIR;
+   ftype = 5;
+  if(member.isfifo()):
+   ffullmode = member.mode + stat.S_IFIFO;
+   ftype = 6;
+  if(member.issparse()):
+   ffullmode = member.mode;
+   ftype = 8;
+  flinkname = "";
+  fbasedir = os.path.dirname(fname);
+  fcurfid = curfid;
+  fcurinode = 0;
+  finode = fcurinode;
+  curfid = curfid + 1;
+  if(ftype==2):
+   flinkname = member.linkname;
+  fdev_minor = member.devminor;
+  fdev_major = member.devmajor;
+  frdev_minor = member.devminor;
+  frdev_major = member.devmajor;
+  if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
+   fsize = "0";
+  if(ftype==0 or ftype==7):
+   fsize = member.size;
+  fatime = member.mtime;
+  fmtime = member.mtime;
+  fctime = member.mtime;
+  fbtime = member.mtime;
+  fmode = ffullmode;
+  fchmode = stat.S_IMODE(ffullmode);
+  ftypemod = stat.S_IFMT(ffullmode);
+  fuid = member.uid;
+  fgid = member.gid;
+  funame = member.uname;
+  fgname = member.gname;
+  flinkcount = flinkcount;
+  fcontents = "".encode();
+  if(ftype==0 or ftype==7):
+   fpc = tarfp.extractfile(member);
+   fcontents = fpc.read(int(member.size));
+   fpc.close();
+  ftypehex = format(ftype, 'x').lower();
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), checksumtype]);
+  if(checksumtype=="none" or checksumtype==""):
+   catfileheadercshex = format(0, 'x').lower();
+   catfilecontentcshex = format(0, 'x').lower();
+  if(CheckSumSupport(checksumtype, 0)):
+   catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffff, '04x').lower();
+   catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
+  if(CheckSumSupport(checksumtype, 1)):
+   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
+  if(CheckSumSupport(checksumtype, 2)):
+   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
+  if(CheckSumSupport(checksumtype, 3)):
+   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
+   catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
+  if(CheckSumSupport(checksumtype, 4)):
+   catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
+   catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
+  if(CheckSumSupport(checksumtype, 6)):
+   checksumoutstr = hashlib.new(checksumtype);
+   checksumoutstr.update(catfileoutstr.encode());
+   catfileheadercshex = checksumoutstr.hexdigest().lower();
+   checksumoutstr = hashlib.new(checksumtype);
+   checksumoutstr.update(fcontents);
+   catfilecontentcshex = checksumoutstr.hexdigest().lower();
+  catfhstart = fheadtell;
+  fheadtell += len(catfileoutstr);
+  catfhend = fheadtell - 1;
+  catfcontentstart = fheadtell;
+  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex]);
+  catfileoutstrecd = catfileoutstr.encode();
+  nullstrecd = "\0".encode();
+  fheadtell += len(catfileoutstr) + 1;
+  catfcontentend = fheadtell - 1;
+  catfileout = catfileoutstrecd + fcontents + nullstrecd;
+  pyhascontents = False;
+  if(int(fsize)>1 and not listonly):
+   pyhascontents = True;
+  if(int(fsize)>1 and listonly):
+   fcontents = "";
+   pyhascontents = False;
+  catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
+  fileidnum = fileidnum + 1;
+ return catlist;
+
+def ZipFileToArrayAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtype="crc32", verbose=False):
+ catver = __cat_header_ver__;
+ fileheaderver = str(int(catver.replace(".", "")));
+ fileheader = AppendNullByte("CatFile" + fileheaderver);
+ catversion = fileheaderver;
+ advancedlist = True;
+ curinode = 0;
+ curfid = 0;
+ inodelist = [];
+ inodetofile = {};
+ filetoinode = {};
+ inodetocatinode = {};
+ catlist = {};
+ fileidnum = 0;
+ fheadtell = 0;
+ if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
+  return False;
+ if(not zipfile.is_zipfile(infiles)):
+  return False;
+ zipfp = zipfile.ZipFile(infiles, "r", allowZip64=True);
+ ziptest = zipfp.testzip();
+ for member in zipfp.infolist():
+  if(re.findall("^[.|/]", member.filename)):
+   fname = member.filename;
+  else:
+   fname = "./"+member.filename;
+  zipinfo = zipfp.getinfo(member.filename);
+  if(verbose):
+   VerbosePrintOut(fname);
+  if(not member.is_dir()):
+   fpremode = stat.S_IFREG + 438;
+  if(member.is_dir()):
+   fpremode = stat.S_IFDIR + 511;
+  flinkcount = 0;
+  ftype = 0;
+  if(not member.is_dir()):
+   ftype = 0;
+  if(member.is_dir()):
+   ftype = 5;
+  flinkname = "";
+  fbasedir = os.path.dirname(fname);
+  fcurfid = curfid;
+  fcurinode = 0;
+  finode = fcurinode;
+  curfid = curfid + 1;
+  fdev_minor = 0;
+  fdev_major = 0;
+  frdev_minor = 0;
+  frdev_major = 0;
+  if(ftype==5):
+   fsize = "0";
+  if(ftype==0):
+   fsize = member.file_size;
+  fatime = time.mktime(member.date_time + (0, 0, -1));
+  fmtime = time.mktime(member.date_time + (0, 0, -1));
+  fctime = time.mktime(member.date_time + (0, 0, -1));
+  fbtime = time.mktime(member.date_time + (0, 0, -1));
+  if(not member.is_dir()):
+   fmode = stat.S_IFREG + 438;
+   fchmode = stat.S_IMODE(int(stat.S_IFREG + 438));
+   ftypemod = stat.S_IFMT(int(stat.S_IFREG + 438));
+  if(member.is_dir()):
+   fmode = stat.S_IFDIR + 511;
+   fchmode = stat.S_IMODE(int(stat.S_IFDIR + 511));
+   ftypemod = stat.S_IFMT(int(stat.S_IFDIR + 511));
+  try:
+   fuid = os.getuid();
+  except AttributeError:
+   fuid = 0;
+  except KeyError:
+   fuid = 0;
+  try:
+   fgid = os.getgid();
+  except AttributeError:
+   fgid = 0;
+  except KeyError:
+   fgid = 0;
+  try:
+   import pwd;
+   try:
+    userinfo = pwd.getpwuid(os.getuid());
+    funame = userinfo.pw_name;
+   except KeyError:
+    funame = "";
+   except AttributeError:
+    funame = "";
+  except ImportError:
+   funame = "";
+  fgname = "";
+  try:
+   import grp;
+   try:
+    groupinfo = grp.getgrgid(os.getgid());
+    fgname = groupinfo.gr_name;
+   except KeyError:
+    fgname = "";
+   except AttributeError:
+    fgname = "";
+  except ImportError:
+   fgname = "";
+  fcontents = "".encode();
+  if(ftype==0):
+   fcontents = zipfp.read(member.filename);
+  ftypehex = format(ftype, 'x').lower();
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), checksumtype]);
+  if(checksumtype=="none" or checksumtype==""):
+   catfileheadercshex = format(0, 'x').lower();
+   catfilecontentcshex = format(0, 'x').lower();
+  if(CheckSumSupport(checksumtype, 0)):
+   catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffff, '04x').lower();
+   catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
+  if(CheckSumSupport(checksumtype, 1)):
+   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
+  if(CheckSumSupport(checksumtype, 2)):
+   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
+  if(CheckSumSupport(checksumtype, 3)):
+   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
+   catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
+  if(CheckSumSupport(checksumtype, 4)):
+   catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
+   catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
+  if(CheckSumSupport(checksumtype, 6)):
+   checksumoutstr = hashlib.new(checksumtype);
+   checksumoutstr.update(catfileoutstr.encode());
+   catfileheadercshex = checksumoutstr.hexdigest().lower();
+   checksumoutstr = hashlib.new(checksumtype);
+   checksumoutstr.update(fcontents);
+   catfilecontentcshex = checksumoutstr.hexdigest().lower();
+  catfhstart = fheadtell;
+  fheadtell += len(catfileoutstr);
+  catfhend = fheadtell - 1;
+  catfcontentstart = fheadtell;
+  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex]);
+  catfileoutstrecd = catfileoutstr.encode();
+  nullstrecd = "\0".encode();
+  fheadtell += len(catfileoutstr) + 1;
+  catfcontentend = fheadtell - 1;
+  catfileout = catfileoutstrecd + fcontents + nullstrecd;
+  pyhascontents = False;
+  if(int(fsize)>1 and not listonly):
+   pyhascontents = True;
+  if(int(fsize)>1 and listonly):
+   fcontents = "";
+   pyhascontents = False;
+  catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
+  fileidnum = fileidnum + 1;
+ return catlist;
+
 def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", verbose=False, returnfp=False):
  outarray = BytesIO();
  packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, verbose, True);
@@ -2052,6 +2343,100 @@ def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
 
 def ListDirToArrayIndexAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, checksumtype="crc32", verbose=False):
  listcatfiles = ListDirToArrayAlt(infiles, dirlistfromtxt, followlink, listonly, checksumtype, verbose);
+ print(listcatfiles);
+ if(not listcatfiles):
+  return False;
+ catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
+ lcfi = 0;
+ lcfx = len(listcatfiles);
+ while(lcfi < lcfx):
+  filetoidarray = {listcatfiles[lcfi]['fname']: listcatfiles[lcfi]['fid']};
+  idtofilearray = {listcatfiles[lcfi]['fid']: listcatfiles[lcfi]['fname']};
+  catarray['filetoid'].update(filetoidarray);
+  catarray['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==0 or listcatfiles[lcfi]['ftype']==7):
+   catarray['filetypes']['files']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['files']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==1):
+   catarray['filetypes']['hardlinks']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['hardlinks']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['links']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['links']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==2):
+   catarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['links']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['links']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==3):
+   catarray['filetypes']['character']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['character']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==4):
+   catarray['filetypes']['block']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['block']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==5):
+   catarray['filetypes']['directories']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['directories']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==6):
+   catarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+  lcfi = lcfi + 1;
+ return catarray;
+
+def TarFileToArrayIndexAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, checksumtype="crc32", verbose=False):
+ listcatfiles = TarFileToArrayAlt(infiles, dirlistfromtxt, followlink, listonly, checksumtype, verbose);
+ print(listcatfiles);
+ if(not listcatfiles):
+  return False;
+ catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
+ lcfi = 0;
+ lcfx = len(listcatfiles);
+ while(lcfi < lcfx):
+  filetoidarray = {listcatfiles[lcfi]['fname']: listcatfiles[lcfi]['fid']};
+  idtofilearray = {listcatfiles[lcfi]['fid']: listcatfiles[lcfi]['fname']};
+  catarray['filetoid'].update(filetoidarray);
+  catarray['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==0 or listcatfiles[lcfi]['ftype']==7):
+   catarray['filetypes']['files']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['files']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==1):
+   catarray['filetypes']['hardlinks']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['hardlinks']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['links']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['links']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==2):
+   catarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['links']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['links']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==3):
+   catarray['filetypes']['character']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['character']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==4):
+   catarray['filetypes']['block']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['block']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==5):
+   catarray['filetypes']['directories']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['directories']['idtofile'].update(idtofilearray);
+  if(listcatfiles[lcfi]['ftype']==6):
+   catarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+  lcfi = lcfi + 1;
+ return catarray;
+
+def ZipFileToArrayIndexAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, checksumtype="crc32", verbose=False):
+ listcatfiles = ZipFileToArrayAlt(infiles, dirlistfromtxt, followlink, listonly, checksumtype, verbose);
  print(listcatfiles);
  if(not listcatfiles):
   return False;
