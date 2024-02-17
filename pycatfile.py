@@ -1037,7 +1037,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
   ftypehex = format(ftype, 'x').lower();
   extrafields = format(len(extradata), 'x').lower();
   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrafields]);
-  if(extradata>0):
+  if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
   if(checksumtype=="none" or checksumtype==""):
@@ -1276,7 +1276,7 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
   ftypehex = format(ftype, 'x').lower();
   extrafields = format(len(extradata), 'x').lower();
   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrafields]);
-  if(extradata>0):
+  if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
   catfhend = (catfp.tell() - 1) + len(catfileoutstr);
@@ -1520,7 +1520,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
   ftypehex = format(ftype, 'x').lower();
   extrafields = format(len(extradata), 'x').lower();
   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrafields]);
-  if(extradata>0):
+  if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
   catfhend = (catfp.tell() - 1) + len(catfileoutstr);
