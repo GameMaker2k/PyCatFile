@@ -770,7 +770,7 @@ def GetDevMajorMinor(fdev):
  return retdev;
 
 def CheckSumSupport(checkfor):
- checklistout = sorted(list(hashlib.algorithms_guaranteed) + ['adler32', 'crc16', 'crc32', 'crc64_ecma', 'crc64_iso', 'none']);
+ checklistout = sorted(list(hashlib.algorithms_guaranteed) + ['adler32', 'crc16', 'crc16_ansi', 'crc16_ibm', 'crc16_ccitt', 'crc32', 'crc64', 'crc64_ecma', 'crc64_iso', 'none']);
  if(checkfor in checklistout):
   return True;
  else:
@@ -1027,9 +1027,12 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  if(checksumtype=="crc16"):
+  if(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
    catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
+  if(checksumtype=="crc16_ccitt"):
+   catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode()) & 0xffff, '04x').lower();
+   catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
@@ -1039,7 +1042,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
   elif(checksumtype=="crc64_ecma"):
    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
-  elif(checksumtype=="crc64_iso"):
+  elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
    catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(checksumtype in sorted(list(hashlib.algorithms_guaranteed))):
@@ -1258,9 +1261,12 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  if(checksumtype=="crc16"):
+  if(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
    catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
+  if(checksumtype=="crc16_ccitt"):
+   catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode()) & 0xffff, '04x').lower();
+   catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
@@ -1270,7 +1276,7 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
   elif(checksumtype=="crc64_ecma"):
    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
-  elif(checksumtype=="crc64_iso"):
+  elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
    catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(checksumtype in sorted(list(hashlib.algorithms_guaranteed))):
@@ -1495,9 +1501,12 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  if(checksumtype=="crc16"):
+  if(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
    catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
+  if(checksumtype=="crc16_ccitt"):
+   catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode()) & 0xffff, '04x').lower();
+   catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
@@ -1507,7 +1516,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
   elif(checksumtype=="crc64_ecma"):
    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
-  elif(checksumtype=="crc64_iso"):
+  elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
    catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(checksumtype in sorted(list(hashlib.algorithms_guaranteed))):
@@ -1690,7 +1699,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    hc = hc + 1;
   if(catfchecksumtype=="none" or catfchecksumtype==""):
    catnewfcs = 0;
-  if(catfchecksumtype=="crc16"):
+  if(catfchecksumtype=="crc16" or catfchecksumtype=="crc16_ansi" or catfchecksumtype=="crc16_ibm"):
    catnewfcs = format(crc16(hout.encode()) & 0xffff, '04x').lower();
   elif(catfchecksumtype=="adler32"):
    catnewfcs = format(zlib.adler32(hout.encode()) & 0xffffffff, '08x').lower();
@@ -1698,7 +1707,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catnewfcs = format(zlib.crc32(hout.encode()) & 0xffffffff, '08x').lower();
   elif(catfchecksumtype=="crc64_ecma"):
    catnewfcs = format(crc64_ecma(hout.encode()) & 0xffffffffffffffff, '016x').lower();
-  elif(catfchecksumtype=="crc64_iso"):
+  elif(catfchecksumtype=="crc64" or catfchecksumtype=="crc64_iso"):
    catnewfcs = format(crc64_iso(hout.encode()) & 0xffffffffffffffff, '016x').lower();
   elif(catfchecksumtype in sorted(list(hashlib.algorithms_guaranteed))):
    checksumoutstr = hashlib.new(catfchecksumtype);
@@ -1715,15 +1724,17 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catfcontents = catfp.read(catfsize);
    if(catfchecksumtype=="none" or catfchecksumtype==""):
     catnewfccs = 0;
-   if(catfchecksumtype=="crc16"):
+   if(catfchecksumtype=="crc16" or catfchecksumtype=="crc16_ansi" or catfchecksumtype=="crc16_ibm"):
     catnewfccs = format(crc16(catfcontents) & 0xffff, '04x').lower();
+   if(catfchecksumtype=="crc16_ccitt"):
+    catnewfcs = format(crc16_ccitt(catfcontents) & 0xffff, '04x').lower();
    elif(catfchecksumtype=="adler32"):
     catnewfccs = format(zlib.adler32(catfcontents) & 0xffffffff, '08x').lower();
    elif(catfchecksumtype=="crc32"):
     catnewfccs = format(zlib.crc32(catfcontents) & 0xffffffff, '08x').lower();
    elif(catfchecksumtype=="crc64_ecma"):
     catnewfcs = format(crc64_ecma(catfcontents) & 0xffffffffffffffff, '016x').lower();
-   elif(catfchecksumtype=="crc64_iso"):
+   elif(catfchecksumtype=="crc64" or catfchecksumtype=="crc64_iso"):
     catnewfcs = format(crc64_iso(catfcontents) & 0xffffffffffffffff, '016x').lower();
    elif(catfchecksumtype in sorted(list(hashlib.algorithms_guaranteed))):
     checksumoutstr = hashlib.new(catfchecksumtype);
@@ -1929,9 +1940,12 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  if(checksumtype=="crc16"):
+  if(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
    catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
+  if(checksumtype=="crc16_ccitt"):
+   catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode()) & 0xffff, '04x').lower();
+   catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
@@ -1941,7 +1955,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   elif(checksumtype=="crc64_ecma"):
    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
-  elif(checksumtype=="crc64_iso"):
+  elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
    catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(checksumtype in sorted(list(hashlib.algorithms_guaranteed))):
@@ -2070,9 +2084,12 @@ def TarFileToArrayAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtyp
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  if(checksumtype=="crc16"):
+  if(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
    catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
+  if(checksumtype=="crc16_ccitt"):
+   catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode()) & 0xffff, '04x').lower();
+   catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
@@ -2082,7 +2099,7 @@ def TarFileToArrayAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtyp
   elif(checksumtype=="crc64_ecma"):
    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
-  elif(checksumtype=="crc64_iso"):
+  elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
    catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(checksumtype in sorted(list(hashlib.algorithms_guaranteed))):
@@ -2220,9 +2237,12 @@ def ZipFileToArrayAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtyp
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  if(checksumtype=="crc16"):
+  if(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
    catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
+  if(checksumtype=="crc16_ccitt"):
+   catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode()) & 0xffff, '04x').lower();
+   catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
@@ -2232,7 +2252,7 @@ def ZipFileToArrayAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtyp
   elif(checksumtype=="crc64_ecma"):
    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
-  elif(checksumtype=="crc64_iso"):
+  elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
    catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(checksumtype in sorted(list(hashlib.algorithms_guaranteed))):
@@ -2672,9 +2692,12 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  if(checksumtype=="crc16"):
+  if(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
    catfileheadercshex = format(crc16(catfileoutstr.encode()) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
+  if(checksumtype=="crc16_ccitt"):
+   catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode()) & 0xffff, '04x').lower();
+   catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
@@ -2684,7 +2707,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   elif(checksumtype=="crc64_ecma"):
    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
-  elif(checksumtype=="crc64_iso"):
+  elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
    catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(checksumtype in sorted(list(hashlib.algorithms_guaranteed))):
