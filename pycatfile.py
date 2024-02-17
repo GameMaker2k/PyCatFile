@@ -36,6 +36,11 @@ if(hasattr(sys.stderr, "detach")):
 from io import open as open;
 
 try:
+ from zlib import crc32;
+except ImportError:
+ from binascii import crc32;
+
+try:
  from safetar import is_tarfile;
 except ImportError:
  try:
@@ -1045,8 +1050,8 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc32"):
-   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
-   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(crc32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc64_ecma"):
    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
@@ -1283,8 +1288,8 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc32"):
-   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
-   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(crc32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc64_ecma"):
    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
@@ -1524,8 +1529,8 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc32"):
-   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
-   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(crc32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc64_ecma"):
    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
@@ -1724,7 +1729,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   elif(catfchecksumtype=="adler32"):
    catnewfcs = format(zlib.adler32(hout.encode()) & 0xffffffff, '08x').lower();
   elif(catfchecksumtype=="crc32"):
-   catnewfcs = format(zlib.crc32(hout.encode()) & 0xffffffff, '08x').lower();
+   catnewfcs = format(crc32(hout.encode()) & 0xffffffff, '08x').lower();
   elif(catfchecksumtype=="crc64_ecma"):
    catnewfcs = format(crc64_ecma(hout.encode()) & 0xffffffffffffffff, '016x').lower();
   elif(catfchecksumtype=="crc64" or catfchecksumtype=="crc64_iso"):
@@ -1751,7 +1756,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    elif(catfchecksumtype=="adler32"):
     catnewfccs = format(zlib.adler32(catfcontents) & 0xffffffff, '08x').lower();
    elif(catfchecksumtype=="crc32"):
-    catnewfccs = format(zlib.crc32(catfcontents) & 0xffffffff, '08x').lower();
+    catnewfccs = format(crc32(catfcontents) & 0xffffffff, '08x').lower();
    elif(catfchecksumtype=="crc64_ecma"):
     catnewfcs = format(crc64_ecma(catfcontents) & 0xffffffffffffffff, '016x').lower();
    elif(catfchecksumtype=="crc64" or catfchecksumtype=="crc64_iso"):
@@ -1970,8 +1975,8 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc32"):
-   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
-   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(crc32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc64_ecma"):
    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
@@ -2114,8 +2119,8 @@ def TarFileToArrayAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtyp
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc32"):
-   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
-   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(crc32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc64_ecma"):
    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
@@ -2267,8 +2272,8 @@ def ZipFileToArrayAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtyp
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc32"):
-   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
-   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(crc32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc64_ecma"):
    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
@@ -2731,8 +2736,8 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc32"):
-   catfileheadercshex = format(zlib.crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
-   catfilecontentcshex = format(zlib.crc32(fcontents) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc32(catfileoutstr.encode()) & 0xffffffff, '08x').lower();
+   catfilecontentcshex = format(crc32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc64_ecma"):
    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
