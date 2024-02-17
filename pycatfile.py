@@ -1035,7 +1035,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
    fcontents = fpc.read(int(flstatinfo.st_size));
    fpc.close();
   ftypehex = format(ftype, 'x').lower();
-  extrafields = format(strlen(extradata), 'x').lower();
+  extrafields = format(len(extradata), 'x').lower();
   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrafields]);
   if(extradata>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata);
