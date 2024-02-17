@@ -1716,6 +1716,8 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   while(hc<hcmax):
    hout = hout + AppendNullByte(catheaderdata[hc]);
    hc = hc + 1;
+  if(len(extrafieldslist)>catfextrafields and len(extrafieldslist)>0):
+   catfextrafields = len(extrafieldslist);
   if(catfextrafields>0):
    hc = 0;
    hcmax = catfextrafields;
@@ -2711,14 +2713,16 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
     fcurinode = format(int(curinode), 'x').lower();
     curinode = curinode + 1;
   curfid = curfid + 1;
-  extrafields = format(int(flinkinfo['fextrafields']), 'x').lower();
+  if(len(listcatfiles['fextralist'])>listcatfiles['fextrafields'] and len(listcatfiles['fextralist'])>0):
+   listcatfiles['fextrafields'] = len(listcatfiles['fextralist'];
+  extrafields = format(int(listcatfiles['fextrafields']), 'x').lower();
   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, checksumtype, extrafields]);
-  if(flinkinfo['fextrafields']>0):
+  if(listcatfiles['fextrafields']>0):
    extrafieldslist = [];
    exi = 0;
-   exil = flinkinfo['fextrafields'];
+   exil = listcatfiles['fextrafields'];
    while(exi < exil):
-    extrafieldslist.append(flinkinfo['fextralist']);
+    extrafieldslist.append(listcatfiles['fextralist']);
     exi = exi + 1;
    catfileoutstr += AppendNullBytes([extrafieldslist]);
   catfhend = (catfp.tell() - 1) + len(catfileoutstr);
