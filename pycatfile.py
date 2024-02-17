@@ -2714,7 +2714,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
     curinode = curinode + 1;
   curfid = curfid + 1;
   if(len(listcatfiles['fextralist'])>listcatfiles['fextrafields'] and len(listcatfiles['fextralist'])>0):
-   listcatfiles['fextrafields'] = len(listcatfiles['fextralist'];
+   listcatfiles['fextrafields'] = len(listcatfiles['fextralist']);
   extrafields = format(int(listcatfiles['fextrafields']), 'x').lower();
   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, checksumtype, extrafields]);
   if(listcatfiles['fextrafields']>0):
