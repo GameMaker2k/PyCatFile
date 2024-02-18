@@ -796,7 +796,18 @@ def CheckSumSupport(checkfor, guaranteed=True):
   hash_list = sorted(list(hashlib.algorithms_guaranteed);
  else:
   hash_list = sorted(list(hashlib.algorithms_available);
- checklistout = hash_list + ['adler32', 'crc16', 'crc16_ansi', 'crc16_ibm', 'crc16_ccitt', 'crc32', 'crc64', 'crc64_ecma', 'crc64_iso', 'none']);
+ checklistout = sorted(hash_list + ['adler32', 'crc16', 'crc16_ansi', 'crc16_ibm', 'crc16_ccitt', 'crc32', 'crc64', 'crc64_ecma', 'crc64_iso', 'none']);
+ if(checkfor in checklistout):
+  return True;
+ else:
+  return False;
+
+def CheckSumSupportAlt(checkfor, guaranteed=True):
+ if(guaranteed):
+  hash_list = sorted(list(hashlib.algorithms_guaranteed);
+ else:
+  hash_list = sorted(list(hashlib.algorithms_available);
+ checklistout = hash_list;
  if(checkfor in checklistout):
   return True;
  else:
@@ -1075,7 +1086,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
    catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
-  elif(checksumtype in sorted(list(hashlib.algorithms_guaranteed))):
+  elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode());
    catfileheadercshex = checksumoutstr.hexdigest().lower();
@@ -1316,7 +1327,7 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
    catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
-  elif(checksumtype in sorted(list(hashlib.algorithms_guaranteed))):
+  elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode());
    catfileheadercshex = checksumoutstr.hexdigest().lower();
@@ -1560,7 +1571,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
    catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
-  elif(checksumtype in sorted(list(hashlib.algorithms_guaranteed))):
+  elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode());
    catfileheadercshex = checksumoutstr.hexdigest().lower();
@@ -1761,7 +1772,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catnewfcs = format(crc64_ecma(hout.encode()) & 0xffffffffffffffff, '016x').lower();
   elif(catfchecksumtype=="crc64" or catfchecksumtype=="crc64_iso"):
    catnewfcs = format(crc64_iso(hout.encode()) & 0xffffffffffffffff, '016x').lower();
-  elif(catfchecksumtype in sorted(list(hashlib.algorithms_guaranteed))):
+  elif(CheckSumSupportAlt(catfchecksumtype, hashlib_guaranteed)):
    checksumoutstr = hashlib.new(catfchecksumtype);
    checksumoutstr.update(hout.encode());
    catnewfcs = checksumoutstr.hexdigest().lower();
@@ -1772,7 +1783,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catfcontentstart = catfp.tell();
   catfcontents = "";
   pyhascontents = False;
-  if(catfsize>1 and not listonly):
+  if(catfsize>0 and not listonly):
    catfcontents = catfp.read(catfsize);
    if(catfchecksumtype=="none" or catfchecksumtype==""):
     catnewfccs = 0;
@@ -1788,7 +1799,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
     catnewfcs = format(crc64_ecma(catfcontents) & 0xffffffffffffffff, '016x').lower();
    elif(catfchecksumtype=="crc64" or catfchecksumtype=="crc64_iso"):
     catnewfcs = format(crc64_iso(catfcontents) & 0xffffffffffffffff, '016x').lower();
-   elif(catfchecksumtype in sorted(list(hashlib.algorithms_guaranteed))):
+   elif(CheckSumSupportAlt(catfchecksumtype, hashlib_guaranteed)):
     checksumoutstr = hashlib.new(catfchecksumtype);
     checksumoutstr.update(catfcontents);
     catnewfccs = checksumoutstr.hexdigest().lower();
@@ -1796,7 +1807,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    if(catfccs!=catnewfccs and skipchecksum):
     VerbosePrintOut("File Content Checksum Error with file " + catfname + " at offset " + str(catfhstart));
     return False;
-  if(catfsize>1 and listonly):
+  if(catfsize>0 and listonly):
    catfp.seek(catfsize, 1);
    pyhascontents = False;
   catfcontentend = catfp.tell() - 1;
@@ -2017,7 +2028,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
    catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
-  elif(checksumtype in sorted(list(hashlib.algorithms_guaranteed))):
+  elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode());
    catfileheadercshex = checksumoutstr.hexdigest().lower();
@@ -2035,9 +2046,9 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   catfcontentend = fheadtell - 1;
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   pyhascontents = False;
-  if(int(fsize)>1 and not listonly):
+  if(int(fsize)>0 and not listonly):
    pyhascontents = True;
-  if(int(fsize)>1 and listonly):
+  if(int(fsize)>0 and listonly):
    fcontents = "";
    pyhascontents = False;
   catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
@@ -2168,7 +2179,7 @@ def TarFileToArrayAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtyp
   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
    catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
-  elif(checksumtype in sorted(list(hashlib.algorithms_guaranteed))):
+  elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode());
    catfileheadercshex = checksumoutstr.hexdigest().lower();
@@ -2186,9 +2197,9 @@ def TarFileToArrayAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtyp
   catfcontentend = fheadtell - 1;
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   pyhascontents = False;
-  if(int(fsize)>1 and not listonly):
+  if(int(fsize)>0 and not listonly):
    pyhascontents = True;
-  if(int(fsize)>1 and listonly):
+  if(int(fsize)>0 and listonly):
    fcontents = "";
    pyhascontents = False;
   catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
@@ -2328,7 +2339,7 @@ def ZipFileToArrayAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtyp
   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
    catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
-  elif(checksumtype in sorted(list(hashlib.algorithms_guaranteed))):
+  elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode());
    catfileheadercshex = checksumoutstr.hexdigest().lower();
@@ -2346,9 +2357,9 @@ def ZipFileToArrayAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtyp
   catfcontentend = fheadtell - 1;
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   pyhascontents = False;
-  if(int(fsize)>1 and not listonly):
+  if(int(fsize)>0 and not listonly):
    pyhascontents = True;
-  if(int(fsize)>1 and listonly):
+  if(int(fsize)>0 and listonly):
    fcontents = "";
    pyhascontents = False;
   catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
@@ -2795,7 +2806,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
    catfileheadercshex = format(crc64_iso(catfileoutstr.encode()) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
-  elif(checksumtype in sorted(list(hashlib.algorithms_guaranteed))):
+  elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode());
    catfileheadercshex = checksumoutstr.hexdigest().lower();
