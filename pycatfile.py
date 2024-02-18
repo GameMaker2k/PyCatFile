@@ -20,6 +20,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals;
 import os, re, sys, time, stat, zlib, shutil, hashlib, logging, binascii, tempfile, zipfile;
 
+hashlib_guaranteed = False;
 os.environ["PYTHONIOENCODING"] = "UTF-8";
 os.environ["LANG"] = "UTF-8";
 os.environ["LC_ALL"] = "UTF-8";
@@ -790,8 +791,12 @@ def GetDevMajorMinor(fdev):
   retdev.append(0);
  return retdev;
 
-def CheckSumSupport(checkfor):
- checklistout = sorted(list(hashlib.algorithms_guaranteed) + ['adler32', 'crc16', 'crc16_ansi', 'crc16_ibm', 'crc16_ccitt', 'crc32', 'crc64', 'crc64_ecma', 'crc64_iso', 'none']);
+def CheckSumSupport(checkfor, guaranteed=True):
+ if(guaranteed):
+  hash_list = sorted(list(hashlib.algorithms_guaranteed);
+ else:
+  hash_list = sorted(list(hashlib.algorithms_available);
+ checklistout = hash_list + ['adler32', 'crc16', 'crc16_ansi', 'crc16_ibm', 'crc16_ccitt', 'crc32', 'crc64', 'crc64_ecma', 'crc64_iso', 'none']);
  if(checkfor in checklistout):
   return True;
  else:
@@ -805,7 +810,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
- if(not CheckSumSupport(checksumtype)):
+ if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
@@ -1110,7 +1115,7 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
- if(not CheckSumSupport(checksumtype)):
+ if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
@@ -1346,7 +1351,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
- if(not CheckSumSupport(checksumtype)):
+ if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
@@ -2591,7 +2596,7 @@ def RePackCatFile(infile, outfile, seekstart=0, seekend=0, compression="auto", c
  if(outfile!="-" and not hasattr(infile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
- if(not CheckSumSupport(checksumtype)):
+ if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
