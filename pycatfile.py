@@ -434,6 +434,26 @@ def PrintPermissionString(fchmode, ftype):
   permissionoutstr = permissionstr;
  return permissionoutstr;
 
+def PrintPermissionStringAlt(fchmode, ftype):
+ permissions = {
+  '0': '---', '1': '--x', '2': '-w-', '3': '-wx',
+  '4': 'r--', '5': 'r-x', '6': 'rw-', '7': 'rwx'
+ };
+ # Translate file mode into permission string
+ permissionstr = ''.join([permissions[i] for i in str(oct(fchmode))[-3:]]);
+ # Append file type indicator
+ type_indicators = {
+  0: '-', 1: 'h', 2: 'l', 3: 'c', 4: 'b',
+  5: 'd', 6: 'f', 8: 'D', 9: 'p', 10: 'w'
+ };
+ file_type = type_indicators.get(ftype, '-');
+ permissionstr = file_type + permissionstr;
+ try:
+  permissionoutstr = stat.filemode(fchmode);
+ except AttributeError:
+  permissionoutstr = permissionstr;
+ return permissionoutstr;
+
 def CompressionSupport():
  compression_list = [];
  try:
