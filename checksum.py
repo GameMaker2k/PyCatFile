@@ -21,9 +21,12 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import os, binascii, argparse, shutil, hashlib, zlib;
 from io import open as open;
 
+hashlib_guaranteed = False;
 chksum_list = sorted(['adler32', 'crc16', 'crc16_ansi', 'crc16_ibm', 'crc16_ccitt', 'crc32', 'crc64', 'crc64_ecma', 'crc64_iso']);
-#chksum_list_hash = sorted(list(hashlib.algorithms_guaranteed));
-chksum_list_hash = sorted(list(hashlib.algorithms_available));
+if(hashlib_guaranteed):
+ chksum_list_hash = sorted(list(hashlib.algorithms_guaranteed));
+else:
+ chksum_list_hash = sorted(list(hashlib.algorithms_available));
 
 # initial_value can be 0xFFFF or 0x0000
 def crc16_ansi(msg, initial_value=0xFFFF):
