@@ -20,9 +20,9 @@ date_default_timezone_set('UTC');
 $info['program_name'] = "PHPCatFile";
 $info['project'] = $info['program_name'];
 $info['project_url'] = "https://github.com/GameMaker2k/PyCatFile";
-$info['version_info'] = array(0 => 0, 1 => 0, 2 => 5, 3 => "RC 1", 4 => 1);
+$info['version_info'] = array(0 => 0, 1 => 0, 2 => 7, 3 => "RC 1", 4 => 1);
 $info['version_id'] = "$Id$";
-$info['version_date_info'] = array(0 => 2024, 1 => 2, 2 => 16, 3 => "RC 1", 1);
+$info['version_date_info'] = array(0 => 2024, 1 => 2, 2 => 21, 3 => "RC 1", 1);
 $info['version_date'] = $info['version_date_info'][0].".".str_pad($info['version_date_info'][1], 2, "-=", STR_PAD_LEFT).".".str_pad($info['version_date_info'][2], 2, "-=", STR_PAD_LEFT);
 if($info['version_info'][4]!==Null) {
  $info['version_date_plusrc'] = $info['version_date']."-".$info['version_date_info'][4]; }
