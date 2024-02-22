@@ -2733,8 +2733,8 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
   fmtime = format(int(listcatfiles[lcfi]['fmtime']), 'x').lower();
   fctime = format(int(listcatfiles[lcfi]['fctime']), 'x').lower();
   fbtime = format(int(listcatfiles[lcfi]['fbtime']), 'x').lower();
-  fmode = format(int(int(listcatfiles[lcfi]['fmode'], 8)), 'x').lower();
-  fchmode = format(int(int(listcatfiles[lcfi]['fchmode'], 8)), 'x').lower();
+  fmode = format(int(listcatfiles[lcfi]['fmode']), 'x').lower();
+  fchmode = format(int(listcatfiles[lcfi]['fchmode']), 'x').lower();
   fuid = format(int(listcatfiles[lcfi]['fuid']), 'x').lower();
   funame = listcatfiles[lcfi]['funame'];
   fgid = format(int(listcatfiles[lcfi]['fgid']), 'x').lower();
@@ -2757,8 +2757,8 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
     fmtime = format(int(flinkinfo['fmtime']), 'x').lower();
     fctime = format(int(flinkinfo['fctime']), 'x').lower();
     fbtime = format(int(flinkinfo['fbtime']), 'x').lower();
-    fmode = format(int(int(flinkinfo['fmode'], 8)), 'x').lower();
-    fchmode = format(int(int(flinkinfo['fchmode'], 8)), 'x').lower();
+    fmode = format(int(flinkinfo['fmode']), 'x').lower();
+    fchmode = format(int(flinkinfo['fchmode']), 'x').lower();
     fuid = format(int(flinkinfo['fuid']), 'x').lower();
     funame = flinkinfo['funame'];
     fgid = format(int(flinkinfo['fgid']), 'x').lower();
@@ -2771,15 +2771,21 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
     frdev_major = format(int(flinkinfo['frmajor']), 'x').lower();
     fcontents = flinkinfo['fcontents'];
     if(flinkinfo['ftype']!=0 and flinkinfo['ftype']!=7):
-     fcontents = fcontents.encode();
+     try:
+      fcontents = fcontents.encode();
+     except AttributeError:
+      pass;
     ftypehex = format(flinkinfo['ftype'], 'x').lower();
   else:
    if(listcatfiles[lcfi]['ftype']!=0 and listcatfiles[lcfi]['ftype']!=7):
-    fcontents = fcontents.encode();
+    try:
+     fcontents = fcontents.encode();
+    except AttributeError:
+     pass;
    ftypehex = format(listcatfiles[lcfi]['ftype'], 'x').lower();
   fcurfid = format(curfid, 'x').lower();
   if(not followlink):
-   if(flinkinfo['ftype']!=1):
+   if(listcatfiles[lcfi]['ftype']!=1):
     fcurinode = format(int(curinode), 'x').lower();
     inodetofile.update({curinode: fname});
     filetoinode.update({fname: curinode});
@@ -3245,15 +3251,15 @@ def ListDirListFilesAlt(infiles, dirlistfromtxt=False, followlink=False, listonl
 
 def PackCatFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, skipchecksum=False, checksumtype="crc32", extradata=[], verbose=False, returnfp=False):
  outarray = ListDirToArrayAlt(infiles, dirlistfromtxt, followlink, False, checksumtype, extradata, False);
- catout = RePackCatFile(outarray, outfile, compression, compressionlevel, checksumtype, skipchecksum, extradata, verbose, returnfp);
+ catout = RePackCatFile(outarray, outfile, compression, compressionlevel, followlink, checksumtype, skipchecksum, extradata, verbose, returnfp);
  return catout;
 
 def PackCatFileFromTarFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], verbose=False, returnfp=False):
  outarray = TarFileToArrayAlt(infile, False, checksumtype, extradata, False);
- catout = RePackCatFile(outarray, outfile, compression, compressionlevel, checksumtype, True, extradata, verbose, returnfp);
+ catout = RePackCatFile(outarray, outfile, compression, compressionlevel, False, checksumtype, True, extradata, verbose, returnfp);
  return catout;
 
 def PackCatFileFromZipFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], verbose=False, returnfp=False):
  outarray = ZipFileToArrayAlt(infile, False, checksumtype, extradata, False);
- catout = RePackCatFile(outarray, outfile, compression, compressionlevel, checksumtype, True, extradata, verbose, returnfp);
+ catout = RePackCatFile(outarray, outfile, compression, compressionlevel, False, checksumtype, True, extradata, verbose, returnfp);
  return catout;
