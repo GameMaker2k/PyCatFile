@@ -3256,10 +3256,10 @@ def PackCatFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, compressio
 
 def PackCatFileFromTarFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], verbose=False, returnfp=False):
  outarray = TarFileToArrayAlt(infile, False, checksumtype, extradata, False);
- catout = RePackCatFile(outarray, outfile, compression, compressionlevel, False, checksumtype, True, extradata, verbose, returnfp);
+ catout = RePackCatFile(outarray, outfile, compression, compressionlevel, False, checksumtype, False, extradata, verbose, returnfp);
  return catout;
 
 def PackCatFileFromZipFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], verbose=False, returnfp=False):
  outarray = ZipFileToArrayAlt(infile, False, checksumtype, extradata, False);
- catout = RePackCatFile(outarray, outfile, compression, compressionlevel, False, checksumtype, True, extradata, verbose, returnfp);
+ catout = RePackCatFile(outarray, outfile, compression, compressionlevel, False, checksumtype, False, extradata, verbose, returnfp);
  return catout;
