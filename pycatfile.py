@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import os, re, sys, time, stat, zlib, shutil, hashlib, logging, binascii, tempfile, zipfile;
+import os, re, sys, time, stat, zlib, shutil, hashlib, logging, binascii, tempfile, zipfile, ftplib;
 
 hashlib_guaranteed = False;
 os.environ["PYTHONIOENCODING"] = "UTF-8";
@@ -3263,3 +3263,97 @@ def PackCatFileFromZipFileAlt(infile, outfile, compression="auto", compressionle
  outarray = ZipFileToArrayAlt(infile, False, checksumtype, extradata, False);
  catout = RePackCatFile(outarray, outfile, compression, compressionlevel, False, checksumtype, False, extradata, verbose, returnfp);
  return catout;
+
+def download_file_from_ftp_file(url):
+ urlparts = urlparse.urlparse(url);
+ file_name = os.path.basename(urlparts.path);
+ file_dir = os.path.dirname(urlparts.path);
+ if(urlparts.username is not None):
+  ftp_username = urlparts.username;
+ else:
+  ftp_username = "anonymous";
+ if(urlparts.password is not None):
+  ftp_password = urlparts.password;
+ elif(urlparts.password is None and urlparts.username=="anonymous"):
+  ftp_password = "anonymous";
+ else:
+  ftp_password = "";
+ if(urlparts.scheme=="ftp"):
+  ftp = FTP();
+ elif(urlparts.scheme=="ftps"):
+  ftp = FTP_TLS();
+ else:
+  return False;
+ if(urlparts.scheme=="http" or urlparts.scheme=="https"):
+  return False;
+ ftp_port = urlparts.port;
+ if(urlparts.port is None):
+  ftp_port = 21;
+ try:
+  ftp.connect(urlparts.hostname, ftp_port);
+ except socket.gaierror:
+  log.info("Error With URL "+httpurl);
+  return False;
+ except socket.timeout:
+  log.info("Error With URL "+httpurl);
+  return False;
+ ftp.login(urlparts.username, urlparts.password);
+ if(urlparts.scheme=="ftps"):
+  ftp.prot_p();
+ ftpfile = BytesIO();
+ ftp.retrbinary("RETR "+urlparts.path, ftpfile.write);
+ #ftp.storbinary("STOR "+urlparts.path, ftpfile.write);
+ ftp.close();
+ ftpfile.seek(0, 0);
+ return ftpfile;
+
+def download_file_from_ftp_string(url):
+ ftpfile = download_file_from_ftp_file(url);
+ return ftpfile.read();
+
+def upload_file_to_ftp_file(ftpfile, url):
+ urlparts = urlparse.urlparse(url);
+ file_name = os.path.basename(urlparts.path);
+ file_dir = os.path.dirname(urlparts.path);
+ if(urlparts.username is not None):
+  ftp_username = urlparts.username;
+ else:
+  ftp_username = "anonymous";
+ if(urlparts.password is not None):
+  ftp_password = urlparts.password;
+ elif(urlparts.password is None and urlparts.username=="anonymous"):
+  ftp_password = "anonymous";
+ else:
+  ftp_password = "";
+ if(urlparts.scheme=="ftp"):
+  ftp = FTP();
+ elif(urlparts.scheme=="ftps"):
+  ftp = FTP_TLS();
+ else:
+  return False;
+ if(urlparts.scheme=="http" or urlparts.scheme=="https"):
+  return False;
+ ftp_port = urlparts.port;
+ if(urlparts.port is None):
+  ftp_port = 21;
+ try:
+  ftp.connect(urlparts.hostname, ftp_port);
+ except socket.gaierror:
+  log.info("Error With URL "+httpurl);
+  return False;
+ except socket.timeout:
+  log.info("Error With URL "+httpurl);
+  return False;
+ ftp.login(urlparts.username, urlparts.password);
+ if(urlparts.scheme=="ftps"):
+  ftp.prot_p();
+ ftp.storbinary("STOR "+urlparts.path, ftpfile);
+ ftp.close();
+ ftpfile.seek(0, 0);
+ return ftpfile;
+
+def upload_file_to_ftp_string(ftpstring, url):
+ ftpfileo = BytesIO(ftpstring);
+ ftpfile = upload_file_to_ftp_file(ftpfileo, url);
+ ftpfileo.close();
+ return ftpfile;
