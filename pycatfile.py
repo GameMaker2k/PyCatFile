@@ -2075,7 +2075,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   fileidnum = fileidnum + 1;
  return catlist;
 
-def TarFileToArrayAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
+def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
  catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
@@ -2226,7 +2226,7 @@ def TarFileToArrayAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtyp
   fileidnum = fileidnum + 1;
  return catlist;
 
-def ZipFileToArrayAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
+def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
  catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
@@ -2492,8 +2492,8 @@ def ListDirToArrayIndexAlt(infiles, dirlistfromtxt=False, followlink=False, list
   lcfi = lcfi + 1;
  return catarray;
 
-def TarFileToArrayIndexAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
- listcatfiles = TarFileToArrayAlt(infiles, dirlistfromtxt, listonly, checksumtype, extradata, verbose);
+def TarFileToArrayIndexAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
+ listcatfiles = TarFileToArrayAlt(infiles, listonly, checksumtype, extradata, verbose);
  print(listcatfiles);
  if(not listcatfiles):
   return False;
@@ -2539,8 +2539,8 @@ def TarFileToArrayIndexAlt(infiles, dirlistfromtxt=False, listonly=False, checks
   lcfi = lcfi + 1;
  return catarray;
 
-def ZipFileToArrayIndexAlt(infiles, dirlistfromtxt=False, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
- listcatfiles = ZipFileToArrayAlt(infiles, dirlistfromtxt, listonly, checksumtype, extradata, verbose);
+def ZipFileToArrayIndexAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
+ listcatfiles = ZipFileToArrayAlt(infiles, listonly, checksumtype, extradata, verbose);
  print(listcatfiles);
  if(not listcatfiles):
   return False;
@@ -3249,11 +3249,11 @@ def PackCatFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, compressio
  return catout;
 
 def PackCatFileFromTarFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], verbose=False, returnfp=False):
- outarray = TarFileToArrayAlt(infile, False, False, False, checksumtype, extradata, False);
+ outarray = TarFileToArrayAlt(infile, False, checksumtype, extradata, False);
  catout = RePackCatFile(outarray, outfile, compression, compressionlevel, checksumtype, True, extradata, verbose, returnfp);
  return catout;
 
 def PackCatFileFromZipFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], verbose=False, returnfp=False):
- outarray = ZipFileToArrayAlt(infile, False, False, False, checksumtype, extradata, False);
+ outarray = ZipFileToArrayAlt(infile, False, checksumtype, extradata, False);
  catout = RePackCatFile(outarray, outfile, compression, compressionlevel, checksumtype, True, extradata, verbose, returnfp);
  return catout;
