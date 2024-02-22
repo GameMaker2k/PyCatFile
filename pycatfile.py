@@ -598,7 +598,7 @@ def UncompressCatFile(fp):
    return False;
   catfp = BytesIO();
   catfp.write(lzo.decompress(fp.read()));
- if(compresscheck=="lzma"):
+ if(compresscheck=="lzma" or compresscheck=="xz"):
   try:
    import lzma;
   except ImportError:
@@ -671,7 +671,7 @@ def CheckCompressionSubType(infile):
    except ImportError:
     return False;
    catfp = zstandard.open(infile, "rb");
-  if(compresscheck=="lzma"):
+  if(compresscheck=="lzma" or compresscheck=="xz"):
    try:
     import lzma;
    except ImportError:
@@ -1695,7 +1695,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    except ImportError:
     return False;
    catfp = zstandard.open(infile, "rb");
-  if(compresscheck=="lzma"):
+  if(compresscheck=="lzma" or compresscheck=="xz"):
    try:
     import lzma;
    except ImportError:
