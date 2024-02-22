@@ -727,7 +727,7 @@ def CompressCatFile(fp, compression="auto", compressionlevel=None):
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
-  catfp.write(GZipCompress(fp.read(), compresslevel=compressionlevel));
+  catfp.write(gzip.compress(fp.read(), compresslevel=compressionlevel));
  if(compression=="bzip2"):
   try:
    import bz2;
@@ -993,7 +993,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
    ftype = 10;
   flinkname = "";
   fcurfid = format(int(curfid), 'x').lower();
-  if(not followlink):
+  if(not followlink and finode!=0):
    if(ftype!=1):
     if(finode in inodelist):
      ftype = 1;
@@ -1932,7 +1932,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   flinkname = "";
   fbasedir = os.path.dirname(fname);
   fcurfid = curfid;
-  if(not followlink):
+  if(not followlink and finode!=0):
    if(ftype!=1):
     if(finode in inodelist):
      ftype = 1;
@@ -2784,7 +2784,7 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
      pass;
    ftypehex = format(listcatfiles[lcfi]['ftype'], 'x').lower();
   fcurfid = format(curfid, 'x').lower();
-  if(not followlink):
+  if(not followlink and finode!=0):
    if(listcatfiles[lcfi]['ftype']!=1):
     fcurinode = format(int(curinode), 'x').lower();
     inodetofile.update({curinode: fname});
