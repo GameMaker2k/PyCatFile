@@ -3249,11 +3249,11 @@ def PackCatFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, compressio
  return catout;
 
 def PackCatFileFromTarFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], verbose=False, returnfp=False):
- outarray = TarFileToArrayAlt(infiles, dirlistfromtxt, False, False, checksumtype, extradata, False);
+ outarray = TarFileToArrayAlt(infile, dirlistfromtxt, False, False, checksumtype, extradata, False);
  catout = RePackCatFile(outarray, outfile, compression, compressionlevel, checksumtype, True, extradata, verbose, returnfp);
  return catout;
 
 def PackCatFileFromZipFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], verbose=False, returnfp=False):
- outarray = ZipFileToArrayAlt(infiles, dirlistfromtxt, False, False, checksumtype, extradata, False);
+ outarray = ZipFileToArrayAlt(infile, dirlistfromtxt, False, False, checksumtype, extradata, False);
  catout = RePackCatFile(outarray, outfile, compression, compressionlevel, checksumtype, True, extradata, verbose, returnfp);
  return catout;
