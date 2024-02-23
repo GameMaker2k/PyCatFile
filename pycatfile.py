@@ -957,6 +957,9 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
  inodetofile = {};
  filetoinode = {};
  inodetocatinode = {};
+ fnumfiles = format(int(len(GetDirList)), 'x').lower();
+ fnumfilesa = AppendNullByte(fnumfiles);
+ catfp.write(fnumfilesa.encode('UTF-8'));
  for curfname in GetDirList:
   catfhstart = catfp.tell();
   if(re.findall("^[.|/]", curfname)):
@@ -1248,6 +1251,9 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
   if(not is_tarfile(infile)):
    return False;
  tarfp = tarfile.open(infile, "r");
+ fnumfiles = format(int(len(tarfp.getmembers())), 'x').lower();
+ fnumfilesa = AppendNullByte(fnumfiles);
+ catfp.write(fnumfilesa.encode('UTF-8'));
  for member in tarfp.getmembers():
   catfhstart = catfp.tell();
   if(re.findall("^[.|/]", member.name)):
@@ -1481,6 +1487,9 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
   return False;
  zipfp = zipfile.ZipFile(infile, "r", allowZip64=True);
  ziptest = zipfp.testzip();
+ fnumfiles = format(int(len(zipfp.infolist())), 'x').lower();
+ fnumfilesa = AppendNullByte(fnumfiles);
+ catfp.write(fnumfilesa.encode('UTF-8'));
  for member in zipfp.infolist():
   catfhstart = catfp.tell();
   if(re.findall("^[.|/]", member.filename)):
@@ -1719,7 +1728,9 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   return False;
  catstring = ReadFileHeaderData(catfp, 1)[0];
  catversion = int(re.findall(r"([\d]+)$", catstring)[0], 16);
- catlist = {};
+ fprenumfiles = ReadFileHeaderData(catfp, 1)[0];
+ fnumfiles = int(fprenumfiles, 16);
+ catlist = {'fnumfiles': fnumfiles, 'catfileversion': catversion};
  fileidnum = 0;
  if(seekstart!=0):
   catfp.seek(seekstart, 0);
@@ -1893,9 +1904,10 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
  inodetofile = {};
  filetoinode = {};
  inodetocatinode = {};
- catlist = {};
  fileidnum = 0;
  fheadtell = 0;
+ fnumfiles = int(len(GetDirList));
+ catlist = {'fnumfiles': fnumfiles, 'catfileversion': catversion};
  for curfname in GetDirList:
   if(re.findall("^[.|/]", curfname)):
    fname = curfname;
@@ -2086,7 +2098,6 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
  inodetofile = {};
  filetoinode = {};
  inodetocatinode = {};
- catlist = {};
  fileidnum = 0;
  fheadtell = 0;
  if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
@@ -2098,6 +2109,8 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   if(not is_tarfile(infiles)):
    return False;
  tarfp = tarfile.open(infiles, "r");
+ fnumfiles = int(len(tarfp.getmembers()));
+ catlist = {'fnumfiles': fnumfiles, 'catfileversion': catversion};
  for member in tarfp.getmembers():
   if(re.findall("^[.|/]", member.name)):
    fname = member.name;
@@ -2238,7 +2251,6 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
  inodetofile = {};
  filetoinode = {};
  inodetocatinode = {};
- catlist = {};
  fileidnum = 0;
  fheadtell = 0;
  if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
@@ -2247,6 +2259,8 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   return False;
  zipfp = zipfile.ZipFile(infiles, "r", allowZip64=True);
  ziptest = zipfp.testzip();
+ fnumfiles = int(len(zipfp.infolist()));
+ catlist = {'fnumfiles': fnumfiles, 'catfileversion': catversion};
  for member in zipfp.infolist():
   if(re.findall("^[.|/]", member.filename)):
    fname = member.filename;
@@ -2405,7 +2419,7 @@ def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
  if(returnfp):
   catarray.update({'catfp': listcatfiles['catfp']});
  lcfi = 0;
- lcfx = len(listcatfiles);
+ lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   filetoidarray = {listcatfiles[lcfi]['fname']: listcatfiles[lcfi]['fid']};
   idtofilearray = {listcatfiles[lcfi]['fid']: listcatfiles[lcfi]['fname']};
@@ -2452,7 +2466,7 @@ def ListDirToArrayIndexAlt(infiles, dirlistfromtxt=False, followlink=False, list
   return False;
  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
  lcfi = 0;
- lcfx = len(listcatfiles);
+ lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   filetoidarray = {listcatfiles[lcfi]['fname']: listcatfiles[lcfi]['fid']};
   idtofilearray = {listcatfiles[lcfi]['fid']: listcatfiles[lcfi]['fname']};
@@ -2499,7 +2513,7 @@ def TarFileToArrayIndexAlt(infiles, listonly=False, checksumtype="crc32", extrad
   return False;
  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
  lcfi = 0;
- lcfx = len(listcatfiles);
+ lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   filetoidarray = {listcatfiles[lcfi]['fname']: listcatfiles[lcfi]['fid']};
   idtofilearray = {listcatfiles[lcfi]['fid']: listcatfiles[lcfi]['fname']};
@@ -2546,7 +2560,7 @@ def ZipFileToArrayIndexAlt(infiles, listonly=False, checksumtype="crc32", extrad
   return False;
  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
  lcfi = 0;
- lcfx = len(listcatfiles);
+ lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   filetoidarray = {listcatfiles[lcfi]['fname']: listcatfiles[lcfi]['fid']};
   idtofilearray = {listcatfiles[lcfi]['fid']: listcatfiles[lcfi]['fname']};
@@ -2712,8 +2726,11 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte("CatFile" + fileheaderver);
  catfp.write(fileheader.encode('UTF-8'));
+ fnumfiles = int(listcatfiles['fnumfiles']);
+ fnumfilesa = AppendNullByte(fnumfiles);
+ catfp.write(fnumfilesa.encode('UTF-8'));
  lcfi = 0;
- lcfx = len(listcatfiles);
+ lcfx = int(listcatfiles['fnumfiles']);
  curinode = 0;
  curfid = 0;
  inodelist = [];
@@ -2894,7 +2911,7 @@ def UnPackCatFile(infile, outdir=None, followlink=False, skipchecksum=False, ver
  if(not listcatfiles):
   return False;
  lcfi = 0;
- lcfx = len(listcatfiles);
+ lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   funame = "";
   try:
@@ -3051,7 +3068,7 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose
  if(not listcatfiles):
   return False;
  lcfi = 0;
- lcfx = len(listcatfiles);
+ lcfx = int(listcatfiles['fnumfiles']);
  returnval = {};
  while(lcfi < lcfx):
   returnval.update({lcfi: listcatfiles[lcfi]['fname']});
