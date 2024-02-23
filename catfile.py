@@ -52,10 +52,7 @@ __version__ = pycatfile.__version__;
 __cat_header_ver__ = pycatfile.__cat_header_ver__;
 
 argparser = argparse.ArgumentParser(description="Manipulate concatenated files.", conflict_handler="resolve", add_help=True);
-try:
- argparser.add_argument("-V", "--version", action="version", version=f"{__program_name__} {__version__}");
-except SyntaxError:
- argparser.add_argument("-V", "--version", action="version", version=__program_name__ + " " + __version__);
+argparser.add_argument("-V", "--version", action="version", version=__program_name__ + " " + __version__);
 argparser.add_argument("-i", "-f", "--input", help="Specify the file(s) to concatenate or the concatenated file to extract.", required=True);
 argparser.add_argument("-d", "-v", "--verbose", action="store_true", help="Enable verbose mode to display various debugging information.");
 argparser.add_argument("-c", "--create", action="store_true", help="Perform concatenation operation only.");
