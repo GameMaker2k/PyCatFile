@@ -97,7 +97,7 @@ __version_info__ = (0, 1, 0, "RC 1", 1);
 __version_date_info__ = (2024, 2, 22, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 __revision__ = __version_info__[3];
-__revision_id__ = "$Id$";
+__revision_id__ = "$Id: 5a222636c15e1b2d02afb33637fa3df8238b23a6 $";
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
 if(__version_info__[4] is None):
@@ -960,6 +960,8 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
  fnumfiles = format(int(len(GetDirList)), 'x').lower();
  fnumfilesa = AppendNullByte(fnumfiles);
  catfp.write(fnumfilesa.encode('UTF-8'));
+ fchecksumfull = AppendNullByte(checksumtype);
+ catfp.write(fchecksumfull.encode('UTF-8'));
  for curfname in GetDirList:
   catfhstart = catfp.tell();
   if(re.findall("^[.|/]", curfname)):
@@ -1091,10 +1093,10 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  if(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
+  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
    catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
-  if(checksumtype=="crc16_ccitt"):
+  elif(checksumtype=="crc16_ccitt"):
    catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
@@ -1124,6 +1126,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
+  catfp.read();
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressCatFile(catfp, compression);
  if(outfile=="-"):
@@ -1335,10 +1338,10 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  if(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
+  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
    catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
-  if(checksumtype=="crc16_ccitt"):
+  elif(checksumtype=="crc16_ccitt"):
    catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
@@ -1582,10 +1585,10 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  if(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
+  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
    catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
-  if(checksumtype=="crc16_ccitt"):
+  elif(checksumtype=="crc16_ccitt"):
    catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
@@ -1793,7 +1796,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catfnumfields = 24 + catfextrafields;
   if(catfchecksumtype=="none" or catfchecksumtype==""):
    catnewfcs = 0;
-  if(catfchecksumtype=="crc16" or catfchecksumtype=="crc16_ansi" or catfchecksumtype=="crc16_ibm"):
+  elif(catfchecksumtype=="crc16" or catfchecksumtype=="crc16_ansi" or catfchecksumtype=="crc16_ibm"):
    catnewfcs = format(crc16(hout.encode('UTF-8')) & 0xffff, '04x').lower();
   elif(catfchecksumtype=="adler32"):
    catnewfcs = format(zlib.adler32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
@@ -1818,9 +1821,9 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catfcontents = catfp.read(catfsize);
    if(catfchecksumtype=="none" or catfchecksumtype==""):
     catnewfccs = 0;
-   if(catfchecksumtype=="crc16" or catfchecksumtype=="crc16_ansi" or catfchecksumtype=="crc16_ibm"):
+   elif(catfchecksumtype=="crc16" or catfchecksumtype=="crc16_ansi" or catfchecksumtype=="crc16_ibm"):
     catnewfccs = format(crc16(catfcontents) & 0xffff, '04x').lower();
-   if(catfchecksumtype=="crc16_ccitt"):
+   elif(catfchecksumtype=="crc16_ccitt"):
     catnewfcs = format(crc16_ccitt(catfcontents) & 0xffff, '04x').lower();
    elif(catfchecksumtype=="adler32"):
     catnewfccs = format(zlib.adler32(catfcontents) & 0xffffffff, '08x').lower();
@@ -2042,10 +2045,10 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  if(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
+  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
    catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
-  if(checksumtype=="crc16_ccitt"):
+  elif(checksumtype=="crc16_ccitt"):
    catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
@@ -2194,10 +2197,10 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  if(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
+  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
    catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
-  if(checksumtype=="crc16_ccitt"):
+  elif(checksumtype=="crc16_ccitt"):
    catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
@@ -2355,10 +2358,10 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  if(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
+  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
    catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
-  if(checksumtype=="crc16_ccitt"):
+  elif(checksumtype=="crc16_ccitt"):
    catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
@@ -2849,10 +2852,10 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  if(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
+  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
    catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
-  if(checksumtype=="crc16_ccitt"):
+  elif(checksumtype=="crc16_ccitt"):
    catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
