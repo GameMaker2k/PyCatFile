@@ -652,7 +652,7 @@ def CheckCompressionSubType(infile):
     import gzip;
    except ImportError:
     return False;
-   catfp = gzip.open(infile, "rb");
+   catfp = gzip.GzipFile(infile, "rb");
   if(compresscheck=="bzip2"):
    try:
     import bz2;
@@ -873,7 +873,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
     compressionlevel = 9;
    else:
     compressionlevel = int(compressionlevel);
-   catfp = gzip.open(outfile, "wb", compresslevel=compressionlevel);
+   catfp = gzip.GzipFile(outfile, "wb", compresslevel=compressionlevel);
   elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
    try:
     import bz2;
@@ -1178,7 +1178,7 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
     compressionlevel = 9;
    else:
     compressionlevel = int(compressionlevel);
-   catfp = gzip.open(outfile, "wb", compresslevel=compressionlevel);
+   catfp = gzip.GzipFile(outfile, "wb", compresslevel=compressionlevel);
   elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
    try:
     import bz2;
@@ -1414,7 +1414,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
     compressionlevel = 9;
    else:
     compressionlevel = int(compressionlevel);
-   catfp = gzip.open(outfile, "wb", compresslevel=compressionlevel);
+   catfp = gzip.GzipFile(outfile, "wb", compresslevel=compressionlevel);
   elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
    try:
     import bz2;
@@ -1676,7 +1676,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
     import gzip;
    except ImportError:
     return False;
-   catfp = gzip.open(infile, "rb");
+   catfp = gzip.GzipFile(infile, "rb");
   if(compresscheck=="bzip2"):
    try:
     import bz2;
@@ -2661,7 +2661,7 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
     compressionlevel = 9;
    else:
     compressionlevel = int(compressionlevel);
-   catfp = gzip.open(outfile, "wb", compresslevel=compressionlevel);
+   catfp = gzip.GzipFile(outfile, "wb", compresslevel=compressionlevel);
   elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
    try:
     import bz2;
