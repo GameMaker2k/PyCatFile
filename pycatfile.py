@@ -2934,7 +2934,7 @@ def UnPackCatFile(infile, outdir=None, followlink=False, seekstart=0, seekend=0,
    prelistcatfiles = CatFileToArrayIndex(infile, seekstart, seekend, False, skipchecksum, returnfp);
    listcatfiles = prelistcatfiles['list'];
   else:
-   listcatfiles = CatFileToArray(infile, seekstart, seekend False, skipchecksum, returnfp);
+   listcatfiles = CatFileToArray(infile, seekstart, seekend, False, skipchecksum, returnfp);
  if(not listcatfiles):
   return False;
  lcfi = 0;
