@@ -2430,11 +2430,18 @@ def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
  if(returnfp):
   catarray.update({'catfp': listcatfiles['catfp']});
- lcfi = 0;
  lenlist = len(listcatfiles) - 2;
- lcfx = int(listcatfiles['fnumfiles']);
- if(lenlist>lcfx or lenlist<lcfx):
-  lcfx = lenlist;
+ if(seekstart>0):
+  lcfi = seekstart;
+ else:
+  lcfi = 0;
+ if(seekend>0 and seekend<listcatfiles['fnumfiles']):
+  lcfx = seekend;
+ else:
+  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+   lcfx = listcatfiles['fnumfiles'];
+  else:
+   lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   filetoidarray = {listcatfiles[lcfi]['fname']: listcatfiles[lcfi]['fid']};
   idtofilearray = {listcatfiles[lcfi]['fid']: listcatfiles[lcfi]['fname']};
@@ -2474,17 +2481,24 @@ def CatFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
   lcfi = lcfi + 1;
  return catarray;
 
-def ListDirToArrayIndexAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
+def ListDirToArrayIndexAlt(infiles, dirlistfromtxt=False, followlink=False, seekstart=0, seekend=0, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
  listcatfiles = ListDirToArrayAlt(infiles, dirlistfromtxt, followlink, listonly, checksumtype, extradata, verbose);
  print(listcatfiles);
  if(not listcatfiles):
   return False;
  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
- lcfi = 0;
  lenlist = len(listcatfiles) - 2;
- lcfx = int(listcatfiles['fnumfiles']);
- if(lenlist>lcfx or lenlist<lcfx):
-  lcfx = lenlist;
+ if(seekstart>0):
+  lcfi = seekstart;
+ else:
+  lcfi = 0;
+ if(seekend>0 and seekend<listcatfiles['fnumfiles']):
+  lcfx = seekend;
+ else:
+  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+   lcfx = listcatfiles['fnumfiles'];
+  else:
+   lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   filetoidarray = {listcatfiles[lcfi]['fname']: listcatfiles[lcfi]['fid']};
   idtofilearray = {listcatfiles[lcfi]['fid']: listcatfiles[lcfi]['fname']};
@@ -2524,17 +2538,24 @@ def ListDirToArrayIndexAlt(infiles, dirlistfromtxt=False, followlink=False, list
   lcfi = lcfi + 1;
  return catarray;
 
-def TarFileToArrayIndexAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
+def TarFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
  listcatfiles = TarFileToArrayAlt(infiles, listonly, checksumtype, extradata, verbose);
  print(listcatfiles);
  if(not listcatfiles):
   return False;
  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
- lcfi = 0;
  lenlist = len(listcatfiles) - 2;
- lcfx = int(listcatfiles['fnumfiles']);
- if(lenlist>lcfx or lenlist<lcfx):
-  lcfx = lenlist;
+ if(seekstart>0):
+  lcfi = seekstart;
+ else:
+  lcfi = 0;
+ if(seekend>0 and seekend<listcatfiles['fnumfiles']):
+  lcfx = seekend;
+ else:
+  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+   lcfx = listcatfiles['fnumfiles'];
+  else:
+   lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   filetoidarray = {listcatfiles[lcfi]['fname']: listcatfiles[lcfi]['fid']};
   idtofilearray = {listcatfiles[lcfi]['fid']: listcatfiles[lcfi]['fname']};
@@ -2574,17 +2595,24 @@ def TarFileToArrayIndexAlt(infiles, listonly=False, checksumtype="crc32", extrad
   lcfi = lcfi + 1;
  return catarray;
 
-def ZipFileToArrayIndexAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
+def ZipFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
  listcatfiles = ZipFileToArrayAlt(infiles, listonly, checksumtype, extradata, verbose);
  print(listcatfiles);
  if(not listcatfiles):
   return False;
  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
- lcfi = 0;
  lenlist = len(listcatfiles) - 2;
- lcfx = int(listcatfiles['fnumfiles']);
- if(lenlist>lcfx or lenlist<lcfx):
-  lcfx = lenlist;
+ if(seekstart>0):
+  lcfi = seekstart;
+ else:
+  lcfi = 0;
+ if(seekend>0 and seekend<listcatfiles['fnumfiles']):
+  lcfx = seekend;
+ else:
+  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+   lcfx = listcatfiles['fnumfiles'];
+  else:
+   lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   filetoidarray = {listcatfiles[lcfi]['fname']: listcatfiles[lcfi]['fid']};
   idtofilearray = {listcatfiles[lcfi]['fid']: listcatfiles[lcfi]['fname']};
@@ -2756,8 +2784,14 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
   fnumfiles = lenlist;
  fnumfilesa = AppendNullByte(fnumfiles);
  catfp.write(fnumfilesa.encode('UTF-8'));
- lcfi = 0;
- lcfx = int(listcatfiles['fnumfiles']);
+ if(seekstart>0):
+  lcfi = seekstart;
+ else:
+  lcfi = 0;
+ if(seekend>0 and seekend<listcatfiles['fnumfiles']):
+  lcfx = seekend;
+ else:
+  lcfx = int(listcatfiles['fnumfiles']);
  curinode = 0;
  curfid = 0;
  inodelist = [];
@@ -2937,9 +2971,18 @@ def UnPackCatFile(infile, outdir=None, followlink=False, seekstart=0, seekend=0,
    listcatfiles = CatFileToArray(infile, seekstart, seekend, False, skipchecksum, returnfp);
  if(not listcatfiles):
   return False;
- lcfi = 0;
  lenlist = len(listcatfiles) - 2;
- lcfx = int(listcatfiles['fnumfiles']);
+ if(seekstart>0):
+  lcfi = seekstart;
+ else:
+  lcfi = 0;
+ if(seekend>0 and seekend<listcatfiles['fnumfiles']):
+  lcfx = seekend;
+ else:
+  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+   lcfx = listcatfiles['fnumfiles'];
+  else:
+   lcfx = int(listcatfiles['fnumfiles']);
  if(lenlist>lcfx or lenlist<lcfx):
   lcfx = lenlist;
  while(lcfi < lcfx):
@@ -3081,9 +3124,9 @@ def UnPackCatFile(infile, outdir=None, followlink=False, seekstart=0, seekend=0,
  else:
   return True;
 
-def UnPackCatString(catstr, outdir=None, followlink=False, skipchecksum=False, verbose=False, returnfp=False):
+def UnPackCatString(catstr, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, verbose=False, returnfp=False):
  catfp = BytesIO(catstr);
- listcatfiles = UnPackCatFile(catfp, outdir, followlink, skipchecksum, verbose, returnfp);
+ listcatfiles = UnPackCatFile(catfp, outdir, followlink, seekstart, seekend, skipchecksum, verbose, returnfp);
  return listcatfiles;
 
 def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose=False, returnfp=False):
@@ -3097,9 +3140,18 @@ def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose
   listcatfiles = CatFileToArray(infile, seekstart, seekend, True, skipchecksum, returnfp);
  if(not listcatfiles):
   return False;
- lcfi = 0;
  lenlist = len(listcatfiles) - 2;
- lcfx = int(listcatfiles['fnumfiles']);
+ if(seekstart>0):
+  lcfi = seekstart;
+ else:
+  lcfi = 0;
+ if(seekend>0 and seekend<listcatfiles['fnumfiles']):
+  lcfx = seekend;
+ else:
+  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+   lcfx = listcatfiles['fnumfiles'];
+  else:
+   lcfx = int(listcatfiles['fnumfiles']);
  if(lenlist>lcfx or lenlist<lcfx):
   lcfx = lenlist;
  returnval = {};
