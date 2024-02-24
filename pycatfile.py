@@ -1737,7 +1737,6 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  fnumfiles = int(fprenumfiles, 16);
  catlist = {'fnumfiles': fnumfiles, 'catfileversion': catversion};
  fileidnum = 0;
- seekstart = catfp.tell();
  while(fileidnum<fnumfiles):
   catfhstart = catfp.tell();
   catheaderdata = ReadFileHeaderData(catfp, 21);
