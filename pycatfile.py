@@ -2782,7 +2782,8 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
  fnumfiles = int(listcatfiles['fnumfiles']);
  if(lenlist>fnumfiles or lenlist<fnumfiles):
   fnumfiles = lenlist;
- fnumfilesa = AppendNullByte(fnumfiles);
+ fnumfileshex = format(int(fnumfiles), 'x').lower();
+ fnumfilesa = AppendNullByte(fnumfileshex);
  catfp.write(fnumfilesa.encode('UTF-8'));
  if(seekstart>0):
   lcfi = seekstart;
