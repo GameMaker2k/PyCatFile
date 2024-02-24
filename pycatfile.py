@@ -1746,6 +1746,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
     extrafieldslist = ReadFileHeaderData(catfp, prefextrafields);
    checksumsval = ReadFileHeaderData(catfp, 3);
    catfp.seek(prefsize, 1);
+   catfp.seek(1, 1);
    il = il + 1;
  fileidnum = seekstart;
  while(fileidnum<seekend):
