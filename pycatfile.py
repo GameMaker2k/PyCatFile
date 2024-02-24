@@ -960,8 +960,6 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
  fnumfiles = format(int(len(GetDirList)), 'x').lower();
  fnumfilesa = AppendNullByte(fnumfiles);
  catfp.write(fnumfilesa.encode('UTF-8'));
- fchecksumfull = AppendNullByte(checksumtype);
- catfp.write(fchecksumfull.encode('UTF-8'));
  for curfname in GetDirList:
   catfhstart = catfp.tell();
   if(re.findall("^[.|/]", curfname)):
@@ -1126,7 +1124,6 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
-  catfp.read();
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressCatFile(catfp, compression);
  if(outfile=="-"):
@@ -1736,8 +1733,22 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  fprenumfiles = ReadFileHeaderData(catfp, 1)[0];
  fnumfiles = int(fprenumfiles, 16);
  catlist = {'fnumfiles': fnumfiles, 'catfileversion': catversion};
- fileidnum = 0;
- while(fileidnum<fnumfiles):
+ if(seekend<=0):
+  seekend = fnumfiles;
+ if(seekstart>0):
+  il = 0;
+  while(il < seekstart):
+   preheaderdata = ReadFileHeaderData(catfp, 21);
+   preftype = int(preheaderdata[0], 16);
+   prefsize = int(preheaderdata[3], 16);
+   prefextrafields = int(preheaderdata[20], 16);
+   if(prefextrafields>0):
+    extrafieldslist = ReadFileHeaderData(catfp, prefextrafields);
+   checksumsval = ReadFileHeaderData(catfp, 3);
+   catfp.seek(prefsize, 1);
+   il = il + 1;
+ fileidnum = seekstart;
+ while(fileidnum<seekend):
   catfhstart = catfp.tell();
   catheaderdata = ReadFileHeaderData(catfp, 21);
   catftype = int(catheaderdata[0], 16);
