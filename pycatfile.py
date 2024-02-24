@@ -1490,6 +1490,8 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
   return False;
  zipfp = zipfile.ZipFile(infile, "r", allowZip64=True);
  ziptest = zipfp.testzip();
+ if(ziptest):
+  VerbosePrintOut("Bad file found: " + str(bad_file));
  fnumfiles = format(int(len(zipfp.infolist())), 'x').lower();
  fnumfilesa = AppendNullByte(fnumfiles);
  catfp.write(fnumfilesa.encode('UTF-8'));
@@ -2262,6 +2264,8 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   return False;
  zipfp = zipfile.ZipFile(infiles, "r", allowZip64=True);
  ziptest = zipfp.testzip();
+ if(ziptest):
+  VerbosePrintOut("Bad file found: " + str(bad_file));
  fnumfiles = int(len(zipfp.infolist()));
  catlist = {'fnumfiles': fnumfiles, 'catfileversion': catversion};
  for member in zipfp.infolist():
@@ -3203,6 +3207,8 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
  returnval = {};
  zipfp = zipfile.ZipFile(infile, "r", allowZip64=True);
  ziptest = zipfp.testzip();
+ if(ziptest):
+  VerbosePrintOut("Bad file found: " + str(bad_file));
  for member in zipfp.infolist():
   if(not member.is_dir()):
    fpremode = int(stat.S_IFREG + 438);
