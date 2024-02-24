@@ -97,10 +97,10 @@ if should_create:
   pycatfile.PackCatFile(getargs.input, getargs.output, getargs.text, getargs.compression, getargs.level, False, getargs.checksum, [], getargs.verbose, False);
 
 if should_repack:
- pycatfile.RePackCatFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, getargs.checksum, False, [], getargs.verbose, False);
+ pycatfile.RePackCatFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, False, [], getargs.verbose, False);
 
 if should_extract:
- pycatfile.UnPackCatFile(getargs.input, getargs.output, False, False, getargs.verbose, False);
+ pycatfile.UnPackCatFile(getargs.input, getargs.output, False, 0, 0, False, getargs.verbose, False);
 
 if should_list:
  if getargs.converttar:

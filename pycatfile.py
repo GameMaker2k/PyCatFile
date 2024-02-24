@@ -2647,21 +2647,21 @@ def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", compr
  catout = CatFileToArrayIndex(outarray, seekstart, seekend, listonly, skipchecksum, returnfp)
  return catout;
 
-def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, followlink=False, checksumtype="crc32", skipchecksum=False, extradata=[], verbose=False, returnfp=False):
+def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, extradata=[], verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
  outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'lzop', 'clz4', 'lzo', 'clzo', 'lzma', 'xz', 'cxz'];
  outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', 'lzop', '.clz4', '.lzo', '.clzo', '.lzma', '.xz', '.cxz'];
  if(isinstance(infile, dict)):
-  prelistcatfiles = CatFileToArrayIndex(infile, 0, 0, False, skipchecksum, returnfp);
+  prelistcatfiles = CatFileToArrayIndex(infile, seekstart, seekend, False, skipchecksum, returnfp);
   listcatfiles = prelistcatfiles['list'];
  else:
   if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
    infile = RemoveWindowsPath(infile);
   if(followlink):
-   prelistcatfiles = CatFileToArrayIndex(infile, 0, 0, False, skipchecksum, returnfp);
+   prelistcatfiles = CatFileToArrayIndex(infile, seekstart, seekend, False, skipchecksum, returnfp);
    listcatfiles = prelistcatfiles['list'];
   else:
-   listcatfiles = CatFileToArray(infile, 0, 0, False, skipchecksum, returnfp);
+   listcatfiles = CatFileToArray(infile, seekstart, seekend, False, skipchecksum, returnfp);
  if(outfile!="-" and not hasattr(infile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -2919,22 +2919,22 @@ def PackCatFileFromListDir(infiles, outfile, dirlistfromtxt=False, compression="
  catout = RePackCatFile(outarray, outfile, compression, compressionlevel, checksumtype, skipchecksum, extradata, verbose, returnfp);
  return catout;
 
-def UnPackCatFile(infile, outdir=None, followlink=False, skipchecksum=False, verbose=False, returnfp=False):
+def UnPackCatFile(infile, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, verbose=False, returnfp=False):
  if(outdir is not None):
   outdir = RemoveWindowsPath(outdir);
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(isinstance(infile, dict)):
-  prelistcatfiles = CatFileToArrayIndex(infile, 0, 0, False, skipchecksum, returnfp);
+  prelistcatfiles = CatFileToArrayIndex(infile, seekstart, seekend, False, skipchecksum, returnfp);
   listcatfiles = prelistcatfiles['list'];
  else:
   if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
    infile = RemoveWindowsPath(infile);
   if(followlink):
-   prelistcatfiles = CatFileToArrayIndex(infile, 0, 0, False, skipchecksum, returnfp);
+   prelistcatfiles = CatFileToArrayIndex(infile, seekstart, seekend, False, skipchecksum, returnfp);
    listcatfiles = prelistcatfiles['list'];
   else:
-   listcatfiles = CatFileToArray(infile, 0, 0, False, skipchecksum, returnfp);
+   listcatfiles = CatFileToArray(infile, seekstart, seekend False, skipchecksum, returnfp);
  if(not listcatfiles):
   return False;
  lcfi = 0;
