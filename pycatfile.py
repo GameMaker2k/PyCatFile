@@ -1737,13 +1737,8 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  fnumfiles = int(fprenumfiles, 16);
  catlist = {'fnumfiles': fnumfiles, 'catfileversion': catversion};
  fileidnum = 0;
- if(seekstart!=0):
-  catfp.seek(seekstart, 0);
- if(seekstart==0):
-  seekstart = catfp.tell();
- if(seekend==0):
-  seekend = CatSizeEnd;
- while(seekstart<seekend):
+ seekstart = catfp.tell();
+ while(fileidnum<fnumfiles):
   catfhstart = catfp.tell();
   catheaderdata = ReadFileHeaderData(catfp, 21);
   catftype = int(catheaderdata[0], 16);
@@ -1849,7 +1844,6 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catfcontentend = catfp.tell() - 1;
   catlist.update({fileidnum: {'catfileversion': catversion, 'fid': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmode': catfchmode, 'ftypemod': catftypemod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextralist': extrafieldslist, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
   catfp.seek(1, 1);
-  seekstart = catfp.tell();
   fileidnum = fileidnum + 1;
  if(returnfp):
   catlist.update({'catfp': catfp});
