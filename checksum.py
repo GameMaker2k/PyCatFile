@@ -168,7 +168,7 @@ if __name__ == "__main__":
   exit();
  if(getargs.checksum in chksum_list):
   if(getargs.checksum=="crc16_ansi" or getargs.checksum=="crc16_ibm" or getargs.checksum=="crc16"):
-   outchck = crc16_file(getargs.input);
+   outchck = crc16_ansi_file(getargs.input);
    if(not outchck):
     exit();
    if(not getargs.quiet):
@@ -176,7 +176,7 @@ if __name__ == "__main__":
    else:
     print(str(outchck));
   if(getargs.checksum=="crc16_ccitt"):
-   outchck = crc16_file(getargs.input);
+   outchck = crc16_ccitt_file(getargs.input);
    if(not outchck):
     exit();
    if(not getargs.quiet):
