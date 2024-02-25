@@ -3,7 +3,8 @@
 function PackCatFile {
  shopt -s globstar
  curinode=0
- echo -n -e 'CatFile1\x00' > ${2}
+ numfiles=$(find "${1}" -mindepth 1 -print | wc -l)
+ echo -n -e 'CatFile1\x00${numfiles}\x00' > ${2}
  for file in ${1}/**; do
   fname="${file%/}"
   echo "${fname}"
@@ -100,6 +101,8 @@ function PackCatFile {
   echo -n "${fdev_minor}" >> ${tmpfile}
   echo -n -e '\x00' >> ${tmpfile}
   echo -n "${fdev_major}" >> ${tmpfile}
+  echo -n -e '\x00' >> ${tmpfile}
+  echo -n "0" >> ${tmpfile}
   echo -n -e '\x00' >> ${tmpfile}
   if [ "${4}" == "none" ]; then
    echo -n "${4}" >> ${tmpfile}
