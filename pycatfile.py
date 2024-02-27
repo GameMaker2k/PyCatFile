@@ -1719,6 +1719,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catfp = lzma.open(infile, "rb");
   if(compresscheck=="catfile"):
    catfp = open(infile, "rb");
+ '''
  try:
   catfp.seek(0, 2);
  except OSError:
@@ -1727,6 +1728,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   SeekToEndOfFile(catfp);
  CatSize = catfp.tell();
  CatSizeEnd = CatSize;
+ '''
  try:
   catfp.seek(0, 0);
  except OSError:
