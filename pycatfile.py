@@ -1118,6 +1118,8 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
    checksumoutstr.update(fcontents);
    catfilecontentcshex = checksumoutstr.hexdigest().lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex]);
+  catheaersize = format(int(len(catfileoutstr)), 'x').lower()
+  catfileoutstr = AppendNullByte(catheaersize) + catfileoutstr;
   catfhend = (catfp.tell() - 1) + len(catfileoutstr);
   catfcontentstart = catfp.tell() + len(catfileoutstr);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
@@ -1366,6 +1368,8 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
    checksumoutstr.update(fcontents);
    catfilecontentcshex = checksumoutstr.hexdigest().lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex]);
+  catheaersize = format(int(len(catfileoutstr)), 'x').lower()
+  catfileoutstr = AppendNullByte(catheaersize) + catfileoutstr;
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = "\0".encode('UTF-8');
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
@@ -1615,6 +1619,8 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
    checksumoutstr.update(fcontents);
    catfilecontentcshex = checksumoutstr.hexdigest().lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex]);
+  catheaersize = format(int(len(catfileoutstr)), 'x').lower()
+  catfileoutstr = AppendNullByte(catheaersize) + catfileoutstr;
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = "\0".encode('UTF-8');
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
@@ -1745,10 +1751,10 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  if(seekstart>0):
   il = 0;
   while(il < seekstart):
-   preheaderdata = ReadFileHeaderData(catfp, 21);
-   preftype = int(preheaderdata[0], 16);
-   prefsize = int(preheaderdata[3], 16);
-   prefextrafields = int(preheaderdata[20], 16);
+   preheaderdata = ReadFileHeaderData(catfp, 22);
+   preftype = int(preheaderdata[1], 16);
+   prefsize = int(preheaderdata[4], 16);
+   prefextrafields = int(preheaderdata[21], 16);
    if(prefextrafields>0):
     extrafieldslist = ReadFileHeaderData(catfp, prefextrafields);
    checksumsval = ReadFileHeaderData(catfp, 3);
@@ -1759,34 +1765,35 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  realidnum = 0;
  while(fileidnum<seekend):
   catfhstart = catfp.tell();
-  catheaderdata = ReadFileHeaderData(catfp, 21);
-  catftype = int(catheaderdata[0], 16);
-  if(re.findall("^[.|/]", catheaderdata[1])):
-   catfname = catheaderdata[1];
+  catheaderdata = ReadFileHeaderData(catfp, 22);
+  catfheadsize = int(catheaderdata[0], 16);
+  catftype = int(catheaderdata[1], 16);
+  if(re.findall("^[.|/]", catheaderdata[2])):
+   catfname = catheaderdata[2];
   else:
-   catfname = "./"+catheaderdata[1];
+   catfname = "./"+catheaderdata[2];
   catfbasedir = os.path.dirname(catfname);
-  catflinkname = catheaderdata[2];
-  catfsize = int(catheaderdata[3], 16);
-  catfatime = int(catheaderdata[4], 16);
-  catfmtime = int(catheaderdata[5], 16);
-  catfctime = int(catheaderdata[6], 16);
-  catfbtime = int(catheaderdata[7], 16);
-  catfmode = int(catheaderdata[8], 16);
+  catflinkname = catheaderdata[3];
+  catfsize = int(catheaderdata[4], 16);
+  catfatime = int(catheaderdata[5], 16);
+  catfmtime = int(catheaderdata[6], 16);
+  catfctime = int(catheaderdata[7], 16);
+  catfbtime = int(catheaderdata[8], 16);
+  catfmode = int(catheaderdata[9], 16);
   catfchmode = stat.S_IMODE(catfmode);
   catftypemod = stat.S_IFMT(catfmode);
-  catfuid = int(catheaderdata[9], 16);
-  catfuname = catheaderdata[10];
-  catfgid = int(catheaderdata[11], 16);
-  catfgname = catheaderdata[12];
-  fid = int(catheaderdata[13], 16);
-  finode = int(catheaderdata[14], 16);
-  flinkcount = int(catheaderdata[15], 16);
-  catfdev_minor = int(catheaderdata[16], 16);
-  catfdev_major = int(catheaderdata[17], 16);
-  catfrdev_minor = int(catheaderdata[18], 16);
-  catfrdev_major = int(catheaderdata[19], 16);
-  catfextrafields = int(catheaderdata[20], 16);
+  catfuid = int(catheaderdata[10], 16);
+  catfuname = catheaderdata[11];
+  catfgid = int(catheaderdata[12], 16);
+  catfgname = catheaderdata[13];
+  fid = int(catheaderdata[14], 16);
+  finode = int(catheaderdata[15], 16);
+  flinkcount = int(catheaderdata[16], 16);
+  catfdev_minor = int(catheaderdata[17], 16);
+  catfdev_major = int(catheaderdata[18], 16);
+  catfrdev_minor = int(catheaderdata[19], 16);
+  catfrdev_major = int(catheaderdata[20], 16);
+  catfextrafields = int(catheaderdata[21], 16);
   extrafieldslist = [];
   if(catfextrafields>0):
    extrafieldslist = ReadFileHeaderData(catfp, catfextrafields);
@@ -1861,7 +1868,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catfp.seek(catfsize, 1);
    pyhascontents = False;
   catfcontentend = catfp.tell() - 1;
-  catlist.update({realidnum: {'fversion': catversion, 'fid': realidnum, 'fidalt': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmode': catfchmode, 'ftypemod': catftypemod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextralist': extrafieldslist, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
+  catlist.update({realidnum: {'fversion': catversion, 'fid': realidnum, 'fidalt': fileidnum, 'fheadersize': catfheadsize, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmode': catfchmode, 'ftypemod': catftypemod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextralist': extrafieldslist, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
   catfp.seek(1, 1);
   fileidnum = fileidnum + 1;
   realidnum = realidnum + 1;
@@ -2091,6 +2098,8 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   catfhend = fheadtell - 1;
   catfcontentstart = fheadtell;
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex]);
+  catheaersize = format(int(len(catfileoutstr)), 'x').lower()
+  catfileoutstr = AppendNullByte(catheaersize) + catfileoutstr;
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = "\0".encode('UTF-8');
   fheadtell += len(catfileoutstr) + 1;
@@ -2102,7 +2111,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   if(int(fsize)>0 and listonly):
    fcontents = "";
    pyhascontents = False;
-  catlist.update({fileidnum: {'fversion': catversion, 'fid': fileidnum, 'fidalt': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
+  catlist.update({fileidnum: {'fversion': catversion, 'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
   fileidnum = fileidnum + 1;
  return catlist;
 
@@ -2243,6 +2252,8 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   catfhend = fheadtell - 1;
   catfcontentstart = fheadtell;
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex]);
+  catheaersize = format(int(len(catfileoutstr)), 'x').lower()
+  catfileoutstr = AppendNullByte(catheaersize) + catfileoutstr;
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = "\0".encode('UTF-8');
   fheadtell += len(catfileoutstr) + 1;
@@ -2254,7 +2265,7 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   if(int(fsize)>0 and listonly):
    fcontents = "";
    pyhascontents = False;
-  catlist.update({fileidnum: {'fversion': catversion, 'fid': fileidnum, 'fidalt': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
+  catlist.update({fileidnum: {'fversion': catversion, 'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
   fileidnum = fileidnum + 1;
  return catlist;
 
@@ -2406,6 +2417,8 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   catfhend = fheadtell - 1;
   catfcontentstart = fheadtell;
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex]);
+  catheaersize = format(int(len(catfileoutstr)), 'x').lower()
+  catfileoutstr = AppendNullByte(catheaersize) + catfileoutstr;
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = "\0".encode('UTF-8');
   fheadtell += len(catfileoutstr) + 1;
@@ -2417,7 +2430,7 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   if(int(fsize)>0 and listonly):
    fcontents = "";
    pyhascontents = False;
-  catlist.update({fileidnum: {'fversion': catversion, 'fid': fileidnum, 'fidalt': fileidnum, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
+  catlist.update({fileidnum: {'fversion': catversion, 'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
   fileidnum = fileidnum + 1;
  return catlist;
 
@@ -2816,6 +2829,7 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
    fname = "./"+listcatfiles[reallcfi]['fname'];
   if(verbose):
    VerbosePrintOut(fname);
+  fheadersize = format(int(listcatfiles[reallcfi]['fheadersize']), 'x').lower();
   fsize = format(int(listcatfiles[reallcfi]['fsize']), 'x').lower();
   flinkname = listcatfiles[reallcfi]['flinkname'];
   fatime = format(int(listcatfiles[reallcfi]['fatime']), 'x').lower();
@@ -2840,6 +2854,7 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
     getflinkpath = listcatfiles[reallcfi]['flinkname'];
     flinkid = prelistcatfiles['filetoid'][getflinkpath];
     flinkinfo = listcatfiles[flinkid];
+    fheadersize = format(int(flinkinfo['fheadersize']), 'x').lower();
     fsize = format(int(flinkinfo['fsize']), 'x').lower();
     flinkname = flinkinfo['flinkname'];
     fatime = format(int(flinkinfo['fatime']), 'x').lower();
@@ -2932,6 +2947,8 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
    checksumoutstr.update(fcontents);
    catfilecontentcshex = checksumoutstr.hexdigest().lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex]);
+  catheaersize = format(int(len(catfileoutstr)), 'x').lower()
+  catfileoutstr = AppendNullByte(catheaersize) + catfileoutstr;
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = "\0".encode('UTF-8');
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
