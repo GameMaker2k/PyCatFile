@@ -361,6 +361,16 @@ def ReadFileHeaderData(fp, rounds=0):
   rocount = rocount + 1;
  return HeaderOut;
 
+def ReadFileHeaderDataByList(fp, listval=[]):
+ rocount = 0;
+ roend = int(len(listval));
+ HeaderOut = {};
+ while(rocount<roend):
+  RoundArray = {listval[rocount]: ReadTillNullByte(fp)};
+  HeaderOut.update(RoundArray);
+  rocount = rocount + 1;
+ return HeaderOut;
+
 def AppendNullByte(indata):
  outdata = str(indata) + "\0";
  return outdata;
