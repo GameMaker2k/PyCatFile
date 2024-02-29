@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import os, re, sys, time, stat, zlib, shutil, hashlib, logging, binascii, tempfile, zipfile, ftplib;
+import os, re, sys, time, stat, zlib, shutil, hashlib, datetime, logging, binascii, tempfile, zipfile, ftplib;
 
 hashlib_guaranteed = False;
 os.environ["PYTHONIOENCODING"] = "UTF-8";
@@ -3312,7 +3312,6 @@ def UnPackCatString(catstr, outdir=None, followlink=False, seekstart=0, seekend=
  return listcatfiles;
 
 def CatFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, verbose=False, returnfp=False):
- import datetime;
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(isinstance(infile, dict)):
   listcatfiles = infile;
@@ -3367,7 +3366,6 @@ def CatStringListFiles(catstr, followlink=False, skipchecksum=False, verbose=Fal
  return listcatfiles;
 
 def TarFileListFiles(infile, verbose=False, returnfp=False):
- import datetime;
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(not os.path.exists(infile) or not os.path.isfile(infile)):
   return False;
@@ -3436,7 +3434,6 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
   return True;
 
 def ZipFileListFiles(infile, verbose=False, returnfp=False):
- import datetime;
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(not os.path.exists(infile) or not os.path.isfile(infile)):
   return False;
