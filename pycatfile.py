@@ -1824,14 +1824,12 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  if(seekstart>0):
   il = 0;
   while(il < seekstart):
-   preheaderdata = ReadFileHeaderData(catfp, 22);
+   preheaderdata = ReadFileHeaderData(catfp, 5);
    prefheadsize = int(preheaderdata[0], 16);
+   prefseek = prefheadsize - (int(len(preheaderdata[1]) + 1) + int(len(preheaderdata[2]) + 1) + int(len(preheaderdata[3]) + 1) + int(len(preheaderdata[4]) + 1));
    preftype = int(preheaderdata[1], 16);
    prefsize = int(preheaderdata[4], 16);
-   prefextrafields = int(preheaderdata[21], 16);
-   if(prefextrafields>0):
-    extrafieldslist = ReadFileHeaderData(catfp, prefextrafields);
-   checksumsval = ReadFileHeaderData(catfp, 3);
+   catfp.seek(prefseek, 1);
    catfp.seek(prefsize, 1);
    catfp.seek(1, 1);
    il = il + 1;
