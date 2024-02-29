@@ -401,7 +401,14 @@ def ReadFileHeaderDataAlt(fp, rounds=0):
  """Read multiple null-byte terminated strings from a file."""
  header_out = {}
  for round_count in range(rounds):
-  header_out[round_count] = read_till_null_byte(fp);
+  header_out[round_count] = ReadTillNullByteAlt(fp);
+ return header_out;
+
+def ReadFileHeaderDataByListAlt(fp, listval=[]):
+ """Read multiple null-byte terminated strings from a file."""
+ header_out = {}
+ for round_count in listval:
+  header_out[round_count] = ReadTillNullByteAlt(fp);
  return header_out;
 
 def AppendNullByteAlt(indata):
