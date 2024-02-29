@@ -3632,8 +3632,8 @@ def upload_file_to_ftp_string(ftpstring, url):
 
 if(hasattr(shutil, "register_archive_format")):
  # Register the packing format
- shutil.register_archive_format(__file_format_name__, PackCatFileFunc, description='Manipulate concatenated files');
+ shutil.register_archive_format(__file_format_name__, PackCatFileFunc, description='Pack concatenated files');
 
 if(hasattr(shutil, "register_unpack_format")):
  # Register the unpacking format
- shutil.register_unpack_format(__file_format_name__, catfile_extensions, UnPackCatFileFunc, description='Custom unpack format');
+ shutil.register_unpack_format(__file_format_name__, catfile_extensions, UnPackCatFileFunc, description='UnPack concatenated files');
