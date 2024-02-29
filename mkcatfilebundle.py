@@ -14,7 +14,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: mkbundle.py - Last Update: 2/25/2024 Ver. 0.1.4 RC 1 - Author: cooldude2k $
+    $FileInfo: mkbundle.py - Last Update: 2/28/2024 Ver. 0.1.6 RC 1 - Author: cooldude2k $
 '''
 
 import os, sys, shutil, subprocess, tempfile, subprocess, platform;
