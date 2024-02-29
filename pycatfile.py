@@ -354,10 +354,9 @@ def SeekToEndOfFile(fp):
 def ReadFileHeaderData(fp, rounds=0):
  rocount = 0;
  roend = int(rounds);
- HeaderOut = {};
+ HeaderOut = [];
  while(rocount<roend):
-  RoundArray = {rocount: ReadTillNullByte(fp)};
-  HeaderOut.update(RoundArray);
+  HeaderOut.append(ReadTillNullByte(fp));
   rocount = rocount + 1;
  return HeaderOut;
 
@@ -399,16 +398,16 @@ def ReadUntilNullByteAlt(fp):
 
 def ReadFileHeaderDataAlt(fp, rounds=0):
  """Read multiple null-byte terminated strings from a file."""
- header_out = {}
+ header_out = [];
  for round_count in range(rounds):
   header_out[round_count] = ReadTillNullByteAlt(fp);
  return header_out;
 
 def ReadFileHeaderDataByListAlt(fp, listval=[]):
  """Read multiple null-byte terminated strings from a file."""
- header_out = {}
+ header_out = {};
  for round_count in listval:
-  header_out[round_count] = ReadTillNullByteAlt(fp);
+  header_out.append(ReadTillNullByteAlt(fp));
  return header_out;
 
 def AppendNullByteAlt(indata):
