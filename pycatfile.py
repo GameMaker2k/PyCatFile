@@ -91,6 +91,7 @@ else:
    teststringio = 0;
 
 __program_name__ = "PyCatFile";
+__file_format_name__ = "CatFile";
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 1, 6, "RC 1", 1);
@@ -943,7 +944,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
    catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=compressionlevel);
  catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte("CatFile" + fileheaderver);
+ fileheader = AppendNullByte(__file_format_name__ + fileheaderver);
  catfp.write(fileheader.encode('UTF-8'));
  infilelist = [];
  if(infiles=="-"):
@@ -1276,7 +1277,7 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
    catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=compressionlevel);
  catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte("CatFile" + fileheaderver);
+ fileheader = AppendNullByte(__file_format_name__ + fileheaderver);
  catfp.write(fileheader.encode('UTF-8'));
  curinode = 0;
  curfid = 0;
@@ -1536,7 +1537,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
    catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=compressionlevel);
  catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte("CatFile" + fileheaderver);
+ fileheader = AppendNullByte(__file_format_name__ + fileheaderver);
  catfp.write(fileheader.encode('UTF-8'));
  curinode = 0;
  curfid = 0;
@@ -1970,7 +1971,7 @@ def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
 def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
  catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte("CatFile" + fileheaderver);
+ fileheader = AppendNullByte(__file_format_name__ + fileheaderver);
  catversion = fileheaderver;
  advancedlist = True;
  infilelist = [];
@@ -2209,7 +2210,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
 def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
  catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte("CatFile" + fileheaderver);
+ fileheader = AppendNullByte(__file_format_name__ + fileheaderver);
  catversion = fileheaderver;
  curinode = 0;
  curfid = 0;
@@ -2382,7 +2383,7 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
 def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], verbose=False):
  catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte("CatFile" + fileheaderver);
+ fileheader = AppendNullByte(__file_format_name__ + fileheaderver);
  catversion = fileheaderver;
  advancedlist = True;
  curinode = 0;
@@ -2927,7 +2928,7 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
    catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=9);
  catver = __cat_header_ver__;
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte("CatFile" + fileheaderver);
+ fileheader = AppendNullByte(__file_format_name__ + fileheaderver);
  catfp.write(fileheader.encode('UTF-8'));
  lenlist = len(listcatfiles) - 2;
  fnumfiles = int(listcatfiles['fnumfiles']);
@@ -3631,8 +3632,8 @@ def upload_file_to_ftp_string(ftpstring, url):
 
 if(hasattr(shutil, "register_archive_format")):
  # Register the packing format
- shutil.register_archive_format('CatFile', PackCatFileFunc, description='Manipulate concatenated files');
+ shutil.register_archive_format(__file_format_name__, PackCatFileFunc, description='Manipulate concatenated files');
 
 if(hasattr(shutil, "register_unpack_format")):
  # Register the unpacking format
- shutil.register_unpack_format('CatFile', catfile_extensions, UnPackCatFileFunc, description='Custom unpack format');
+ shutil.register_unpack_format(__file_format_name__, catfile_extensions, UnPackCatFileFunc, description='Custom unpack format');
