@@ -597,7 +597,7 @@ def GetCompressionMimeType(infile):
   return catfile_lzma_mimetype;
  if(compresscheck=="xz"):
   return catfile_xz_mimetype;
- if(compresscheck=="catfile" or compresscheck=="cat" or compresscheck==__file_format_name__):
+ if(compresscheck=="catfile" or compresscheck=="cat" or compresscheck==__file_format_lower__):
   return catfile_cat_mimetype;
  if(not compresscheck):
   return False;
@@ -648,7 +648,7 @@ def UncompressCatFile(fp):
    return False;
   catfp = BytesIO();
   catfp.write(lzma.decompress(fp.read()));
- if(compresscheck=="catfile" or compresscheck==__file_format_name__):
+ if(compresscheck=="catfile" or compresscheck==__file_format_lower__):
   catfp = fp;
  if(not compresscheck):
   try:
@@ -802,7 +802,7 @@ def CheckCompressionSubType(infile):
   return False;
  if(compresscheck=="catfile"):
   return "catfile";
- if(compresscheck==__file_format_name__):
+ if(compresscheck==__file_format_lower__):
   return __file_format_name__;
  if(compresscheck=="tarfile"):
   return "tarfile";
@@ -881,7 +881,7 @@ def CompressCatFile(fp, compression="auto", compressionlevel=None):
  if(not hasattr(fp, "read") and not hasattr(fp, "write")):
   return False;
  fp.seek(0, 0);
- if(not compression or compression or compression=="catfile" or compression==__file_format_name__):
+ if(not compression or compression or compression=="catfile" or compression==__file_format_lower__):
   compression = None;
  if(compression not in compressionlist and compression is None):
   compression = "auto";
@@ -1071,7 +1071,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
- if(not compression or compression or compression=="catfile" or compression==__file_format_name__):
+ if(not compression or compression or compression=="catfile" or compression==__file_format_lower__):
   compression = None;
  if(compression not in compressionlist and compression is None):
   compression = "auto";
@@ -1427,7 +1427,7 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
- if(not compression or compression or compression=="catfile" or compression==__file_format_name__):
+ if(not compression or compression or compression=="catfile" or compression==__file_format_lower__):
   compression = None;
  if(compression not in compressionlist and compression is None):
   compression = "auto";
@@ -1710,7 +1710,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
- if(not compression or compression or compression=="catfile" or compression==__file_format_name__):
+ if(not compression or compression or compression=="catfile" or compression==__file_format_lower__):
   compression = None;
  if(compression not in compressionlist and compression is None):
   compression = "auto";
@@ -2002,7 +2002,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, returnfp);
   if(checkcompressfile=="zipfile"):
    return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, returnfp);
-  if(checkcompressfile!="catfile" and checkcompressfile!=__file_format_name__):
+  if(checkcompressfile!="catfile" and checkcompressfile!=__file_format_lower__):
    return False;
   if(not catfp):
    return False;
@@ -2025,7 +2025,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, returnfp);
   if(checkcompressfile=="zipfile"):
    return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, returnfp);
-  if(checkcompressfile!="catfile" and checkcompressfile!=__file_format_name__):
+  if(checkcompressfile!="catfile" and checkcompressfile!=__file_format_lower__):
    return False;
   compresscheck = CheckCompressionType(infile, True);
   if(not compresscheck):
@@ -2074,7 +2074,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    except ImportError:
     return False;
    catfp = lzma.open(infile, "rb");
-  if(compresscheck=="catfile" and compresscheck==__file_format_name__):
+  if(compresscheck=="catfile" and compresscheck==__file_format_lower__):
    catfp = open(infile, "rb");
  '''
  try:
@@ -2126,7 +2126,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   VerbosePrintOut("File Header Checksum Error with file " + catfname + " at offset " + str(catfhstart));
   return False;
  catversions = re.search(r'(.*?)(\d+)$', catstring).groups();
- catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}};
+ catlist = {'fnumfiles': fnumfiles, 'fversion': catversions[1], 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}};
  if(seekend<=0):
   seekend = fnumfiles;
  if(seekstart>0):
@@ -3244,7 +3244,7 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
- if(not compression or compression or compression=="catfile" or compression==__file_format_name__):
+ if(not compression or compression or compression=="catfile" or compression==__file_format_lower__):
   compression = None;
  if(compression not in compressionlist and compression is None):
   compression = "auto";
