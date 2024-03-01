@@ -1309,26 +1309,26 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
-   catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+   catfileheadercshex = format(crc16("".encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="crc16_ccitt"):
-   catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+   catfileheadercshex = format(crc16_ccitt("".encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
-   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(zlib.adler32("".encode('UTF-8')) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc32"):
-   catfileheadercshex = format(crc32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc32("".encode('UTF-8')) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(crc32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc64_ecma"):
-   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   catfileheadercshex = format(crc64_ecma("".encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
-   catfileheadercshex = format(crc64_iso(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   catfileheadercshex = format(crc64_iso("".encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
    checksumoutstr = hashlib.new(checksumtype);
-   checksumoutstr.update(catfileoutstr.encode('UTF-8'));
+   checksumoutstr.update("".encode('UTF-8'));
    catfileheadercshex = checksumoutstr.hexdigest().lower();
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(fcontents);
@@ -1582,26 +1582,26 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
-   catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+   catfileheadercshex = format(crc16("".encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="crc16_ccitt"):
-   catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+   catfileheadercshex = format(crc16_ccitt("".encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
-   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(zlib.adler32("".encode('UTF-8')) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc32"):
-   catfileheadercshex = format(crc32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc32("".encode('UTF-8')) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(crc32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc64_ecma"):
-   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   catfileheadercshex = format(crc64_ecma("".encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
-   catfileheadercshex = format(crc64_iso(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   catfileheadercshex = format(crc64_iso("".encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
    checksumoutstr = hashlib.new(checksumtype);
-   checksumoutstr.update(catfileoutstr.encode('UTF-8'));
+   checksumoutstr.update("".encode('UTF-8'));
    catfileheadercshex = checksumoutstr.hexdigest().lower();
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(fcontents);
@@ -1856,26 +1856,26 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
-   catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+   catfileheadercshex = format(crc16("".encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="crc16_ccitt"):
-   catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+   catfileheadercshex = format(crc16_ccitt("".encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
-   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(zlib.adler32("".encode('UTF-8')) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc32"):
-   catfileheadercshex = format(crc32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc32("".encode('UTF-8')) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(crc32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc64_ecma"):
-   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   catfileheadercshex = format(crc64_ecma("".encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
-   catfileheadercshex = format(crc64_iso(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   catfileheadercshex = format(crc64_iso("".encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
    checksumoutstr = hashlib.new(checksumtype);
-   checksumoutstr.update(catfileoutstr.encode('UTF-8'));
+   checksumoutstr.update("".encode('UTF-8'));
    catfileheadercshex = checksumoutstr.hexdigest().lower();
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(fcontents);
@@ -2149,7 +2149,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
    catfp.seek(catfsize, 1);
    pyhascontents = False;
   catfcontentend = catfp.tell() - 1;
-  catlist.update({realidnum: {'fversion': catversion, 'fid': realidnum, 'fidalt': fileidnum, 'fheadersize': catfheadsize, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmode': catfchmode, 'ftypemod': catftypemod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextralist': extrafieldslist, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
+  catlist.update({realidnum: {'fversion': catversion, 'fid': realidnum, 'fidalt': fileidnum, 'fheadersize': catfheadsize, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmode': catfchmode, 'ftypemod': catftypemod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextrafieldsize': catfextrasize, 'fextralist': extrafieldslist, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
   catfp.seek(1, 1);
   fileidnum = fileidnum + 1;
   realidnum = realidnum + 1;
@@ -2344,8 +2344,9 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   extrasizestr = AppendNullByte(extrafields);
   if(len(extradata)>0):
    extrasizestr = extrasizestr + AppendNullBytes(extradata);
-  extrasizelen = format(len(extrasizestr), 'x').lower();
-  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), format(catfextrafields, 'x').lower()]);
+  extrasizelen = len(extrasizestr);
+  extrasizelenhex = format(extrasizelen, 'x').lower();
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), extrasizelenhex, format(catfextrafields, 'x').lower()]);
   if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
@@ -2354,26 +2355,26 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
-   catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+   catfileheadercshex = format(crc16("".encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="crc16_ccitt"):
-   catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+   catfileheadercshex = format(crc16_ccitt("".encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
-   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(zlib.adler32("".encode('UTF-8')) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc32"):
-   catfileheadercshex = format(crc32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc32("".encode('UTF-8')) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(crc32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc64_ecma"):
-   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   catfileheadercshex = format(crc64_ecma("".encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
-   catfileheadercshex = format(crc64_iso(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   catfileheadercshex = format(crc64_iso("".encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
    checksumoutstr = hashlib.new(checksumtype);
-   checksumoutstr.update(catfileoutstr.encode('UTF-8'));
+   checksumoutstr.update("".encode('UTF-8'));
    catfileheadercshex = checksumoutstr.hexdigest().lower();
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(fcontents);
@@ -2415,7 +2416,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   if(int(fsize)>0 and listonly):
    fcontents = "";
    pyhascontents = False;
-  catlist.update({fileidnum: {'fversion': catversion, 'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
+  catlist.update({fileidnum: {'fversion': catversion, 'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
   fileidnum = fileidnum + 1;
  return catlist;
 
@@ -2521,8 +2522,9 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   extrasizestr = AppendNullByte(extrafields);
   if(len(extradata)>0):
    extrasizestr = extrasizestr + AppendNullBytes(extradata);
-  extrasizelen = format(len(extrasizestr), 'x').lower();
-  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), format(catfextrafields, 'x').lower()]);
+  extrasizelen = len(extrasizestr);
+  extrasizelenhex = format(extrasizelen, 'x').lower();
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), extrasizelenhex, format(catfextrafields, 'x').lower()]);
   if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
@@ -2531,26 +2533,26 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
-   catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+   catfileheadercshex = format(crc16("".encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="crc16_ccitt"):
-   catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+   catfileheadercshex = format(crc16_ccitt("".encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
-   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(zlib.adler32("".encode('UTF-8')) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc32"):
-   catfileheadercshex = format(crc32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc32("".encode('UTF-8')) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(crc32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc64_ecma"):
-   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   catfileheadercshex = format(crc64_ecma("".encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
-   catfileheadercshex = format(crc64_iso(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   catfileheadercshex = format(crc64_iso("".encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
    checksumoutstr = hashlib.new(checksumtype);
-   checksumoutstr.update(catfileoutstr.encode('UTF-8'));
+   checksumoutstr.update("".encode('UTF-8'));
    catfileheadercshex = checksumoutstr.hexdigest().lower();
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(fcontents);
@@ -2592,7 +2594,7 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   if(int(fsize)>0 and listonly):
    fcontents = "";
    pyhascontents = False;
-  catlist.update({fileidnum: {'fversion': catversion, 'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
+  catlist.update({fileidnum: {'fversion': catversion, 'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
   fileidnum = fileidnum + 1;
  return catlist;
 
@@ -2709,8 +2711,9 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   extrasizestr = AppendNullByte(extrafields);
   if(len(extradata)>0):
    extrasizestr = extrasizestr + AppendNullBytes(extradata);
-  extrasizelen = format(len(extrasizestr), 'x').lower();
-  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), format(catfextrafields, 'x').lower()]);
+  extrasizelen = len(extrasizestr);
+  extrasizelenhex = format(extrasizelen, 'x').lower();
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), extrasizelenhex, format(catfextrafields, 'x').lower()]);
   if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
@@ -2719,26 +2722,26 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
-   catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+   catfileheadercshex = format(crc16("".encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="crc16_ccitt"):
-   catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+   catfileheadercshex = format(crc16_ccitt("".encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
-   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(zlib.adler32("".encode('UTF-8')) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc32"):
-   catfileheadercshex = format(crc32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc32("".encode('UTF-8')) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(crc32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc64_ecma"):
-   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   catfileheadercshex = format(crc64_ecma("".encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
-   catfileheadercshex = format(crc64_iso(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   catfileheadercshex = format(crc64_iso("".encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
    checksumoutstr = hashlib.new(checksumtype);
-   checksumoutstr.update(catfileoutstr.encode('UTF-8'));
+   checksumoutstr.update("".encode('UTF-8'));
    catfileheadercshex = checksumoutstr.hexdigest().lower();
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(fcontents);
@@ -2780,7 +2783,7 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   if(int(fsize)>0 and listonly):
    fcontents = "";
    pyhascontents = False;
-  catlist.update({fileidnum: {'fversion': catversion, 'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
+  catlist.update({fileidnum: {'fversion': catversion, 'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
   fileidnum = fileidnum + 1;
  return catlist;
 
@@ -3198,6 +3201,16 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
   fdev_major = format(int(listcatfiles[reallcfi]['fmajor']), 'x').lower();
   frdev_minor = format(int(listcatfiles[reallcfi]['frminor']), 'x').lower();
   frdev_major = format(int(listcatfiles[reallcfi]['frmajor']), 'x').lower();
+  if(len(listcatfiles[reallcfi]['fextralist'])>listcatfiles[reallcfi]['fextrafields'] and len(listcatfiles[reallcfi]['fextralist'])>0):
+   listcatfiles[reallcfi]['fextrafields'] = len(listcatfiles[reallcfi]['fextralist']);
+  if(len(extradata) > 0):
+   listcatfiles[reallcfi]['fextrafields'] = len(extradata);
+   listcatfiles[reallcfi]['fextralist'] = extradata;
+  extrafields = format(int(listcatfiles[reallcfi]['fextrafields']), 'x').lower();
+  extrasizestr = AppendNullByte(extrafields);
+  if(len(extradata)>0):
+   extrasizestr = extrasizestr + AppendNullBytes(extradata);
+  extrasizelen = format(len(extrasizestr), 'x').lower();
   fcontents = listcatfiles[reallcfi]['fcontents'];
   if(followlink):
    if(listcatfiles[reallcfi]['ftype']==1 or listcatfiles[reallcfi]['ftype']==2):
@@ -3223,6 +3236,16 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
     fdev_major = format(int(flinkinfo['fmajor']), 'x').lower();
     frdev_minor = format(int(flinkinfo['frminor']), 'x').lower();
     frdev_major = format(int(flinkinfo['frmajor']), 'x').lower();
+    if(len(flinkinfo['fextralist'])>flinkinfo['fextrafields'] and len(flinkinfo['fextralist'])>0):
+     flinkinfo['fextrafields'] = len(flinkinfo['fextralist']);
+    if(len(extradata) > 0):
+     flinkinfo['fextrafields'] = len(extradata);
+     flinkinfo['fextralist'] = extradata;
+    extrafields = format(int(flinkinfo['fextrafields']), 'x').lower();
+    extrasizestr = AppendNullByte(extrafields);
+    if(len(extradata)>0):
+     extrasizestr = extrasizestr + AppendNullBytes(extradata);
+    extrasizelen = format(len(extrasizestr), 'x').lower();
     fcontents = flinkinfo['fcontents'];
     if(flinkinfo['ftype']!=0 and flinkinfo['ftype']!=7):
      try:
@@ -3250,17 +3273,7 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
     fcurinode = format(int(curinode), 'x').lower();
     curinode = curinode + 1;
   curfid = curfid + 1;
-  if(len(listcatfiles[reallcfi]['fextralist'])>listcatfiles[reallcfi]['fextrafields'] and len(listcatfiles[reallcfi]['fextralist'])>0):
-   listcatfiles[reallcfi]['fextrafields'] = len(listcatfiles[reallcfi]['fextralist']);
-  if(len(extradata) > 0):
-   listcatfiles[reallcfi]['fextrafields'] = len(extradata);
-   listcatfiles[reallcfi]['fextralist'] = extradata;
-  extrafields = format(int(listcatfiles[reallcfi]['fextrafields']), 'x').lower();
-  extrasizestr = AppendNullByte(extrafields);
-  if(len(extradata)>0):
-   extrasizestr = extrasizestr + AppendNullBytes(extradata);
-  extrasizelen = format(len(extrasizestr), 'x').lower();
-  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrafields]);
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields]);
   if(listcatfiles[reallcfi]['fextrafields']>0):
    extrafieldslist = [];
    exi = 0;
@@ -3276,26 +3289,26 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
-   catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+   catfileheadercshex = format(crc16("".encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="crc16_ccitt"):
-   catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+   catfileheadercshex = format(crc16_ccitt("".encode('UTF-8')) & 0xffff, '04x').lower();
    catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
   elif(checksumtype=="adler32"):
-   catfileheadercshex = format(zlib.adler32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(zlib.adler32("".encode('UTF-8')) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc32"):
-   catfileheadercshex = format(crc32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   catfileheadercshex = format(crc32("".encode('UTF-8')) & 0xffffffff, '08x').lower();
    catfilecontentcshex = format(crc32(fcontents) & 0xffffffff, '08x').lower();
   elif(checksumtype=="crc64_ecma"):
-   catfileheadercshex = format(crc64_ecma(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   catfileheadercshex = format(crc64_ecma("".encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
-   catfileheadercshex = format(crc64_iso(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   catfileheadercshex = format(crc64_iso("".encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
   elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
    checksumoutstr = hashlib.new(checksumtype);
-   checksumoutstr.update(catfileoutstr.encode('UTF-8'));
+   checksumoutstr.update("".encode('UTF-8'));
    catfileheadercshex = checksumoutstr.hexdigest().lower();
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(fcontents);
