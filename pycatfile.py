@@ -22,10 +22,19 @@ import os, re, sys, time, stat, zlib, shutil, hashlib, datetime, logging, binasc
 
 hashlib_guaranteed = False;
 os.environ["PYTHONIOENCODING"] = "UTF-8";
-os.environ["LANG"] = "UTF-8";
-os.environ["LC_ALL"] = "UTF-8";
 os.environ["LC_CTYPE"] = "UTF-8";
-os.environ["LC_CTYPE"] = "UTF-8";
+try:
+ reload(sys);
+ try:
+  sys.setdefaultencoding('UTF-8');
+ except NameError:
+  pass;
+ except AttributeError:
+  pass;
+except NameError:
+ pass;
+except AttributeError:
+ pass;
 if(hasattr(sys, "setdefaultencoding")):
  sys.setdefaultencoding('UTF-8');
 if(hasattr(sys.stdout, "detach")):
@@ -142,34 +151,22 @@ if __name__ == "__main__":
   scrcmd.wait();
 
 def VerbosePrintOut(dbgtxt, outtype="log", dbgenable=True, dgblevel=20):
- if(outtype=="print" and dbgenable):
-  print(dbgtxt);
+ if(not dbgenable):
   return True;
- elif(outtype=="log" and dbgenable):
-  logging.info(dbgtxt);
+ log_functions = {
+  "print": print,
+  "log": logging.info,
+  "warning": logging.warning,
+  "error": logging.error,
+  "critical": logging.critical,
+  "exception": logging.exception,
+  "logalt": lambda x: logging.log(dgblevel, x),
+  "debug": logging.debug
+ };
+ log_function = log_functions.get(outtype);
+ if(log_function):
+  log_function(dbgtxt);
   return True;
- elif(outtype=="warning" and dbgenable):
-  logging.warning(dbgtxt);
-  return True;
- elif(outtype=="error" and dbgenable):
-  logging.error(dbgtxt);
-  return True;
- elif(outtype=="critical" and dbgenable):
-  logging.critical(dbgtxt);
-  return True;
- elif(outtype=="exception" and dbgenable):
-  logging.exception(dbgtxt);
-  return True;
- elif(outtype=="logalt" and dbgenable):
-  logging.log(dgblevel, dbgtxt);
-  return True;
- elif(outtype=="debug" and dbgenable):
-  logging.debug(dbgtxt);
-  return True;
- elif(not dbgenable):
-  return True;
- else:
-  return False;
  return False;
 
 def VerbosePrintOutReturn(dbgtxt, outtype="log", dbgenable=True, dgblevel=20):
@@ -1102,7 +1099,11 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
    fpc.close();
   ftypehex = format(ftype, 'x').lower();
   extrafields = format(len(extradata), 'x').lower();
-  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrafields]);
+  extrasizestr = AppendNullByte(extrafields);
+  if(len(extradata)>0):
+   extrasizestr = extrasizestr + AppendNullBytes(extradata);
+  extrasizelen = format(len(extrasizestr), 'x').lower();
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields]);
   if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
@@ -1369,7 +1370,11 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
    fpc.close();
   ftypehex = format(ftype, 'x').lower();
   extrafields = format(len(extradata), 'x').lower();
-  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrafields]);
+  extrasizestr = AppendNullByte(extrafields);
+  if(len(extradata)>0):
+   extrasizestr = extrasizestr + AppendNullBytes(extradata);
+  extrasizelen = format(len(extrasizestr), 'x').lower();
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields]);
   if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
@@ -1639,7 +1644,11 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
    fcontents = zipfp.read(member.filename);
   ftypehex = format(ftype, 'x').lower();
   extrafields = format(len(extradata), 'x').lower();
-  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrafields]);
+  extrasizestr = AppendNullByte(extrafields);
+  if(len(extradata)>0):
+   extrasizestr = extrasizestr + AppendNullBytes(extradata);
+  extrasizelen = format(len(extrasizestr), 'x').lower();
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields]);
   if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype);
@@ -1838,7 +1847,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  realidnum = 0;
  while(fileidnum<seekend):
   catfhstart = catfp.tell();
-  catheaderdata = ReadFileHeaderData(catfp, 22);
+  catheaderdata = ReadFileHeaderData(catfp, 23);
   catfheadsize = int(catheaderdata[0], 16);
   catftype = int(catheaderdata[1], 16);
   if(re.findall("^[.|/]", catheaderdata[2])):
@@ -1866,7 +1875,8 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
   catfdev_major = int(catheaderdata[18], 16);
   catfrdev_minor = int(catheaderdata[19], 16);
   catfrdev_major = int(catheaderdata[20], 16);
-  catfextrafields = int(catheaderdata[21], 16);
+  catfextrasize = int(catheaderdata[21], 16);
+  catfextrafields = int(catheaderdata[22], 16);
   extrafieldslist = [];
   if(catfextrafields>0):
    extrafieldslist = ReadFileHeaderData(catfp, catfextrafields);
@@ -2133,6 +2143,10 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   extrafields = len(extradata);
   extrafieldslist = extradata;
   catfextrafields = extrafields;
+  extrasizestr = AppendNullByte(extrafields);
+  if(len(extradata)>0):
+   extrasizestr = extrasizestr + AppendNullBytes(extradata);
+  extrasizelen = format(len(extrasizestr), 'x').lower();
   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), format(catfextrafields, 'x').lower()]);
   if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata);
@@ -2306,6 +2320,10 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   extrafields = len(extradata);
   extrafieldslist = extradata;
   catfextrafields = extrafields;
+  extrasizestr = AppendNullByte(extrafields);
+  if(len(extradata)>0):
+   extrasizestr = extrasizestr + AppendNullBytes(extradata);
+  extrasizelen = format(len(extrasizestr), 'x').lower();
   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), format(catfextrafields, 'x').lower()]);
   if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata);
@@ -2490,6 +2508,10 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   extrafields = len(extradata);
   extrafieldslist = extradata;
   catfextrafields = extrafields;
+  extrasizestr = AppendNullByte(extrafields);
+  if(len(extradata)>0):
+   extrasizestr = extrasizestr + AppendNullBytes(extradata);
+  extrasizelen = format(len(extrasizestr), 'x').lower();
   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), format(catfextrafields, 'x').lower()]);
   if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata);
@@ -3036,6 +3058,10 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
    listcatfiles[reallcfi]['fextrafields'] = len(extradata);
    listcatfiles[reallcfi]['fextralist'] = extradata;
   extrafields = format(int(listcatfiles[reallcfi]['fextrafields']), 'x').lower();
+  extrasizestr = AppendNullByte(extrafields);
+  if(len(extradata)>0):
+   extrasizestr = extrasizestr + AppendNullBytes(extradata);
+  extrasizelen = format(len(extrasizestr), 'x').lower();
   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrafields]);
   if(listcatfiles[reallcfi]['fextrafields']>0):
    extrafieldslist = [];
