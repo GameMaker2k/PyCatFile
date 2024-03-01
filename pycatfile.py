@@ -109,8 +109,8 @@ else:
   except ImportError:
    teststringio = 0;
 
-__program_name__ = "PyCatFile";
 __file_format_name__ = "CatFile";
+__program_name__ = "Py"+__file_format_name__;
 __file_format_lower__ = __file_format_name__.lower();
 __file_format_len__ = len(__file_format_name__);
 __file_format_hex__ = binascii.hexlify(__file_format_name__.encode("UTF-8")).decode("UTF-8");
