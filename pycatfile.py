@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import os, re, sys, time, stat, zlib, shutil, hashlib, datetime, logging, binascii, tempfile, zipfile, ftplib;
+import os, re, sys, time, marshal, stat, zlib, shutil, hashlib, datetime, logging, binascii, tempfile, zipfile, ftplib;
 
 hashlib_guaranteed = False;
 os.environ["PYTHONIOENCODING"] = "UTF-8";
@@ -44,6 +44,16 @@ if(hasattr(sys.stderr, "detach")):
  import io;
  sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = 'UTF-8');
 from io import open as open;
+
+try:
+ import simplejson as json;
+except ImportError:
+ import json;
+
+try:
+ import cPickle as pickle;
+except ImportError:
+ import pickle;
 
 try:
  from zlib import crc32;
@@ -117,6 +127,10 @@ if(__version_info__[3] is not None):
 if(__version_info__[3] is None):
  __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]);
 __cat_header_ver__ = "001";
+
+compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'xz', 'lz4', 'lzo', 'lzma'];
+outextlist = ['gz', 'bz2', 'zst', 'xz', 'lz4', 'lzo', 'lzma'];
+outextlistwd = ['.gz', '.bz2', '.zst', '.xz', '.lz4', '.lzo', '.lzma'];
 
 tarfile_mimetype = "application/tar";
 tarfile_tar_mimetype = tarfile_mimetype;
@@ -553,6 +567,13 @@ def CheckCompressionType(infile, closefp=True):
   catfp.close();
  return filetype;
 
+def CheckCompressionTypeFromString(instring, closefp=True):
+ try:
+  instringsfile = BytesIO(instring);
+ except TypeError:
+  instringsfile = BytesIO(instring.encode("UTF-8"));
+ return CheckCompressionType(instringsfile, closefp);
+
 def GetCompressionMimeType(infile):
  compresscheck = CheckCompressionType(fp, False);
  if(compresscheck=="gzip" or compresscheck=="gz"):
@@ -634,6 +655,125 @@ def UncompressCatFile(fp):
    except lzma.LZMAError:
     return False;
  return catfp;
+
+def UncompressFile(infile, mode="rb"):
+ compresscheck = CheckCompressionType(infile, False);
+ if(sys.version_info[0]==2 and compresscheck):
+  if(mode=="rt"):
+   mode = "r";
+  if(mode=="wt"):
+   mode = "w";
+ if(compresscheck=="gzip"):
+  try:
+   import gzip;
+  except ImportError:
+   return False;
+  try:
+   filefp = gzip.open(infile, mode, encoding="UTF-8");
+  except (ValueError, TypeError) as e:
+   filefp = gzip.open(infile, mode);
+ if(compresscheck=="bzip2"):
+  try:
+   import bz2;
+  except ImportError:
+   return False;
+  try:
+   filefp = bz2.open(infile, mode, encoding="UTF-8");
+  except (ValueError, TypeError) as e:
+   filefp = bz2.open(infile, mode);
+ if(compresscheck=="zstd"):
+  try:
+   import zstandard;
+  except ImportError:
+   return False;
+  try:
+   filefp = zstandard.open(infile, mode, encoding="UTF-8");
+  except (ValueError, TypeError) as e:
+   filefp = zstandard.open(infile, mode);
+ if(compresscheck=="lz4"):
+  try:
+   import lz4.frame;
+  except ImportError:
+   return False;
+  try:
+   filefp = lz4.frame.open(infile, mode, encoding="UTF-8");
+  except (ValueError, TypeError) as e:
+   filefp = lz4.frame.open(infile, mode);
+ if(compresscheck=="lzo"):
+  try:
+   import lzo;
+  except ImportError:
+   return False;
+  try:
+   filefp = lzo.open(infile, mode, encoding="UTF-8");
+  except (ValueError, TypeError) as e:
+   filefp = lzo.open(infile, mode);
+ if(compresscheck=="lzma"):
+  try:
+   import lzma;
+  except ImportError:
+   return False;
+  try:
+   filefp = lzma.open(infile, mode, encoding="UTF-8");
+  except (ValueError, TypeError) as e:
+   filefp = lzma.open(infile, mode);
+ if(not compresscheck):
+  try:
+   filefp = open(infile, mode, encoding="UTF-8");
+  except (ValueError, TypeError) as e:
+   filefp = open(infile, mode);
+ return filefp;
+
+def UncompressString(infile):
+ compresscheck = CheckCompressionTypeFromString(infile, False);
+ if(compresscheck=="gzip"):
+  try:
+   import gzip;
+  except ImportError:
+   return False;
+  fileuz = gzip.decompress(infile);
+ if(compresscheck=="bzip2"):
+  try:
+   import bz2;
+  except ImportError:
+   return False;
+  fileuz = bz2.decompress(infile);
+ if(compresscheck=="zstd"):
+  try:
+   import zstandard;
+  except ImportError:
+   return False;
+  fileuz = zstandard.decompress(infile);
+ if(compresscheck=="lz4"):
+  try:
+   import lz4.frame;
+  except ImportError:
+   return False;
+  fileuz = lz4.frame.decompress(infile);
+ if(compresscheck=="lzo"):
+  try:
+   import lzo;
+  except ImportError:
+   return False;
+  fileuz = lzo.decompress(infile);
+ if(compresscheck=="lzma"):
+  try:
+   import lzma;
+  except ImportError:
+   return False;
+  fileuz = lzma.decompress(infile);
+ if(not compresscheck):
+  fileuz = infile;
+ if(hasattr(fileuz, 'decode')):
+  fileuz = fileuz.decode("UTF-8");
+ return fileuz;
+
+def UncompressStringAlt(infile):
+ filefp = StringIO();
+ outstring = UncompressString(infile);
+ filefp.write(outstring);
+ filefp.seek(0);
+ return filefp;
 
 def CheckCompressionSubType(infile):
  compresscheck = CheckCompressionType(infile, False);
@@ -813,6 +953,64 @@ def CompressCatFile(fp, compression="auto", compressionlevel=None):
   catfp = fp;
  catfp.seek(0, 0);
  return catfp;
+
+def CompressOpenFile(outfile):
+ if(outfile is None):
+  return False;
+ fbasename = os.path.splitext(outfile)[0];
+ fextname = os.path.splitext(outfile)[1];
+ if(sys.version_info[0]==2):
+  mode = "w";
+ else:
+  mode = "wb";
+ if(fextname not in outextlistwd):
+  try:
+   outfp = open(outfile, "wb", encoding="UTF-8");
+  except (ValueError, TypeError) as e:
+   outfp = open(outfile, "wb");
+ elif(fextname==".gz"):
+  try:
+   import gzip;
+  except ImportError:
+   return False;
+  outfp = gzip.open(outfile, mode, 9, encoding="UTF-8");
+ elif(fextname==".bz2"):
+  try:
+   import bz2;
+  except ImportError:
+   return False;
+  outfp = bz2.open(outfile, mode, 9, encoding="UTF-8");
+ elif(fextname==".zst"):
+  try:
+   import zstandard;
+  except ImportError:
+   return False;
+  outfp = zstandard.open(outfile, mode, zstandard.ZstdCompressor(level=10), encoding="UTF-8");
+ elif(fextname==".xz"):
+  try:
+   import lzma;
+  except ImportError:
+   return False;
+  outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, preset=9, encoding="UTF-8");
+ elif(fextname==".lz4"):
+  try:
+   import lz4.frame;
+  except ImportError:
+   return False;
+  outfp = lz4.frame.open(outfile, mode, format=lzma.FORMAT_XZ, preset=9, encoding="UTF-8");
+ elif(fextname==".lzo"):
+  try:
+   import lzo;
+  except ImportError:
+   return False;
+  outfp = lzo.open(outfile, mode, format=lzma.FORMAT_XZ, preset=9, encoding="UTF-8");
+ elif(fextname==".lzma"):
+  try:
+   import lzma;
+  except ImportError:
+   return False;
+  outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, preset=9, encoding="UTF-8");
+ return outfp;
 
 def GetDevMajorMinor(fdev):
  retdev = [];
