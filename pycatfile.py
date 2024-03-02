@@ -349,7 +349,11 @@ def ReadTillNullByte(fp):
  curfullbyte = b"";
  nullbyte = b"\0";
  while(curbyte!=nullbyte):
+  curtell = fp.tell();
   curbyte = fp.read(1);
+  nextell = fp.tell();
+  if(curtell==nextell):
+   break;
   if(curbyte!=nullbyte):
    curfullbyte = curfullbyte + curbyte;
  return curfullbyte.decode('UTF-8');
@@ -402,7 +406,11 @@ def ReadTillNullByteAlt(fp):
  """Read bytes from file pointer until a null byte is encountered."""
  bytes_list = []  # Use list for efficient append operation.
  while True:
+  cur_tell = fp.tell();
   cur_byte = fp.read(1);
+  nex_tell = fp.tell();
+  if(cur_tell==nex_tell):
+   break;
   if cur_byte == b"\0" or not cur_byte:
    break;
   bytes_list.append(cur_byte);
@@ -3330,7 +3338,7 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
  if(lenlist>fnumfiles or lenlist<fnumfiles):
   fnumfiles = lenlist;
  fnumfileshex = format(int(fnumfiles), 'x').lower();
- fnumfilesa = AppendNullBytes([fnumfiles, checksumtype]);
+ fnumfilesa = AppendNullBytes([fnumfileshex, checksumtype]);
  if(checksumtype=="none" or checksumtype==""):
   catfileheadercshex = format(0, 'x').lower();
  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
