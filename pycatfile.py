@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import os, re, sys, time, marshal, stat, zlib, shutil, hashlib, datetime, logging, binascii, tempfile, zipfile, ftplib;
+import os, re, sys, time, marshal, stat, zlib, base64, shutil, hashlib, datetime, logging, binascii, tempfile, zipfile, ftplib;
 
 hashlib_guaranteed = False;
 os.environ["PYTHONIOENCODING"] = "UTF-8";
@@ -3763,6 +3763,78 @@ def PackCatFileFromListDir(infiles, outfile, dirlistfromtxt=False, compression="
  outarray = BytesIO();
  packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, extradata, verbose, True);
  listcatfiles = RePackCatFile(outarray, outfile, compression, compressionlevel, checksumtype, skipchecksum, extradata, verbose, returnfp);
+ return listcatfiles;
+
+def CatFileArrayBase64Encode(infile, followlink=False, seekstart=0, seekend=0, skipchecksum=False, verbose=False, returnfp=False):
+ if(verbose):
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+ if(isinstance(infile, dict)):
+  prelistcatfiles = CatFileToArrayIndex(infile, seekstart, seekend, False, skipchecksum, returnfp);
+  listcatfiles = prelistcatfiles['list'];
+ else:
+  if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
+   infile = RemoveWindowsPath(infile);
+  if(followlink):
+   prelistcatfiles = CatFileToArrayIndex(infile, seekstart, seekend, False, skipchecksum, returnfp);
+   listcatfiles = prelistcatfiles['list'];
+  else:
+   listcatfiles = CatFileToArray(infile, seekstart, seekend, False, skipchecksum, returnfp);
+ if(not listcatfiles):
+  return False;
+ lenlist = len(listcatfiles['ffilelist']);
+ if(seekstart>0):
+  lcfi = seekstart;
+ else:
+  lcfi = 0;
+ if(seekend>0 and seekend<listcatfiles['fnumfiles']):
+  lcfx = seekend;
+ else:
+  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+   lcfx = listcatfiles['fnumfiles'];
+  else:
+   lcfx = int(listcatfiles['fnumfiles']);
+ if(lenlist>lcfx or lenlist<lcfx):
+  lcfx = lenlist;
+ while(lcfi < lcfx):
+  if(listcatfiles['ffilelist'][lcfi]['fhascontents']):
+   listcatfiles['ffilelist'][lcfi]['fcontents'] = base64.b64encode(listcatfiles['ffilelist'][lcfi]['fcontents']).decode("UTF-8");
+  lcfi = lcfi + 1;
+ return listcatfiles;
+
+def CatFileArrayBase64Decode(infile, followlink=False, seekstart=0, seekend=0, skipchecksum=False, verbose=False, returnfp=False):
+ if(verbose):
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+ if(isinstance(infile, dict)):
+  prelistcatfiles = CatFileToArrayIndex(infile, seekstart, seekend, False, skipchecksum, returnfp);
+  listcatfiles = prelistcatfiles['list'];
+ else:
+  if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
+   infile = RemoveWindowsPath(infile);
+  if(followlink):
+   prelistcatfiles = CatFileToArrayIndex(infile, seekstart, seekend, False, skipchecksum, returnfp);
+   listcatfiles = prelistcatfiles['list'];
+  else:
+   listcatfiles = CatFileToArray(infile, seekstart, seekend, False, skipchecksum, returnfp);
+ if(not listcatfiles):
+  return False;
+ lenlist = len(listcatfiles['ffilelist']);
+ if(seekstart>0):
+  lcfi = seekstart;
+ else:
+  lcfi = 0;
+ if(seekend>0 and seekend<listcatfiles['fnumfiles']):
+  lcfx = seekend;
+ else:
+  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+   lcfx = listcatfiles['fnumfiles'];
+  else:
+   lcfx = int(listcatfiles['fnumfiles']);
+ if(lenlist>lcfx or lenlist<lcfx):
+  lcfx = lenlist;
+ while(lcfi < lcfx):
+  if(listcatfiles['ffilelist'][lcfi]['fhascontents']):
+   listcatfiles['ffilelist'][lcfi]['fcontents'] = base64.b64decode(listcatfiles['ffilelist'][lcfi]['fcontents'].encode("UTF-8"));
+  lcfi = lcfi + 1;
  return listcatfiles;
 
 def UnPackCatFile(infile, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, verbose=False, returnfp=False):
