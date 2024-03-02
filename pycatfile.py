@@ -55,6 +55,12 @@ try:
 except ImportError:
  import pickle;
 
+pickledp = None;
+try:
+ pickledp = pickle.DEFAULT_PROTOCOL;
+except AttributeError:
+ pickledp = 2;
+
 try:
  from zlib import crc32;
 except ImportError:
@@ -3228,6 +3234,198 @@ def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", compr
  outarray = BytesIO();
  packcat = PackCatFile(infiles, outarray, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, verbose, True);
  listcatfiles = CatFileToArrayIndex(outarray, seekstart, seekend, listonly, skipchecksum, returnfp)
+ return listcatfiles;
+
+def MakeCatFileJSONFromCatFileArray(inhockeyarray, jsonindent=1, beautify=True, sortkeys=False, verbose=True, jsonverbose=True):
+ if(beautify):
+  jsonstring = json.dumps(inhockeyarray, sort_keys=sortkeys, indent=jsonindent);
+ else:
+  jsonstring = json.dumps(inhockeyarray, sort_keys=sortkeys, separators=(', ', ': '));
+ if(verbose and jsonverbose):
+  VerbosePrintOut(jsonstring);
+ elif(verbose and not jsonverbose):
+  VerbosePrintOut(MakeCatFileXMLFromCatFileArray(inhockeyarray, verbose=False, jsonverbose=True));
+ return jsonstring;
+
+def MakeCatFileJSONFileFromCatFileArray(inhockeyarray, outjsonfile=None, returnjson=False, jsonindent=1, beautify=True, sortkeys=False, verbose=True, jsonverbose=True):
+ if(outjsonfile is None):
+  return False;
+ fbasename = os.path.splitext(outjsonfile)[0];
+ fextname = os.path.splitext(outjsonfile)[1];
+ jsonfp = CompressOpenFile(outjsonfile);
+ jsonstring = MakeCatFileJSONFromCatFileArray(inhockeyarray, jsonindent, beautify, sortkeys, verbose);
+ try:
+  jsonfp.write(jsonstring);
+ except TypeError:
+  jsonfp.write(jsonstring.encode("UTF-8"));
+ jsonfp.close();
+ if(returnjson):
+  return jsonstring;
+ if(not returnjson):
+  return True;
+ return True;
+
+def MakeCatFileArrayFromCatFileJSON(injsonfile, jsonisfile=True, verbose=True, jsonverbose=True):
+ if(jsonisfile and ((os.path.exists(injsonfile) and os.path.isfile(injsonfile)))):
+  jsonfp = UncompressFile(injsonfile);
+  listcatfiles = json.load(jsonfp);
+  jsonfp.close();
+ elif(not jsonisfile):
+  chckcompression = CheckCompressionTypeFromString(injsonfile);
+  if(not chckcompression):
+   jsonfp = StringIO(injsonfile);
+  else:
+   try:
+    injsonsfile = BytesIO(injsonfile);
+   except TypeError:
+    injsonsfile = BytesIO(injsonfile.encode("UTF-8"));
+   jsonfp = UncompressFile(injsonsfile);
+  listcatfiles = json.load(jsonfp);
+  jsonfp.close();
+ else:
+  return False;
+ if(verbose and jsonverbose):
+  VerbosePrintOut(MakeCatFileJSONFromCatFileArray(listcatfiles, verbose=False, jsonverbose=True));
+ elif(verbose and not jsonverbose):
+  VerbosePrintOut(MakeCatFileXMLFromCatFileArray(listcatfiles, verbose=False, jsonverbose=True));
+ return listcatfiles;
+
+def MakeCatFilePickleFromCatFileArray(inlistcatfiles, protocol=pickledp, verbose=True, jsonverbose=True):
+ if(protocol is None):
+  picklestring = pickle.dumps(inlistcatfiles, fix_imports=True);
+ else:
+  picklestring = pickle.dumps(inlistcatfiles, protocol=protocol, fix_imports=True);
+ if(verbose and jsonverbose):
+  VerbosePrintOut(MakeCatFileJSONFromCatFileArray(inlistcatfiles, verbose=False, jsonverbose=True));
+ elif(verbose and not jsonverbose):
+  VerbosePrintOut(MakeCatFileXMLFromCatFileArray(inlistcatfiles, verbose=False, jsonverbose=True));
+ return picklestring;
+
+def MakeCatFilePickleFileFromCatFileArray(inlistcatfiles, outpicklefile=None, returnpickle=False, protocol=pickledp, verbose=True, jsonverbose=True):
+ if(outpicklefile is None):
+  return False;
+ fbasename = os.path.splitext(outpicklefile)[0];
+ fextname = os.path.splitext(outpicklefile)[1];
+ picklefp = CompressOpenFile(outpicklefile);
+ picklestring = MakeCatFilePickleFromCatFileArray(inlistcatfiles, protocol, verbose);
+ try:
+  picklefp.write(picklestring);
+ except TypeError:
+  picklefp.write(picklestring.encode("UTF-8"));
+ picklefp.close();
+ if(returnpickle):
+  return picklestring;
+ if(not returnpickle):
+  return True;
+ return True;
+
+def MakeCatFileArrayFromCatFilePickle(inpicklefile, pickleisfile=True, verbose=True, jsonverbose=True):
+ if(pickleisfile and ((os.path.exists(inpicklefile) and os.path.isfile(inpicklefile)))):
+  picklefp = UncompressFile(inpicklefile);
+  listcatfiles = pickle.load(picklefp, fix_imports=True);
+  picklefp.close();
+ elif(not pickleisfile):
+  picklefp = BytesIO(inpicklefile.encode("UTF-8"));
+  picklefp = UncompressFile(picklefp);
+  listcatfiles = json.load(picklefp, fix_imports=True);
+  picklefp.close();
+ else:
+  return False;
+ if(verbose and jsonverbose):
+  VerbosePrintOut(MakeCatFileJSONFromCatFileArray(listcatfiles, verbose=False, jsonverbose=True));
+ elif(verbose and not jsonverbose):
+  VerbosePrintOut(MakeCatFileXMLFromCatFileArray(listcatfiles, verbose=False, jsonverbose=True));
+ return listcatfiles;
+
+def MakeCatFileMarshalFromCatFileArray(inlistcatfiles, version=marshal.version, verbose=True, jsonverbose=True):
+ marshalstring = marshal.dumps(inlistcatfiles, version);
+ if(verbose and jsonverbose):
+  VerbosePrintOut(MakeCatFileJSONFromCatFileArray(inlistcatfiles, verbose=False, jsonverbose=True));
+ elif(verbose and not jsonverbose):
+  VerbosePrintOut(MakeCatFileXMLFromCatFileArray(inlistcatfiles, verbose=False, jsonverbose=True));
+ return marshalstring;
+
+def MakeCatFileMarshalFileFromCatFileArray(inlistcatfiles, outmarshalfile=None, returnmarshal=False, version=marshal.version, verbose=True, jsonverbose=True):
+ if(outmarshalfile is None):
+  return False;
+ fbasename = os.path.splitext(outmarshalfile)[0];
+ fextname = os.path.splitext(outmarshalfile)[1];
+ marshalfp = CompressOpenFile(outmarshalfile);
+ marshalstring = MakeCatFileMarshalFromCatFileArray(inlistcatfiles, version, verbose);
+ try:
+  marshalfp.write(marshalstring);
+ except TypeError:
+  marshalfp.write(marshalstring.encode("UTF-8"));
+ marshalfp.close();
+ if(returnmarshal):
+  return marshalstring;
+ if(not returnmarshal):
+  return True;
+ return True;
+
+def MakeCatFileArrayFromCatFileMarshal(inmarshalfile, marshalisfile=True, verbose=True, jsonverbose=True):
+ if(marshalisfile and ((os.path.exists(inmarshalfile) and os.path.isfile(inmarshalfile)))):
+  inmarshalfile = UncompressFileURL(inmarshalfile, geturls_headers, geturls_cj);
+  listcatfiles = marshal.load(inmarshalfile);
+  marshalfp = UncompressFile(inmarshalfile);
+  listcatfiles = marshal.load(marshalfp);
+  marshalfp.close();
+ elif(not marshalisfile):
+  marshalfp = BytesIO(inmarshalfile.encode("UTF-8"));
+  marshalfp = UncompressFile(marshalfp);
+  listcatfiles = json.load(marshalfp);
+  marshalfp.close();
+ else:
+  return False;
+ if(verbose and jsonverbose):
+  VerbosePrintOut(MakeCatFileJSONFromCatFileArray(listcatfiles, verbose=False, jsonverbose=True));
+ elif(verbose and not jsonverbose):
+  VerbosePrintOut(MakeCatFileXMLFromCatFileArray(listcatfiles, verbose=False, jsonverbose=True));
+ return listcatfiles;
+
+def MakeCatFileShelveFromCatFileArray(inlistcatfiles, version=pickledp, verbose=True, jsonverbose=True):
+ outshelvefile = BytesIO();
+ with shelve.open(outshelvefile, protocol=version) as shelf_file:
+  for key, value in inlistcatfiles.items():
+   shelf_file[key] = value;
+ outshelvefile.seek(0);
+ shelvestring = outshelvefile.read();
+ if(verbose and jsonverbose):
+  VerbosePrintOut(MakeCatFileJSONFromCatFileArray(inlistcatfiles, verbose=False, jsonverbose=True));
+ elif(verbose and not jsonverbose):
+  VerbosePrintOut(MakeCatFileXMLFromCatFileArray(inlistcatfiles, verbose=False, jsonverbose=True));
+ return shelvestring;
+
+def MakeCatFileShelveFileFromCatFileArray(inlistcatfiles, outshelvefile=None, returnshelve=False, version=pickledp, verbose=True, jsonverbose=True):
+ if(outshelvefile is None):
+  return False;
+ fbasename = os.path.splitext(outshelvefile)[0];
+ fextname = os.path.splitext(outshelvefile)[1];
+ with shelve.open(outshelvefile, protocol=version) as shelf_file:
+  for key, value in inlistcatfiles.items():
+   shelf_file[key] = value;
+ if(returnshelve):
+  shelvestring = MakeCatFileShelveFromCatFileArray(inlistcatfiles, version, False, False);
+  return shelvestring;
+ if(not returnshelve):
+  return True;
+ return True;
+
+def MakeCatFileArrayFromCatFileShelve(inshelvefile, shelveisfile=True, version=pickledp, verbose=True, jsonverbose=True):
+ if(shelveisfile):
+  with shelve.open(inshelvefile, protocol=version) as shelf_file:
+   listcatfiles = dict(shelf_file);
+ else:
+  try:
+   inshelvefile = BytesIO(inshelvefile);
+  except TypeError:
+   inshelvefile = BytesIO(inshelvefile.encode("UTF-8"));
+  with shelve.open(inshelvefile, protocol=version) as shelf_file:
+   listcatfiles = dict(shelf_file);
+ if(verbose and jsonverbose):
+  VerbosePrintOut(MakeCatFileJSONFromCatFileArray(listcatfiles, verbose=False, jsonverbose=True));
+ elif(verbose and not jsonverbose):
+  VerbosePrintOut(MakeCatFileXMLFromCatFileArray(listcatfiles, verbose=False, jsonverbose=True));
  return listcatfiles;
 
 def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, extradata=[], verbose=False, returnfp=False):
