@@ -120,6 +120,7 @@ __program_name__ = "Py"+__file_format_name__;
 __file_format_lower__ = __file_format_name__.lower();
 __file_format_len__ = len(__file_format_name__);
 __file_format_hex__ = binascii.hexlify(__file_format_name__.encode("UTF-8")).decode("UTF-8");
+__file_format_delimiter__ = "\x00";
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 2, 0, "RC 1", 1);
@@ -350,10 +351,10 @@ def crc64_iso(msg, initial_value=0xFFFFFFFFFFFFFFFF):
    crc &= 0xFFFFFFFFFFFFFFFF;  # Ensure CRC remains 64-bit
  return crc;
 
-def ReadTillNullByte(fp):
+def ReadTillNullByte(fp, delimiter=__file_format_delimiter__):
  curbyte = b"";
  curfullbyte = b"";
- nullbyte = b"\0";
+ nullbyte = delimiter.encode("UTF-8");
  while(True):
   curbyte = fp.read(1);
   if(curbyte==nullbyte or not curbyte):
@@ -361,8 +362,8 @@ def ReadTillNullByte(fp):
   curfullbyte = curfullbyte + curbyte;
  return curfullbyte.decode('UTF-8');
 
-def ReadUntilNullByte(fp):
- return ReadTillNullByte(fp);
+def ReadUntilNullByte(fp, delimiter=__file_format_delimiter__):
+ return ReadTillNullByte(fp, delimiter);
 
 def SeekToEndOfFile(fp):
  lasttell = 0;
@@ -373,30 +374,30 @@ def SeekToEndOfFile(fp):
   lasttell = fp.tell();
  return True;
 
-def ReadFileHeaderData(fp, rounds=0):
+def ReadFileHeaderData(fp, rounds=0, delimiter=__file_format_delimiter__):
  rocount = 0;
  roend = int(rounds);
  HeaderOut = [];
  while(rocount<roend):
-  HeaderOut.append(ReadTillNullByte(fp));
+  HeaderOut.append(ReadTillNullByte(fp, delimiter));
   rocount = rocount + 1;
  return HeaderOut;
 
-def ReadFileHeaderDataByList(fp, listval=[]):
+def ReadFileHeaderDataByList(fp, listval=[], delimiter=__file_format_delimiter__):
  rocount = 0;
  roend = int(len(listval));
  HeaderOut = {};
  while(rocount<roend):
-  RoundArray = {listval[rocount]: ReadTillNullByte(fp)};
+  RoundArray = {listval[rocount]: ReadTillNullByte(fp, delimiter)};
   HeaderOut.update(RoundArray);
   rocount = rocount + 1;
  return HeaderOut;
 
-def AppendNullByte(indata):
- outdata = str(indata) + "\0";
+def AppendNullByte(indata, delimiter=__file_format_delimiter__):
+ outdata = str(indata) + delimiter;
  return outdata;
 
-def AppendNullBytes(indata=[]):
+def AppendNullBytes(indata=[], delimiter=__file_format_delimiter__):
  outdata = "";
  inum = 0;
  il = len(indata);
@@ -405,40 +406,40 @@ def AppendNullBytes(indata=[]):
   inum = inum + 1;
  return outdata;
 
-def ReadTillNullByteAlt(fp):
+def ReadTillNullByteAlt(fp, delimiter=__file_format_delimiter__):
  """Read bytes from file pointer until a null byte is encountered."""
  bytes_list = []  # Use list for efficient append operation.
  while True:
   cur_byte = fp.read(1);
-  if cur_byte == b"\0" or not cur_byte:
+  if cur_byte == delimiter.encode() or not cur_byte:
    break;
   bytes_list.append(cur_byte);
  return b''.join(bytes_list).decode('UTF-8');
 
-def ReadUntilNullByteAlt(fp):
- return ReadTillNullByteAlt(fp);
+def ReadUntilNullByteAlt(fp, delimiter=__file_format_delimiter__):
+ return ReadTillNullByteAlt(fp, delimiter);
 
-def ReadFileHeaderDataAlt(fp, rounds=0):
+def ReadFileHeaderDataAlt(fp, rounds=0, delimiter=__file_format_delimiter__):
  """Read multiple null-byte terminated strings from a file."""
  header_out = [];
  for round_count in range(rounds):
-  header_out[round_count] = ReadTillNullByteAlt(fp);
+  header_out[round_count] = ReadTillNullByteAlt(fp, delimiter);
  return header_out;
 
-def ReadFileHeaderDataByListAlt(fp, listval=[]):
+def ReadFileHeaderDataByListAlt(fp, listval=[], delimiter=__file_format_delimiter__):
  """Read multiple null-byte terminated strings from a file."""
  header_out = {};
  for round_count in listval:
-  header_out.append(ReadTillNullByteAlt(fp));
+  header_out.append(ReadTillNullByteAlt(fp, delimiter));
  return header_out;
 
-def AppendNullByteAlt(indata):
+def AppendNullByteAlt(indata, delimiter=__file_format_delimiter__):
  """Append a null byte to the given data."""
- return str(indata) + "\0";
+ return str(indata) + delimiter;
 
-def AppendNullBytesAlt(indata=[]):
+def AppendNullBytesAlt(indata=[], delimiter=__file_format_delimiter__):
  """Append a null byte to each element in the list and concatenate."""
- return '\0'.join(map(str, indata)) + "\0";  # Efficient concatenation with null byte.
+ return delimiter.join(map(str, indata)) + delimiter;  # Efficient concatenation with null byte.
 
 def PrintPermissionString(fchmode, ftype):
  permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
@@ -1397,7 +1398,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, compression="auto", comp
   catfhend = (catfp.tell() - 1) + len(catfileoutstr);
   catfcontentstart = catfp.tell() + len(catfileoutstr);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = "\0".encode('UTF-8');
+  nullstrecd = __file_format_delimiter__.encode('UTF-8');
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
@@ -1687,7 +1688,7 @@ def PackCatFileFromTarFile(infile, outfile, compression="auto", compressionlevel
    catfileheadercshex = checksumoutstr.hexdigest().lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = "\0".encode('UTF-8');
+  nullstrecd = __file_format_delimiter__.encode('UTF-8');
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
@@ -1980,7 +1981,7 @@ def PackCatFileFromZipFile(infile, outfile, compression="auto", compressionlevel
    catfileheadercshex = checksumoutstr.hexdigest().lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = "\0".encode('UTF-8');
+  nullstrecd = __file_format_delimiter__.encode('UTF-8');
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
@@ -2537,7 +2538,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
    catfileheadercshex = checksumoutstr.hexdigest().lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = "\0".encode('UTF-8');
+  nullstrecd = __file_format_delimiter__.encode('UTF-8');
   fheadtell += len(catfileoutstr) + 1;
   catfcontentend = fheadtell - 1;
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
@@ -2739,7 +2740,7 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
    catfileheadercshex = checksumoutstr.hexdigest().lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = "\0".encode('UTF-8');
+  nullstrecd = __file_format_delimiter__.encode('UTF-8');
   fheadtell += len(catfileoutstr) + 1;
   catfcontentend = fheadtell - 1;
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
@@ -2952,7 +2953,7 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
    catfileheadercshex = checksumoutstr.hexdigest().lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = "\0".encode('UTF-8');
+  nullstrecd = __file_format_delimiter__.encode('UTF-8');
   fheadtell += len(catfileoutstr) + 1;
   catfcontentend = fheadtell - 1;
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
@@ -3726,7 +3727,7 @@ def RePackCatFile(infile, outfile, compression="auto", compressionlevel=None, fo
    catfileheadercshex = checksumoutstr.hexdigest().lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = "\0".encode('UTF-8');
+  nullstrecd = __file_format_delimiter__.encode('UTF-8');
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
