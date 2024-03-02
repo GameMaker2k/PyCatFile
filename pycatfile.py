@@ -3236,24 +3236,24 @@ def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", compr
  listcatfiles = CatFileToArrayIndex(outarray, seekstart, seekend, listonly, skipchecksum, returnfp)
  return listcatfiles;
 
-def MakeCatFileJSONFromCatFileArray(inhockeyarray, jsonindent=1, beautify=True, sortkeys=False, verbose=True, jsonverbose=True):
+def MakeCatFileJSONFromCatFileArray(inlistcatfiles, jsonindent=1, beautify=True, sortkeys=False, verbose=True, jsonverbose=True):
  if(beautify):
-  jsonstring = json.dumps(inhockeyarray, sort_keys=sortkeys, indent=jsonindent);
+  jsonstring = json.dumps(inlistcatfiles, sort_keys=sortkeys, indent=jsonindent);
  else:
-  jsonstring = json.dumps(inhockeyarray, sort_keys=sortkeys, separators=(', ', ': '));
+  jsonstring = json.dumps(inlistcatfiles, sort_keys=sortkeys, separators=(', ', ': '));
  if(verbose and jsonverbose):
   VerbosePrintOut(jsonstring);
  elif(verbose and not jsonverbose):
-  VerbosePrintOut(MakeCatFileXMLFromCatFileArray(inhockeyarray, verbose=False, jsonverbose=True));
+  VerbosePrintOut(MakeCatFileXMLFromCatFileArray(inlistcatfiles, verbose=False, jsonverbose=True));
  return jsonstring;
 
-def MakeCatFileJSONFileFromCatFileArray(inhockeyarray, outjsonfile=None, returnjson=False, jsonindent=1, beautify=True, sortkeys=False, verbose=True, jsonverbose=True):
+def MakeCatFileJSONFileFromCatFileArray(inlistcatfiles, outjsonfile=None, returnjson=False, jsonindent=1, beautify=True, sortkeys=False, verbose=True, jsonverbose=True):
  if(outjsonfile is None):
   return False;
  fbasename = os.path.splitext(outjsonfile)[0];
  fextname = os.path.splitext(outjsonfile)[1];
  jsonfp = CompressOpenFile(outjsonfile);
- jsonstring = MakeCatFileJSONFromCatFileArray(inhockeyarray, jsonindent, beautify, sortkeys, verbose);
+ jsonstring = MakeCatFileJSONFromCatFileArray(inlistcatfiles, jsonindent, beautify, sortkeys, verbose);
  try:
   jsonfp.write(jsonstring);
  except TypeError:
