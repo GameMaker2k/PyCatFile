@@ -356,8 +356,9 @@ def ReadTillNullByte(fp):
  nullbyte = b"\0";
  while(True):
   curbyte = fp.read(1);
-  if(curbyte!=nullbyte or not curbyte):
-   curfullbyte = curfullbyte + curbyte;
+  if(curbyte==nullbyte or not curbyte):
+   break;
+  curfullbyte = curfullbyte + curbyte;
  return curfullbyte.decode('UTF-8');
 
 def ReadUntilNullByte(fp):
