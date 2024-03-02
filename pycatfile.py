@@ -2131,7 +2131,7 @@ def CatFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  fileheader = fileheader + AppendNullByte(catfileheadercshex);
  fheadtell = len(fileheader);
  if(fprechecksum!=catfileheadercshex and not skipchecksum):
-  VerbosePrintOut("File Header Checksum Error with file " + catfname + " at offset " + str(catfhstart));
+  VerbosePrintOut("File Header Checksum Error with file " + infile + " at offset " + str(catfp.tell()));
   return False;
  catversions = re.search(r'(.*?)(\d+)$', catstring).groups();
  catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}};
