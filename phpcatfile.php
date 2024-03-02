@@ -12,7 +12,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: phpcatfile.php - Last Update: 2/28/2024 Ver. 0.1.6 RC 1 - Author: cooldude2k $
+    $FileInfo: phpcatfile.php - Last Update: 3/1/2024 Ver. 0.2.0 RC 1 - Author: cooldude2k $
 */
 
 date_default_timezone_set('UTC');
@@ -20,9 +20,9 @@ date_default_timezone_set('UTC');
 $info['program_name'] = "PHPCatFile";
 $info['project'] = $info['program_name'];
 $info['project_url'] = "https://github.com/GameMaker2k/PyCatFile";
-$info['version_info'] = array(0 => 0, 1 => 1, 2 => 6, 3 => "RC 1", 4 => 1);
+$info['version_info'] = array(0 => 0, 1 => 2, 2 => 0, 3 => "RC 1", 4 => 1);
 $info['version_id'] = "$Id$";
-$info['version_date_info'] = array(0 => 2024, 1 => 2, 2 => 28, 3 => "RC 1", 1);
+$info['version_date_info'] = array(0 => 2024, 1 => 3, 2 => 1, 3 => "RC 1", 1);
 $info['version_date'] = $info['version_date_info'][0].".".str_pad($info['version_date_info'][1], 2, "-=", STR_PAD_LEFT).".".str_pad($info['version_date_info'][2], 2, "-=", STR_PAD_LEFT);
 if($info['version_info'][4]!==Null) {
  $info['version_date_plusrc'] = $info['version_date']."-".$info['version_date_info'][4]; }
