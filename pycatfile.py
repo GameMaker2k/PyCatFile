@@ -147,19 +147,19 @@ tarfile_mimetype = "application/tar";
 tarfile_tar_mimetype = tarfile_mimetype;
 zipfile_mimetype = "application/zip";
 zipfile_zip_mimetype = zipfile_mimetype;
-catfile_mimetype = "application/x-"+__file_format_lower__+"";
+catfile_mimetype = "application/x-"+__file_format_list__[1]+"";
 catfile_cat_mimetype = catfile_mimetype;
-catfile_gzip_mimetype = "application/x-"+__file_format_lower__+"+gzip";
+catfile_gzip_mimetype = "application/x-"+__file_format_list__[1]+"+gzip";
 catfile_gz_mimetype = catfile_gzip_mimetype;
-catfile_bzip2_mimetype = "application/x-"+__file_format_lower__+"+bzip2";
+catfile_bzip2_mimetype = "application/x-"+__file_format_list__[1]+"+bzip2";
 catfile_bz2_mimetype = catfile_bzip2_mimetype;
-catfile_lz4_mimetype = "application/x-"+__file_format_lower__+"+lz4";
-catfile_lzop_mimetype = "application/x-"+__file_format_lower__+"+lzop";
+catfile_lz4_mimetype = "application/x-"+__file_format_list__[1]+"+lz4";
+catfile_lzop_mimetype = "application/x-"+__file_format_list__[1]+"+lzop";
 catfile_lzo_mimetype = catfile_lzop_mimetype;
-catfile_zstandard_mimetype = "application/x-"+__file_format_lower__+"+zstandard";
+catfile_zstandard_mimetype = "application/x-"+__file_format_list__[1]+"+zstandard";
 catfile_zstd_mimetype = catfile_zstandard_mimetype;
-catfile_lzma_mimetype = "application/x-"+__file_format_lower__+"+lzma";
-catfile_xz_mimetype = "application/x-"+__file_format_lower__+"+xz";
+catfile_lzma_mimetype = "application/x-"+__file_format_list__[1]+"+lzma";
+catfile_xz_mimetype = "application/x-"+__file_format_list__[1]+"+xz";
 catfile_extensions = ['.cat', '.cat.gz', '.cgz', '.cat.bz2', '.cbz', '.cat.zst', '.czst', '.cat.lz4', '.clz4', '.cat.lzo', '.cat.lzop', '.clzo', '.cat.lzma', '.cat.xz', '.cxz'];
 
 if __name__ == "__main__":
