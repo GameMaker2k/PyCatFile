@@ -147,20 +147,20 @@ tarfile_mimetype = "application/tar";
 tarfile_tar_mimetype = tarfile_mimetype;
 zipfile_mimetype = "application/zip";
 zipfile_zip_mimetype = zipfile_mimetype;
-catfile_mimetype = "application/x-"+__file_format_list__[1]+"";
-catfile_cat_mimetype = catfile_mimetype;
-catfile_gzip_mimetype = "application/x-"+__file_format_list__[1]+"+gzip";
-catfile_gz_mimetype = catfile_gzip_mimetype;
-catfile_bzip2_mimetype = "application/x-"+__file_format_list__[1]+"+bzip2";
-catfile_bz2_mimetype = catfile_bzip2_mimetype;
-catfile_lz4_mimetype = "application/x-"+__file_format_list__[1]+"+lz4";
-catfile_lzop_mimetype = "application/x-"+__file_format_list__[1]+"+lzop";
-catfile_lzo_mimetype = catfile_lzop_mimetype;
-catfile_zstandard_mimetype = "application/x-"+__file_format_list__[1]+"+zstandard";
-catfile_zstd_mimetype = catfile_zstandard_mimetype;
-catfile_lzma_mimetype = "application/x-"+__file_format_list__[1]+"+lzma";
-catfile_xz_mimetype = "application/x-"+__file_format_list__[1]+"+xz";
-catfile_extensions = ['.cat', '.cat.gz', '.cgz', '.cat.bz2', '.cbz', '.cat.zst', '.czst', '.cat.lz4', '.clz4', '.cat.lzo', '.cat.lzop', '.clzo', '.cat.lzma', '.cat.xz', '.cxz'];
+archivefile_mimetype = "application/x-"+__file_format_list__[1]+"";
+archivefile_cat_mimetype = archivefile_mimetype;
+archivefile_gzip_mimetype = "application/x-"+__file_format_list__[1]+"+gzip";
+archivefile_gz_mimetype = archivefile_gzip_mimetype;
+archivefile_bzip2_mimetype = "application/x-"+__file_format_list__[1]+"+bzip2";
+archivefile_bz2_mimetype = archivefile_bzip2_mimetype;
+archivefile_lz4_mimetype = "application/x-"+__file_format_list__[1]+"+lz4";
+archivefile_lzop_mimetype = "application/x-"+__file_format_list__[1]+"+lzop";
+archivefile_lzo_mimetype = archivefile_lzop_mimetype;
+archivefile_zstandard_mimetype = "application/x-"+__file_format_list__[1]+"+zstandard";
+archivefile_zstd_mimetype = archivefile_zstandard_mimetype;
+archivefile_lzma_mimetype = "application/x-"+__file_format_list__[1]+"+lzma";
+archivefile_xz_mimetype = "application/x-"+__file_format_list__[1]+"+xz";
+archivefile_extensions = ['.cat', '.cat.gz', '.cat.bz2', '.cat.zst', '.cat.lz4', '.cat.lzo', '.cat.lzop', '.cat.lzma', '.cat.xz'];
 
 if __name__ == "__main__":
  import subprocess;
@@ -604,21 +604,21 @@ def CheckCompressionTypeFromString(instring, formatspecs=__file_format_list__, c
 def GetCompressionMimeType(infile, formatspecs=__file_format_list__):
  compresscheck = CheckCompressionType(fp, formatspecs, False);
  if(compresscheck=="gzip" or compresscheck=="gz"):
-  return catfile_gzip_mimetype;
+  return archivefile_gzip_mimetype;
  if(compresscheck=="bzip2" or compresscheck=="bz2"):
-  return catfile_bzip2_mimetype;
+  return archivefile_bzip2_mimetype;
  if(compresscheck=="zstd" or compresscheck=="zstandard"):
-  return catfile_zstandard_mimetype;
+  return archivefile_zstandard_mimetype;
  if(compresscheck=="lz4"):
-  return catfile_lz4_mimetype;
+  return archivefile_lz4_mimetype;
  if(compresscheck=="lzo" or compresscheck=="lzop"):
-  return catfile_lzop_mimetype;
+  return archivefile_lzop_mimetype;
  if(compresscheck=="lzma"):
-  return catfile_lzma_mimetype;
+  return archivefile_lzma_mimetype;
  if(compresscheck=="xz"):
-  return catfile_xz_mimetype;
+  return archivefile_xz_mimetype;
  if(compresscheck=="catfile" or compresscheck=="cat" or compresscheck==formatspecs[1]):
-  return catfile_cat_mimetype;
+  return archivefile_cat_mimetype;
  if(not compresscheck):
   return False;
  return False;
@@ -1085,8 +1085,8 @@ def CheckSumSupportAlt(checkfor, guaranteed=True):
 
 def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
- outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'lzop', 'clzo', 'lzma', 'xz', 'cxz'];
- outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', '.clz4', '.lzo', '.lzop', '.clzo', '.lzma', '.xz', '.cxz'];
+ outextlist = ['gz', 'bz2', 'zst', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
+ outextlistwd = ['.gz', '.bz2', '.zst', '.lz4', '.lzo', '.lzop', '.lzma', '.xz'];
  advancedlist = True;
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
@@ -1445,8 +1445,8 @@ def PackArchiveFileFromDirList(infiles, outfile, dirlistfromtxt=False, compressi
 
 def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
- outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'lzop', 'clzo', 'lzma', 'xz', 'cxz'];
- outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', '.clz4', '.lzo', '.lzop', '.clzo', '.lzma', '.xz', '.cxz'];
+ outextlist = ['gz', 'bz2', 'zst', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
+ outextlistwd = ['.gz', '.bz2', '.zst', '.lz4', '.lzo', '.lzop', '.lzma', '.xz'];
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -1730,8 +1730,8 @@ create_alias_function("Pack", __file_format_name__, "FromTarFile", PackArchiveFi
 
 def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
- outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'clz4', 'lzo', 'lzop', 'clzo', 'lzma', 'xz', 'cxz'];
- outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', '.clz4', '.lzo', '.lzop', '.clzo', '.lzma', '.xz', '.cxz'];
+ outextlist = ['gz', 'bz2', 'zst', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
+ outextlistwd = ['.gz', '.bz2', '.zst', '.lz4', '.lzo', '.lzop', '.lzma', '.xz'];
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -4191,4 +4191,4 @@ if(hasattr(shutil, "register_archive_format")):
 
 if(hasattr(shutil, "register_unpack_format")):
  # Register the unpacking format
- shutil.register_unpack_format(__file_format_name__, catfile_extensions, UnPackArchiveFileFunc, description='UnPack concatenated files');
+ shutil.register_unpack_format(__file_format_name__, archivefile_extensions, UnPackArchiveFileFunc, description='UnPack concatenated files');
