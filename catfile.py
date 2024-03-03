@@ -96,17 +96,17 @@ should_repack = getargs.create and getargs.repack;
 # Execute the appropriate functions based on determined actions and arguments
 if should_create:
  if getargs.converttar:
-  pycatfile.PackCatFileFromTarFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], __file_format_list__, getargs.verbose, False);
+  pycatfile.PackArchiveFileFromTarFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], __file_format_list__, getargs.verbose, False);
  elif getargs.convertzip:
-  pycatfile.PackCatFileFromZipFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], __file_format_list__, getargs.verbose, False);
+  pycatfile.PackArchiveFileFromZipFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], __file_format_list__, getargs.verbose, False);
  else:
-  pycatfile.PackCatFile(getargs.input, getargs.output, getargs.text, getargs.compression, getargs.level, False, getargs.checksum, [], __file_format_list__, getargs.verbose, False);
+  pycatfile.PackArchiveFile(getargs.input, getargs.output, getargs.text, getargs.compression, getargs.level, False, getargs.checksum, [], __file_format_list__, getargs.verbose, False);
 
 if should_repack:
- pycatfile.RePackCatFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, False, [], __file_format_list__, getargs.verbose, False);
+ pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, False, [], __file_format_list__, getargs.verbose, False);
 
 if should_extract:
- pycatfile.UnPackCatFile(getargs.input, getargs.output, False, 0, 0, False, __file_format_list__, getargs.verbose, False);
+ pycatfile.UnPackArchiveFile(getargs.input, getargs.output, False, 0, 0, False, __file_format_list__, getargs.verbose, False);
 
 if should_list:
  if getargs.converttar:
@@ -114,4 +114,4 @@ if should_list:
  elif getargs.convertzip:
   pycatfile.ZipFileListFiles(getargs.input, getargs.verbose, False);
  else:
-  pycatfile.CatFileListFiles(getargs.input, 0, 0, False, __file_format_list__, getargs.verbose, False);
+  pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, False, __file_format_list__, getargs.verbose, False);
