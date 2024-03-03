@@ -2011,7 +2011,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
    return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
-  if(checkcompressfile!="catfile" and checkcompressfile!=__file_format_lower__):
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
    return False;
   if(not catfp):
    return False;
@@ -2034,7 +2034,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
    return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
-  if(checkcompressfile!="catfile" and checkcompressfile!=__file_format_lower__):
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
    return False;
   compresscheck = CheckCompressionType(infile, formatspecs, True);
   if(not compresscheck):
@@ -2083,7 +2083,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    except ImportError:
     return False;
    catfp = lzma.open(infile, "rb");
-  if(compresscheck=="catfile" and compresscheck==__file_format_lower__):
+  if(compresscheck=="catfile" and compresscheck==formatspecs[1]):
    catfp = open(infile, "rb");
  '''
  try:
