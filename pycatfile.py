@@ -403,7 +403,7 @@ def AppendNullBytes(indata=[], delimiter=__file_format_delimiter__):
  inum = 0;
  il = len(indata);
  while(inum < il):
-  outdata = outdata + AppendNullByte(indata[inum]);
+  outdata = outdata + AppendNullByte(indata[inum], delimiter);
   inum = inum + 1;
  return outdata;
 
