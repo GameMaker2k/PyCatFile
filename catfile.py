@@ -95,8 +95,6 @@ fnamelen = len(fname);
 fnamehex = binascii.hexlify(fname.encode("UTF-8")).decode("UTF-8");
 fnamelist = [fname, fnamelower, fnamelen, fnamehex, getargs.delimiter];
 
-print(fnamelist);
-
 # Determine actions based on user input
 should_create = getargs.create and not getargs.extract and not getargs.list;
 should_extract = getargs.extract and not getargs.create and not getargs.list;
