@@ -79,6 +79,7 @@ argparser.add_argument("-checksum", "--checksum", default="crc32", help="Specify
 argparser.add_argument("-e", "-x", "--extract", action="store_true", help="Perform extraction operation only.");
 argparser.add_argument("-format", "--format", default=__file_format_list__[0], help="Specify the format to use");
 argparser.add_argument("-delimiter", "--delimiter", default=__file_format_list__[4], help="Specify the format to use");
+argparser.add_argument("-formatver", "--formatver", default=__file_format_list__[5], help="Specify the format to use");
 argparser.add_argument("-l", "-t", "--list", action="store_true", help="List files included in the concatenated file.");
 argparser.add_argument("-r", "--repack", action="store_true", help="Re-concatenate files, fixing checksum errors if any.");
 argparser.add_argument("-o", "--output", default=None, help="Specify the name for the extracted concatenated files or the output concatenated file.");
@@ -93,7 +94,8 @@ fname = getargs.format;
 fnamelower = fname.lower();
 fnamelen = len(fname);
 fnamehex = binascii.hexlify(fname.encode("UTF-8")).decode("UTF-8");
-fnamelist = [fname, fnamelower, fnamelen, fnamehex, getargs.delimiter];
+fnamever = getargs.formatver;
+fnamelist = [fname, fnamelower, fnamelen, fnamehex, getargs.delimiter, fnamever];
 
 # Determine actions based on user input
 should_create = getargs.create and not getargs.extract and not getargs.list;

@@ -121,7 +121,8 @@ __file_format_lower__ = __file_format_name__.lower();
 __file_format_len__ = len(__file_format_name__);
 __file_format_hex__ = binascii.hexlify(__file_format_name__.encode("UTF-8")).decode("UTF-8");
 __file_format_delimiter__ = "\x00";
-__file_format_list__ = [__file_format_name__, __file_format_lower__, __file_format_len__, __file_format_hex__, __file_format_delimiter__];
+__file_format_ver__ = "001";
+__file_format_list__ = [__file_format_name__, __file_format_lower__, __file_format_len__, __file_format_hex__, __file_format_delimiter__, __file_format_ver__];
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 2, 0, "RC 1", 1);
@@ -137,7 +138,6 @@ if(__version_info__[3] is not None):
  __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]) + " " + str(__version_info__[3]);
 if(__version_info__[3] is None):
  __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2]);
-__cat_header_ver__ = "001";
 
 compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'xz', 'lz4', 'lzo', 'lzma'];
 outextlist = ['gz', 'bz2', 'zst', 'xz', 'lz4', 'lzo', 'lzma'];
@@ -1159,7 +1159,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
    else:
     compressionlevel = int(compressionlevel);
    catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=compressionlevel);
- catver = __cat_header_ver__;
+ catver = formatspecs[5];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
  catfp.write(fileheader.encode('UTF-8'));
@@ -1515,7 +1515,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
    else:
     compressionlevel = int(compressionlevel);
    catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=compressionlevel);
- catver = __cat_header_ver__;
+ catver = formatspecs[5];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
  catfp.write(fileheader.encode('UTF-8'));
@@ -1798,7 +1798,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
    else:
     compressionlevel = int(compressionlevel);
    catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=compressionlevel);
- catver = __cat_header_ver__;
+ catver = formatspecs[5];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
  catfp.write(fileheader.encode('UTF-8'));
@@ -2286,7 +2286,7 @@ def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  return listcatfiles;
 
 def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False):
- catver = __cat_header_ver__;
+ catver = formatspecs[5];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
  advancedlist = True;
@@ -2321,7 +2321,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
  inodetocatinode = {};
  fileidnum = 0;
  fnumfiles = int(len(GetDirList));
- catver = __cat_header_ver__;
+ catver = formatspecs[5];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
  fnumfileshex = format(int(fnumfiles), 'x').lower();
@@ -2571,7 +2571,7 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
    return False;
  tarfp = tarfile.open(infiles, "r");
  fnumfiles = int(len(tarfp.getmembers()));
- catver = __cat_header_ver__;
+ catver = formatspecs[5];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
  fnumfileshex = format(int(fnumfiles), 'x').lower();
@@ -2770,7 +2770,7 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
  if(ziptest):
   VerbosePrintOut("Bad file found: " + str(bad_file));
  fnumfiles = int(len(zipfp.infolist()));
- catver = __cat_header_ver__;
+ catver = formatspecs[5];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
  catversion = fileheaderver;
@@ -3513,7 +3513,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
    except ImportError:
     return False;
    catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=9);
- catver = __cat_header_ver__;
+ catver = formatspecs[5];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
  catfp.write(fileheader.encode('UTF-8'));
