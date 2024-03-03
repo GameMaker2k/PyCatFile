@@ -147,19 +147,19 @@ tarfile_mimetype = "application/tar";
 tarfile_tar_mimetype = tarfile_mimetype;
 zipfile_mimetype = "application/zip";
 zipfile_zip_mimetype = zipfile_mimetype;
-catfile_mimetype = "application/x-catfile";
+catfile_mimetype = "application/x-"+__file_format_lower__+"";
 catfile_cat_mimetype = catfile_mimetype;
-catfile_gzip_mimetype = "application/x-catfile+gzip";
+catfile_gzip_mimetype = "application/x-"+__file_format_lower__+"+gzip";
 catfile_gz_mimetype = catfile_gzip_mimetype;
-catfile_bzip2_mimetype = "application/x-catfile+bzip2";
+catfile_bzip2_mimetype = "application/x-"+__file_format_lower__+"+bzip2";
 catfile_bz2_mimetype = catfile_bzip2_mimetype;
-catfile_lz4_mimetype = "application/x-catfile+lz4";
-catfile_lzop_mimetype = "application/x-catfile+lzop";
+catfile_lz4_mimetype = "application/x-"+__file_format_lower__+"+lz4";
+catfile_lzop_mimetype = "application/x-"+__file_format_lower__+"+lzop";
 catfile_lzo_mimetype = catfile_lzop_mimetype;
-catfile_zstandard_mimetype = "application/x-catfile+zstandard";
+catfile_zstandard_mimetype = "application/x-"+__file_format_lower__+"+zstandard";
 catfile_zstd_mimetype = catfile_zstandard_mimetype;
-catfile_lzma_mimetype = "application/x-catfile+lzma";
-catfile_xz_mimetype = "application/x-catfile+xz";
+catfile_lzma_mimetype = "application/x-"+__file_format_lower__+"+lzma";
+catfile_xz_mimetype = "application/x-"+__file_format_lower__+"+xz";
 catfile_extensions = ['.cat', '.cat.gz', '.cgz', '.cat.bz2', '.cbz', '.cat.zst', '.czst', '.cat.lz4', '.clz4', '.cat.lzo', '.cat.lzop', '.clzo', '.cat.lzma', '.cat.xz', '.cxz'];
 
 if __name__ == "__main__":
@@ -590,7 +590,7 @@ def CheckCompressionTypeFromString(instring, formatspecs=__file_format_list__, c
   instringsfile = BytesIO(instring.encode("UTF-8"));
  return CheckCompressionType(instringsfile, formatspecs, closefp);
 
-def GetCompressionMimeType(infile, formatname=__file_format_lower__):
+def GetCompressionMimeType(infile, formatspecs=__file_format_list__):
  compresscheck = CheckCompressionType(fp, formatspecs, False);
  if(compresscheck=="gzip" or compresscheck=="gz"):
   return catfile_gzip_mimetype;
@@ -606,13 +606,13 @@ def GetCompressionMimeType(infile, formatname=__file_format_lower__):
   return catfile_lzma_mimetype;
  if(compresscheck=="xz"):
   return catfile_xz_mimetype;
- if(compresscheck=="catfile" or compresscheck=="cat" or compresscheck==formatname):
+ if(compresscheck=="catfile" or compresscheck=="cat" or compresscheck==formatspecs[1]):
   return catfile_cat_mimetype;
  if(not compresscheck):
   return False;
  return False;
 
-def UncompressArchiveFile(fp, formatname=__file_format_lower__):
+def UncompressArchiveFile(fp, formatspecs=__file_format_list__):
  if(not hasattr(fp, "read") and not hasattr(fp, "write")):
   return False;
  compresscheck = CheckCompressionType(fp, formatspecs, False);
@@ -657,7 +657,7 @@ def UncompressArchiveFile(fp, formatname=__file_format_lower__):
    return False;
   catfp = BytesIO();
   catfp.write(lzma.decompress(fp.read()));
- if(compresscheck=="catfile" or compresscheck==formatname):
+ if(compresscheck=="catfile" or compresscheck==formatspecs[1]):
   catfp = fp;
  if(not compresscheck):
   try:
@@ -885,12 +885,12 @@ def GZipCompress(data, compresslevel=9):
  catfp.close();
  return catdata;
 
-def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatname=__file_format_lower__):
+def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspecs=__file_format_list__):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
  if(not hasattr(fp, "read") and not hasattr(fp, "write")):
   return False;
  fp.seek(0, 0);
- if(not compression or compression or compression=="catfile" or compression==formatname):
+ if(not compression or compression or compression=="catfile" or compression==formatspecs[1]):
   compression = None;
  if(compression not in compressionlist and compression is None):
   compression = "auto";
@@ -1404,7 +1404,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs[1]);
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
  if(outfile=="-"):
   catfp.seek(0, 0);
   if(hasattr(sys.stdout, "buffer")):
@@ -1694,7 +1694,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs[1]);
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
  if(outfile=="-"):
   catfp.seek(0, 0);
   if(hasattr(sys.stdout, "buffer")):
@@ -1987,7 +1987,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs[1]);
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
  if(outfile=="-"):
   catfp.seek(0, 0);
   if(hasattr(sys.stdout, "buffer")):
@@ -2005,7 +2005,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
   catfp.seek(0, 0);
-  catfp = UncompressArchiveFile(catfp, formatspecs[1]);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
   checkcompressfile = CheckCompressionSubType(catfp, formatspecs);
   if(checkcompressfile=="tarfile"):
    return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
@@ -2023,7 +2023,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   else:
    shutil.copyfileobj(sys.stdin, catfp);
   catfp.seek(0, 0);
-  catfp = UncompressArchiveFile(catfp, formatspecs[1]);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
   if(not catfp):
    return False;
   catfp.seek(0, 0);
@@ -3729,7 +3729,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   lcfi = lcfi + 1;
   reallcfi = reallcfi + 1;
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs[1]);
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
  if(outfile=="-"):
   catfp.seek(0, 0);
   if(hasattr(sys.stdout, "buffer")):
