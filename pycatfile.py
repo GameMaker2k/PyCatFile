@@ -283,6 +283,17 @@ def ListDirAdvanced(dirpath, followlink=False, duplicates=False):
    retlist.append(RemoveWindowsPath(mydirfile));
  return retlist;
 
+def create_alias_function(prefix, base_name, suffix, target_function):
+ # Define a new function that wraps the target function
+ def alias_function(*args, **kwargs):
+  return target_function(*args, **kwargs);
+
+ # Create the function name by combining the prefix, base name, and the suffix
+ function_name = "{}{}{}".format(prefix, base_name, suffix);
+ 
+ # Add the new function to the global namespace
+ globals()[function_name] = alias_function;
+
 # initial_value can be 0xFFFF or 0x0000
 def crc16_ansi(msg, initial_value=0xFFFF):
  # CRC-16-IBM / CRC-16-ANSI polynomial and initial value
@@ -672,6 +683,8 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_list__):
     return False;
  return catfp;
 
+create_alias_function("Uncompress", __file_format_name__, "", UncompressArchiveFile);
+
 def UncompressFile(infile, mode="rb"):
  compresscheck = CheckCompressionType(infile, formatspecs, False);
  if(sys.version_info[0]==2 and compresscheck):
@@ -975,6 +988,8 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
   catfp = fp;
  catfp.seek(0, 0);
  return catfp;
+
+create_alias_function("Compress", __file_format_name__, "", CompressArchiveFile);
 
 def CompressOpenFile(outfile):
  if(outfile is None):
@@ -1418,9 +1433,12 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   catfp.close();
   return True;
 
+create_alias_function("Pack", __file_format_name__, "", PackArchiveFile);
+
 if(hasattr(shutil, "register_archive_format")):
  def PackArchiveFileFunc(archive_name, source_dir, **kwargs):
   return PackArchiveFile(source_dir, archive_name, False, "auto", None, False, "crc32", [], __file_format_delimiter__, False, False);
+ create_alias_function("Pack", __file_format_name__, "Func", PackArchiveFileFunc);
 
 def PackArchiveFileFromDirList(infiles, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  return PackArchiveFile(infiles, outfile, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, returnfp);
@@ -1707,6 +1725,8 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
  else:
   catfp.close();
   return True;
+
+create_alias_function("Pack", __file_format_name__, "FromTarFile", PackArchiveFileFromTarFile);
 
 def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
@@ -2001,6 +2021,8 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   catfp.close();
   return True;
 
+create_alias_function("Pack", __file_format_name__, "FromZipFile", PackArchiveFileFromZipFile);
+
 def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
@@ -2268,10 +2290,14 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   catfp.close();
  return catlist;
 
-def CatStringToArray(catstr, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
+create_alias_function("", __file_format_name__, "ToArray", ArchiveFileToArray);
+
+def ArchiveFileStringToArray(catstr, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  catfp = BytesIO(catstr);
  listcatfiles = ArchiveFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  return listcatfiles;
+
+create_alias_function("", __file_format_name__, "StringToArray", ArchiveFileStringToArray);
 
 def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  catfp = BytesIO();
@@ -3031,6 +3057,8 @@ def ArchiveFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skip
   lcfi = lcfi + 1;
  return catarray;
 
+create_alias_function("", __file_format_name__, "ToArrayIndex", ArchiveFileToArrayIndex);
+
 def ListDirToArrayIndexAlt(infiles, dirlistfromtxt=False, followlink=False, seekstart=0, seekend=0, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False):
  listcatfiles = ListDirToArrayAlt(infiles, dirlistfromtxt, followlink, listonly, checksumtype, extradata, formatspecs, verbose);
  if(not listcatfiles):
@@ -3199,10 +3227,12 @@ def ZipFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, chec
   lcfi = lcfi + 1;
  return catarray;
 
-def CatStringToArrayIndex(catstr, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
+def ArchiveFileStringToArrayIndex(catstr, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  catfp = BytesIO(catstr);
  listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  return listcatfiles;
+
+create_alias_function("", __file_format_name__, "StringToArrayIndex", ArchiveFileStringToArrayIndex);
 
 def TarFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  catfp = BytesIO();
@@ -3220,198 +3250,6 @@ def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", compr
  outarray = BytesIO();
  packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, formatspecs, verbose, True);
  listcatfiles = ArchiveFileToArrayIndex(outarray, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
- return listcatfiles;
-
-def MakeArchiveFileJSONFromArchiveFileArray(inlistcatfiles, jsonindent=1, beautify=True, sortkeys=False, verbose=True, jsonverbose=True):
- if(beautify):
-  jsonstring = json.dumps(inlistcatfiles, sort_keys=sortkeys, indent=jsonindent);
- else:
-  jsonstring = json.dumps(inlistcatfiles, sort_keys=sortkeys, separators=(', ', ': '));
- if(verbose and jsonverbose):
-  VerbosePrintOut(jsonstring);
- elif(verbose and not jsonverbose):
-  VerbosePrintOut(MakeArchiveFileXMLFromArchiveFileArray(inlistcatfiles, verbose=False, jsonverbose=True));
- return jsonstring;
-
-def MakeArchiveFileJSONFileFromArchiveFileArray(inlistcatfiles, outjsonfile=None, returnjson=False, jsonindent=1, beautify=True, sortkeys=False, verbose=True, jsonverbose=True):
- if(outjsonfile is None):
-  return False;
- fbasename = os.path.splitext(outjsonfile)[0];
- fextname = os.path.splitext(outjsonfile)[1];
- jsonfp = CompressOpenFile(outjsonfile);
- jsonstring = MakeArchiveFileJSONFromArchiveFileArray(inlistcatfiles, jsonindent, beautify, sortkeys, verbose);
- try:
-  jsonfp.write(jsonstring);
- except TypeError:
-  jsonfp.write(jsonstring.encode("UTF-8"));
- jsonfp.close();
- if(returnjson):
-  return jsonstring;
- if(not returnjson):
-  return True;
- return True;
-
-def MakeArchiveFileArrayFromArchiveFileJSON(injsonfile, jsonisfile=True, verbose=True, jsonverbose=True):
- if(jsonisfile and ((os.path.exists(injsonfile) and os.path.isfile(injsonfile)))):
-  jsonfp = UncompressFile(injsonfile);
-  listcatfiles = json.load(jsonfp);
-  jsonfp.close();
- elif(not jsonisfile):
-  chckcompression = CheckCompressionTypeFromString(injsonfile, []);
-  if(not chckcompression):
-   jsonfp = StringIO(injsonfile);
-  else:
-   try:
-    injsonsfile = BytesIO(injsonfile);
-   except TypeError:
-    injsonsfile = BytesIO(injsonfile.encode("UTF-8"));
-   jsonfp = UncompressFile(injsonsfile);
-  listcatfiles = json.load(jsonfp);
-  jsonfp.close();
- else:
-  return False;
- if(verbose and jsonverbose):
-  VerbosePrintOut(MakeArchiveFileJSONFromArchiveFileArray(listcatfiles, verbose=False, jsonverbose=True));
- elif(verbose and not jsonverbose):
-  VerbosePrintOut(MakeArchiveFileXMLFromArchiveFileArray(listcatfiles, verbose=False, jsonverbose=True));
- return listcatfiles;
-
-def MakeArchiveFilePickleFromArchiveFileArray(inlistcatfiles, protocol=pickledp, verbose=True, jsonverbose=True):
- if(protocol is None):
-  picklestring = pickle.dumps(inlistcatfiles, fix_imports=True);
- else:
-  picklestring = pickle.dumps(inlistcatfiles, protocol=protocol, fix_imports=True);
- if(verbose and jsonverbose):
-  VerbosePrintOut(MakeArchiveFileJSONFromArchiveFileArray(inlistcatfiles, verbose=False, jsonverbose=True));
- elif(verbose and not jsonverbose):
-  VerbosePrintOut(MakeArchiveFileXMLFromArchiveFileArray(inlistcatfiles, verbose=False, jsonverbose=True));
- return picklestring;
-
-def MakeArchiveFilePickleFileFromArchiveFileArray(inlistcatfiles, outpicklefile=None, returnpickle=False, protocol=pickledp, verbose=True, jsonverbose=True):
- if(outpicklefile is None):
-  return False;
- fbasename = os.path.splitext(outpicklefile)[0];
- fextname = os.path.splitext(outpicklefile)[1];
- picklefp = CompressOpenFile(outpicklefile);
- picklestring = MakeArchiveFilePickleFromArchiveFileArray(inlistcatfiles, protocol, verbose);
- try:
-  picklefp.write(picklestring);
- except TypeError:
-  picklefp.write(picklestring.encode("UTF-8"));
- picklefp.close();
- if(returnpickle):
-  return picklestring;
- if(not returnpickle):
-  return True;
- return True;
-
-def MakeArchiveFileArrayFromArchiveFilePickle(inpicklefile, pickleisfile=True, verbose=True, jsonverbose=True):
- if(pickleisfile and ((os.path.exists(inpicklefile) and os.path.isfile(inpicklefile)))):
-  picklefp = UncompressFile(inpicklefile);
-  listcatfiles = pickle.load(picklefp, fix_imports=True);
-  picklefp.close();
- elif(not pickleisfile):
-  picklefp = BytesIO(inpicklefile.encode("UTF-8"));
-  picklefp = UncompressFile(picklefp);
-  listcatfiles = json.load(picklefp, fix_imports=True);
-  picklefp.close();
- else:
-  return False;
- if(verbose and jsonverbose):
-  VerbosePrintOut(MakeArchiveFileJSONFromArchiveFileArray(listcatfiles, verbose=False, jsonverbose=True));
- elif(verbose and not jsonverbose):
-  VerbosePrintOut(MakeArchiveFileXMLFromArchiveFileArray(listcatfiles, verbose=False, jsonverbose=True));
- return listcatfiles;
-
-def MakeArchiveFileMarshalFromArchiveFileArray(inlistcatfiles, version=marshal.version, verbose=True, jsonverbose=True):
- marshalstring = marshal.dumps(inlistcatfiles, version);
- if(verbose and jsonverbose):
-  VerbosePrintOut(MakeArchiveFileJSONFromArchiveFileArray(inlistcatfiles, verbose=False, jsonverbose=True));
- elif(verbose and not jsonverbose):
-  VerbosePrintOut(MakeArchiveFileXMLFromArchiveFileArray(inlistcatfiles, verbose=False, jsonverbose=True));
- return marshalstring;
-
-def MakeArchiveFileMarshalFileFromArchiveFileArray(inlistcatfiles, outmarshalfile=None, returnmarshal=False, version=marshal.version, verbose=True, jsonverbose=True):
- if(outmarshalfile is None):
-  return False;
- fbasename = os.path.splitext(outmarshalfile)[0];
- fextname = os.path.splitext(outmarshalfile)[1];
- marshalfp = CompressOpenFile(outmarshalfile);
- marshalstring = MakeArchiveFileMarshalFromArchiveFileArray(inlistcatfiles, version, verbose);
- try:
-  marshalfp.write(marshalstring);
- except TypeError:
-  marshalfp.write(marshalstring.encode("UTF-8"));
- marshalfp.close();
- if(returnmarshal):
-  return marshalstring;
- if(not returnmarshal):
-  return True;
- return True;
-
-def MakeArchiveFileArrayFromArchiveFileMarshal(inmarshalfile, marshalisfile=True, verbose=True, jsonverbose=True):
- if(marshalisfile and ((os.path.exists(inmarshalfile) and os.path.isfile(inmarshalfile)))):
-  inmarshalfile = UncompressFileURL(inmarshalfile, geturls_headers, geturls_cj);
-  listcatfiles = marshal.load(inmarshalfile);
-  marshalfp = UncompressFile(inmarshalfile);
-  listcatfiles = marshal.load(marshalfp);
-  marshalfp.close();
- elif(not marshalisfile):
-  marshalfp = BytesIO(inmarshalfile.encode("UTF-8"));
-  marshalfp = UncompressFile(marshalfp);
-  listcatfiles = json.load(marshalfp);
-  marshalfp.close();
- else:
-  return False;
- if(verbose and jsonverbose):
-  VerbosePrintOut(MakeArchiveFileJSONFromArchiveFileArray(listcatfiles, verbose=False, jsonverbose=True));
- elif(verbose and not jsonverbose):
-  VerbosePrintOut(MakeArchiveFileXMLFromArchiveFileArray(listcatfiles, verbose=False, jsonverbose=True));
- return listcatfiles;
-
-def MakeArchiveFileShelveFromArchiveFileArray(inlistcatfiles, version=pickledp, verbose=True, jsonverbose=True):
- outshelvefile = BytesIO();
- with shelve.open(outshelvefile, protocol=version) as shelf_file:
-  for key, value in inlistcatfiles.items():
-   shelf_file[key] = value;
- outshelvefile.seek(0);
- shelvestring = outshelvefile.read();
- if(verbose and jsonverbose):
-  VerbosePrintOut(MakeArchiveFileJSONFromArchiveFileArray(inlistcatfiles, verbose=False, jsonverbose=True));
- elif(verbose and not jsonverbose):
-  VerbosePrintOut(MakeArchiveFileXMLFromArchiveFileArray(inlistcatfiles, verbose=False, jsonverbose=True));
- return shelvestring;
-
-def MakeArchiveFileShelveFileFromArchiveFileArray(inlistcatfiles, outshelvefile=None, returnshelve=False, version=pickledp, verbose=True, jsonverbose=True):
- if(outshelvefile is None):
-  return False;
- fbasename = os.path.splitext(outshelvefile)[0];
- fextname = os.path.splitext(outshelvefile)[1];
- with shelve.open(outshelvefile, protocol=version) as shelf_file:
-  for key, value in inlistcatfiles.items():
-   shelf_file[key] = value;
- if(returnshelve):
-  shelvestring = MakeArchiveFileShelveFromArchiveFileArray(inlistcatfiles, version, False, False);
-  return shelvestring;
- if(not returnshelve):
-  return True;
- return True;
-
-def MakeArchiveFileArrayFromArchiveFileShelve(inshelvefile, shelveisfile=True, version=pickledp, verbose=True, jsonverbose=True):
- if(shelveisfile):
-  with shelve.open(inshelvefile, protocol=version) as shelf_file:
-   listcatfiles = dict(shelf_file);
- else:
-  try:
-   inshelvefile = BytesIO(inshelvefile);
-  except TypeError:
-   inshelvefile = BytesIO(inshelvefile.encode("UTF-8"));
-  with shelve.open(inshelvefile, protocol=version) as shelf_file:
-   listcatfiles = dict(shelf_file);
- if(verbose and jsonverbose):
-  VerbosePrintOut(MakeArchiveFileJSONFromArchiveFileArray(listcatfiles, verbose=False, jsonverbose=True));
- elif(verbose and not jsonverbose):
-  VerbosePrintOut(MakeArchiveFileXMLFromArchiveFileArray(listcatfiles, verbose=False, jsonverbose=True));
  return listcatfiles;
 
 def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
@@ -3740,16 +3578,22 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   catfp.close();
   return True;
 
+create_alias_function("RePack", __file_format_name__, "", RePackArchiveFile);
+
 def RePackArchiveFileFromString(catstr, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", skipchecksum=False, extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  catfp = BytesIO(catstr);
  listcatfiles = RePackArchiveFile(catfp, compression, compressionlevel, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp);
  return listcatfiles;
+
+create_alias_function("RePack", __file_format_name__, "FromString", RePackArchiveFileFromString);
 
 def PackArchiveFileFromListDir(infiles, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = BytesIO();
  packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, True);
  listcatfiles = RePackArchiveFile(outarray, outfile, compression, compressionlevel, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp);
  return listcatfiles;
+
+create_alias_function("Pack", __file_format_name__, "FromListDir", PackArchiveFileFromListDir);
 
 def ArchiveFileArrayBase64Encode(infile, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_list__, verbose=False, returnfp=False):
  if(verbose):
@@ -3787,6 +3631,8 @@ def ArchiveFileArrayBase64Encode(infile, followlink=False, seekstart=0, seekend=
   lcfi = lcfi + 1;
  return listcatfiles;
 
+create_alias_function("", __file_format_name__, "ArrayBase64Encode", ArchiveFileArrayBase64Encode);
+
 def ArchiveFileArrayBase64Decode(infile, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_list__, verbose=False, returnfp=False):
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
@@ -3822,6 +3668,8 @@ def ArchiveFileArrayBase64Decode(infile, followlink=False, seekstart=0, seekend=
    listcatfiles['ffilelist'][lcfi]['fcontents'] = base64.b64decode(listcatfiles['ffilelist'][lcfi]['fcontents'].encode("UTF-8"));
   lcfi = lcfi + 1;
  return listcatfiles;
+
+create_alias_function("", __file_format_name__, "ArrayBase64Decode", ArchiveFileArrayBase64Decode);
 
 def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_list__, verbose=False, returnfp=False):
  if(outdir is not None):
@@ -3994,14 +3842,19 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
  else:
   return True;
 
+create_alias_function("UnPack", __file_format_name__, "", UnPackArchiveFile);
+
 if(hasattr(shutil, "register_unpack_format")):
  def UnPackArchiveFileFunc(archive_name, extract_dir=None, **kwargs):
   return UnPackArchiveFile(archive_name, extract_dir, False, 0, 0, False, __file_format_delimiter__, False, False);
+ create_alias_function("UnPack", __file_format_name__, "Func", UnPackArchiveFileFunc);
 
-def UnPackCatString(catstr, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def UnPackArchiveFileString(catstr, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_list__, verbose=False, returnfp=False):
  catfp = BytesIO(catstr);
  listcatfiles = UnPackArchiveFile(catfp, outdir, followlink, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp);
  return listcatfiles;
+
+create_alias_function("UnPack", __file_format_name__, "String", UnPackArchiveFileString);
 
 def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_list__, verbose=False, returnfp=False):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
@@ -4041,10 +3894,14 @@ def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, for
  else:
   return True;
 
-def CatStringListFiles(catstr, followlink=False, skipchecksum=False, formatspecs=__file_format_list__, verbose=False, returnfp=False):
+create_alias_function("", __file_format_name__, "ListFiles", ArchiveFileListFiles);
+
+def ArchiveFileStringListFiles(catstr, followlink=False, skipchecksum=False, formatspecs=__file_format_list__, verbose=False, returnfp=False):
  catfp = BytesIO(catstr);
  listcatfiles = UnPackArchiveFile(catfp, None, followlink, skipchecksum, formatspecs, verbose, returnfp);
  return listcatfiles;
+
+create_alias_function("", __file_format_name__, "StringListFiles", ArchiveFileListFiles);
 
 def TarFileListFiles(infile, verbose=False, returnfp=False):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
@@ -4218,15 +4075,21 @@ def PackArchiveFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, compre
  listcatfiles = RePackArchiveFile(outarray, outfile, compression, compressionlevel, followlink, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp);
  return listcatfiles;
 
+create_alias_function("Pack", __file_format_name__, "FromListDirAlt", PackArchiveFileFromListDirAlt);
+
 def PackArchiveFileFromTarFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = TarFileToArrayAlt(infile, False, checksumtype, extradata, formatspecs, False);
  listcatfiles = RePackArchiveFile(outarray, outfile, compression, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
  return listcatfiles;
 
+create_alias_function("Pack", __file_format_name__, "FromTarFileAlt", PackArchiveFileFromTarFileAlt);
+
 def PackArchiveFileFromZipFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = ZipFileToArrayAlt(infile, False, checksumtype, extradata, formatspecs, False);
  listcatfiles = RePackArchiveFile(outarray, outfile, compression, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
  return listcatfiles;
+
+create_alias_function("Pack", __file_format_name__, "FromZipFileAlt", PackArchiveFileFromZipFileAlt);
 
 def download_file_from_ftp_file(url):
  urlparts = urlparse.urlparse(url);
