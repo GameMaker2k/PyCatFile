@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import os, sys, logging, argparse, pycatfile;
+import os, sys, logging, argparse, pycatfile, binascii;
 from io import open as open;
 
 if(sys.version[0]=="2"):
@@ -77,6 +77,8 @@ argparser.add_argument("-d", "-v", "--verbose", action="store_true", help="Enabl
 argparser.add_argument("-c", "--create", action="store_true", help="Perform concatenation operation only.");
 argparser.add_argument("-checksum", "--checksum", default="crc32", help="Specify the type of checksum to use. Default is crc32.");
 argparser.add_argument("-e", "-x", "--extract", action="store_true", help="Perform extraction operation only.");
+argparser.add_argument("-format", "--format", default=__file_format_list__[0], help="Specify the format to use");
+argparser.add_argument("-delimiter", "--delimiter", default=__file_format_list__[4], help="Specify the format to use");
 argparser.add_argument("-l", "-t", "--list", action="store_true", help="List files included in the concatenated file.");
 argparser.add_argument("-r", "--repack", action="store_true", help="Re-concatenate files, fixing checksum errors if any.");
 argparser.add_argument("-o", "--output", default=None, help="Specify the name for the extracted concatenated files or the output concatenated file.");
@@ -87,6 +89,12 @@ argparser.add_argument("-z", "--convertzip", action="store_true", help="Convert 
 argparser.add_argument("-T", "--text", action="store_true", help="Read file locations from a text file.");
 getargs = argparser.parse_args();
 
+fname = getargs.format;
+fnamelower = fname.lower();
+fnamelen = len(fname);
+fnamehex = binascii.hexlify(fname.encode("UTF-8")).decode("UTF-8");
+fnamelist = [fname, fnamelower, fnamelen, fnamehex, getargs.delimiter];
+
 # Determine actions based on user input
 should_create = getargs.create and not getargs.extract and not getargs.list;
 should_extract = getargs.extract and not getargs.create and not getargs.list;
@@ -96,17 +104,17 @@ should_repack = getargs.create and getargs.repack;
 # Execute the appropriate functions based on determined actions and arguments
 if should_create:
  if getargs.converttar:
-  pycatfile.PackArchiveFileFromTarFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], __file_format_list__, getargs.verbose, False);
+  pycatfile.PackArchiveFileFromTarFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
  elif getargs.convertzip:
-  pycatfile.PackArchiveFileFromZipFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], __file_format_list__, getargs.verbose, False);
+  pycatfile.PackArchiveFileFromZipFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
  else:
-  pycatfile.PackArchiveFile(getargs.input, getargs.output, getargs.text, getargs.compression, getargs.level, False, getargs.checksum, [], __file_format_list__, getargs.verbose, False);
+  pycatfile.PackArchiveFile(getargs.input, getargs.output, getargs.text, getargs.compression, getargs.level, False, getargs.checksum, [], fnamelist, getargs.verbose, False);
 
 if should_repack:
- pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, False, [], __file_format_list__, getargs.verbose, False);
+ pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, False, [], fnamelist, getargs.verbose, False);
 
 if should_extract:
- pycatfile.UnPackArchiveFile(getargs.input, getargs.output, False, 0, 0, False, __file_format_list__, getargs.verbose, False);
+ pycatfile.UnPackArchiveFile(getargs.input, getargs.output, False, 0, 0, False, fnamelist, getargs.verbose, False);
 
 if should_list:
  if getargs.converttar:
@@ -114,4 +122,4 @@ if should_list:
  elif getargs.convertzip:
   pycatfile.ZipFileListFiles(getargs.input, getargs.verbose, False);
  else:
-  pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, False, __file_format_list__, getargs.verbose, False);
+  pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, False, fnamelist, getargs.verbose, False);
