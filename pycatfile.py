@@ -129,7 +129,7 @@ __version_info__ = (0, 3, 0, "RC 1", 1);
 __version_date_info__ = (2024, 3, 3, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 __revision__ = __version_info__[3];
-__revision_id__ = "$Id$";
+__revision_id__ = "$Id: 4994492f2f0e6a60d6c0e383dc48cd7ba1ab7680 $";
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
 if(__version_info__[4] is None):
@@ -2301,13 +2301,13 @@ create_alias_function("", __file_format_name__, "StringToArray", ArchiveFileStri
 
 def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  catfp = BytesIO();
- catfp = PackArchiveFileFromTarFile(infile, catfp, "auto", None, "crc32", formatspecs, False, True);
+ catfp = PackArchiveFileFromTarFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
  listcatfiles = ArchiveFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  return listcatfiles;
 
 def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  catfp = BytesIO();
- catfp = PackArchiveFileFromZipFile(infile, catfp, "auto", None, "crc32", formatspecs, False, True);
+ catfp = PackArchiveFileFromZipFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
  listcatfiles = ArchiveFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  return listcatfiles;
 
@@ -3236,13 +3236,13 @@ create_alias_function("", __file_format_name__, "StringToArrayIndex", ArchiveFil
 
 def TarFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  catfp = BytesIO();
- catfp = PackArchiveFileFromTarFile(infile, catfp, "auto", None, "crc32", formatspecs, False, True);
+ catfp = PackArchiveFileFromTarFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
  listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  return listcatfiles;
 
 def ZipFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  catfp = BytesIO();
- catfp = PackArchiveFileFromZipFile(infile, catfp, "auto", None, "crc32", formatspecs, False, True);
+ catfp = PackArchiveFileFromZipFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
  listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  return listcatfiles;
 
