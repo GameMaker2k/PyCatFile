@@ -2050,6 +2050,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    return False;
   catfp.seek(0, 0);
  else:
+  print(infile);
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs);
   if(checkcompressfile=="tarfile"):
