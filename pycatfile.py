@@ -1227,6 +1227,8 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   checksumoutstr = hashlib.new(checksumtype);
   checksumoutstr.update(str(fileheader + fnumfilesa).encode('UTF-8'));
   catfileheadercshex = checksumoutstr.hexdigest().lower();
+ else:
+  catfileheadercshex = format(0, 'x').lower
  fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[4]);
  catfp.write(fnumfilesa.encode('UTF-8'));
  for curfname in GetDirList:
@@ -1389,6 +1391,9 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(fcontents);
    catfilecontentcshex = checksumoutstr.hexdigest().lower();
+  else:
+   catfileheadercshex = format(0, 'x').lower();
+   catfilecontentcshex = format(0, 'x').lower();
   tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
   catfileoutstr = AppendNullByte(catheaersize, formatspecs[4]) + catfileoutstr;
@@ -1410,6 +1415,8 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode('UTF-8'));
    catfileheadercshex = checksumoutstr.hexdigest().lower();
+  else:
+   catfileheadercshex = format(0, 'x').lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
   catfhend = (catfp.tell() - 1) + len(catfileoutstr);
   catfcontentstart = catfp.tell() + len(catfileoutstr);
@@ -1572,6 +1579,8 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   checksumoutstr = hashlib.new(checksumtype);
   checksumoutstr.update(str(fileheader + fnumfilesa).encode('UTF-8'));
   catfileheadercshex = checksumoutstr.hexdigest().lower();
+ else:
+  catfileheadercshex = format(0, 'x').lower();
  fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[4]);
  catfp.write(fnumfilesa.encode('UTF-8'));
  for member in tarfp.getmembers():
@@ -1684,6 +1693,9 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(fcontents);
    catfilecontentcshex = checksumoutstr.hexdigest().lower();
+  else:
+   catfileheadercshex = format(0, 'x').lower();
+   catfilecontentcshex = format(0, 'x').lower();
   tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
   catfileoutstr = AppendNullByte(catheaersize, formatspecs[4]) + catfileoutstr;
@@ -1705,6 +1717,8 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode('UTF-8'));
    catfileheadercshex = checksumoutstr.hexdigest().lower();
+  else:
+   catfileheadercshex = format(0, 'x').lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = formatspecs[4].encode('UTF-8');
@@ -1856,6 +1870,8 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   checksumoutstr = hashlib.new(checksumtype);
   checksumoutstr.update(str(fileheader + fnumfilesa).encode('UTF-8'));
   catfileheadercshex = checksumoutstr.hexdigest().lower();
+ else:
+  catfileheadercshex = format(0, 'x').lower();
  fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[4]);
  catfp.write(fnumfilesa.encode('UTF-8'));
  for member in zipfp.infolist():
@@ -1979,6 +1995,9 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(fcontents);
    catfilecontentcshex = checksumoutstr.hexdigest().lower();
+  else:
+   catfileheadercshex = format(0, 'x').lower();
+   catfilecontentcshex = format(0, 'x').lower();
   tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
   catfileoutstr = AppendNullByte(catheaersize, formatspecs[4]) + catfileoutstr;
@@ -2000,6 +2019,8 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode('UTF-8'));
    catfileheadercshex = checksumoutstr.hexdigest().lower();
+  else:
+   catfileheadercshex = format(0, 'x').lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = formatspecs[4].encode('UTF-8');
@@ -2151,6 +2172,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   checksumoutstr = hashlib.new(fprechecksumtype);
   checksumoutstr.update(fileheader.encode('UTF-8'));
   catfileheadercshex = checksumoutstr.hexdigest().lower();
+ else:
+  catfileheadercshex = format(0, 'x').lower();
  fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[4]);
  fheadtell = len(fileheader);
  if(fprechecksum!=catfileheadercshex and not skipchecksum):
@@ -2371,6 +2394,8 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   checksumoutstr = hashlib.new(checksumtype);
   checksumoutstr.update(fileheader.encode('UTF-8'));
   catfileheadercshex = checksumoutstr.hexdigest().lower();
+ else:
+  catfileheadercshex = format(0, 'x').lower();
  fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[4]);
  fheadtell = len(fileheader);
  catlist = {'fnumfiles': fnumfiles, 'fformat': formatspecs[0], 'fversion': catversion, 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
@@ -2538,6 +2563,9 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(fcontents);
    catfilecontentcshex = checksumoutstr.hexdigest().lower();
+  else:
+   catfileheadercshex = format(0, 'x').lower();
+   catfilecontentcshex = format(0, 'x').lower();
   catfhstart = fheadtell;
   fheadtell += len(catfileoutstr);
   catfhend = fheadtell - 1;
@@ -2563,6 +2591,8 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode('UTF-8'));
    catfileheadercshex = checksumoutstr.hexdigest().lower();
+  else:
+   catfileheadercshex = format(0, 'x').lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = formatspecs[4].encode('UTF-8');
@@ -2621,6 +2651,8 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   checksumoutstr = hashlib.new(checksumtype);
   checksumoutstr.update(fileheader.encode('UTF-8'));
   catfileheadercshex = checksumoutstr.hexdigest().lower();
+ else:
+  catfileheadercshex = format(0, 'x').lower();
  fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[4]);
  fheadtell = len(fileheader);
  catlist = {'fnumfiles': fnumfiles, 'fformat': formatspecs[0], 'fversion': catversion, 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
@@ -2737,6 +2769,9 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(fcontents);
    catfilecontentcshex = checksumoutstr.hexdigest().lower();
+  else:
+   catfileheadercshex = format(0, 'x').lower();
+   catfilecontentcshex = format(0, 'x').lower();
   catfhstart = fheadtell;
   fheadtell += len(catfileoutstr);
   catfhend = fheadtell - 1;
@@ -2762,6 +2797,8 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode('UTF-8'));
    catfileheadercshex = checksumoutstr.hexdigest().lower();
+  else:
+   catfileheadercshex = format(0, 'x').lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = formatspecs[4].encode('UTF-8');
@@ -2820,6 +2857,8 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   checksumoutstr = hashlib.new(checksumtype);
   checksumoutstr.update(fileheader.encode('UTF-8'));
   catfileheadercshex = checksumoutstr.hexdigest().lower();
+ else:
+  catfileheadercshex = format(0, 'x').lower();
  fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[4]);
  fheadtell = len(fileheader);
  catlist = {'fnumfiles': fnumfiles, 'fformat': formatspecs[0], 'fversion': catversion, 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
@@ -2947,6 +2986,9 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(fcontents);
    catfilecontentcshex = checksumoutstr.hexdigest().lower();
+  else:
+   catfileheadercshex = format(0, 'x').lower();
+   catfilecontentcshex = format(0, 'x').lower();
   catfhstart = fheadtell;
   fheadtell += len(catfileoutstr);
   catfhend = fheadtell - 1;
@@ -2972,6 +3014,8 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode('UTF-8'));
    catfileheadercshex = checksumoutstr.hexdigest().lower();
+  else:
+   catfileheadercshex = format(0, 'x').lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = formatspecs[4].encode('UTF-8');
@@ -3379,6 +3423,8 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   checksumoutstr = hashlib.new(checksumtype);
   checksumoutstr.update(str(fileheader + fnumfilesa).encode('UTF-8'));
   catfileheadercshex = checksumoutstr.hexdigest().lower();
+ else:
+  catfileheadercshex = format(0, 'x').lower();
  fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[4]);
  catfp.write(fnumfilesa.encode('UTF-8'));
  if(seekstart>0):
@@ -3534,6 +3580,9 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(fcontents);
    catfilecontentcshex = checksumoutstr.hexdigest().lower();
+  else:
+   catfileheadercshex = format(0, 'x').lower();
+   catfilecontentcshex = format(0, 'x').lower();
   tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
   catfileoutstr = AppendNullByte(catheaersize, formatspecs[4]) + catfileoutstr;
@@ -3555,6 +3604,8 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
    checksumoutstr = hashlib.new(checksumtype);
    checksumoutstr.update(catfileoutstr.encode('UTF-8'));
    catfileheadercshex = checksumoutstr.hexdigest().lower();
+  else:
+   catfileheadercshex = format(0, 'x').lower();
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = formatspecs[4].encode('UTF-8');
