@@ -2051,9 +2051,9 @@ def ArchiveFileSeekToFile(infile, seekto=0, skipchecksum=False, formatspecs=__fi
   catfp = UncompressArchiveFile(catfp, formatspecs);
   checkcompressfile = CheckCompressionSubType(catfp, formatspecs);
   if(checkcompressfile=="tarfile"):
-   return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+   return TarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
-   return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+   return ZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
    return False;
   if(not catfp):
@@ -2074,9 +2074,9 @@ def ArchiveFileSeekToFile(infile, seekto=0, skipchecksum=False, formatspecs=__fi
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs);
   if(checkcompressfile=="tarfile"):
-   return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+   return TarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
-   return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+   return ZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
    return False;
   compresscheck = CheckCompressionType(infile, formatspecs, True);
@@ -2181,11 +2181,9 @@ def ArchiveFileSeekToFile(infile, seekto=0, skipchecksum=False, formatspecs=__fi
   return False;
  catversions = re.search(r'(.*?)(\d+)$', catstring).groups();
  catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}};
- if(seekend<=0):
-  seekend = fnumfiles;
- if(seekstart>0):
+ if(seekto>0):
   il = 0;
-  while(il < seekstart):
+  while(il < seekto):
    preheaderdata = ReadFileHeaderData(catfp, 5, formatspecs[4]);
    prefheadsize = int(preheaderdata[0], 16);
    prefseek = prefheadsize - (int(len(preheaderdata[1]) + 1) + int(len(preheaderdata[2]) + 1) + int(len(preheaderdata[3]) + 1) + int(len(preheaderdata[4]) + 1));
@@ -2195,7 +2193,7 @@ def ArchiveFileSeekToFile(infile, seekto=0, skipchecksum=False, formatspecs=__fi
    catfp.seek(prefsize, 1);
    catfp.seek(1, 1);
    il = il + 1;
- fileidnum = seekstart;
+ fileidnum = seekto;
  realidnum = 0;
  catlist = {'filenum': fileidnum, 'fileoffset': catfp.tell()};
  if(returnfp):
