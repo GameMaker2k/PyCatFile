@@ -129,7 +129,7 @@ __version_info__ = (0, 3, 0, "RC 1", 1);
 __version_date_info__ = (2024, 3, 3, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 __revision__ = __version_info__[3];
-__revision_id__ = "$Id$";
+__revision_id__ = "$Id: 1a3b99d91c8c7062bcb07375648061bd1c0faa87 $";
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
 if(__version_info__[4] is None):
@@ -2043,6 +2043,168 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   return True;
 
 create_alias_function("Pack", __file_format_name__, "FromZipFile", PackArchiveFileFromZipFile);
+
+def ArchiveFileSeekToFile(infile, seekto=0, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
+ if(hasattr(infile, "read") or hasattr(infile, "write")):
+  catfp = infile;
+  catfp.seek(0, 0);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
+  checkcompressfile = CheckCompressionSubType(catfp, formatspecs);
+  if(checkcompressfile=="tarfile"):
+   return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+  if(checkcompressfile=="zipfile"):
+   return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
+   return False;
+  if(not catfp):
+   return False;
+  catfp.seek(0, 0);
+ elif(infile=="-"):
+  catfp = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   shutil.copyfileobj(sys.stdin.buffer, catfp);
+  else:
+   shutil.copyfileobj(sys.stdin, catfp);
+  catfp.seek(0, 0);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
+  if(not catfp):
+   return False;
+  catfp.seek(0, 0);
+ else:
+  infile = RemoveWindowsPath(infile);
+  checkcompressfile = CheckCompressionSubType(infile, formatspecs);
+  if(checkcompressfile=="tarfile"):
+   return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+  if(checkcompressfile=="zipfile"):
+   return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
+   return False;
+  compresscheck = CheckCompressionType(infile, formatspecs, True);
+  if(not compresscheck):
+   fextname = os.path.splitext(infile)[1];
+   if(fextname==".gz" or fextname==".cgz"):
+    compresscheck = "gzip";
+   if(fextname==".bz2" or fextname==".cbz"):
+    compresscheck = "bzip2";
+   if(fextname==".zst" or fextname==".czst"):
+    compresscheck = "zstd";
+   if(fextname==".lz4" or fextname==".clz4"):
+    compresscheck = "lz4";
+   if(fextname==".lzo" or fextname==".lzop" or fextname==".clzo"):
+    compresscheck = "lzo";
+   if(fextname==".lzma" or fextname==".xz" or fextname==".cxz"):
+    compresscheck = "lzma";
+  if(not compresscheck):
+   return False;
+  if(compresscheck=="gzip"):
+   try:
+    import gzip;
+   except ImportError:
+    return False;
+   catfp = gzip.GzipFile(infile, "rb");
+  if(compresscheck=="bzip2"):
+   try:
+    import bz2;
+   except ImportError:
+    return False;
+   catfp = bz2.BZ2File(infile, "rb");
+  if(compresscheck=="lz4"):
+   try:
+    import lz4.frame;
+   except ImportError:
+    return False;
+   catfp = lz4.frame.open(infile, "rb");
+  if(compresscheck=="zstd"):
+   try:
+    import zstandard;
+   except ImportError:
+    return False;
+   catfp = zstandard.open(infile, "rb");
+  if(compresscheck=="lzma" or compresscheck=="xz"):
+   try:
+    import lzma;
+   except ImportError:
+    return False;
+   catfp = lzma.open(infile, "rb");
+  if( compresscheck=="catfile" or compresscheck==formatspecs[1]):
+   catfp = open(infile, "rb");
+ '''
+ try:
+  catfp.seek(0, 2);
+ except OSError:
+  SeekToEndOfFile(catfp);
+ except ValueError:
+  SeekToEndOfFile(catfp);
+ CatSize = catfp.tell();
+ CatSizeEnd = CatSize;
+ '''
+ try:
+  catfp.seek(0, 0);
+ except OSError:
+  return False;
+ except ValueError:
+  return False;
+ catheader = ReadFileHeaderData(catfp, 4, formatspecs[4]);
+ catstring = catheader[0];
+ catversion = re.findall(r"([\d]+)$", catstring);
+ fprenumfiles = catheader[1];
+ fnumfiles = int(fprenumfiles, 16);
+ fprechecksumtype = catheader[2];
+ fprechecksum = catheader[3];
+ fileheader = AppendNullByte(catstring, formatspecs[4]);
+ fnumfileshex = format(int(fnumfiles), 'x').lower();
+ fileheader = fileheader + AppendNullBytes([fnumfileshex, fprechecksumtype], formatspecs[4]);
+ if(fprechecksumtype=="none" or fprechecksumtype==""):
+  catfileheadercshex = format(0, 'x').lower();
+ elif(fprechecksumtype=="crc16" or fprechecksumtype=="crc16_ansi" or fprechecksumtype=="crc16_ibm"):
+  catfileheadercshex = format(crc16(fileheader.encode('UTF-8')) & 0xffff, '04x').lower();
+ elif(fprechecksumtype=="crc16_ccitt"):
+  catfileheadercshex = format(crc16_ccitt(fileheader.encode('UTF-8')) & 0xffff, '04x').lower();
+ elif(fprechecksumtype=="adler32"):
+  catfileheadercshex = format(zlib.adler32(fileheader.encode('UTF-8')) & 0xffffffff, '08x').lower();
+ elif(fprechecksumtype=="crc32"):
+  catfileheadercshex = format(crc32(fileheader.encode('UTF-8')) & 0xffffffff, '08x').lower();
+ elif(fprechecksumtype=="crc64_ecma"):
+  catfileheadercshex = format(crc64_ecma(fileheader.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+ elif(fprechecksumtype=="crc64" or fprechecksumtype=="crc64_iso"):
+  catfileheadercshex = format(crc64_iso(fileheader.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+ elif(CheckSumSupportAlt(fprechecksumtype, hashlib_guaranteed)):
+  checksumoutstr = hashlib.new(fprechecksumtype);
+  checksumoutstr.update(fileheader.encode('UTF-8'));
+  catfileheadercshex = checksumoutstr.hexdigest().lower();
+ else:
+  catfileheadercshex = format(0, 'x').lower();
+ fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[4]);
+ fheadtell = len(fileheader);
+ if(fprechecksum!=catfileheadercshex and not skipchecksum):
+  VerbosePrintOut("File Header Checksum Error with file " + infile + " at offset " + str(catfp.tell()));
+  return False;
+ catversions = re.search(r'(.*?)(\d+)$', catstring).groups();
+ catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}};
+ if(seekend<=0):
+  seekend = fnumfiles;
+ if(seekstart>0):
+  il = 0;
+  while(il < seekstart):
+   preheaderdata = ReadFileHeaderData(catfp, 5, formatspecs[4]);
+   prefheadsize = int(preheaderdata[0], 16);
+   prefseek = prefheadsize - (int(len(preheaderdata[1]) + 1) + int(len(preheaderdata[2]) + 1) + int(len(preheaderdata[3]) + 1) + int(len(preheaderdata[4]) + 1));
+   preftype = int(preheaderdata[1], 16);
+   prefsize = int(preheaderdata[4], 16);
+   catfp.seek(prefseek, 1);
+   catfp.seek(prefsize, 1);
+   catfp.seek(1, 1);
+   il = il + 1;
+ fileidnum = seekstart;
+ realidnum = 0;
+ catlist = {'filenum': fileidnum, 'fileoffset': catfp.tell()};
+ if(returnfp):
+  catlist.update({'catfp': catfp});
+ else:
+  catfp.close();
+ return catlist; 
+
+create_alias_function("", __file_format_name__, "SeekToFile", ArchiveFileSeekToFile);
 
 def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  if(hasattr(infile, "read") or hasattr(infile, "write")):
