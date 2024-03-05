@@ -2181,6 +2181,8 @@ def ArchiveFileSeekToFile(infile, seekto=0, skipchecksum=False, formatspecs=__fi
   return False;
  catversions = re.search(r'(.*?)(\d+)$', catstring).groups();
  catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}};
+ if(seekto>fnumfiles):
+  seekto = fnumfiles;
  if(seekto>0):
   il = 0;
   while(il < seekto):
@@ -2190,6 +2192,7 @@ def ArchiveFileSeekToFile(infile, seekto=0, skipchecksum=False, formatspecs=__fi
    preftype = int(preheaderdata[1], 16);
    prefsize = int(preheaderdata[4], 16);
    catfp.seek(prefseek, 1);
+   catfp.seek(1, 1);
    catfp.seek(prefsize, 1);
    catfp.seek(1, 1);
    il = il + 1;
@@ -2352,6 +2355,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    preftype = int(preheaderdata[1], 16);
    prefsize = int(preheaderdata[4], 16);
    catfp.seek(prefseek, 1);
+   catfp.seek(1, 1);
    catfp.seek(prefsize, 1);
    catfp.seek(1, 1);
    il = il + 1;
