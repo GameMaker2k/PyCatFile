@@ -2188,6 +2188,7 @@ def ArchiveFileSeekToFile(infile, seekto=0, skipchecksum=False, formatspecs=__fi
  if(seekto>=0):
   il = -1;
   while(il < seekto):
+   seekstart = catfp.tell();
    preheaderdata = ReadFileHeaderData(catfp, 5, formatspecs[4]);
    prefheadsize = int(preheaderdata[0], 16);
    prefseek = prefheadsize - (int(len(preheaderdata[1]) + 1) + int(len(preheaderdata[2]) + 1) + int(len(preheaderdata[3]) + 1) + int(len(preheaderdata[4]) + 1));
@@ -2198,6 +2199,7 @@ def ArchiveFileSeekToFile(infile, seekto=0, skipchecksum=False, formatspecs=__fi
    catfp.seek(prefsize, 1);
    catfp.seek(1, 1);
    il = il + 1;
+ catfp.seek(seekstart, 0);
  fileidnum = seekto;
  catfheadsize = int(preheaderdata[0], 16);
  catftype = int(preheaderdata[1], 16);
