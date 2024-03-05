@@ -2197,8 +2197,16 @@ def ArchiveFileSeekToFile(infile, seekto=0, skipchecksum=False, formatspecs=__fi
    catfp.seek(1, 1);
    il = il + 1;
  fileidnum = seekto;
- realidnum = 0;
- catlist = {'filenum': fileidnum, 'fileoffset': catfp.tell()};
+ catfheadsize = int(preheaderdata[0], 16);
+ catftype = int(preheaderdata[1], 16);
+ if(re.findall("^[.|/]", preheaderdata[2])):
+  catfname = preheaderdata[2];
+ else:
+  catfname = "./"+preheaderdata[2];
+ catflinkname = preheaderdata[3];
+ catfsize = int(preheaderdata[4], 16);
+ catfbasedir = os.path.dirname(catfname);
+ catlist = {'fid': fileidnum, 'foffset': catfp.tell(), 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize};
  if(returnfp):
   catlist.update({'catfp': catfp});
  else:
