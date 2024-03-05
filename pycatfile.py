@@ -2183,7 +2183,7 @@ def ArchiveFileSeekToFile(infile, seekto=0, skipchecksum=False, formatspecs=__fi
  catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}};
  if(seekto>fnumfiles):
   seekto = fnumfiles;
- if(seekto>0):
+ if(seekto=>0):
   il = 0;
   while(il < seekto):
    preheaderdata = ReadFileHeaderData(catfp, 5, formatspecs[4]);
@@ -2354,7 +2354,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
  catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}};
  if(seekend<=0):
   seekend = fnumfiles;
- if(seekstart>0):
+ if(seekstart=>0):
   il = 0;
   while(il < seekstart):
    preheaderdata = ReadFileHeaderData(catfp, 5, formatspecs[4]);
