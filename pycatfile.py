@@ -685,7 +685,7 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_list__):
 
 create_alias_function("Uncompress", __file_format_name__, "", UncompressArchiveFile);
 
-def UncompressFile(infile, mode="rb"):
+def UncompressFile(infile, formatspecs=__file_format_list__, mode="rb"):
  compresscheck = CheckCompressionType(infile, formatspecs, False);
  if(sys.version_info[0]==2 and compresscheck):
   if(mode=="rt"):
@@ -746,6 +746,11 @@ def UncompressFile(infile, mode="rb"):
    filefp = lzma.open(infile, mode, encoding="UTF-8");
   except (ValueError, TypeError) as e:
    filefp = lzma.open(infile, mode);
+ if(compresscheck=="catfile" or compresscheck==formatspecs[1]):
+  try:
+   filefp = open(infile, mode, encoding="UTF-8");
+  except (ValueError, TypeError) as e:
+   filefp = open(infile, mode);
  if(not compresscheck):
   try:
    filefp = open(infile, mode, encoding="UTF-8");
@@ -991,11 +996,17 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
 
 create_alias_function("Compress", __file_format_name__, "", CompressArchiveFile);
 
-def CompressOpenFile(outfile):
+def CompressOpenFile(outfile, compressionlevel=None):
  if(outfile is None):
   return False;
  fbasename = os.path.splitext(outfile)[0];
  fextname = os.path.splitext(outfile)[1];
+ if(compressionlevel is None and fextname!=".zst"):
+  compressionlevel = 9;
+ elif(compressionlevel is None and fextname==".zst"):
+  compressionlevel = 10;
+ else:
+  compressionlevel = int(compressionlevel);
  if(sys.version_info[0]==2):
   mode = "w";
  else:
@@ -1010,43 +1021,43 @@ def CompressOpenFile(outfile):
    import gzip;
   except ImportError:
    return False;
-  outfp = gzip.open(outfile, mode, 9, encoding="UTF-8");
+  outfp = gzip.open(outfile, mode, compressionlevel, encoding="UTF-8");
  elif(fextname==".bz2"):
   try:
    import bz2;
   except ImportError:
    return False;
-  outfp = bz2.open(outfile, mode, 9, encoding="UTF-8");
+  outfp = bz2.open(outfile, mode, compressionlevel, encoding="UTF-8");
  elif(fextname==".zst"):
   try:
    import zstandard;
   except ImportError:
    return False;
-  outfp = zstandard.open(outfile, mode, zstandard.ZstdCompressor(level=10), encoding="UTF-8");
+  outfp = zstandard.open(outfile, mode, zstandard.ZstdCompressor(level=compressionlevel), encoding="UTF-8");
  elif(fextname==".xz"):
   try:
    import lzma;
   except ImportError:
    return False;
-  outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, preset=9, encoding="UTF-8");
+  outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel, encoding="UTF-8");
  elif(fextname==".lz4"):
   try:
    import lz4.frame;
   except ImportError:
    return False;
-  outfp = lz4.frame.open(outfile, mode, format=lzma.FORMAT_XZ, preset=9, encoding="UTF-8");
+  outfp = lz4.frame.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel, encoding="UTF-8");
  elif(fextname==".lzo"):
   try:
    import lzo;
   except ImportError:
    return False;
-  outfp = lzo.open(outfile, mode, format=lzma.FORMAT_XZ, preset=9, encoding="UTF-8");
+  outfp = lzo.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel, encoding="UTF-8");
  elif(fextname==".lzma"):
   try:
    import lzma;
   except ImportError:
    return False;
-  outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, preset=9, encoding="UTF-8");
+  outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, preset=compressionlevel, encoding="UTF-8");
  return outfp;
 
 def GetDevMajorMinor(fdev):
@@ -1112,68 +1123,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  if(fextname not in outextlistwd and (compression=="auto" or compression is None)):
-   catfp = open(outfile, "wb");
-  elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
-   try:
-    import gzip;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = gzip.GzipFile(outfile, "wb", compresslevel=compressionlevel);
-  elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
-   try:
-    import bz2;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = bz2.BZ2File(outfile, "wb", compresslevel=compressionlevel);
-  elif(((fextname==".zst" or fextname==".czst") and compression=="auto") or compression=="zstd"):
-   try:
-    import zstandard;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 10;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = zstandard.open(outfile, "wb", zstandard.ZstdCompressor(level=compressionlevel));
-  elif(((fextname==".lz4" or fextname==".clz4") and compression=="auto") or compression=="lz4"):
-   try:
-    import lz4.frame;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = lz4.frame.open(outfile, "wb", compression_level=compressionlevel);
-  elif(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
-   try:
-    import lzma;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=compressionlevel);
-  elif((fextname==".lzma" and compression=="auto") or compression=="lzma"):
-   try:
-    import lzma;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=compressionlevel);
+  catfp = CompressOpenFile(outfile, compressionlevel);
  catver = formatspecs[5];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
@@ -1499,68 +1449,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  if(fextname not in outextlistwd and (compression=="auto" or compression is None)):
-   catfp = open(outfile, "wb");
-  elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
-   try:
-    import gzip;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = gzip.GzipFile(outfile, "wb", compresslevel=compressionlevel);
-  elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
-   try:
-    import bz2;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = bz2.BZ2File(outfile, "wb", compresslevel=compressionlevel);
-  elif(((fextname==".zst" or fextname==".czst") and compression=="auto") or compression=="zstd"):
-   try:
-    import zstandard;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 10;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = zstandard.open(outfile, "wb", zstandard.ZstdCompressor(level=compressionlevel));
-  elif(((fextname==".lz4" or fextname==".clz4") and compression=="auto") or compression=="lz4"):
-   try:
-    import lz4.frame;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = lz4.frame.open(outfile, "wb", compression_level=compressionlevel);
-  elif(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
-   try:
-    import lzma;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=compressionlevel);
-  elif((fextname==".lzma" and compression=="auto") or compression=="lzma"):
-   try:
-    import lzma;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=compressionlevel);
+  catfp = CompressOpenFile(outfile, compressionlevel);
  catver = formatspecs[5];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
@@ -1812,68 +1701,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  if(fextname not in outextlistwd and (compression=="auto" or compression is None)):
-   catfp = open(outfile, "wb");
-  elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
-   try:
-    import gzip;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = gzip.GzipFile(outfile, "wb", compresslevel=compressionlevel);
-  elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
-   try:
-    import bz2;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = bz2.BZ2File(outfile, "wb", compresslevel=compressionlevel);
-  elif(((fextname==".zst" or fextname==".czst") and compression=="auto") or compression=="zstd"):
-   try:
-    import zstandard;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 10;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = zstandard.open(outfile, "wb", zstandard.ZstdCompressor(level=compressionlevel));
-  elif(((fextname==".lz4" or fextname==".clz4") and compression=="auto") or compression=="lz4"):
-   try:
-    import lz4.frame;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = lz4.frame.open(outfile, "wb", compression_level=compressionlevel);
-  elif(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
-   try:
-    import lzma;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=compressionlevel);
-  elif((fextname==".lzma" and compression=="auto") or compression=="lzma"):
-   try:
-    import lzma;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=compressionlevel);
+  catfp = CompressOpenFile(outfile, compressionlevel);
  catver = formatspecs[5];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
@@ -2145,52 +1973,21 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
   compresscheck = CheckCompressionType(infile, formatspecs, True);
   if(not compresscheck):
    fextname = os.path.splitext(infile)[1];
-   if(fextname==".gz" or fextname==".cgz"):
+   if(fextname==".gz"):
     compresscheck = "gzip";
-   if(fextname==".bz2" or fextname==".cbz"):
+   if(fextname==".bz2"):
     compresscheck = "bzip2";
-   if(fextname==".zst" or fextname==".czst"):
+   if(fextname==".zst"):
     compresscheck = "zstd";
    if(fextname==".lz4" or fextname==".clz4"):
     compresscheck = "lz4";
-   if(fextname==".lzo" or fextname==".lzop" or fextname==".clzo"):
+   if(fextname==".lzo" or fextname==".lzop"):
     compresscheck = "lzo";
-   if(fextname==".lzma" or fextname==".xz" or fextname==".cxz"):
+   if(fextname==".lzma" or fextname==".xz"):
     compresscheck = "lzma";
   if(not compresscheck):
    return False;
-  if(compresscheck=="gzip"):
-   try:
-    import gzip;
-   except ImportError:
-    return False;
-   catfp = gzip.GzipFile(infile, "rb");
-  if(compresscheck=="bzip2"):
-   try:
-    import bz2;
-   except ImportError:
-    return False;
-   catfp = bz2.BZ2File(infile, "rb");
-  if(compresscheck=="lz4"):
-   try:
-    import lz4.frame;
-   except ImportError:
-    return False;
-   catfp = lz4.frame.open(infile, "rb");
-  if(compresscheck=="zstd"):
-   try:
-    import zstandard;
-   except ImportError:
-    return False;
-   catfp = zstandard.open(infile, "rb");
-  if(compresscheck=="lzma" or compresscheck=="xz"):
-   try:
-    import lzma;
-   except ImportError:
-    return False;
-   catfp = lzma.open(infile, "rb");
-  if( compresscheck=="catfile" or compresscheck==formatspecs[1]):
-   catfp = open(infile, "rb");
+  catfp = UncompressFile(infile, formatspecs, "rb");
  '''
  try:
   catfp.seek(0, 2);
@@ -2320,52 +2117,21 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
   compresscheck = CheckCompressionType(infile, formatspecs, True);
   if(not compresscheck):
    fextname = os.path.splitext(infile)[1];
-   if(fextname==".gz" or fextname==".cgz"):
+   if(fextname==".gz"):
     compresscheck = "gzip";
-   if(fextname==".bz2" or fextname==".cbz"):
+   if(fextname==".bz2"):
     compresscheck = "bzip2";
-   if(fextname==".zst" or fextname==".czst"):
+   if(fextname==".zst"):
     compresscheck = "zstd";
    if(fextname==".lz4" or fextname==".clz4"):
     compresscheck = "lz4";
-   if(fextname==".lzo" or fextname==".lzop" or fextname==".clzo"):
+   if(fextname==".lzo" or fextname==".lzop"):
     compresscheck = "lzo";
-   if(fextname==".lzma" or fextname==".xz" or fextname==".cxz"):
+   if(fextname==".lzma" or fextname==".xz"):
     compresscheck = "lzma";
   if(not compresscheck):
    return False;
-  if(compresscheck=="gzip"):
-   try:
-    import gzip;
-   except ImportError:
-    return False;
-   catfp = gzip.GzipFile(infile, "rb");
-  if(compresscheck=="bzip2"):
-   try:
-    import bz2;
-   except ImportError:
-    return False;
-   catfp = bz2.BZ2File(infile, "rb");
-  if(compresscheck=="lz4"):
-   try:
-    import lz4.frame;
-   except ImportError:
-    return False;
-   catfp = lz4.frame.open(infile, "rb");
-  if(compresscheck=="zstd"):
-   try:
-    import zstandard;
-   except ImportError:
-    return False;
-   catfp = zstandard.open(infile, "rb");
-  if(compresscheck=="lzma" or compresscheck=="xz"):
-   try:
-    import lzma;
-   except ImportError:
-    return False;
-   catfp = lzma.open(infile, "rb");
-  if( compresscheck=="catfile" or compresscheck==formatspecs[1]):
-   catfp = open(infile, "rb");
+  catfp = UncompressFile(infile, formatspecs, "rb");
  '''
  try:
   catfp.seek(0, 2);
@@ -2505,52 +2271,21 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   compresscheck = CheckCompressionType(infile, formatspecs, True);
   if(not compresscheck):
    fextname = os.path.splitext(infile)[1];
-   if(fextname==".gz" or fextname==".cgz"):
+   if(fextname==".gz"):
     compresscheck = "gzip";
-   if(fextname==".bz2" or fextname==".cbz"):
+   if(fextname==".bz2"):
     compresscheck = "bzip2";
-   if(fextname==".zst" or fextname==".czst"):
+   if(fextname==".zst"):
     compresscheck = "zstd";
    if(fextname==".lz4" or fextname==".clz4"):
     compresscheck = "lz4";
-   if(fextname==".lzo" or fextname==".lzop" or fextname==".clzo"):
+   if(fextname==".lzo" or fextname==".lzop"):
     compresscheck = "lzo";
-   if(fextname==".lzma" or fextname==".xz" or fextname==".cxz"):
+   if(fextname==".lzma" or fextname==".xz"):
     compresscheck = "lzma";
   if(not compresscheck):
    return False;
-  if(compresscheck=="gzip"):
-   try:
-    import gzip;
-   except ImportError:
-    return False;
-   catfp = gzip.GzipFile(infile, "rb");
-  if(compresscheck=="bzip2"):
-   try:
-    import bz2;
-   except ImportError:
-    return False;
-   catfp = bz2.BZ2File(infile, "rb");
-  if(compresscheck=="lz4"):
-   try:
-    import lz4.frame;
-   except ImportError:
-    return False;
-   catfp = lz4.frame.open(infile, "rb");
-  if(compresscheck=="zstd"):
-   try:
-    import zstandard;
-   except ImportError:
-    return False;
-   catfp = zstandard.open(infile, "rb");
-  if(compresscheck=="lzma" or compresscheck=="xz"):
-   try:
-    import lzma;
-   except ImportError:
-    return False;
-   catfp = lzma.open(infile, "rb");
-  if( compresscheck=="catfile" or compresscheck==formatspecs[1]):
-   catfp = open(infile, "rb");
+  catfp = UncompressFile(infile, formatspecs, "rb");
  '''
  try:
   catfp.seek(0, 2);
@@ -3763,64 +3498,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  if(fextname not in outextlistwd and (compression=="auto" or compression is None)):
-   catfp = open(outfile, "wb");
-  elif(((fextname==".gz" or fextname==".cgz") and compression=="auto") or compression=="gzip"):
-   try:
-    import gzip;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = gzip.GzipFile(outfile, "wb", compresslevel=compressionlevel);
-  elif(((fextname==".bz2" or fextname==".cbz") and compression=="auto") or compression=="bzip2"):
-   try:
-    import bz2;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = bz2.BZ2File(outfile, "wb", compresslevel=compressionlevel);
-  elif(((fextname==".zst" or fextname==".czst") and compression=="auto") or compression=="zstd"):
-   try:
-    import zstandard;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 10;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = zstandard.open(outfile, "wb", zstandard.ZstdCompressor(level=compressionlevel));
-  elif(((fextname==".lz4" or fextname==".clz4") and compression=="auto") or compression=="lz4"):
-   try:
-    import lz4.frame;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = lz4.frame.open(outfile, "wb", compression_level=compressionlevel);
-  elif(((fextname==".xz" or fextname==".cxz") and compression=="auto") or compression=="xz"):
-   try:
-    import lzma;
-   except ImportError:
-    return False;
-   if(compressionlevel is None):
-    compressionlevel = 9;
-   else:
-    compressionlevel = int(compressionlevel);
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_XZ, preset=compressionlevel);
-  elif((fextname==".lzma" and compression=="auto") or compression=="lzma"):
-   try:
-    import lzma;
-   except ImportError:
-    return False;
-   catfp = lzma.open(outfile, "wb", format=lzma.FORMAT_ALONE, preset=9);
+  catfp = CompressOpenFile(outfile, compressionlevel);
  catver = formatspecs[5];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
