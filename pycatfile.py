@@ -1231,6 +1231,13 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   catfileheadercshex = format(0, 'x').lower
  fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[4]);
  catfp.write(fnumfilesa.encode('UTF-8'));
+ try:
+  catfp.flush();
+  os.fsync(catfp.fileno());
+ except io.UnsupportedOperation:
+  pass;
+ except AttributeError:
+  pass;
  for curfname in GetDirList:
   catfhstart = catfp.tell();
   if(re.findall("^[.|/]", curfname)):
@@ -1425,8 +1432,22 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
+  try:
+   catfp.flush();
+   os.fsync(catfp.fileno());
+  except io.UnsupportedOperation:
+   pass;
+  except AttributeError:
+   pass;
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  try:
+   catfp.flush();
+   os.fsync(catfp.fileno());
+  except io.UnsupportedOperation:
+   pass;
+  except AttributeError:
+   pass;
  if(outfile=="-"):
   catfp.seek(0, 0);
   if(hasattr(sys.stdout, "buffer")):
@@ -1583,6 +1604,13 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   catfileheadercshex = format(0, 'x').lower();
  fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[4]);
  catfp.write(fnumfilesa.encode('UTF-8'));
+ try:
+  catfp.flush();
+  os.fsync(catfp.fileno());
+ except io.UnsupportedOperation:
+  pass;
+ except AttributeError:
+  pass;
  for member in tarfp.getmembers():
   catfhstart = catfp.tell();
   if(re.findall("^[.|/]", member.name)):
@@ -1725,8 +1753,22 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
+  try:
+   catfp.flush();
+   os.fsync(catfp.fileno());
+  except io.UnsupportedOperation:
+   pass;
+  except AttributeError:
+   pass;
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  try:
+   catfp.flush();
+   os.fsync(catfp.fileno());
+  except io.UnsupportedOperation:
+   pass;
+  except AttributeError:
+   pass;
  if(outfile=="-"):
   catfp.seek(0, 0);
   if(hasattr(sys.stdout, "buffer")):
@@ -1874,6 +1916,13 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   catfileheadercshex = format(0, 'x').lower();
  fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[4]);
  catfp.write(fnumfilesa.encode('UTF-8'));
+ try:
+  catfp.flush();
+  os.fsync(catfp.fileno());
+ except io.UnsupportedOperation:
+  pass;
+ except AttributeError:
+  pass;
  for member in zipfp.infolist():
   catfhstart = catfp.tell();
   if(re.findall("^[.|/]", member.filename)):
@@ -2027,8 +2076,22 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
+  try:
+   catfp.flush();
+   os.fsync(catfp.fileno());
+  except io.UnsupportedOperation:
+   pass;
+  except AttributeError:
+   pass;
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  try:
+   catfp.flush();
+   os.fsync(catfp.fileno());
+  except io.UnsupportedOperation:
+   pass;
+  except AttributeError:
+   pass;
  if(outfile=="-"):
   catfp.seek(0, 0);
   if(hasattr(sys.stdout, "buffer")):
@@ -3790,6 +3853,13 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   catfileheadercshex = format(0, 'x').lower();
  fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[4]);
  catfp.write(fnumfilesa.encode('UTF-8'));
+ try:
+  catfp.flush();
+  os.fsync(catfp.fileno());
+ except io.UnsupportedOperation:
+  pass;
+ except AttributeError:
+  pass;
  if(seekstart>0):
   lcfi = seekstart;
  else:
@@ -3975,10 +4045,24 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
+  try:
+   catfp.flush();
+   os.fsync(catfp.fileno());
+  except io.UnsupportedOperation:
+   pass;
+  except AttributeError:
+   pass;
   lcfi = lcfi + 1;
   reallcfi = reallcfi + 1;
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  try:
+   catfp.flush();
+   os.fsync(catfp.fileno());
+  except io.UnsupportedOperation:
+   pass;
+  except AttributeError:
+   pass;
  if(outfile=="-"):
   catfp.seek(0, 0);
   if(hasattr(sys.stdout, "buffer")):
@@ -4143,6 +4227,13 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
   if(listcatfiles['ffilelist'][lcfi]['ftype']==0 or listcatfiles['ffilelist'][lcfi]['ftype']==7):
    fpc = open(listcatfiles['ffilelist'][lcfi]['fname'], "wb");
    fpc.write(listcatfiles['ffilelist'][lcfi]['fcontents']);
+   try:
+    fpc.flush();
+    os.fsync(fpc.fileno());
+   except io.UnsupportedOperation:
+    pass;
+   except AttributeError:
+    pass;
    fpc.close();
    if(hasattr(os, "chown") and funame==listcatfiles['ffilelist'][lcfi]['funame'] and fgname==listcatfiles['ffilelist'][lcfi]['fgname']):
     os.chown(listcatfiles['ffilelist'][lcfi]['fname'], listcatfiles['ffilelist'][lcfi]['fuid'], listcatfiles['ffilelist'][lcfi]['fgid']);
@@ -4176,6 +4267,13 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
     if(flinkinfo['ftype']==0 or flinkinfo['ftype']==7):
      fpc = open(listcatfiles['ffilelist'][lcfi]['fname'], "wb");
      fpc.write(flinkinfo['fcontents']);
+     try:
+      fpc.flush();
+      os.fsync(fpc.fileno());
+     except io.UnsupportedOperation:
+      pass;
+     except AttributeError:
+      pass;
      fpc.close();
      if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname']):
       os.chown(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
