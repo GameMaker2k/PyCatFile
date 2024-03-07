@@ -1723,7 +1723,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
  zipfp = zipfile.ZipFile(infile, "r", allowZip64=True);
  ziptest = zipfp.testzip();
  if(ziptest):
-  VerbosePrintOut("Bad file found: " + str(bad_file));
+  VerbosePrintOut("Bad file found!");
  fnumfiles = format(int(len(zipfp.infolist())), 'x').lower();
  fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[4]);
  if(checksumtype=="none" or checksumtype==""):
@@ -1990,7 +1990,7 @@ if(rarfile_support):
   rarfp = rarfile.RarFile(infile, "r");
   rartest = rarfp.testrar();
   if(rartest):
-   VerbosePrintOut("Bad file found: " + str(bad_file));
+   VerbosePrintOut("Bad file found!");
   fnumfiles = format(int(len(rarfp.infolist())), 'x').lower();
   fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[4]);
   if(checksumtype=="none" or checksumtype==""):
@@ -2227,7 +2227,6 @@ if(rarfile_support):
    return True;
 
 create_alias_function("Pack", __file_format_name__, "FromRarFile", PackArchiveFileFromRarFile);
-
 
 def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  if(hasattr(infile, "read") or hasattr(infile, "write")):
@@ -3309,7 +3308,7 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
  zipfp = zipfile.ZipFile(infiles, "r", allowZip64=True);
  ziptest = zipfp.testzip();
  if(ziptest):
-  VerbosePrintOut("Bad file found: " + str(bad_file));
+  VerbosePrintOut("Bad file found!");
  fnumfiles = int(len(zipfp.infolist()));
  catver = formatspecs[5];
  fileheaderver = str(int(catver.replace(".", "")));
@@ -3531,7 +3530,7 @@ if(rarfile_support):
   rarfp = rarfile.RarFile(infile, "r");
   rartest = rarfp.testrar();
   if(rartest):
-   VerbosePrintOut("Bad file found: " + str(bad_file));
+   VerbosePrintOut("Bad file found!");
   fnumfiles = int(len(rarfp.infolist()));
   catver = formatspecs[5];
   fileheaderver = str(int(catver.replace(".", "")));
@@ -3750,7 +3749,6 @@ if(rarfile_support):
    catlist['ffilelist'].update({fileidnum: {'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
    fileidnum = fileidnum + 1;
   return catlist;
-
 
 def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = BytesIO();
@@ -4803,7 +4801,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
  zipfp = zipfile.ZipFile(infile, "r", allowZip64=True);
  ziptest = zipfp.testzip();
  if(ziptest):
-  VerbosePrintOut("Bad file found: " + str(bad_file));
+  VerbosePrintOut("Bad file found!");
  for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
   if(not member.is_dir()):
    fpremode = int(stat.S_IFREG + 438);
@@ -4898,7 +4896,7 @@ if(rarfile_support):
   rarfp = rarfile.RarFile(infile, "r");
   rartest = rarfp.testrar();
   if(rartest):
-   VerbosePrintOut("Bad file found: " + str(bad_file));
+   VerbosePrintOut("Bad file found!");
   for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
    if(member.is_file()):
     fpremode = int(stat.S_IFREG + 438);
@@ -4985,7 +4983,6 @@ if(rarfile_support):
    return listcatfiles['catfp'];
   else:
    return True;
-
 
 def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = BytesIO();
