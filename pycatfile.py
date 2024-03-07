@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import os, re, sys, time, marshal, stat, zlib, base64, shutil, hashlib, datetime, logging, binascii, tempfile, zipfile, ftplib;
+import os, re, sys, time, stat, zlib, base64, shutil, hashlib, datetime, logging, binascii, tempfile, zipfile, ftplib;
 
 hashlib_guaranteed = False;
 os.environ["PYTHONIOENCODING"] = "UTF-8";
@@ -49,17 +49,6 @@ try:
  import simplejson as json;
 except ImportError:
  import json;
-
-try:
- import cPickle as pickle;
-except ImportError:
- import pickle;
-
-pickledp = None;
-try:
- pickledp = pickle.DEFAULT_PROTOCOL;
-except AttributeError:
- pickledp = 2;
 
 try:
  from zlib import crc32;
@@ -1950,6 +1939,10 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
 
 create_alias_function("Pack", __file_format_name__, "FromZipFile", PackArchiveFileFromZipFile);
 
+if(not rarfile_support):
+ def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+  return False
+
 if(rarfile_support):
  def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
   compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
@@ -2233,8 +2226,7 @@ if(rarfile_support):
    catfp.close()
    return True;
 
-if(rarfile_support):
- create_alias_function("Pack", __file_format_name__, "FromRarFile", PackArchiveFileFromRarFile);
+create_alias_function("Pack", __file_format_name__, "FromRarFile", PackArchiveFileFromRarFile);
 
 
 def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
@@ -2808,6 +2800,10 @@ def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  catfp = PackArchiveFileFromZipFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
  listcatfiles = ArchiveFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  return listcatfiles;
+
+if(not rarfile_support):
+ def RarFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
+  return False;
 
 if(rarfile_support):
  def RarFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
@@ -3514,6 +3510,10 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   fileidnum = fileidnum + 1;
  return catlist;
 
+if(not rarfile_support):
+ def RarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False):
+  return False;
+
 if(rarfile_support):
  def RarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False):
   advancedlist = True;
@@ -3991,6 +3991,10 @@ def ZipFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, chec
   lcfi = lcfi + 1;
  return catarray;
 
+if(not rarfile_support):
+ def RarFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False):
+  return False;
+
 if(rarfile_support):
  def RarFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False):
   listcatfiles = RarFileToArrayAlt(infiles, listonly, checksumtype, extradata, formatspecs, verbose);
@@ -4066,6 +4070,10 @@ def ZipFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
  catfp = PackArchiveFileFromZipFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
  listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  return listcatfiles;
+
+if(not rarfile_support):
+ def RarFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
+  return False;
 
 if(rarfile_support):
  def RarFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
@@ -4872,6 +4880,12 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
  else:
   return True;
 
+if(not rarfile_support):
+ def RarFileListFiles(infile, verbose=False, returnfp=False):
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+  if(not os.path.exists(infile) or not os.path.isfile(infile)):
+  return False;
+
 if(rarfile_support):
  def RarFileListFiles(infile, verbose=False, returnfp=False):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
@@ -5005,14 +5019,17 @@ def PackArchiveFileFromZipFileAlt(infile, outfile, compression="auto", compressi
 
 create_alias_function("Pack", __file_format_name__, "FromZipFileAlt", PackArchiveFileFromZipFileAlt);
 
+if(not rarfile_support):
+ def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+  return False;
+
 if(rarfile_support):
  def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
   outarray = RarFileToArrayAlt(infile, False, checksumtype, extradata, formatspecs, False);
   listcatfiles = RePackArchiveFile(outarray, outfile, compression, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
   return listcatfiles;
 
-if(rarfile_support):
- create_alias_function("Pack", __file_format_name__, "FromRarFileAlt", PackArchiveFileFromRarFileAlt);
+create_alias_function("Pack", __file_format_name__, "FromRarFileAlt", PackArchiveFileFromRarFileAlt);
 
 def download_file_from_ftp_file(url):
  urlparts = urlparse.urlparse(url);
