@@ -66,6 +66,13 @@ try:
 except ImportError:
  from binascii import crc32;
 
+rarfile_support = False;
+try:
+ import rarfile;
+ rarfile_support = True;
+except ImportError:
+ rarfile_support = False;
+
 try:
  from safetar import is_tarfile;
 except ImportError:
@@ -147,6 +154,8 @@ tarfile_mimetype = "application/tar";
 tarfile_tar_mimetype = tarfile_mimetype;
 zipfile_mimetype = "application/zip";
 zipfile_zip_mimetype = zipfile_mimetype;
+rarfile_mimetype = "application/rar";
+rarfile_rar_mimetype = rarfile_mimetype;
 archivefile_mimetype = "application/x-"+__file_format_list__[1]+"";
 archivefile_cat_mimetype = archivefile_mimetype;
 archivefile_gzip_mimetype = "application/x-"+__file_format_list__[1]+"+gzip";
@@ -575,8 +584,14 @@ def CheckCompressionType(infile, formatspecs=__file_format_list__, closefp=True)
  prefp = catfp.read(7);
  if(prefp==binascii.unhexlify("fd377a585a0000")):
   filetype = "lzma";
+ if(prefp==binascii.unhexlify("526172211a0700")):
+  filetype = "rarfile";
  if(prefp==binascii.unhexlify("43617446696c65")):
   filetype = "catfile";
+ catfp.seek(0, 0);
+ prefp = catfp.read(8);
+ if(prefp==binascii.unhexlify("526172211a070100")):
+  filetype = "rarfile";
  catfp.seek(0, 0);
  prefp = catfp.read(formatspecs[2]);
  if(prefp==binascii.unhexlify(formatspecs[3])):
@@ -1935,6 +1950,293 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
 
 create_alias_function("Pack", __file_format_name__, "FromZipFile", PackArchiveFileFromZipFile);
 
+if(rarfile_support):
+ def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
+  outextlist = ['gz', 'bz2', 'zst', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
+  outextlistwd = ['.gz', '.bz2', '.zst', '.lz4', '.lzo', '.lzop', '.lzma', '.xz'];
+  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+   outfile = RemoveWindowsPath(outfile);
+  checksumtype = checksumtype.lower();
+  if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
+   checksumtype="crc32";
+  if(checksumtype=="none"):
+   checksumtype = "";
+  if(not compression or compression or compression=="catfile" or compression==formatspecs[1]):
+   compression = None;
+  if(compression not in compressionlist and compression is None):
+   compression = "auto";
+  if(verbose):
+   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+   if(os.path.exists(outfile)):
+    os.unlink(outfile);
+  if(outfile=="-"):
+   verbose = False;
+   catfp = BytesIO();
+  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
+   catfp = outfile;
+  else:
+   fbasename = os.path.splitext(outfile)[0];
+   fextname = os.path.splitext(outfile)[1];
+   catfp = CompressOpenFile(outfile, compressionlevel);
+  catver = formatspecs[5];
+  fileheaderver = str(int(catver.replace(".", "")));
+  fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
+  catfp.write(fileheader.encode('UTF-8'));
+  curinode = 0;
+  curfid = 0;
+  inodelist = [];
+  inodetofile = {};
+  filetoinode = {};
+  inodetocatinode = {};
+  if(not os.path.exists(infile) or not os.path.isfile(infile)):
+   return False;
+  if(not rarfile.is_rarfile(infile) and not rarfile.is_rarfile_sfx(infile)):
+   return False;
+  rarfp = rarfile.RarFile(infile, "r");
+  rartest = rarfp.testrar();
+  if(rartest):
+   VerbosePrintOut("Bad file found: " + str(bad_file));
+  fnumfiles = format(int(len(rarfp.infolist())), 'x').lower();
+  fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[4]);
+  if(checksumtype=="none" or checksumtype==""):
+   catfileheadercshex = format(0, 'x').lower();
+  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
+   catfileheadercshex = format(crc16(str(fileheader + fnumfilesa).encode('UTF-8')) & 0xffff, '04x').lower();
+  elif(checksumtype=="crc16_ccitt"):
+   catfileheadercshex = format(crc16_ccitt(str(fileheader + fnumfilesa).encode('UTF-8')) & 0xffff, '04x').lower();
+  elif(checksumtype=="adler32"):
+   catfileheadercshex = format(zlib.adler32(str(fileheader + fnumfilesa).encode('UTF-8')) & 0xffffffff, '08x').lower();
+  elif(checksumtype=="crc32"):
+   catfileheadercshex = format(crc32(str(fileheader + fnumfilesa).encode('UTF-8')) & 0xffffffff, '08x').lower();
+  elif(checksumtype=="crc64_ecma"):
+   catfileheadercshex = format(crc64_ecma(str(fileheader + fnumfilesa).encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+  elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
+   catfileheadercshex = format(crc64_iso(str(fileheader + fnumfilesa).encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+  elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
+   checksumoutstr = hashlib.new(checksumtype);
+   checksumoutstr.update(str(fileheader + fnumfilesa).encode('UTF-8'));
+   catfileheadercshex = checksumoutstr.hexdigest().lower();
+  else:
+   catfileheadercshex = format(0, 'x').lower();
+  fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[4]);
+  catfp.write(fnumfilesa.encode('UTF-8'));
+  try:
+   catfp.flush();
+   os.fsync(catfp.fileno());
+  except io.UnsupportedOperation:
+   pass;
+  except AttributeError:
+   pass;
+  for member in rarfp.infolist():
+   catfhstart = catfp.tell();
+   if(re.findall("^[.|/]", member.filename)):
+    fname = member.filename;
+   else:
+    fname = "./"+member.filename;
+   rarinfo = rarfp.getinfo(member.filename);
+   if(verbose):
+    VerbosePrintOut(fname);
+   if(member.is_file()):
+    fpremode = format(int(stat.S_IFREG + 438), 'x').lower();
+   elif(member.is_symlink()):
+    fpremode = format(int(stat.S_IFLNK + 438), 'x').lower();
+   elif(member.is_dir()):
+    fpremode = format(int(stat.S_IFDIR + 511), 'x').lower();
+   flinkcount = 0;
+   ftype = 0;
+   if(member.is_file()):
+    ftype = 0;
+   elif(member.is_symlink()):
+    ftype = 2;
+   elif(member.is_dir()):
+    ftype = 5;
+   flinkname = "";
+   if(ftype==2):
+    flinkname = rarfp.read(member.filename).decode("UTF-8");
+   fcurfid = format(int(curfid), 'x').lower();
+   fcurinode = format(int(0), 'x').lower();
+   curfid = curfid + 1;
+   fdev_minor = format(int(0), 'x').lower();
+   fdev_major = format(int(0), 'x').lower();
+   frdev_minor = format(int(0), 'x').lower();
+   frdev_major = format(int(0), 'x').lower();
+   if(ftype==5):
+    fsize = format(int("0"), 'x').lower();
+   if(ftype==0):
+    fsize = format(int(member.file_size), 'x').lower();
+   try:
+    if(member.atime):
+     fatime = format(int(member.atime.timestamp()), 'x').lower();
+    else:
+     fatime = format(int(member.mtime.timestamp()), 'x').lower();
+   except AttributeError:
+    fatime = format(int(member.mtime.timestamp()), 'x').lower();
+   fmtime = format(int(member.mtime.timestamp()), 'x').lower();
+   try:
+    if(member.ctime):
+     fctime = format(int(member.ctime.timestamp()), 'x').lower();
+    else:
+     fctime = format(int(member.mtime.timestamp()), 'x').lower();
+   except AttributeError:
+    fctime = format(int(member.mtime.timestamp()), 'x').lower();
+   fbtime = format(int(member.mtime.timestamp()), 'x').lower();
+   if(member.is_file()):
+    fmode = format(int(stat.S_IFREG + 438), 'x').lower();
+    fchmode = format(int(stat.S_IMODE(int(stat.S_IFREG + 438))), 'x').lower();
+    ftypemod = format(int(stat.S_IFMT(int(stat.S_IFREG + 438))), 'x').lower();
+   elif(member.is_symlink()):
+    fmode = format(int(stat.S_IFLNK + 438), 'x').lower();
+    fchmode = format(int(stat.S_IMODE(int(stat.S_IFREG + 438))), 'x').lower();
+    ftypemod = format(int(stat.S_IFMT(int(stat.S_IFREG + 438))), 'x').lower();
+   elif(member.is_dir()):
+    fmode = format(int(stat.S_IFDIR + 511), 'x').lower();
+    fchmode = format(int(stat.S_IMODE(int(stat.S_IFDIR + 511))), 'x').lower();
+    ftypemod = format(int(stat.S_IFMT(int(stat.S_IFDIR + 511))), 'x').lower();
+   try:
+    fuid = format(int(os.getuid()), 'x').lower();
+   except AttributeError:
+    fuid = format(int(0), 'x').lower();
+   except KeyError:
+    fuid = format(int(0), 'x').lower();
+   try:
+    fgid = format(int(os.getgid()), 'x').lower();
+   except AttributeError:
+    fgid = format(int(0), 'x').lower();
+   except KeyError:
+    fgid = format(int(0), 'x').lower();
+   try:
+    import pwd;
+    try:
+     userinfo = pwd.getpwuid(os.getuid());
+     funame = userinfo.pw_name;
+    except KeyError:
+     funame = "";
+    except AttributeError:
+     funame = "";
+   except ImportError:
+    funame = "";
+   fgname = "";
+   try:
+    import grp;
+    try:
+     groupinfo = grp.getgrgid(os.getgid());
+     fgname = groupinfo.gr_name;
+    except KeyError:
+     fgname = "";
+    except AttributeError:
+     fgname = "";
+   except ImportError:
+    fgname = "";
+   fcontents = "".encode('UTF-8');
+   if(ftype==0):
+    fcontents = rarfp.read(member.filename);
+   ftypehex = format(ftype, 'x').lower();
+   extrafields = format(len(extradata), 'x').lower();
+   extrasizestr = AppendNullByte(extrafields, formatspecs[4]);
+   if(len(extradata)>0):
+    extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[4]);
+   extrasizelen = format(len(extrasizestr), 'x').lower();
+   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields], formatspecs[4]);
+   if(len(extradata)>0):
+    catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[4]);
+   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[4]);
+   catfhend = (catfp.tell() - 1) + len(catfileoutstr);
+   catfcontentstart = catfp.tell() + len(catfileoutstr);
+   if(checksumtype=="none" or checksumtype==""):
+    catfileheadercshex = format(0, 'x').lower();
+    catfilecontentcshex = format(0, 'x').lower();
+   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
+    catfileheadercshex = format(crc16("".encode('UTF-8')) & 0xffff, '04x').lower();
+    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
+   elif(checksumtype=="crc16_ccitt"):
+    catfileheadercshex = format(crc16_ccitt("".encode('UTF-8')) & 0xffff, '04x').lower();
+    catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
+   elif(checksumtype=="adler32"):
+    catfileheadercshex = format(zlib.adler32("".encode('UTF-8')) & 0xffffffff, '08x').lower();
+    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
+   elif(checksumtype=="crc32"):
+    catfileheadercshex = format(crc32("".encode('UTF-8')) & 0xffffffff, '08x').lower();
+    catfilecontentcshex = format(crc32(fcontents) & 0xffffffff, '08x').lower();
+   elif(checksumtype=="crc64_ecma"):
+    catfileheadercshex = format(crc64_ecma("".encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
+   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
+    catfileheadercshex = format(crc64_iso("".encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
+   elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
+    checksumoutstr = hashlib.new(checksumtype);
+    checksumoutstr.update("".encode('UTF-8'));
+    catfileheadercshex = checksumoutstr.hexdigest().lower();
+    checksumoutstr = hashlib.new(checksumtype);
+    checksumoutstr.update(fcontents);
+    catfilecontentcshex = checksumoutstr.hexdigest().lower();
+   else:
+    catfileheadercshex = format(0, 'x').lower();
+    catfilecontentcshex = format(0, 'x').lower();
+   tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
+   catfileoutstr = AppendNullByte(catheaersize, formatspecs[4]) + catfileoutstr
+   if(checksumtype=="none" or checksumtype==""):
+    catfileheadercshex = format(0, 'x').lower()
+   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
+    catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower()
+   elif(checksumtype=="crc16_ccitt"):
+    catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower()
+   elif(checksumtype=="adler32"):
+    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower()
+   elif(checksumtype=="crc32"):
+    catfileheadercshex = format(crc32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower()
+   elif(checksumtype=="crc64_ecma"):
+    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower()
+   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
+    catfileheadercshex = format(crc64_iso(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower()
+   elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
+    checksumoutstr = hashlib.new(checksumtype)
+    checksumoutstr.update(catfileoutstr.encode('UTF-8'))
+    catfileheadercshex = checksumoutstr.hexdigest().lower()
+   else:
+    catfileheadercshex = format(0, 'x').lower()
+   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4])
+   catfileoutstrecd = catfileoutstr.encode('UTF-8')
+   nullstrecd = formatspecs[4].encode('UTF-8')
+   catfileout = catfileoutstrecd + fcontents + nullstrecd
+   catfcontentend = (catfp.tell() - 1) + len(catfileout)
+   catfp.write(catfileout)
+   try:
+    catfp.flush()
+    os.fsync(catfp.fileno())
+   except io.UnsupportedOperation:
+    pass
+   except AttributeError:
+    pass
+  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+   catfp = CompressArchiveFile(catfp, compression, formatspecs)
+   try:
+    catfp.flush()
+    os.fsync(catfp.fileno())
+   except io.UnsupportedOperation:
+    pass
+   except AttributeError:
+    pass
+  if(outfile=="-"):
+   catfp.seek(0, 0)
+   if(hasattr(sys.stdout, "buffer")):
+    shutil.copyfileobj(catfp, sys.stdout.buffer)
+   else:
+    shutil.copyfileobj(catfp, sys.stdout)
+  if(returnfp):
+   catfp.seek(0, 0)
+   return catfp
+  else:
+   catfp.close()
+   return True;
+
+if(rarfile_support):
+ create_alias_function("Pack", __file_format_name__, "FromRarFile", PackArchiveFileFromRarFile);
+
+
 def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
@@ -1945,6 +2247,8 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
    return TarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
    return ZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
+  if(rarfile_support and checkcompressfile=="rarfile"):
+   return RarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
    return False;
   if(not catfp):
@@ -1968,6 +2272,8 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
    return TarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
    return ZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
+  if(rarfile_support and checkcompressfile=="rarfile"):
+   return RarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
    return False;
   compresscheck = CheckCompressionType(infile, formatspecs, True);
@@ -2089,6 +2395,8 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
    return TarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
    return ZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
+  if(rarfile_support and checkcompressfile=="rarfile"):
+   return RarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
    return False;
   if(not catfp):
@@ -2112,6 +2420,8 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
    return TarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
    return ZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
+  if(rarfile_support and checkcompressfile=="rarfile"):
+   return RarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
    return False;
   compresscheck = CheckCompressionType(infile, formatspecs, True);
@@ -2243,6 +2553,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
    return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+  if(rarfile_support and checkcompressfile=="rarfile"):
+   return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
    return False;
   if(not catfp):
@@ -2265,6 +2577,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   if(checkcompressfile=="tarfile"):
    return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
+   return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+  if(rarfile_support and checkcompressfile=="rarfile"):
    return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
    return False;
@@ -2494,6 +2808,13 @@ def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=
  catfp = PackArchiveFileFromZipFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
  listcatfiles = ArchiveFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  return listcatfiles;
+
+if(rarfile_support):
+ def RarFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
+  catfp = BytesIO();
+  catfp = PackArchiveFileFromRarFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
+  listcatfiles = ArchiveFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+  return listcatfiles;
 
 def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False):
  catver = formatspecs[5];
@@ -3193,6 +3514,244 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   fileidnum = fileidnum + 1;
  return catlist;
 
+if(rarfile_support):
+ def RarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False):
+  advancedlist = True;
+  curinode = 0;
+  curfid = 0;
+  inodelist = [];
+  inodetofile = {};
+  filetoinode = {};
+  inodetocatinode = {};
+  fileidnum = 0;
+  if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
+   return False;
+  if(not rarfile.is_rarfile(infile) and not rarfile.is_rarfile_sfx(infile)):
+   return False;
+  rarfp = rarfile.RarFile(infile, "r");
+  rartest = rarfp.testrar();
+  if(rartest):
+   VerbosePrintOut("Bad file found: " + str(bad_file));
+  fnumfiles = int(len(rarfp.infolist()));
+  catver = formatspecs[5];
+  fileheaderver = str(int(catver.replace(".", "")));
+  fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
+  catversion = fileheaderver;
+  fnumfileshex = format(int(fnumfiles), 'x').lower();
+  fileheader = fileheader + AppendNullBytes([fnumfileshex, checksumtype], formatspecs[4]);
+  if(checksumtype=="none" or checksumtype==""):
+   catfileheadercshex = format(0, 'x').lower();
+  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
+   catfileheadercshex = format(crc16(fileheader.encode('UTF-8')) & 0xffff, '04x').lower();
+  elif(checksumtype=="crc16_ccitt"):
+   catfileheadercshex = format(crc16_ccitt(fileheader.encode('UTF-8')) & 0xffff, '04x').lower();
+  elif(checksumtype=="adler32"):
+   catfileheadercshex = format(zlib.adler32(fileheader.encode('UTF-8')) & 0xffffffff, '08x').lower();
+  elif(checksumtype=="crc32"):
+   catfileheadercshex = format(crc32(fileheader.encode('UTF-8')) & 0xffffffff, '08x').lower();
+  elif(checksumtype=="crc64_ecma"):
+   catfileheadercshex = format(crc64_ecma(fileheader.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+  elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
+   catfileheadercshex = format(crc64_iso(fileheader.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+  elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
+   checksumoutstr = hashlib.new(checksumtype);
+   checksumoutstr.update(fileheader.encode('UTF-8'));
+   catfileheadercshex = checksumoutstr.hexdigest().lower();
+  else:
+   catfileheadercshex = format(0, 'x').lower();
+  fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[4]);
+  fheadtell = len(fileheader);
+  catlist = {'fnumfiles': fnumfiles, 'fformat': formatspecs[0], 'fversion': catversion, 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
+  for member in rarfp.infolist():
+   if(re.findall("^[.|/]", member.filename)):
+    fname = member.filename;
+   else:
+    fname = "./"+member.filename;
+   rarinfo = rarfp.getinfo(member.filename);
+   if(verbose):
+    VerbosePrintOut(fname);
+   if(member.is_file()):
+    fpremode = stat.S_IFREG + 438;
+   if(member.is_symlink()):
+    fpremode = stat.S_IFLNK + 438;
+   if(member.is_dir()):
+    fpremode = stat.S_IFDIR + 511;
+   flinkcount = 0;
+   ftype = 0;
+   if(member.is_file()):
+    ftype = 0;
+   elif(member.is_symlink()):
+    ftype = 2;
+   elif(member.is_dir()):
+    ftype = 5;
+   flinkname = "";
+   if(ftype==2):
+    flinkname = rarfp.read(member.filename).decode("UTF-8");
+   fbasedir = os.path.dirname(fname);
+   fcurfid = curfid;
+   fcurinode = 0;
+   finode = fcurinode;
+   curfid = curfid + 1;
+   fdev_minor = 0;
+   fdev_major = 0;
+   frdev_minor = 0;
+   frdev_major = 0;
+   if(ftype==5):
+    fsize = "0";
+   if(ftype==0):
+    fsize = member.file_size;
+   try:
+    if(member.atime):
+     fatime = int(member.atime.timestamp());
+    else:
+     fatime = int(member.mtime.timestamp());
+   except AttributeError:
+    fatime = int(member.mtime.timestamp());
+   fmtime = int(member.mtime.timestamp());
+   try:
+    if(member.ctime):
+     fctime = int(member.ctime.timestamp());
+    else:
+     fctime = int(member.mtime.timestamp());
+   except AttributeError:
+    fctime = int(member.mtime.timestamp());
+   fbtime = int(member.mtime.timestamp());
+   if(member.is_file()):
+    fmode = int(stat.S_IFREG + 438)
+    fchmode = int(stat.S_IMODE(stat.S_IFREG + 438));
+    ftypemod = int(stat.S_IFMT(stat.S_IFREG + 438));
+   elif(member.is_symlink()):
+    fmode = int(stat.S_IFLNK + 438)
+    fchmode = int(stat.S_IMODE(stat.S_IFREG + 438));
+    ftypemod = int(stat.S_IFMT(stat.S_IFREG + 438));
+   elif(member.is_dir()):
+    fmode = int(stat.S_IFDIR + 511)
+    fchmode = int(stat.S_IMODE(stat.S_IFDIR + 511));
+    ftypemod = int(stat.S_IFMT(stat.S_IFDIR + 511));
+   try:
+    fuid = os.getuid();
+   except AttributeError:
+    fuid = 0;
+   except KeyError:
+    fuid = 0;
+   try:
+    fgid = os.getgid();
+   except AttributeError:
+    fgid = 0;
+   except KeyError:
+    fgid = 0;
+   try:
+    import pwd;
+    try:
+     userinfo = pwd.getpwuid(os.getuid());
+     funame = userinfo.pw_name;
+    except KeyError:
+     funame = "";
+    except AttributeError:
+     funame = "";
+   except ImportError:
+    funame = "";
+   fgname = "";
+   try:
+    import grp;
+    try:
+     groupinfo = grp.getgrgid(os.getgid());
+     fgname = groupinfo.gr_name;
+    except KeyError:
+     fgname = "";
+    except AttributeError:
+     fgname = "";
+   except ImportError:
+    fgname = "";
+   fcontents = "".encode('UTF-8');
+   if(ftype==0):
+    fcontents = rarfp.read(member.filename);
+   ftypehex = format(ftype, 'x').lower();
+   extrafields = len(extradata);
+   extrafieldslist = extradata;
+   catfextrafields = extrafields;
+   extrasizestr = AppendNullByte(extrafields, formatspecs[4]);
+   if(len(extradata)>0):
+    extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[4]);
+   extrasizelen = len(extrasizestr);
+   extrasizelenhex = format(extrasizelen, 'x').lower();
+   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), extrasizelenhex, format(catfextrafields, 'x').lower()], formatspecs[4]);
+   if(len(extradata)>0):
+    catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[4]);
+   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[4]);
+   catfnumfields = 24 + catfextrafields;
+   if(checksumtype=="none" or checksumtype==""):
+    catfileheadercshex = format(0, 'x').lower();
+    catfilecontentcshex = format(0, 'x').lower();
+   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
+    catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+    catfilecontentcshex = format(crc16(fcontents) & 0xffff, '04x').lower();
+   elif(checksumtype=="crc16_ccitt"):
+    catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+    catfilecontentcshex = format(crc16_ccitt(fcontents) & 0xffff, '04x').lower();
+   elif(checksumtype=="adler32"):
+    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+    catfilecontentcshex = format(zlib.adler32(fcontents) & 0xffffffff, '08x').lower();
+   elif(checksumtype=="crc32"):
+    catfileheadercshex = format(crc32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+    catfilecontentcshex = format(crc32(fcontents) & 0xffffffff, '08x').lower();
+   elif(checksumtype=="crc64_ecma"):
+    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+    catfilecontentcshex = format(crc64_ecma(fcontents) & 0xffffffffffffffff, '016x').lower();
+   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
+    catfileheadercshex = format(crc64_iso(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+    catfilecontentcshex = format(crc64_iso(fcontents) & 0xffffffffffffffff, '016x').lower();
+   elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
+    checksumoutstr = hashlib.new(checksumtype);
+    checksumoutstr.update(catfileoutstr.encode('UTF-8'));
+    catfileheadercshex = checksumoutstr.hexdigest().lower();
+   else:
+    catfileheadercshex = format(0, 'x').lower();
+    catfilecontentcshex = format(0, 'x').lower();
+   catfhstart = fheadtell;
+   fheadtell += len(catfileoutstr);
+   catfhend = fheadtell - 1;
+   catfcontentstart = fheadtell;
+   tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
+   catfileoutstr = AppendNullByte(catheaersize, formatspecs[4]) + catfileoutstr;
+   if(checksumtype=="none" or checksumtype==""):
+    catfileheadercshex = format(0, 'x').lower();
+   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
+    catfileheadercshex = format(crc16(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+   elif(checksumtype=="crc16_ccitt"):
+    catfileheadercshex = format(crc16_ccitt(catfileoutstr.encode('UTF-8')) & 0xffff, '04x').lower();
+   elif(checksumtype=="adler32"):
+    catfileheadercshex = format(zlib.adler32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   elif(checksumtype=="crc32"):
+    catfileheadercshex = format(crc32(catfileoutstr.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   elif(checksumtype=="crc64_ecma"):
+    catfileheadercshex = format(crc64_ecma(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
+    catfileheadercshex = format(crc64_iso(catfileoutstr.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
+    checksumoutstr = hashlib.new(checksumtype);
+    checksumoutstr.update(catfileoutstr.encode('UTF-8'));
+    catfileheadercshex = checksumoutstr.hexdigest().lower();
+   else:
+    catfileheadercshex = format(0, 'x').lower();
+   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+   catfileoutstrecd = catfileoutstr.encode('UTF-8');
+   nullstrecd = formatspecs[4].encode('UTF-8');
+   fheadtell += len(catfileoutstr) + 1;
+   catfcontentend = fheadtell - 1;
+   catfileout = catfileoutstrecd + fcontents + nullstrecd;
+   pyhascontents = False;
+   if(int(fsize)>0 and not listonly):
+    pyhascontents = True;
+   if(int(fsize)>0 and listonly):
+    fcontents = "";
+    pyhascontents = False;
+   catlist['ffilelist'].update({fileidnum: {'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
+   fileidnum = fileidnum + 1;
+  return catlist;
+
+
 def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = BytesIO();
  packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, True);
@@ -3432,6 +3991,63 @@ def ZipFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, chec
   lcfi = lcfi + 1;
  return catarray;
 
+if(rarfile_support):
+ def RarFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False):
+  listcatfiles = RarFileToArrayAlt(infiles, listonly, checksumtype, extradata, formatspecs, verbose);
+  if(not listcatfiles):
+   return False;
+  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
+  lenlist = len(listcatfiles['ffilelist']);
+  if(seekstart>0):
+   lcfi = seekstart;
+  else:
+   lcfi = 0;
+  if(seekend>0 and seekend<listcatfiles['fnumfiles']):
+   lcfx = seekend;
+  else:
+   if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+    lcfx = listcatfiles['fnumfiles'];
+   else:
+    lcfx = int(listcatfiles['fnumfiles']);
+  while(lcfi < lcfx):
+   filetoidarray = {listcatfiles['ffilelist'][lcfi]['fname']: listcatfiles['ffilelist'][lcfi]['fid']};
+   idtofilearray = {listcatfiles['ffilelist'][lcfi]['fid']: listcatfiles['ffilelist'][lcfi]['fname']};
+   catarray['filetoid'].update(filetoidarray);
+   catarray['idtofile'].update(idtofilearray);
+   if(listcatfiles['ffilelist'][lcfi]['ftype']==0 or listcatfiles['ffilelist'][lcfi]['ftype']==7):
+    catarray['filetypes']['files']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['files']['idtofile'].update(idtofilearray);
+   if(listcatfiles['ffilelist'][lcfi]['ftype']==1):
+    catarray['filetypes']['hardlinks']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['hardlinks']['idtofile'].update(idtofilearray);
+    catarray['filetypes']['links']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['links']['idtofile'].update(idtofilearray);
+   if(listcatfiles['ffilelist'][lcfi]['ftype']==2):
+    catarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
+    catarray['filetypes']['links']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['links']['idtofile'].update(idtofilearray);
+   if(listcatfiles['ffilelist'][lcfi]['ftype']==3):
+    catarray['filetypes']['character']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['character']['idtofile'].update(idtofilearray);
+    catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+   if(listcatfiles['ffilelist'][lcfi]['ftype']==4):
+    catarray['filetypes']['block']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['block']['idtofile'].update(idtofilearray);
+    catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+   if(listcatfiles['ffilelist'][lcfi]['ftype']==5):
+    catarray['filetypes']['directories']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['directories']['idtofile'].update(idtofilearray);
+   if(listcatfiles['ffilelist'][lcfi]['ftype']==6):
+    catarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
+    catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+   lcfi = lcfi + 1;
+  return catarray;
+
 def ArchiveFileStringToArrayIndex(catstr, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  catfp = BytesIO(catstr);
  listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
@@ -3450,6 +4066,13 @@ def ZipFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchec
  catfp = PackArchiveFileFromZipFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
  listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  return listcatfiles;
+
+if(rarfile_support):
+ def RarFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
+  catfp = BytesIO();
+  catfp = PackArchiveFileFromRarFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
+  listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+  return listcatfiles;
 
 def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = BytesIO();
@@ -4173,7 +4796,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
  ziptest = zipfp.testzip();
  if(ziptest):
   VerbosePrintOut("Bad file found: " + str(bad_file));
- for member in zipfp.infolist():
+ for member in rarfp.infolist():
   if(not member.is_dir()):
    fpremode = int(stat.S_IFREG + 438);
   if(member.is_dir()):
@@ -4249,6 +4872,107 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
  else:
   return True;
 
+if(rarfile_support):
+ def RarFileListFiles(infile, verbose=False, returnfp=False):
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+  if(not os.path.exists(infile) or not os.path.isfile(infile)):
+   return False;
+  if(not rarfile.is_rarfile(infile) and not rarfile.is_rarfile_sfx(infile)):
+   return False;
+  lcfi = 0;
+  returnval = {};
+  rarfp = rarfile.RarFile(infile, "r");
+  rartest = rarfp.testrar();
+  if(rartest):
+   VerbosePrintOut("Bad file found: " + str(bad_file));
+  for member in rarfp.infolist():
+   if(member.is_file()):
+    fpremode = int(stat.S_IFREG + 438);
+   elif(member.is_symlink()):
+    fpremode = int(stat.S_IFLNK + 438);
+   elif(member.is_dir()):
+    fpremode = int(stat.S_IFDIR + 511);
+   if(member.is_file()):
+    fmode = int(stat.S_IFREG + 438);
+    fchmode = int(stat.S_IMODE(int(stat.S_IFREG + 438)));
+    ftypemod = int(stat.S_IFMT(int(stat.S_IFREG + 438)));
+   elif(member.is_symlink()):
+    fmode = int(stat.S_IFLNK + 438);
+    fchmode = int(stat.S_IMODE(int(stat.S_IFLNK + 438)));
+    ftypemod = int(stat.S_IFMT(int(stat.S_IFLNK + 438)));
+   elif(member.is_dir()):
+    fmode = int(stat.S_IFDIR + 511);
+    fchmode = int(stat.S_IMODE(int(stat.S_IFDIR + 511)));
+    ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)));
+   returnval.update({lcfi: member.filename});
+   if(not verbose):
+    VerbosePrintOut(member.filename);
+   if(verbose):
+    permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
+    permissionstr = "";
+    for fmodval in str(oct(fmode))[-3:]:
+     permissionstr = permissionstr + permissions['access'].get(fmodval, '---');
+    if(member.is_file()):
+     ftype = 0;
+     permissionstr = "-" + permissionstr;
+     printfname = member.filename;
+    elif(member.is_symlink()):
+     ftype = 2;
+     permissionstr = "l" + permissionstr;
+     printfname = member.name + " -> " + member.read().decode("UTF-8");
+    elif(member.is_dir()):
+     ftype = 5;
+     permissionstr = "d" + permissionstr;
+     printfname = member.filename;
+    try:
+     fuid = int(os.getuid());
+    except AttributeError:
+     fuid = int(0);
+    except KeyError:
+     fuid = int(0);
+    try:
+     fgid = int(os.getgid());
+    except AttributeError:
+     fgid = int(0);
+    except KeyError:
+     fgid = int(0);
+    try:
+     import pwd;
+     try:
+      userinfo = pwd.getpwuid(os.getuid());
+      funame = userinfo.pw_name;
+     except KeyError:
+      funame = "";
+     except AttributeError:
+      funame = "";
+    except ImportError:
+     funame = "";
+    fgname = "";
+    try:
+     import grp;
+     try:
+      groupinfo = grp.getgrgid(os.getgid());
+      fgname = groupinfo.gr_name;
+     except KeyError:
+      fgname = "";
+     except AttributeError:
+      fgname = "";
+    except ImportError:
+     fgname = "";
+    fuprint = funame;
+    if(len(fuprint)<=0):
+     fuprint = str(fuid);
+    fgprint = fgname;
+    if(len(fgprint)<=0):
+     fgprint = str(fgid);
+    VerbosePrintOut(PrintPermissionString(fmode, ftype) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.file_size).rjust(15) + " " + member.mtime.strftime('%Y-%m-%d %H:%M') + " " + printfname));
+   lcfi = lcfi + 1;
+  if(returnfp):
+   return listcatfiles['catfp'];
+  else:
+   return True;
+
+
 def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = BytesIO();
  packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, formatspecs, False, True);
@@ -4280,6 +5004,15 @@ def PackArchiveFileFromZipFileAlt(infile, outfile, compression="auto", compressi
  return listcatfiles;
 
 create_alias_function("Pack", __file_format_name__, "FromZipFileAlt", PackArchiveFileFromZipFileAlt);
+
+if(rarfile_support):
+ def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+  outarray = RarFileToArrayAlt(infile, False, checksumtype, extradata, formatspecs, False);
+  listcatfiles = RePackArchiveFile(outarray, outfile, compression, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
+  return listcatfiles;
+
+if(rarfile_support):
+ create_alias_function("Pack", __file_format_name__, "FromRarFileAlt", PackArchiveFileFromRarFileAlt);
 
 def download_file_from_ftp_file(url):
  urlparts = urlparse.urlparse(url);

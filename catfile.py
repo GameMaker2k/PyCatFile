@@ -21,6 +21,13 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import os, sys, logging, argparse, pycatfile, binascii;
 from io import open as open;
 
+rarfile_support = False;
+try:
+ import rarfile;
+ rarfile_support = True;
+except ImportError:
+ rarfile_support = False;
+
 if(sys.version[0]=="2"):
  try:
   from io import StringIO, BytesIO;
@@ -80,12 +87,13 @@ argparser.add_argument("-format", "--format", default=__file_format_list__[0], h
 argparser.add_argument("-delimiter", "--delimiter", default=__file_format_list__[4], help="Specify the format to use");
 argparser.add_argument("-formatver", "--formatver", default=__file_format_list__[5], help="Specify the format version");
 argparser.add_argument("-l", "-t", "--list", action="store_true", help="List files included in the concatenated file.");
-argparser.add_argument("-r", "--repack", action="store_true", help="Re-concatenate files, fixing checksum errors if any.");
+argparser.add_argument("-repack", "--repack", action="store_true", help="Re-concatenate files, fixing checksum errors if any.");
 argparser.add_argument("-o", "--output", default=None, help="Specify the name for the extracted concatenated files or the output concatenated file.");
 argparser.add_argument("-compression", "--compression", default="auto", help="Specify the compression method to use for concatenation.");
 argparser.add_argument("-level", "--level", default=None, help="Specify the compression level for concatenation.");
-argparser.add_argument("-t", "--converttar", action="store_true", help="Convert a tar file to a catfile.");
-argparser.add_argument("-z", "--convertzip", action="store_true", help="Convert a zip file to a catfile.");
+argparser.add_argument("-t", "-tar", "--converttar", action="store_true", help="Convert a tar file to a catfile.");
+argparser.add_argument("-z", "-zip", "--convertzip", action="store_true", help="Convert a zip file to a catfile.");
+argparser.add_argument("-rar", "--convertrar", action="store_true", help="Convert a rar file to a catfile.");
 argparser.add_argument("-T", "--text", action="store_true", help="Read file locations from a text file.");
 getargs = argparser.parse_args();
 
@@ -108,6 +116,8 @@ if should_create:
   pycatfile.PackArchiveFileFromTarFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
  elif getargs.convertzip:
   pycatfile.PackArchiveFileFromZipFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
+ elif rarfile_support and getargs.convertrar:
+  pycatfile.PackArchiveFileFromRarFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
  else:
   pycatfile.PackArchiveFile(getargs.input, getargs.output, getargs.text, getargs.compression, getargs.level, False, getargs.checksum, [], fnamelist, getargs.verbose, False);
 
@@ -122,5 +132,7 @@ if should_list:
   pycatfile.TarFileListFiles(getargs.input, getargs.verbose, False);
  elif getargs.convertzip:
   pycatfile.ZipFileListFiles(getargs.input, getargs.verbose, False);
+ elif rarfile_support and getargs.convertrar:
+  pycatfile.RarFileListFiles(getargs.input, getargs.verbose, False);
  else:
   pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, False, fnamelist, getargs.verbose, False);
