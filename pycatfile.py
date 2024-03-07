@@ -1515,7 +1515,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   pass;
  except AttributeError:
   pass;
- for member in tarfp.getmembers():
+ for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
   catfhstart = catfp.tell();
   if(re.findall("^[.|/]", member.name)):
    fname = member.name;
@@ -1766,7 +1766,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   pass;
  except AttributeError:
   pass;
- for member in zipfp.infolist():
+ for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
   catfhstart = catfp.tell();
   if(re.findall("^[.|/]", member.filename)):
    fname = member.filename;
@@ -2029,7 +2029,7 @@ if(rarfile_support):
    pass;
   except AttributeError:
    pass;
-  for member in rarfp.infolist():
+  for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
    catfhstart = catfp.tell();
    if(re.findall("^[.|/]", member.filename)):
     fname = member.filename;
@@ -3138,7 +3138,7 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
  fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[4]);
  fheadtell = len(fileheader);
  catlist = {'fnumfiles': fnumfiles, 'fformat': formatspecs[0], 'fversion': catversion, 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
- for member in tarfp.getmembers():
+ for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
   if(re.findall("^[.|/]", member.name)):
    fname = member.name;
   else:
@@ -3344,7 +3344,7 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
  fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[4]);
  fheadtell = len(fileheader);
  catlist = {'fnumfiles': fnumfiles, 'fformat': formatspecs[0], 'fversion': catversion, 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
- for member in zipfp.infolist():
+ for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
   if(re.findall("^[.|/]", member.filename)):
    fname = member.filename;
   else:
@@ -3562,7 +3562,7 @@ if(rarfile_support):
   fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[4]);
   fheadtell = len(fileheader);
   catlist = {'fnumfiles': fnumfiles, 'fformat': formatspecs[0], 'fversion': catversion, 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
-  for member in rarfp.infolist():
+  for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
    if(re.findall("^[.|/]", member.filename)):
     fname = member.filename;
    else:
@@ -4729,7 +4729,7 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
  lcfi = 0;
  returnval = {};
  tarfp = tarfile.open(infile, "r");
- for member in tarfp.getmembers():
+ for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
   returnval.update({lcfi: member.name});
   fpremode = member.mode;
   ffullmode = member.mode;
@@ -4796,7 +4796,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
  ziptest = zipfp.testzip();
  if(ziptest):
   VerbosePrintOut("Bad file found: " + str(bad_file));
- for member in rarfp.infolist():
+ for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
   if(not member.is_dir()):
    fpremode = int(stat.S_IFREG + 438);
   if(member.is_dir()):
@@ -4885,7 +4885,7 @@ if(rarfile_support):
   rartest = rarfp.testrar();
   if(rartest):
    VerbosePrintOut("Bad file found: " + str(bad_file));
-  for member in rarfp.infolist():
+  for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
    if(member.is_file()):
     fpremode = int(stat.S_IFREG + 438);
    elif(member.is_symlink()):
