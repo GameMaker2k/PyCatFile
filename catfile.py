@@ -21,12 +21,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import os, sys, logging, argparse, pycatfile, binascii;
 from io import open as open;
 
-rarfile_support = False;
-try:
- import rarfile;
- rarfile_support = True;
-except ImportError:
- rarfile_support = False;
+rarfile_support = pycatfile.rarfile_support;
 
 if(sys.version[0]=="2"):
  try:
