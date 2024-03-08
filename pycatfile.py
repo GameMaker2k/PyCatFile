@@ -2034,6 +2034,15 @@ if(rarfile_support):
   except AttributeError:
    pass;
   for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
+   is_unix = False;
+   if(member.host_os == rarfile.RAR_OS_UNIX):
+    try:
+     member.external_attr
+     is_unix = True;
+    except AttributeError:
+     is_unix = False;
+   else:
+    is_unix = False;
    catfhstart = catfp.tell();
    if(re.findall("^[.|/]", member.filename)):
     fname = member.filename;
@@ -3590,6 +3599,15 @@ if(rarfile_support):
   fheadtell = len(fileheader);
   catlist = {'fnumfiles': fnumfiles, 'fformat': formatspecs[0], 'fversion': catversion, 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
   for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
+   is_unix = False;
+   if(member.host_os == rarfile.RAR_OS_UNIX):
+    try:
+     member.external_attr
+     is_unix = True;
+    except AttributeError:
+     is_unix = False;
+   else:
+    is_unix = False;
    if(re.findall("^[.|/]", member.filename)):
     fname = member.filename;
    else:
@@ -4932,6 +4950,15 @@ if(rarfile_support):
   if(rartest):
    VerbosePrintOut("Bad file found!");
   for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
+   is_unix = False;
+   if(member.host_os == rarfile.RAR_OS_UNIX):
+    try:
+     member.external_attr
+     is_unix = True;
+    except AttributeError:
+     is_unix = False;
+   else:
+    is_unix = False;
    if(is_unix and member.external_attr !=0):
     fpremode = int(member.external_attr);
    elif(member.is_file()):
