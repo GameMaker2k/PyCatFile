@@ -2035,14 +2035,24 @@ if(rarfile_support):
    pass;
   for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
    is_unix = False;
+   is_windows = False;
    if(member.host_os == rarfile.RAR_OS_UNIX):
+    is_windows = False;
     try:
      member.external_attr
      is_unix = True;
     except AttributeError:
      is_unix = False;
+   elif(member.host_os == rarfile.RAR_OS_WIN32):
+    is_unix = False;
+    try:
+     member.external_attr
+     is_windows = True;
+    except AttributeError:
+     is_windows = False;
    else:
     is_unix = False;
+    is_windows = False;
    catfhstart = catfp.tell();
    if(re.findall("^[.|/]", member.filename)):
     fname = member.filename;
@@ -2059,6 +2069,10 @@ if(rarfile_support):
     fpremode = int(stat.S_IFLNK + 438);
    elif(member.is_dir()):
     fpremode = int(stat.S_IFDIR + 511);
+   if(is_windows and member.external_attr !=0):
+    fwinattributes = format(int(member.external_attr), 'x').lower();
+   else:
+    fwinattributes = format(int(0), 'x').lower();
    flinkcount = 0;
    ftype = 0;
    if(member.is_file()):
@@ -3600,14 +3614,24 @@ if(rarfile_support):
   catlist = {'fnumfiles': fnumfiles, 'fformat': formatspecs[0], 'fversion': catversion, 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
   for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
    is_unix = False;
+   is_windows = False;
    if(member.host_os == rarfile.RAR_OS_UNIX):
+    is_windows = False;
     try:
      member.external_attr
      is_unix = True;
     except AttributeError:
      is_unix = False;
+   elif(member.host_os == rarfile.RAR_OS_WIN32):
+    is_unix = False;
+    try:
+     member.external_attr
+     is_windows = True;
+    except AttributeError:
+     is_windows = False;
    else:
     is_unix = False;
+    is_windows = False;
    if(re.findall("^[.|/]", member.filename)):
     fname = member.filename;
    else:
@@ -3623,6 +3647,10 @@ if(rarfile_support):
     fpremode = stat.S_IFLNK + 438;
    elif(member.is_dir()):
     fpremode = stat.S_IFDIR + 511;
+   if(is_windows and member.external_attr !=0):
+    fwinattributes = int(member.external_attr);
+   else:
+    fwinattributes = int(0);
    flinkcount = 0;
    ftype = 0;
    if(member.is_file()):
@@ -4951,14 +4979,24 @@ if(rarfile_support):
    VerbosePrintOut("Bad file found!");
   for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
    is_unix = False;
+   is_windows = False;
    if(member.host_os == rarfile.RAR_OS_UNIX):
+    is_windows = False;
     try:
      member.external_attr
      is_unix = True;
     except AttributeError:
      is_unix = False;
+   elif(member.host_os == rarfile.RAR_OS_WIN32):
+    is_unix = False;
+    try:
+     member.external_attr
+     is_windows = True;
+    except AttributeError:
+     is_windows = False;
    else:
     is_unix = False;
+    is_windows = False;
    if(is_unix and member.external_attr !=0):
     fpremode = int(member.external_attr);
    elif(member.is_file()):
@@ -4967,6 +5005,10 @@ if(rarfile_support):
     fpremode = int(stat.S_IFLNK + 438);
    elif(member.is_dir()):
     fpremode = int(stat.S_IFDIR + 511);
+   if(is_windows and member.external_attr !=0):
+    fwinattributes = int(member.external_attr);
+   else:
+    fwinattributes = int(0);
    if(is_unix and member.external_attr !=0):
     fmode = int(member.external_attr);
     fchmode = int(stat.S_IMODE(member.external_attr));
