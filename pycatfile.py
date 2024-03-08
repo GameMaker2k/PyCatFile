@@ -1210,22 +1210,24 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   ftype = 0;
   if(stat.S_ISREG(fpremode)):
    ftype = 0;
-  if(stat.S_ISLNK(fpremode)):
+  elif(stat.S_ISLNK(fpremode)):
    ftype = 2;
-  if(stat.S_ISCHR(fpremode)):
+  elif(stat.S_ISCHR(fpremode)):
    ftype = 3;
-  if(stat.S_ISBLK(fpremode)):
+  elif(stat.S_ISBLK(fpremode)):
    ftype = 4;
-  if(stat.S_ISDIR(fpremode)):
+  elif(stat.S_ISDIR(fpremode)):
    ftype = 5;
-  if(stat.S_ISFIFO(fpremode)):
+  elif(stat.S_ISFIFO(fpremode)):
    ftype = 6;
-  if(hasattr(stat, "S_ISDOOR") and stat.S_ISDOOR(fpremode)):
+  elif(hasattr(stat, "S_ISDOOR") and stat.S_ISDOOR(fpremode)):
    ftype = 8;
-  if(hasattr(stat, "S_ISPORT") and stat.S_ISPORT(fpremode)):
+  elif(hasattr(stat, "S_ISPORT") and stat.S_ISPORT(fpremode)):
    ftype = 9;
-  if(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
+  elif(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
    ftype = 10;
+  else:
+   ftype = 0;
   flinkname = "";
   fcurfid = format(int(curfid), 'x').lower();
   if(not followlink and finode!=0):
@@ -1260,8 +1262,10 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   frdev_major = getfrdev[1];
   if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
    fsize = format(int("0"), 'x').lower();
-  if(ftype==0 or ftype==7):
+  elif(ftype==0 or ftype==7):
    fsize = format(int(fstatinfo.st_size), 'x').lower();
+  else:
+   fsize = format(int(fstatinfo.st_size)).lower();
   fatime = format(int(fstatinfo.st_atime), 'x').lower();
   fmtime = format(int(fstatinfo.st_mtime), 'x').lower();
   fctime = format(int(fstatinfo.st_ctime), 'x').lower();
@@ -1519,30 +1523,33 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   if(member.isreg()):
    ffullmode = member.mode + stat.S_IFREG;
    ftype = 0;
-  if(member.isdev()):
+  elif(member.isdev()):
    ffullmode = member.mode;
    ftype = 7;
-  if(member.islnk()):
+  elif(member.islnk()):
    ffullmode = member.mode + stat.S_IFREG;
    ftype = 1;
-  if(member.issym()):
+  elif(member.issym()):
    ffullmode = member.mode + stat.S_IFLNK;
    ftype = 2;
-  if(member.ischr()):
+  elif(member.ischr()):
    ffullmode = member.mode + stat.S_IFCHR;
    ftype = 3;
-  if(member.isblk()):
+  elif(member.isblk()):
    ffullmode = member.mode + stat.S_IFBLK;
    ftype = 4;
-  if(member.isdir()):
+  elif(member.isdir()):
    ffullmode = member.mode + stat.S_IFDIR;
    ftype = 5;
-  if(member.isfifo()):
+  elif(member.isfifo()):
    ffullmode = member.mode + stat.S_IFIFO;
    ftype = 6;
-  if(member.issparse()):
+  elif(member.issparse()):
    ffullmode = member.mode;
    ftype = 8;
+  else:
+   ffullmode = member.mode;
+   ftype = 0;
   flinkname = "";
   fcurfid = format(int(curfid), 'x').lower();
   fcurinode = format(int(0), 'x').lower();
@@ -1555,7 +1562,9 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   frdev_major = format(int(member.devmajor), 'x').lower();
   if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
    fsize = format(int("0"), 'x').lower();
-  if(ftype==0 or ftype==7):
+  elif(ftype==0 or ftype==7):
+   fsize = format(int(member.size), 'x').lower();
+  else:
    fsize = format(int(member.size), 'x').lower();
   fatime = format(int(member.mtime), 'x').lower();
   fmtime = format(int(member.mtime), 'x').lower();
@@ -1765,14 +1774,14 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   if(verbose):
    VerbosePrintOut(fname);
   if(not member.is_dir()):
-   fpremode = format(int(stat.S_IFREG + 438), 'x').lower();
-  if(member.is_dir()):
-   fpremode = format(int(stat.S_IFDIR + 511), 'x').lower();
+   fpremode = int(stat.S_IFREG + 438);
+  elif(member.is_dir()):
+   fpremode = int(stat.S_IFDIR + 511);
   flinkcount = 0;
   ftype = 0;
   if(not member.is_dir()):
    ftype = 0;
-  if(member.is_dir()):
+  elif(member.is_dir()):
    ftype = 5;
   flinkname = "";
   fcurfid = format(int(curfid), 'x').lower();
@@ -1784,7 +1793,9 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   frdev_major = format(int(0), 'x').lower();
   if(ftype==5):
    fsize = format(int("0"), 'x').lower();
-  if(ftype==0):
+  elif(ftype==0):
+   fsize = format(int(member.file_size), 'x').lower();
+  else:
    fsize = format(int(member.file_size), 'x').lower();
   fatime = format(int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower();
   fmtime = format(int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower();
@@ -2031,12 +2042,14 @@ if(rarfile_support):
    rarinfo = rarfp.getinfo(member.filename);
    if(verbose):
     VerbosePrintOut(fname);
-   if(member.is_file()):
-    fpremode = format(int(stat.S_IFREG + 438), 'x').lower();
+   if(is_unix and member.external_attr !=0):
+    fpremode = int(member.external_attr);
+   elif(member.is_file()):
+    fpremode = int(stat.S_IFREG + 438);
    elif(member.is_symlink()):
-    fpremode = format(int(stat.S_IFLNK + 438), 'x').lower();
+    fpremode = int(stat.S_IFLNK + 438);
    elif(member.is_dir()):
-    fpremode = format(int(stat.S_IFDIR + 511), 'x').lower();
+    fpremode = int(stat.S_IFDIR + 511);
    flinkcount = 0;
    ftype = 0;
    if(member.is_file()):
@@ -2057,7 +2070,9 @@ if(rarfile_support):
    frdev_major = format(int(0), 'x').lower();
    if(ftype==5):
     fsize = format(int("0"), 'x').lower();
-   if(ftype==0):
+   elif(ftype==0):
+    fsize = format(int(member.file_size), 'x').lower();
+   else:
     fsize = format(int(member.file_size), 'x').lower();
    try:
     if(member.atime):
@@ -2075,7 +2090,11 @@ if(rarfile_support):
    except AttributeError:
     fctime = format(int(member.mtime.timestamp()), 'x').lower();
    fbtime = format(int(member.mtime.timestamp()), 'x').lower();
-   if(member.is_file()):
+   if(is_unix and member.external_attr !=0):
+    fmode = format(int(member.external_attr), 'x').lower();
+    fchmode = format(int(stat.S_IMODE(member.external_attr)), 'x').lower();
+    ftypemod = format(int(stat.S_IFMT(member.external_attr)), 'x').lower();
+   elif(member.is_file()):
     fmode = format(int(stat.S_IFREG + 438), 'x').lower();
     fchmode = format(int(stat.S_IMODE(int(stat.S_IFREG + 438))), 'x').lower();
     ftypemod = format(int(stat.S_IFMT(int(stat.S_IFREG + 438))), 'x').lower();
@@ -2893,22 +2912,24 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   ftype = 0;
   if(stat.S_ISREG(fpremode)):
    ftype = 0;
-  if(stat.S_ISLNK(fpremode)):
+  elif(stat.S_ISLNK(fpremode)):
    ftype = 2;
-  if(stat.S_ISCHR(fpremode)):
+  elif(stat.S_ISCHR(fpremode)):
    ftype = 3;
-  if(stat.S_ISBLK(fpremode)):
+  elif(stat.S_ISBLK(fpremode)):
    ftype = 4;
-  if(stat.S_ISDIR(fpremode)):
+  elif(stat.S_ISDIR(fpremode)):
    ftype = 5;
-  if(stat.S_ISFIFO(fpremode)):
+  elif(stat.S_ISFIFO(fpremode)):
    ftype = 6;
-  if(hasattr(stat, "S_ISDOOR") and stat.S_ISDOOR(fpremode)):
+  elif(hasattr(stat, "S_ISDOOR") and stat.S_ISDOOR(fpremode)):
    ftype = 8;
-  if(hasattr(stat, "S_ISPORT") and stat.S_ISPORT(fpremode)):
+  elif(hasattr(stat, "S_ISPORT") and stat.S_ISPORT(fpremode)):
    ftype = 9;
-  if(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
+  elif(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
    ftype = 10;
+  else:
+   ftype = 0;
   flinkname = "";
   fbasedir = os.path.dirname(fname);
   fcurfid = curfid;
@@ -3147,30 +3168,33 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   if(member.isreg()):
    ffullmode = member.mode + stat.S_IFREG;
    ftype = 0;
-  if(member.isdev()):
+  elif(member.isdev()):
    ffullmode = member.mode;
    ftype = 7;
-  if(member.islnk()):
+  elif(member.islnk()):
    ffullmode = member.mode + stat.S_IFREG;
    ftype = 1;
-  if(member.issym()):
+  elif(member.issym()):
    ffullmode = member.mode + stat.S_IFLNK;
    ftype = 2;
-  if(member.ischr()):
+  elif(member.ischr()):
    ffullmode = member.mode + stat.S_IFCHR;
    ftype = 3;
-  if(member.isblk()):
+  elif(member.isblk()):
    ffullmode = member.mode + stat.S_IFBLK;
    ftype = 4;
-  if(member.isdir()):
+  elif(member.isdir()):
    ffullmode = member.mode + stat.S_IFDIR;
    ftype = 5;
-  if(member.isfifo()):
+  elif(member.isfifo()):
    ffullmode = member.mode + stat.S_IFIFO;
    ftype = 6;
-  if(member.issparse()):
+  elif(member.issparse()):
    ffullmode = member.mode;
    ftype = 8;
+  else:
+   ffullmode = member.mode;
+   ftype = 0;
   flinkname = "";
   fbasedir = os.path.dirname(fname);
   fcurfid = curfid;
@@ -3185,7 +3209,9 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   frdev_major = member.devmajor;
   if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
    fsize = "0";
-  if(ftype==0 or ftype==7):
+  elif(ftype==0 or ftype==7):
+   fsize = member.size;
+  else:
    fsize = member.size;
   fatime = member.mtime;
   fmtime = member.mtime;
@@ -3349,13 +3375,13 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
    VerbosePrintOut(fname);
   if(not member.is_dir()):
    fpremode = stat.S_IFREG + 438;
-  if(member.is_dir()):
+  elif(member.is_dir()):
    fpremode = stat.S_IFDIR + 511;
   flinkcount = 0;
   ftype = 0;
   if(not member.is_dir()):
    ftype = 0;
-  if(member.is_dir()):
+  elif(member.is_dir()):
    ftype = 5;
   flinkname = "";
   fbasedir = os.path.dirname(fname);
@@ -3369,7 +3395,9 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   frdev_major = 0;
   if(ftype==5):
    fsize = "0";
-  if(ftype==0):
+  elif(ftype==0):
+   fsize = member.file_size;
+  else:
    fsize = member.file_size;
   fatime = time.mktime(member.date_time + (0, 0, -1));
   fmtime = time.mktime(member.date_time + (0, 0, -1));
@@ -3569,11 +3597,13 @@ if(rarfile_support):
    rarinfo = rarfp.getinfo(member.filename);
    if(verbose):
     VerbosePrintOut(fname);
-   if(member.is_file()):
+   if(is_unix and member.external_attr !=0):
+    fpremode = int(member.external_attr);
+   elif(member.is_file()):
     fpremode = stat.S_IFREG + 438;
-   if(member.is_symlink()):
+   elif(member.is_symlink()):
     fpremode = stat.S_IFLNK + 438;
-   if(member.is_dir()):
+   elif(member.is_dir()):
     fpremode = stat.S_IFDIR + 511;
    flinkcount = 0;
    ftype = 0;
@@ -3615,7 +3645,11 @@ if(rarfile_support):
    except AttributeError:
     fctime = int(member.mtime.timestamp());
    fbtime = int(member.mtime.timestamp());
-   if(member.is_file()):
+   if(is_unix and member.external_attr !=0):
+    fmode = format(int(member.external_attr), 'x').lower();
+    fchmode = format(int(stat.S_IMODE(member.external_attr)), 'x').lower();
+    ftypemod = format(int(stat.S_IFMT(member.external_attr)), 'x').lower();
+   elif(member.is_file()):
     fmode = int(stat.S_IFREG + 438)
     fchmode = int(stat.S_IMODE(stat.S_IFREG + 438));
     ftypemod = int(stat.S_IFMT(stat.S_IFREG + 438));
@@ -4744,38 +4778,38 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
   if(member.isreg()):
    ffullmode = member.mode + stat.S_IFREG;
    ftype = 0;
-  if(member.isdev()):
+  elif(member.isdev()):
    ffullmode = member.mode;
    ftype = 7;
-  if(member.islnk()):
+  elif(member.islnk()):
    ffullmode = member.mode + stat.S_IFREG;
    ftype = 1;
-  if(member.issym()):
+  elif(member.issym()):
    ffullmode = member.mode + stat.S_IFLNK;
    ftype = 2;
-  if(member.ischr()):
+  elif(member.ischr()):
    ffullmode = member.mode + stat.S_IFCHR;
    ftype = 3;
-  if(member.isblk()):
+  elif(member.isblk()):
    ffullmode = member.mode + stat.S_IFBLK;
    ftype = 4;
-  if(member.isdir()):
+  elif(member.isdir()):
    ffullmode = member.mode + stat.S_IFDIR;
    ftype = 5;
-  if(member.isfifo()):
+  elif(member.isfifo()):
    ffullmode = member.mode + stat.S_IFIFO;
    ftype = 6;
-  if(member.issparse()):
+  elif(member.issparse()):
    ffullmode = member.mode;
    ftype = 8;
   if(not verbose):
    VerbosePrintOut(member.name);
-  if(verbose):
+  elif(verbose):
    permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
    printfname = member.name;
    if(member.islnk()):
     printfname = member.name + " link to " + member.linkname;
-   if(member.issym()):
+   elif(member.issym()):
     printfname = member.name + " -> " + member.linkname;
    fuprint = member.uname;
    if(len(fuprint)<=0):
@@ -4805,13 +4839,13 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
  for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
   if(not member.is_dir()):
    fpremode = int(stat.S_IFREG + 438);
-  if(member.is_dir()):
+  elif(member.is_dir()):
    fpremode = int(stat.S_IFDIR + 511);
   if(not member.is_dir()):
    fmode = int(stat.S_IFREG + 438);
    fchmode = int(stat.S_IMODE(int(stat.S_IFREG + 438)));
    ftypemod = int(stat.S_IFMT(int(stat.S_IFREG + 438)));
-  if(member.is_dir()):
+  elif(member.is_dir()):
    fmode = int(stat.S_IFDIR + 511);
    fchmode = int(stat.S_IMODE(int(stat.S_IFDIR + 511)));
    ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)));
@@ -4826,7 +4860,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
    if(not member.is_dir()):
     ftype = 0;
     permissionstr = "-" + permissionstr;
-   if(member.is_dir()):
+   elif(member.is_dir()):
     ftype = 5;
     permissionstr = "d" + permissionstr;
    printfname = member.filename;
@@ -4882,7 +4916,7 @@ if(not rarfile_support):
  def RarFileListFiles(infile, verbose=False, returnfp=False):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
   if(not os.path.exists(infile) or not os.path.isfile(infile)):
-  return False;
+   return False;
 
 if(rarfile_support):
  def RarFileListFiles(infile, verbose=False, returnfp=False):
@@ -4898,13 +4932,19 @@ if(rarfile_support):
   if(rartest):
    VerbosePrintOut("Bad file found!");
   for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
-   if(member.is_file()):
+   if(is_unix and member.external_attr !=0):
+    fpremode = int(member.external_attr);
+   elif(member.is_file()):
     fpremode = int(stat.S_IFREG + 438);
    elif(member.is_symlink()):
     fpremode = int(stat.S_IFLNK + 438);
    elif(member.is_dir()):
     fpremode = int(stat.S_IFDIR + 511);
-   if(member.is_file()):
+   if(is_unix and member.external_attr !=0):
+    fmode = int(member.external_attr);
+    fchmode = int(stat.S_IMODE(member.external_attr));
+    ftypemod = int(stat.S_IFMT(member.external_attr));
+   elif(member.is_file()):
     fmode = int(stat.S_IFREG + 438);
     fchmode = int(stat.S_IMODE(int(stat.S_IFREG + 438)));
     ftypemod = int(stat.S_IFMT(int(stat.S_IFREG + 438)));
