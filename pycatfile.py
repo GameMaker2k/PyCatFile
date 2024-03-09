@@ -393,6 +393,19 @@ def ReadFileHeaderData(fp, rounds=0, delimiter=__file_format_delimiter__):
   rocount = rocount + 1;
  return HeaderOut;
 
+def ReadFileHeaderDataBySize(fp, rounds=0, delimiter=__file_format_delimiter__):
+ headerpresize = ReadTillNullByte(fp, delimiter);
+ headersize = int(headerpresize, 16);
+ heasercontent = str(fp.read(headersize).decode('UTF-8').split(delimiter);
+ rocount = 0;
+ roend = int(len(heasercontent));
+ HeaderOut = [];
+ HeaderOut.append(headerpresize);
+ while(rocount<roend):
+  HeaderOut.append(heasercontent[rocount]);
+  rocount = rocount + 1;
+ return HeaderOut;
+
 def ReadFileHeaderDataByList(fp, listval=[], delimiter=__file_format_delimiter__):
  rocount = 0;
  roend = int(len(listval));
@@ -435,6 +448,17 @@ def ReadFileHeaderDataAlt(fp, rounds=0, delimiter=__file_format_delimiter__):
  for round_count in range(rounds):
   header_out[round_count] = ReadTillNullByteAlt(fp, delimiter);
  return header_out;
+
+def ReadFileHeaderDataBySizeAlt(fp, rounds=0, delimiter=__file_format_delimiter__):
+ # Read and convert header size from hexadecimal to integer
+ header_pre_size = ReadTillNullByte(fp, delimiter);
+ header_size = int(header_pre_size, 16);
+
+ # Read and split the header content
+ header_content = fp.read(header_size).decode('UTF-8').split(delimiter);
+
+ # Prepend the pre-size and return the combined list
+ return [header_pre_size] + header_content;
 
 def ReadFileHeaderDataByListAlt(fp, listval=[], delimiter=__file_format_delimiter__):
  """Read multiple null-byte terminated strings from a file."""
