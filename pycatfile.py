@@ -1025,43 +1025,64 @@ def CompressOpenFile(outfile, compressionlevel=None):
    import gzip;
   except ImportError:
    return False;
-  outfp = gzip.open(outfile, mode, compressionlevel, encoding="UTF-8");
+  try:
+   outfp = gzip.open(outfile, mode, compressionlevel, encoding="UTF-8");
+  except (ValueError, TypeError) as e:
+   outfp = gzip.open(outfile, mode, compressionlevel);
  elif(fextname==".bz2"):
   try:
    import bz2;
   except ImportError:
    return False;
-  outfp = bz2.open(outfile, mode, compressionlevel, encoding="UTF-8");
+  try:
+   outfp = bz2.open(outfile, mode, compressionlevel, encoding="UTF-8");
+  except (ValueError, TypeError) as e:
+   outfp = bz2.open(outfile, mode, compressionlevel);
  elif(fextname==".zst"):
   try:
    import zstandard;
   except ImportError:
    return False;
-  outfp = zstandard.open(outfile, mode, zstandard.ZstdCompressor(level=compressionlevel), encoding="UTF-8");
+  try:
+   outfp = zstandard.open(outfile, mode, zstandard.ZstdCompressor(level=compressionlevel), encoding="UTF-8");
+  except (ValueError, TypeError) as e:
+   outfp = zstandard.open(outfile, mode, zstandard.ZstdCompressor(level=compressionlevel));
  elif(fextname==".xz"):
   try:
    import lzma;
   except ImportError:
    return False;
-  outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel, encoding="UTF-8");
+  try:
+   outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel, encoding="UTF-8");
+  except (ValueError, TypeError) as e:
+   outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel);
  elif(fextname==".lz4"):
   try:
    import lz4.frame;
   except ImportError:
    return False;
-  outfp = lz4.frame.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel, encoding="UTF-8");
+  try:
+   outfp = lz4.frame.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel, encoding="UTF-8");
+  except (ValueError, TypeError) as e:
+   outfp = lz4.frame.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel);
  elif(fextname==".lzo"):
   try:
    import lzo;
   except ImportError:
    return False;
-  outfp = lzo.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel, encoding="UTF-8");
+  try:
+   outfp = lzo.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel, encoding="UTF-8");
+  except (ValueError, TypeError) as e:
+   outfp = lzo.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel);
  elif(fextname==".lzma"):
   try:
    import lzma;
   except ImportError:
    return False;
-  outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, preset=compressionlevel, encoding="UTF-8");
+  try:
+   outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, preset=compressionlevel, encoding="UTF-8");
+  except (ValueError, TypeError) as e:
+   outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, preset=compressionlevel);
  return outfp;
 
 def GetDevMajorMinor(fdev):
