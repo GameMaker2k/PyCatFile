@@ -393,14 +393,13 @@ def ReadFileHeaderData(fp, rounds=0, delimiter=__file_format_delimiter__):
   rocount = rocount + 1;
  return HeaderOut;
 
-def ReadFileHeaderDataBySize(fp, rounds=0, delimiter=__file_format_delimiter__):
+def ReadFileHeaderDataBySize(fp, delimiter=__file_format_delimiter__):
  headerpresize = ReadTillNullByte(fp, delimiter);
  headersize = int(headerpresize, 16);
- heasercontent = str(fp.read(headersize).decode('UTF-8').split(delimiter);
+ heasercontent = str(fp.read(headersize).decode('UTF-8')).split(delimiter);
  rocount = 0;
  roend = int(len(heasercontent));
- HeaderOut = [];
- HeaderOut.append(headerpresize);
+ HeaderOut = [headerpresize];
  while(rocount<roend):
   HeaderOut.append(heasercontent[rocount]);
   rocount = rocount + 1;
@@ -414,6 +413,21 @@ def ReadFileHeaderDataByList(fp, listval=[], delimiter=__file_format_delimiter__
   RoundArray = {listval[rocount]: ReadTillNullByte(fp, delimiter)};
   HeaderOut.update(RoundArray);
   rocount = rocount + 1;
+ return HeaderOut;
+
+def ReadFileHeaderDataByListSize(fp, listval=[], delimiter=__file_format_delimiter__):
+ headerpresize = ReadTillNullByte(fp, delimiter);
+ headersize = int(headerpresize, 16);
+ heasercontent = str(fp.read(headersize).decode('UTF-8')).split(delimiter);
+ rocount = 0;
+ listcount = 1;
+ roend = int(len(heasercontent));
+ HeaderOut = {listval[0]: headerpresize};
+ while(rocount<roend):
+  RoundArray = {listval[rocount]: heasercontent[rocount]};
+  HeaderOut.update(RoundArray);
+  rocount = rocount + 1;
+  listcount = listcount + 1;
  return HeaderOut;
 
 def AppendNullByte(indata, delimiter=__file_format_delimiter__):
