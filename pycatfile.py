@@ -463,7 +463,7 @@ def ReadFileHeaderDataAlt(fp, rounds=0, delimiter=__file_format_delimiter__):
   header_out[round_count] = ReadTillNullByteAlt(fp, delimiter);
  return header_out;
 
-def ReadFileHeaderDataBySizeAlt(fp, rounds=0, delimiter=__file_format_delimiter__):
+def ReadFileHeaderDataBySizeAlt(fp, delimiter=__file_format_delimiter__):
  # Read and convert header size from hexadecimal to integer
  header_pre_size = ReadTillNullByte(fp, delimiter);
  header_size = int(header_pre_size, 16);
@@ -473,6 +473,18 @@ def ReadFileHeaderDataBySizeAlt(fp, rounds=0, delimiter=__file_format_delimiter_
 
  # Prepend the pre-size and return the combined list
  return [header_pre_size] + header_content;
+
+def ReadFileHeaderDataByListSize(fp, listval=[], delimiter=__file_format_delimiter__):
+ # Read the size and content from the header
+ header_pre_size = ReadTillNullByte(fp, delimiter);
+ header_size = int(header_pre_size, 16);
+ header_content = fp.read(header_size).decode('UTF-8').split(delimiter):
+ # Initialize HeaderOut with the header pre-size if listval is not empty
+ HeaderOut = {listval[0]: header_pre_size} if listval else {};
+ # Map the remaining listval items to their corresponding header content, starting from the second item
+ for i in range(1, min(len(header_content) + 1, len(listval))):
+  HeaderOut[listval[i]] = header_content[i - 1];  # -1 because header_content is 0-indexed
+ return HeaderOut;
 
 def ReadFileHeaderDataByListAlt(fp, listval=[], delimiter=__file_format_delimiter__):
  """Read multiple null-byte terminated strings from a file."""
