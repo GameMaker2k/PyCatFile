@@ -125,7 +125,7 @@ __version_info__ = (0, 3, 4, "RC 1", 1);
 __version_date_info__ = (2024, 3, 3, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 __revision__ = __version_info__[3];
-__revision_id__ = "$Id$";
+__revision_id__ = "$Id: 744124740b99fd6c06621e18288396c822f3a7ac $";
 if(__version_info__[4] is not None):
  __version_date_plusrc__ = __version_date__ + "-" + str(__version_date_info__[4]);
 if(__version_info__[4] is None):
@@ -2657,6 +2657,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
 create_alias_function("", __file_format_name__, "SeekToFileName", ArchiveFileSeekToFileName);
 
 def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
+ usenewstyle = True;
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
   catfp.seek(0, 0);
@@ -2787,7 +2788,10 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
  realidnum = 0;
  while(fileidnum<seekend):
   catfhstart = catfp.tell();
-  catheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[4]);
+  if(usenewstyle):
+   catheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[4]);
+  else:
+   catheaderdata = ReadFileHeaderData(catfp, 23, formatspecs[4]);
   catfheadsize = int(catheaderdata[0], 16);
   catftype = int(catheaderdata[1], 16);
   if(re.findall("^[.|/]", catheaderdata[2])):
@@ -2818,17 +2822,29 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   catfextrasize = int(catheaderdata[21], 16);
   catfextrafields = int(catheaderdata[22], 16);
   extrafieldslist = [];
-  extrastart = 23;
-  extraend = extrastart + catfextrafields;
-  extrafieldslist = [];
-  if(extrastart<extraend):
-   extrafieldslist.append(catheaderdata[extrastart]);
-   extrastart = extrastart + 1;
-  catfchecksumtype = catheaderdata[extrastart].lower();
-  catfcs = catheaderdata[extrastart + 1].lower();
-  catfccs = catheaderdata[extrastart + 2].lower();
+  if(usenewstyle):
+   extrastart = 23;
+   extraend = extrastart + catfextrafields;
+   extrafieldslist = [];
+   if(extrastart<extraend):
+    extrafieldslist.append(catheaderdata[extrastart]);
+    extrastart = extrastart + 1;
+   catfchecksumtype = catheaderdata[extrastart].lower();
+   catfcs = catheaderdata[extrastart + 1].lower();
+   catfccs = catheaderdata[extrastart + 2].lower();
+  else:
+   extrafieldslist = [];
+   if(catfextrafields>0):
+    extrafieldslist = ReadFileHeaderData(catfp, catfextrafields, formatspecs[4]);
+   checksumsval = ReadFileHeaderData(catfp, 3, formatspecs[4]);
+   catfchecksumtype = checksumsval[0].lower();
+   catfcs = checksumsval[1].lower();
+   catfccs = checksumsval[2].lower();
   hc = 0;
-  hcmax = len(catheaderdata) - 2;
+  if(usenewstyle):
+   hcmax = len(catheaderdata) - 2;
+  else:
+   hcmax = len(catheaderdata);
   hout = "";
   while(hc<hcmax):
    hout = hout + AppendNullByte(catheaderdata[hc], formatspecs[4]);
@@ -2887,7 +2903,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   catfp.seek(1, 1);
   catfcontentend = catfp.tell() - 1;
   catlist['ffilelist'].update({realidnum: {'fid': realidnum, 'fidalt': fileidnum, 'fheadersize': catfheadsize, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmode': catfchmode, 'ftypemod': catftypemod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextrafieldsize': catfextrasize, 'fextralist': extrafieldslist, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
-  catfp.seek(1, 1);
+  if(usenewstyle):
+   catfp.seek(1, 1);
   fileidnum = fileidnum + 1;
   realidnum = realidnum + 1;
  if(returnfp):
