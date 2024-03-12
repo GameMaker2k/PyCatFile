@@ -117,17 +117,17 @@ if should_create:
   pycatfile.PackArchiveFile(getargs.input, getargs.output, getargs.text, getargs.compression, getargs.level, False, getargs.checksum, [], fnamelist, getargs.verbose, False);
 
 if should_repack:
- pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, False, [], fnamelist, getargs.verbose, False);
+ pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, False, [], fnamelist, getargs.verbose, True, False);
 
 if should_extract:
  pycatfile.UnPackArchiveFile(getargs.input, getargs.output, False, 0, 0, False, fnamelist, getargs.verbose, False);
 
 if should_list:
  if getargs.converttar:
-  pycatfile.TarFileListFiles(getargs.input, getargs.verbose, False);
+  pycatfile.TarFileListFiles(getargs.input, getargs.verbose, True, False);
  elif getargs.convertzip:
-  pycatfile.ZipFileListFiles(getargs.input, getargs.verbose, False);
+  pycatfile.ZipFileListFiles(getargs.input, getargs.verbose, True, False);
  elif rarfile_support and getargs.convertrar:
-  pycatfile.RarFileListFiles(getargs.input, getargs.verbose, False);
+  pycatfile.RarFileListFiles(getargs.input, getargs.verbose, True, False);
  else:
-  pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, False, fnamelist, getargs.verbose, False);
+  pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, False, fnamelist, getargs.verbose, True, False);
