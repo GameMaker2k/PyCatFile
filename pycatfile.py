@@ -467,18 +467,16 @@ def ReadFileHeaderDataBySizeAlt(fp, delimiter=__file_format_delimiter__):
  # Read and convert header size from hexadecimal to integer
  header_pre_size = ReadTillNullByte(fp, delimiter);
  header_size = int(header_pre_size, 16);
-
  # Read and split the header content
- header_content = fp.read(header_size).decode('UTF-8').split(delimiter);
-
+ header_content = str(fp.read(header_size).decode('UTF-8')).split(delimiter);
  # Prepend the pre-size and return the combined list
  return [header_pre_size] + header_content;
 
-def ReadFileHeaderDataByListSize(fp, listval=[], delimiter=__file_format_delimiter__):
+def ReadFileHeaderDataByListSizeAlt(fp, listval=[], delimiter=__file_format_delimiter__):
  # Read the size and content from the header
  header_pre_size = ReadTillNullByte(fp, delimiter);
  header_size = int(header_pre_size, 16);
- header_content = fp.read(header_size).decode('UTF-8').split(delimiter):
+ header_content = str(fp.read(header_size).decode('UTF-8')).split(delimiter);
  # Initialize HeaderOut with the header pre-size if listval is not empty
  HeaderOut = {listval[0]: header_pre_size} if listval else {};
  # Map the remaining listval items to their corresponding header content, starting from the second item
@@ -2778,7 +2776,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
  realidnum = 0;
  while(fileidnum<seekend):
   catfhstart = catfp.tell();
-  catheaderdata = ReadFileHeaderData(catfp, 23, formatspecs[4]);
+  catheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[4]);
   catfheadsize = int(catheaderdata[0], 16);
   catftype = int(catheaderdata[1], 16);
   if(re.findall("^[.|/]", catheaderdata[2])):
@@ -2809,27 +2807,21 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   catfextrasize = int(catheaderdata[21], 16);
   catfextrafields = int(catheaderdata[22], 16);
   extrafieldslist = [];
-  if(catfextrafields>0):
-   extrafieldslist = ReadFileHeaderData(catfp, catfextrafields, formatspecs[4]);
-  checksumsval = ReadFileHeaderData(catfp, 3, formatspecs[4]);
-  catfchecksumtype = checksumsval[0].lower();
-  catfcs = checksumsval[1].lower();
-  catfccs = checksumsval[2].lower();
+  extrastart = 23;
+  extraend = extrastart + catfextrafields;
+  extrafieldslist = [];
+  if(extrastart<extraend):
+   extrafieldslist.append(catheaderdata[extrastart]);
+   extrastart = extrastart + 1;
+  catfchecksumtype = catheaderdata[extrastart].lower();
+  catfcs = catheaderdata[extrastart + 1].lower();
+  catfccs = catheaderdata[extrastart + 2].lower();
   hc = 0;
-  hcmax = len(catheaderdata);
+  hcmax = len(catheaderdata) - 2;
   hout = "";
   while(hc<hcmax):
    hout = hout + AppendNullByte(catheaderdata[hc], formatspecs[4]);
    hc = hc + 1;
-  if(len(extrafieldslist)>catfextrafields and len(extrafieldslist)>0):
-   catfextrafields = len(extrafieldslist);
-  if(catfextrafields>0):
-   hc = 0;
-   hcmax = catfextrafields;
-   while(hc<hcmax):
-    hout = hout + AppendNullByte(extrafieldslist[hc], formatspecs[4]);
-    hc = hc + 1;
-  hout = hout + AppendNullByte(checksumsval[0].lower(), formatspecs[4]);
   catfnumfields = 24 + catfextrafields;
   if(catfchecksumtype=="none" or catfchecksumtype==""):
    catnewfcs = 0;
@@ -2881,6 +2873,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   if(catfsize>0 and listonly):
    catfp.seek(catfsize, 1);
    pyhascontents = False;
+  catfp.seek(1, 1);
   catfcontentend = catfp.tell() - 1;
   catlist['ffilelist'].update({realidnum: {'fid': realidnum, 'fidalt': fileidnum, 'fheadersize': catfheadsize, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmode': catfchmode, 'ftypemod': catftypemod, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fchecksumtype': catfchecksumtype, 'fnumfields': catfnumfields, 'fextrafields': catfextrafields, 'fextrafieldsize': catfextrasize, 'fextralist': extrafieldslist, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents} });
   catfp.seek(1, 1);
