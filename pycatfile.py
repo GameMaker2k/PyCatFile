@@ -4592,7 +4592,7 @@ def ArchiveFileArrayBase64Encode(infile, followlink=False, seekstart=0, seekend=
   if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
    infile = RemoveWindowsPath(infile);
   if(followlink):
-   prelistcatfiles = ArchiveFileToArrayIndex(infile, seekstart, seekend, False, skipchecksum, formatspecs, usenewstyle=True, returnfp);
+   prelistcatfiles = ArchiveFileToArrayIndex(infile, seekstart, seekend, False, skipchecksum, formatspecs, usenewstyle, returnfp);
    listcatfiles = prelistcatfiles['list'];
   else:
    listcatfiles = ArchiveFileToArray(infile, seekstart, seekend, False, skipchecksum, formatspecs, usenewstyle, returnfp);
