@@ -1378,15 +1378,22 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   else:
    fwinattributes = format(int(0), 'x').lower();
   fcontents = "".encode('UTF-8');
-  if(ftype==0 or ftype==7):
-   fpc = open(fname, "rb");
-   fcontents = fpc.read(int(fstatinfo.st_size));
-   fpc.close();
-  if(followlink and (ftype==1 or ftype==2)):
+  chunk_size = 1024;
+  if(ftype == 0 or ftype == 7):
+   with(open(fname, "rb") as fpc):
+    while(True):
+     chunk = fpc.read(chunk_size);
+     if(not chunk):
+      break
+     fcontents += chunk;
+  if(followlink and (ftype == 1 or ftype == 2)):
    flstatinfo = os.stat(flinkname);
-   fpc = open(flinkname, "rb");
-   fcontents = fpc.read(int(flstatinfo.st_size));
-   fpc.close();
+   with(open(flinkname, "rb") as fpc):
+    while(True):
+     chunk = fpc.read(chunk_size);
+     if(not chunk):
+      break;
+     fcontents += chunk;
   ftypehex = format(ftype, 'x').lower();
   extrafields = format(len(extradata), 'x').lower();
   extrasizestr = AppendNullByte(extrafields, formatspecs[4]);
@@ -1648,10 +1655,14 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   fgname = member.gname;
   flinkcount = format(int(flinkcount), 'x').lower();
   fcontents = "".encode('UTF-8');
-  if(ftype==0 or ftype==7):
-   fpc = tarfp.extractfile(member);
-   fcontents = fpc.read(int(member.size));
-   fpc.close();
+  chunk_size = 1024;
+  if(ftype == 0 or ftype == 7):
+   with(tarfp.extractfile(member) as fpc):
+    while(True):
+     chunk = fpc.read(chunk_size);
+     if(not chunk):
+      break
+     fcontents += chunk;
   ftypehex = format(ftype, 'x').lower();
   extrafields = format(len(extradata), 'x').lower();
   extrasizestr = AppendNullByte(extrafields, formatspecs[4]);
@@ -3097,15 +3108,22 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   else:
    fwinattributes = 0;
   fcontents = "".encode('UTF-8');
-  if(ftype==0 or ftype==7):
-   fpc = open(fname, "rb");
-   fcontents = fpc.read(int(fstatinfo.st_size));
-   fpc.close();
-  if(followlink and (ftype==1 or ftype==2)):
+  chunk_size = 1024;
+  if(ftype == 0 or ftype == 7):
+   with(open(fname, "rb") as fpc):
+    while(True):
+     chunk = fpc.read(chunk_size);
+     if(not chunk):
+      break
+     fcontents += chunk;
+  if(followlink and (ftype == 1 or ftype == 2)):
    flstatinfo = os.stat(flinkname);
-   fpc = open(flinkname, "rb");
-   fcontents = fpc.read(int(flstatinfo.st_size));
-   fpc.close();
+   with(open(flinkname, "rb") as fpc):
+    while(True):
+     chunk = fpc.read(chunk_size);
+     if(not chunk):
+      break;
+     fcontents += chunk;
   ftypehex = format(ftype, 'x').lower();
   extrafields = len(extradata);
   extrafieldslist = extradata;
@@ -3313,10 +3331,14 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   fgname = member.gname;
   flinkcount = flinkcount;
   fcontents = "".encode('UTF-8');
-  if(ftype==0 or ftype==7):
-   fpc = tarfp.extractfile(member);
-   fcontents = fpc.read(int(member.size));
-   fpc.close();
+  chunk_size = 1024;
+  if(ftype == 0 or ftype == 7):
+   with(tarfp.extractfile(member) as fpc):
+    while(True):
+     chunk = fpc.read(chunk_size);
+     if(not chunk):
+      break
+     fcontents += chunk;
   ftypehex = format(ftype, 'x').lower();
   extrafields = len(extradata);
   extrafieldslist = extradata;
@@ -4715,17 +4737,20 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
       fgname = "";
     except ImportError:
      fgname = "";
-    if(flinkinfo['ftype']==0 or flinkinfo['ftype']==7):
-     fpc = open(listcatfiles['ffilelist'][lcfi]['fname'], "wb");
-     fpc.write(flinkinfo['fcontents']);
-     try:
-      fpc.flush();
-      os.fsync(fpc.fileno());
-     except io.UnsupportedOperation:
-      pass;
-     except AttributeError:
-      pass;
-     fpc.close();
+    if(flinkinfo['ftype'] == 0 or flinkinfo['ftype'] == 7):
+     with(open(listcatfiles['ffilelist'][lcfi]['fname'], "wb") as fpc):
+      fcontents = flinkinfo['fcontents'];
+      chunk_size = 1024;
+      offset = 0;
+      while(offset < len(fcontents)):
+       chunk = fcontents[offset:offset + chunk_size];
+       fpc.write(chunk);
+       try:
+        fpc.flush();
+        os.fsync(fpc.fileno());
+       except (io.UnsupportedOperation, AttributeError):
+        pass
+       offset += len(chunk);
      if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname']):
       os.chown(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
      os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], int(flinkinfo['fchmode'], 8));
