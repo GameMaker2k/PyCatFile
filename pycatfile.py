@@ -1033,7 +1033,7 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
-  catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE, preset=compressionlevel));
+  catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}]));
  if(compression=="xz"):
   try:
    import lzma;
@@ -1044,7 +1044,7 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
-  catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ, preset=compressionlevel));
+  catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}]));
  if(compression=="auto" or compression is None):
   catfp = fp;
  catfp.seek(0, 0);
@@ -1105,9 +1105,9 @@ def CompressOpenFile(outfile, compressionlevel=None):
   except ImportError:
    return False;
   try:
-   outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel, encoding="UTF-8");
+   outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}], encoding="UTF-8");
   except (ValueError, TypeError) as e:
-   outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel);
+   outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}]);
  elif(fextname==".lz4"):
   try:
    import lz4.frame;
@@ -1132,9 +1132,9 @@ def CompressOpenFile(outfile, compressionlevel=None):
   except ImportError:
    return False;
   try:
-   outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, preset=compressionlevel, encoding="UTF-8");
+   outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}], encoding="UTF-8");
   except (ValueError, TypeError) as e:
-   outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, preset=compressionlevel);
+   outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}]);
  return outfp;
 
 def GetDevMajorMinor(fdev):
