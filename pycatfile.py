@@ -609,6 +609,8 @@ def CheckCompressionType(infile, formatspecs=__file_format_list__, closefp=True)
  prefp = catfp.read(3);
  if(prefp==binascii.unhexlify("425a68")):
   filetype = "bzip2";
+ if(prefp==binascii.unhexlify("5d0000")):
+  filetype = "lzma";
  catfp.seek(0, 0);
  prefp = catfp.read(4);
  if(prefp==binascii.unhexlify("28b52ffd")):
@@ -622,9 +624,11 @@ def CheckCompressionType(infile, formatspecs=__file_format_list__, closefp=True)
  if(prefp==binascii.unhexlify("7573746172")):
   filetype = "tarfile";
  catfp.seek(0, 0);
- prefp = catfp.read(7);
- if(prefp==binascii.unhexlify("fd377a585a0000")):
+ prefp = catfp.read(6);
+ if(prefp==binascii.unhexlify("fd377a585a00")):
   filetype = "lzma";
+ catfp.seek(0, 0);
+ prefp = catfp.read(7);
  if(prefp==binascii.unhexlify("526172211a0700")):
   filetype = "rarfile";
  if(prefp==binascii.unhexlify("43617446696c65")):
