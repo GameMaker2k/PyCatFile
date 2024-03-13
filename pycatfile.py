@@ -397,6 +397,7 @@ def ReadFileHeaderDataBySize(fp, delimiter=__file_format_delimiter__):
  headerpresize = ReadTillNullByte(fp, delimiter);
  headersize = int(headerpresize, 16);
  heasercontent = str(fp.read(headersize).decode('UTF-8')).split(delimiter);
+ fp.seek(1, 1);
  rocount = 0;
  roend = int(len(heasercontent));
  HeaderOut = [headerpresize];
@@ -419,6 +420,7 @@ def ReadFileHeaderDataByListSize(fp, listval=[], delimiter=__file_format_delimit
  headerpresize = ReadTillNullByte(fp, delimiter);
  headersize = int(headerpresize, 16);
  heasercontent = str(fp.read(headersize).decode('UTF-8')).split(delimiter);
+ fp.seek(1, 1);
  rocount = 0;
  listcount = 1;
  roend = int(len(heasercontent));
@@ -469,6 +471,7 @@ def ReadFileHeaderDataBySizeAlt(fp, delimiter=__file_format_delimiter__):
  header_size = int(header_pre_size, 16);
  # Read and split the header content
  header_content = str(fp.read(header_size).decode('UTF-8')).split(delimiter);
+ fp.seek(1, 1);
  # Prepend the pre-size and return the combined list
  return [header_pre_size] + header_content;
 
@@ -477,6 +480,7 @@ def ReadFileHeaderDataByListSizeAlt(fp, listval=[], delimiter=__file_format_deli
  header_pre_size = ReadTillNullByte(fp, delimiter);
  header_size = int(header_pre_size, 16);
  header_content = str(fp.read(header_size).decode('UTF-8')).split(delimiter);
+ fp.seek(1, 1);
  # Initialize HeaderOut with the header pre-size if listval is not empty
  HeaderOut = {listval[0]: header_pre_size} if listval else {};
  # Map the remaining listval items to their corresponding header content, starting from the second item
@@ -2789,7 +2793,6 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   catfhstart = catfp.tell();
   if(usenewstyle):
    catheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[4]);
-   catfp.seek(1, 1);
   else:
    catheaderdata = ReadFileHeaderData(catfp, 23, formatspecs[4]);
   catfheadsize = int(catheaderdata[0], 16);
