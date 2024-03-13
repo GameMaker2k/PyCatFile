@@ -18,7 +18,17 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import os, re, sys, time, stat, zlib, base64, shutil, hashlib, datetime, logging, binascii, tempfile, zipfile, ftplib;
+import io, os, re, sys, time, stat, zlib, base64, shutil, hashlib, datetime, logging, binascii, tempfile, zipfile, ftplib;
+
+if os.name == 'nt':  # Only modify if on Windows
+ if sys.version[0] == "2":
+  import codecs;
+  sys.stdout = codecs.getwriter('utf-8')(sys.stdout);
+  sys.stderr = codecs.getwriter('utf-8')(sys.stderr);
+ else:
+  import io;
+  sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True);
+  sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True);
 
 hashlib_guaranteed = False;
 os.environ["PYTHONIOENCODING"] = "UTF-8";
@@ -35,15 +45,6 @@ except NameError:
  pass;
 except AttributeError:
  pass;
-if(hasattr(sys, "setdefaultencoding")):
- sys.setdefaultencoding('UTF-8');
-if(hasattr(sys.stdout, "detach")):
- import io;
- sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding = 'UTF-8');
-if(hasattr(sys.stderr, "detach")):
- import io;
- sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = 'UTF-8');
-from io import open as open;
 
 try:
  import simplejson as json;
@@ -599,7 +600,10 @@ def CheckCompressionType(infile, formatspecs=__file_format_list__, closefp=True)
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
  else:
-  catfp = open(infile, "rb");
+  try:
+   catfp = open(infile, "rb");
+  except FileNotFoundError:
+   return False;
  catfp.seek(0, 0);
  prefp = catfp.read(2);
  filetype = False;
@@ -752,70 +756,73 @@ def UncompressFile(infile, formatspecs=__file_format_list__, mode="rb"):
    mode = "r";
   if(mode=="wt"):
    mode = "w";
- if(compresscheck=="gzip"):
-  try:
-   import gzip;
-  except ImportError:
-   return False;
-  try:
-   filefp = gzip.open(infile, mode, encoding="UTF-8");
-  except (ValueError, TypeError) as e:
-   filefp = gzip.open(infile, mode);
- if(compresscheck=="bzip2"):
-  try:
-   import bz2;
-  except ImportError:
-   return False;
-  try:
-   filefp = bz2.open(infile, mode, encoding="UTF-8");
-  except (ValueError, TypeError) as e:
-   filefp = bz2.open(infile, mode);
- if(compresscheck=="zstd"):
-  try:
-   import zstandard;
-  except ImportError:
-   return False;
-  try:
-   filefp = zstandard.open(infile, mode, encoding="UTF-8");
-  except (ValueError, TypeError) as e:
-   filefp = zstandard.open(infile, mode);
- if(compresscheck=="lz4"):
-  try:
-   import lz4.frame;
-  except ImportError:
-   return False;
-  try:
-   filefp = lz4.frame.open(infile, mode, encoding="UTF-8");
-  except (ValueError, TypeError) as e:
-   filefp = lz4.frame.open(infile, mode);
- if(compresscheck=="lzo"):
-  try:
-   import lzo;
-  except ImportError:
-   return False;
-  try:
-   filefp = lzo.open(infile, mode, encoding="UTF-8");
-  except (ValueError, TypeError) as e:
-   filefp = lzo.open(infile, mode);
- if(compresscheck=="lzma"):
-  try:
-   import lzma;
-  except ImportError:
-   return False;
-  try:
-   filefp = lzma.open(infile, mode, encoding="UTF-8");
-  except (ValueError, TypeError) as e:
-   filefp = lzma.open(infile, mode);
- if(compresscheck=="catfile" or compresscheck==formatspecs[1]):
-  try:
-   filefp = open(infile, mode, encoding="UTF-8");
-  except (ValueError, TypeError) as e:
-   filefp = open(infile, mode);
- if(not compresscheck):
-  try:
-   filefp = open(infile, mode, encoding="UTF-8");
-  except (ValueError, TypeError) as e:
-   filefp = open(infile, mode);
+ try:
+  if(compresscheck=="gzip"):
+   try:
+    import gzip;
+   except ImportError:
+    return False;
+   try:
+    filefp = gzip.open(infile, mode, encoding="UTF-8");
+   except (ValueError, TypeError) as e:
+    filefp = gzip.open(infile, mode);
+  if(compresscheck=="bzip2"):
+   try:
+    import bz2;
+   except ImportError:
+    return False;
+   try:
+    filefp = bz2.open(infile, mode, encoding="UTF-8");
+   except (ValueError, TypeError) as e:
+    filefp = bz2.open(infile, mode);
+  if(compresscheck=="zstd"):
+   try:
+    import zstandard;
+   except ImportError:
+    return False;
+   try:
+    filefp = zstandard.open(infile, mode, encoding="UTF-8");
+   except (ValueError, TypeError) as e:
+    filefp = zstandard.open(infile, mode);
+  if(compresscheck=="lz4"):
+   try:
+    import lz4.frame;
+   except ImportError:
+    return False;
+   try:
+    filefp = lz4.frame.open(infile, mode, encoding="UTF-8");
+   except (ValueError, TypeError) as e:
+    filefp = lz4.frame.open(infile, mode);
+  if(compresscheck=="lzo"):
+   try:
+    import lzo;
+   except ImportError:
+    return False;
+   try:
+    filefp = lzo.open(infile, mode, encoding="UTF-8");
+   except (ValueError, TypeError) as e:
+    filefp = lzo.open(infile, mode);
+  if(compresscheck=="lzma"):
+   try:
+    import lzma;
+   except ImportError:
+    return False;
+   try:
+    filefp = lzma.open(infile, mode, encoding="UTF-8");
+   except (ValueError, TypeError) as e:
+    filefp = lzma.open(infile, mode);
+  if(compresscheck=="catfile" or compresscheck==formatspecs[1]):
+   try:
+    filefp = open(infile, mode, encoding="UTF-8");
+   except (ValueError, TypeError) as e:
+    filefp = open(infile, mode);
+  if(not compresscheck):
+   try:
+    filefp = open(infile, mode, encoding="UTF-8");
+   except (ValueError, TypeError) as e:
+    filefp = open(infile, mode);
+ except FileNotFoundError:
+  return False;
  return filefp;
 
 def UncompressString(infile):
@@ -898,36 +905,39 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_list__):
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = UncompressArchiveFile(infile, formatspecs[1]);
  else:
-  if(compresscheck=="gzip"):
-   try:
-    import gzip;
-   except ImportError:
-    return False;
-   catfp = gzip.GzipFile(infile, "rb");
-  if(compresscheck=="bzip2"):
-   try:
-    import bz2;
-   except ImportError:
-    return False;
-   catfp = bz2.BZ2File(infile, "rb");
-  if(compresscheck=="lz4"):
-   try:
-    import lz4.frame;
-   except ImportError:
-    return False;
-   catfp = lz4.frame.open(infile, "rb");
-  if(compresscheck=="zstd"):
-   try:
-    import zstandard;
-   except ImportError:
-    return False;
-   catfp = zstandard.open(infile, "rb");
-  if(compresscheck=="lzma" or compresscheck=="xz"):
-   try:
-    import lzma;
-   except ImportError:
-    return False;
-   catfp = lzma.open(infile, "rb");
+  try:
+   if(compresscheck=="gzip"):
+    try:
+     import gzip;
+    except ImportError:
+     return False;
+    catfp = gzip.GzipFile(infile, "rb");
+   if(compresscheck=="bzip2"):
+    try:
+     import bz2;
+    except ImportError:
+     return False;
+    catfp = bz2.BZ2File(infile, "rb");
+   if(compresscheck=="lz4"):
+    try:
+     import lz4.frame;
+    except ImportError:
+     return False;
+    catfp = lz4.frame.open(infile, "rb");
+   if(compresscheck=="zstd"):
+    try:
+     import zstandard;
+    except ImportError:
+     return False;
+    catfp = zstandard.open(infile, "rb");
+   if(compresscheck=="lzma" or compresscheck=="xz"):
+    try:
+     import lzma;
+    except ImportError:
+     return False;
+    catfp = lzma.open(infile, "rb");
+  except FileNotFoundError:
+   return False;
  filetype = False;
  prefp = catfp.read(5);
  if(prefp==binascii.unhexlify("7573746172")):
@@ -958,7 +968,10 @@ def GZipCompress(data, compresslevel=9):
  tmpfp = gzip.GzipFile(tmpfp.name, mode="wb", compresslevel=compresslevel);
  tmpfp.write(data);
  tmpfp.close();
- catfp = open(tmpfp.name, "rb");
+ try:
+  catfp = open(tmpfp.name, "rb");
+ except FileNotFoundError:
+  return False;
  catdata = catfp.read();
  catfp.close();
  return catdata;
@@ -1071,74 +1084,77 @@ def CompressOpenFile(outfile, compressionlevel=None):
   mode = "w";
  else:
   mode = "wb";
- if(fextname not in outextlistwd):
-  try:
-   outfp = open(outfile, "wb", encoding="UTF-8");
-  except (ValueError, TypeError) as e:
-   outfp = open(outfile, "wb");
- elif(fextname==".gz"):
-  try:
-   import gzip;
-  except ImportError:
-   return False;
-  try:
-   outfp = gzip.open(outfile, mode, compressionlevel, encoding="UTF-8");
-  except (ValueError, TypeError) as e:
-   outfp = gzip.open(outfile, mode, compressionlevel);
- elif(fextname==".bz2"):
-  try:
-   import bz2;
-  except ImportError:
-   return False;
-  try:
-   outfp = bz2.open(outfile, mode, compressionlevel, encoding="UTF-8");
-  except (ValueError, TypeError) as e:
-   outfp = bz2.open(outfile, mode, compressionlevel);
- elif(fextname==".zst"):
-  try:
-   import zstandard;
-  except ImportError:
-   return False;
-  try:
-   outfp = zstandard.open(outfile, mode, zstandard.ZstdCompressor(level=compressionlevel), encoding="UTF-8");
-  except (ValueError, TypeError) as e:
-   outfp = zstandard.open(outfile, mode, zstandard.ZstdCompressor(level=compressionlevel));
- elif(fextname==".xz"):
-  try:
-   import lzma;
-  except ImportError:
-   return False;
-  try:
-   outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}], encoding="UTF-8");
-  except (ValueError, TypeError) as e:
-   outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}]);
- elif(fextname==".lz4"):
-  try:
-   import lz4.frame;
-  except ImportError:
-   return False;
-  try:
-   outfp = lz4.frame.open(outfile, mode, compression_level=compressionlevel, encoding="UTF-8");
-  except (ValueError, TypeError) as e:
-   outfp = lz4.frame.open(outfile, mode, compression_level=compressionlevel);
- elif(fextname==".lzo"):
-  try:
-   import lzo;
-  except ImportError:
-   return False;
-  try:
-   outfp = lzo.open(outfile, mode, compresslevel=compressionlevel, encoding="UTF-8");
-  except (ValueError, TypeError) as e:
-   outfp = lzo.open(outfile, mode, compresslevel=compressionlevel);
- elif(fextname==".lzma"):
-  try:
-   import lzma;
-  except ImportError:
-   return False;
-  try:
-   outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}], encoding="UTF-8");
-  except (ValueError, TypeError) as e:
-   outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}]);
+ try:
+  if(fextname not in outextlistwd):
+   try:
+    outfp = open(outfile, "wb", encoding="UTF-8");
+   except (ValueError, TypeError) as e:
+    outfp = open(outfile, "wb");
+  elif(fextname==".gz"):
+   try:
+    import gzip;
+   except ImportError:
+    return False;
+   try:
+    outfp = gzip.open(outfile, mode, compressionlevel, encoding="UTF-8");
+   except (ValueError, TypeError) as e:
+    outfp = gzip.open(outfile, mode, compressionlevel);
+  elif(fextname==".bz2"):
+   try:
+    import bz2;
+   except ImportError:
+    return False;
+   try:
+    outfp = bz2.open(outfile, mode, compressionlevel, encoding="UTF-8");
+   except (ValueError, TypeError) as e:
+    outfp = bz2.open(outfile, mode, compressionlevel);
+  elif(fextname==".zst"):
+   try:
+    import zstandard;
+   except ImportError:
+    return False;
+   try:
+    outfp = zstandard.open(outfile, mode, zstandard.ZstdCompressor(level=compressionlevel), encoding="UTF-8");
+   except (ValueError, TypeError) as e:
+    outfp = zstandard.open(outfile, mode, zstandard.ZstdCompressor(level=compressionlevel));
+  elif(fextname==".xz"):
+   try:
+    import lzma;
+   except ImportError:
+    return False;
+   try:
+    outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}], encoding="UTF-8");
+   except (ValueError, TypeError) as e:
+    outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}]);
+  elif(fextname==".lz4"):
+   try:
+    import lz4.frame;
+   except ImportError:
+    return False;
+   try:
+    outfp = lz4.frame.open(outfile, mode, compression_level=compressionlevel, encoding="UTF-8");
+   except (ValueError, TypeError) as e:
+    outfp = lz4.frame.open(outfile, mode, compression_level=compressionlevel);
+  elif(fextname==".lzo"):
+   try:
+    import lzo;
+   except ImportError:
+    return False;
+   try:
+    outfp = lzo.open(outfile, mode, compresslevel=compressionlevel, encoding="UTF-8");
+   except (ValueError, TypeError) as e:
+    outfp = lzo.open(outfile, mode, compresslevel=compressionlevel);
+  elif(fextname==".lzma"):
+   try:
+    import lzma;
+   except ImportError:
+    return False;
+   try:
+    outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}], encoding="UTF-8");
+   except (ValueError, TypeError) as e:
+    outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}]);
+ except FileNotFoundError:
+  return False;
  return outfp;
 
 def GetDevMajorMinor(fdev):
@@ -1388,7 +1404,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   fcontents = "".encode('UTF-8');
   chunk_size = 1024;
   if(ftype == 0 or ftype == 7):
-   with(open(fname, "rb") as fpc):
+   with open(fname, "rb") as fpc:
     while(True):
      chunk = fpc.read(chunk_size);
      if(not chunk):
@@ -1396,7 +1412,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
      fcontents += chunk;
   if(followlink and (ftype == 1 or ftype == 2)):
    flstatinfo = os.stat(flinkname);
-   with(open(flinkname, "rb") as fpc):
+   with open(flinkname, "rb") as fpc:
     while(True):
      chunk = fpc.read(chunk_size);
      if(not chunk):
@@ -1560,7 +1576,10 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
  except AttributeError:
   if(not is_tarfile(infile)):
    return False;
- tarfp = tarfile.open(infile, "r");
+ try:
+  tarfp = tarfile.open(infile, "r");
+ except FileNotFoundError:
+  return False;
  fnumfiles = format(int(len(tarfp.getmembers())), 'x').lower();
  fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[4]);
  if(checksumtype=="none" or checksumtype==""):
@@ -1665,7 +1684,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   fcontents = "".encode('UTF-8');
   chunk_size = 1024;
   if(ftype == 0 or ftype == 7):
-   with(tarfp.extractfile(member) as fpc):
+   with tarfp.extractfile(member) as fpc:
     while(True):
      chunk = fpc.read(chunk_size);
      if(not chunk):
@@ -3136,7 +3155,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   fcontents = "".encode('UTF-8');
   chunk_size = 1024;
   if(ftype == 0 or ftype == 7):
-   with(open(fname, "rb") as fpc):
+   with open(fname, "rb") as fpc:
     while(True):
      chunk = fpc.read(chunk_size);
      if(not chunk):
@@ -3144,7 +3163,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
      fcontents += chunk;
   if(followlink and (ftype == 1 or ftype == 2)):
    flstatinfo = os.stat(flinkname);
-   with(open(flinkname, "rb") as fpc):
+   with open(flinkname, "rb") as fpc:
     while(True):
      chunk = fpc.read(chunk_size);
      if(not chunk):
@@ -3254,7 +3273,10 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
  except AttributeError:
   if(not is_tarfile(infiles)):
    return False;
- tarfp = tarfile.open(infiles, "r");
+ try:
+  tarfp = tarfile.open(infiles, "r");
+ except FileNotFoundError:
+  return False;
  fnumfiles = int(len(tarfp.getmembers()));
  catver = formatspecs[5];
  fileheaderver = str(int(catver.replace(".", "")));
@@ -3359,7 +3381,7 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   fcontents = "".encode('UTF-8');
   chunk_size = 1024;
   if(ftype == 0 or ftype == 7):
-   with(tarfp.extractfile(member) as fpc):
+   with tarfp.extractfile(member) as fpc:
     while(True):
      chunk = fpc.read(chunk_size);
      if(not chunk):
@@ -4724,16 +4746,15 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
   if(verbose):
    VerbosePrintOut(listcatfiles['ffilelist'][lcfi]['fname']);
   if(listcatfiles['ffilelist'][lcfi]['ftype']==0 or listcatfiles['ffilelist'][lcfi]['ftype']==7):
-   fpc = open(listcatfiles['ffilelist'][lcfi]['fname'], "wb");
-   fpc.write(listcatfiles['ffilelist'][lcfi]['fcontents']);
-   try:
-    fpc.flush();
-    os.fsync(fpc.fileno());
-   except io.UnsupportedOperation:
-    pass;
-   except AttributeError:
-    pass;
-   fpc.close();
+   with open(listcatfiles['ffilelist'][lcfi]['fname'], "wb") as fpc:
+    fpc.write(listcatfiles['ffilelist'][lcfi]['fcontents'])
+    try:
+     fpc.flush()
+     os.fsync(fpc.fileno())
+    except io.UnsupportedOperation:
+     pass
+    except AttributeError:
+     pass
    if(hasattr(os, "chown") and funame==listcatfiles['ffilelist'][lcfi]['funame'] and fgname==listcatfiles['ffilelist'][lcfi]['fgname']):
     os.chown(listcatfiles['ffilelist'][lcfi]['fname'], listcatfiles['ffilelist'][lcfi]['fuid'], listcatfiles['ffilelist'][lcfi]['fgid']);
    os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], int(listcatfiles['ffilelist'][lcfi]['fchmode'], 8));
@@ -4764,19 +4785,15 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
     except ImportError:
      fgname = "";
     if(flinkinfo['ftype'] == 0 or flinkinfo['ftype'] == 7):
-     with(open(listcatfiles['ffilelist'][lcfi]['fname'], "wb") as fpc):
-      fcontents = flinkinfo['fcontents'];
-      chunk_size = 1024;
-      offset = 0;
-      while(offset < len(fcontents)):
-       chunk = fcontents[offset:offset + chunk_size];
-       fpc.write(chunk);
-       try:
-        fpc.flush();
-        os.fsync(fpc.fileno());
-       except (io.UnsupportedOperation, AttributeError):
-        pass
-       offset += len(chunk);
+     with open(listcatfiles['ffilelist'][lcfi]['fname'], "wb") as fpc:
+      fpc.write(flinkinfo['fcontents'])
+      try:
+       fpc.flush()
+       os.fsync(fpc.fileno())
+      except io.UnsupportedOperation:
+       pass
+      except AttributeError:
+       pass
      if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname']):
       os.chown(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
      os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], int(flinkinfo['fchmode'], 8));
@@ -4821,9 +4838,15 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
     except ImportError:
      fgname = "";
     if(flinkinfo['ftype']==0 or flinkinfo['ftype']==7):
-     fpc = open(listcatfiles['ffilelist'][lcfi]['fname'], "wb");
-     fpc.write(flinkinfo['fcontents']);
-     fpc.close();
+     with open(listcatfiles['ffilelist'][lcfi]['fname'], "wb") as fpc:
+      fpc.write(flinkinfo['fcontents'])
+      try:
+       fpc.flush()
+       os.fsync(fpc.fileno())
+      except io.UnsupportedOperation:
+       pass
+      except AttributeError:
+       pass
      if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname']):
       os.chown(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
      os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], int(flinkinfo['fchmode'], 8));
@@ -4929,7 +4952,10 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
     return False;
  lcfi = 0;
  returnval = {};
- tarfp = tarfile.open(infile, "r");
+ try:
+  tarfp = tarfile.open(infiles, "r");
+ except FileNotFoundError:
+  return False;
  for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
   returnval.update({lcfi: member.name});
   fpremode = member.mode;
@@ -5346,10 +5372,16 @@ def upload_file_to_ftp_string(ftpstring, url):
  ftpfileo.close();
  return ftpfile;
 
-if(hasattr(shutil, "register_archive_format")):
- # Register the packing format
- shutil.register_archive_format(__file_format_name__, PackArchiveFileFunc, description='Pack concatenated files');
+try:
+ if(hasattr(shutil, "register_archive_format")):
+  # Register the packing format
+  shutil.register_archive_format(__file_format_name__, PackArchiveFileFunc, description='Pack concatenated files');
+except shutil.RegistryError:
+ pass;
 
-if(hasattr(shutil, "register_unpack_format")):
- # Register the unpacking format
- shutil.register_unpack_format(__file_format_name__, archivefile_extensions, UnPackArchiveFileFunc, description='UnPack concatenated files');
+try:
+ if(hasattr(shutil, "register_unpack_format")):
+  # Register the unpacking format
+  shutil.register_unpack_format(__file_format_name__, archivefile_extensions, UnPackArchiveFileFunc, description='UnPack concatenated files');
+except shutil.RegistryError:
+ pass;
