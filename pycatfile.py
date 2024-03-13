@@ -4302,8 +4302,8 @@ def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", compr
 
 def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, extradata=[], formatspecs=__file_format_list__, verbose=False, usenewstyle=True, returnfp=False):
  compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
- outextlist = ['gz', 'cgz', 'bz2', 'cbz', 'zst', 'czst', 'lz4', 'lzop', 'clz4', 'lzo', 'clzo', 'lzma', 'xz', 'cxz'];
- outextlistwd = ['.gz', '.cgz', '.bz2', '.cbz', '.zst', '.czst', '.lz4', 'lzop', '.clz4', '.lzo', '.clzo', '.lzma', '.xz', '.cxz'];
+ outextlist = ['gz', 'bz2', 'zst', 'lz4', 'lzop', 'lzo', 'lzma', 'xz'];
+ outextlistwd = ['.gz', '.bz2', '.zst', '.lz4', 'lzop', '.lzo', '.lzma', '.xz'];
  if(isinstance(infile, dict)):
   prelistcatfiles = ArchiveFileToArrayIndex(infile, seekstart, seekend, False, skipchecksum, formatspecs, usenewstyle, returnfp);
   listcatfiles = prelistcatfiles['list'];
