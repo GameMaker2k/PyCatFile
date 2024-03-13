@@ -2770,9 +2770,13 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   return False;
  catversions = re.search(r'(.*?)(\d+)$', catstring).groups();
  catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}};
- if(seekstart<0):
+ if(seekstart<0 and seekstart>fnumfiles):
    seekstart = 0;
- if(seekend<=0 or seekend>fnumfiles):
+ if(seekend==0 or seekend>fnumfiles and seekend<seekstart):
+  seekend = fnumfiles;
+ elif(seekend<0 and abs(seekend)<=fnumfiles and abs(seekend)>=seekstart):
+  seekend = fnumfiles - abs(seekend);
+ else:
   seekend = fnumfiles;
  if(seekstart>0):
   il = 0;
