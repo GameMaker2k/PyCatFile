@@ -63,6 +63,8 @@ __file_format_lower__ = pycatfile.__file_format_lower__;
 __file_format_len__ = pycatfile.__file_format_len__;
 __file_format_hex__ = pycatfile.__file_format_hex__;
 __file_format_delimiter__ = pycatfile.__file_format_delimiter__;
+__file_format_ver__ = pycatfile.__file_format_ver__;
+__use_new_style__ = pycatfile.__use_new_style__;
 __file_format_list__ = pycatfile.__file_format_list__;
 __project_url__ = pycatfile.__project_url__;
 __version_info__ = pycatfile.__version_info__;
@@ -97,7 +99,7 @@ fnamelower = fname.lower();
 fnamelen = len(fname);
 fnamehex = binascii.hexlify(fname.encode("UTF-8")).decode("UTF-8");
 fnamever = getargs.formatver;
-fnamelist = [fname, fnamelower, fnamelen, fnamehex, getargs.delimiter, fnamever];
+fnamelist = [fname, fnamelower, fnamelen, fnamehex, getargs.delimiter, fnamever, True];
 
 # Determine actions based on user input
 should_create = getargs.create and not getargs.extract and not getargs.list;
@@ -117,17 +119,17 @@ if should_create:
   pycatfile.PackArchiveFile(getargs.input, getargs.output, getargs.text, getargs.compression, getargs.level, False, getargs.checksum, [], fnamelist, getargs.verbose, False);
 
 if should_repack:
- pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, False, [], fnamelist, getargs.verbose, True, False);
+ pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, False, [], fnamelist, getargs.verbose, False);
 
 if should_extract:
  pycatfile.UnPackArchiveFile(getargs.input, getargs.output, False, 0, 0, False, fnamelist, getargs.verbose, False);
 
 if should_list:
  if getargs.converttar:
-  pycatfile.TarFileListFiles(getargs.input, getargs.verbose, True, False);
+  pycatfile.TarFileListFiles(getargs.input, getargs.verbose, False);
  elif getargs.convertzip:
-  pycatfile.ZipFileListFiles(getargs.input, getargs.verbose, True, False);
+  pycatfile.ZipFileListFiles(getargs.input, getargs.verbose, False);
  elif rarfile_support and getargs.convertrar:
-  pycatfile.RarFileListFiles(getargs.input, getargs.verbose, True, False);
+  pycatfile.RarFileListFiles(getargs.input, getargs.verbose, False);
  else:
-  pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, False, fnamelist, getargs.verbose, True, False);
+  pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, False, fnamelist, getargs.verbose, False);
