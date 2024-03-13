@@ -1114,18 +1114,18 @@ def CompressOpenFile(outfile, compressionlevel=None):
   except ImportError:
    return False;
   try:
-   outfp = lz4.frame.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel, encoding="UTF-8");
+   outfp = lz4.frame.open(outfile, mode, compression_level=compressionlevel, encoding="UTF-8");
   except (ValueError, TypeError) as e:
-   outfp = lz4.frame.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel);
+   outfp = lz4.frame.open(outfile, mode, compression_level=compressionlevel);
  elif(fextname==".lzo"):
   try:
    import lzo;
   except ImportError:
    return False;
   try:
-   outfp = lzo.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel, encoding="UTF-8");
+   outfp = lzo.open(outfile, mode, compresslevel=compressionlevel, encoding="UTF-8");
   except (ValueError, TypeError) as e:
-   outfp = lzo.open(outfile, mode, format=lzma.FORMAT_XZ, preset=compressionlevel);
+   outfp = lzo.open(outfile, mode, compresslevel=compressionlevel);
  elif(fextname==".lzma"):
   try:
    import lzma;
