@@ -5307,10 +5307,10 @@ def download_file_from_ftp_file(url):
  try:
   ftp.connect(urlparts.hostname, ftp_port);
  except socket.gaierror:
-  log.info("Error With URL "+httpurl);
+  log.info("Error With URL "+url);
   return False;
  except socket.timeout:
-  log.info("Error With URL "+httpurl);
+  log.info("Error With URL "+url);
   return False;
  ftp.login(urlparts.username, urlparts.password);
  if(urlparts.scheme=="ftps"):
@@ -5354,10 +5354,10 @@ def upload_file_to_ftp_file(ftpfile, url):
  try:
   ftp.connect(urlparts.hostname, ftp_port);
  except socket.gaierror:
-  log.info("Error With URL "+httpurl);
+  log.info("Error With URL "+url);
   return False;
  except socket.timeout:
-  log.info("Error With URL "+httpurl);
+  log.info("Error With URL "+url);
   return False;
  ftp.login(urlparts.username, urlparts.password);
  if(urlparts.scheme=="ftps"):
