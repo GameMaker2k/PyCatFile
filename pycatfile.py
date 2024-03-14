@@ -5488,10 +5488,10 @@ if(haveparamiko):
   except paramiko.ssh_exception.SSHException:
    return False;
   except socket.gaierror:
-   log.info("Error With URL "+httpurl);
+   log.info("Error With URL "+url);
    return False;
   except socket.timeout:
-   log.info("Error With URL "+httpurl);
+   log.info("Error With URL "+url);
    return False;
   sftp = ssh.open_sftp();
   sftpfile = BytesIO();
@@ -5544,10 +5544,10 @@ if(haveparamiko):
   except paramiko.ssh_exception.SSHException:
    return False;
   except socket.gaierror:
-   log.info("Error With URL "+httpurl);
+   log.info("Error With URL "+url);
    return False;
   except socket.timeout:
-   log.info("Error With URL "+httpurl);
+   log.info("Error With URL "+url);
    return False;
   sftp = ssh.open_sftp();
   sftp.putfo(sftpfile, urlparts.path);
