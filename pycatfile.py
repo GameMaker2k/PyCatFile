@@ -387,6 +387,26 @@ def crc64_iso(msg, initial_value=0xFFFFFFFFFFFFFFFF):
    crc &= 0xFFFFFFFFFFFFFFFF;  # Ensure CRC remains 64-bit
  return crc;
 
+def GetDataFromArray(data, path, default=None):
+ element = data;
+ try:
+  for key in path:
+   element = element[key];
+  return element;
+ except (KeyError, TypeError, IndexError):
+  return default;
+
+def GetDataFromArrayAlt(structure, path, default=None):
+ element = structure;
+ for key in path:
+  if isinstance(element, dict) and key in element:
+   element = element[key];
+  elif isinstance(element, list) and isinstance(key, int) and -len(element) <= key < len(element):
+   element = element[key];
+  else:
+   return default;
+ return element;
+
 def ReadTillNullByte(fp, delimiter=__file_format_delimiter__):
  curbyte = b"";
  curfullbyte = b"";
