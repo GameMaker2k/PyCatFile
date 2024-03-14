@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import io, os, re, sys, time, stat, zlib, base64, shutil, hashlib, datetime, logging, binascii, tempfile, zipfile, ftplib;
+import io, os, re, sys, time, stat, zlib, base64, shutil, socket, hashlib, datetime, logging, binascii, tempfile, zipfile, ftplib;
 from ftplib import FTP, FTP_TLS;
 if(sys.version[0]=="2"):
  from urlparse import urlparse, urlunparse, urlsplit, urlunsplit, urljoin;
