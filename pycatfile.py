@@ -132,6 +132,9 @@ else:
   except ImportError:
    teststringio = 0;
 
+__use_pysftp__ = False;
+if(not havepysftp):
+ __use_pysftp__ = False;
 __file_format_name__ = "CatFile";
 __program_name__ = "Py"+__file_format_name__;
 __file_format_lower__ = __file_format_name__.lower();
@@ -1544,7 +1547,10 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
  elif(re.findall(r"^(sftp)\:\/\/", outfile) and haveparamiko):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   catfp.seek(0, 0);
-  upload_file_to_sftp_file(catfp, outfile);
+  if(__use_pysftp__):
+   upload_file_to_pysftp_file(catfp, outfile);
+  else:
+   upload_file_to_sftp_file(catfp, outfile);
  if(returnfp):
   catfp.seek(0, 0);
   return catfp;
@@ -1828,7 +1834,10 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
  elif(re.findall(r"^(sftp)\:\/\/", outfile) and haveparamiko):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   catfp.seek(0, 0);
-  upload_file_to_sftp_file(catfp, outfile);
+  if(__use_pysftp__):
+   upload_file_to_pysftp_file(catfp, outfile);
+  else:
+   upload_file_to_sftp_file(catfp, outfile);
  if(returnfp):
   catfp.seek(0, 0);
   return catfp;
@@ -2104,7 +2113,10 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
  elif(re.findall(r"^(sftp)\:\/\/", outfile) and haveparamiko):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   catfp.seek(0, 0);
-  upload_file_to_sftp_file(catfp, outfile);
+  if(__use_pysftp__):
+   upload_file_to_pysftp_file(catfp, outfile);
+  else:
+   upload_file_to_sftp_file(catfp, outfile);
  if(returnfp):
   catfp.seek(0, 0);
   return catfp;
@@ -2436,7 +2448,10 @@ if(rarfile_support):
   elif(re.findall(r"^(sftp)\:\/\/", outfile) and haveparamiko):
    catfp = CompressArchiveFile(catfp, compression, formatspecs);
    catfp.seek(0, 0);
-   upload_file_to_sftp_file(catfp, outfile);
+   if(__use_pysftp__):
+    upload_file_to_pysftp_file(catfp, outfile);
+   else:
+    upload_file_to_sftp_file(catfp, outfile);
   if(returnfp):
    catfp.seek(0, 0)
    return catfp
@@ -2477,7 +2492,10 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
  elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
   catfp = download_file_from_ftp_file(infile);
  elif(re.findall(r"^(sftp)\:\/\/", infile) and haveparamiko):
-  catfp = download_file_from_sftp_file(infile);
+  if(__use_pysftp__):
+   catfp = download_file_from_pysftp_file(infile);
+  else:
+   catfp = download_file_from_sftp_file(infile);
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs);
@@ -2629,7 +2647,10 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
  elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
   catfp = download_file_from_ftp_file(infile);
  elif(re.findall(r"^(sftp)\:\/\/", infile) and haveparamiko):
-  catfp = download_file_from_sftp_file(infile);
+  if(__use_pysftp__):
+   catfp = download_file_from_pysftp_file(infile);
+  else:
+   catfp = download_file_from_sftp_file(infile);
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs);
@@ -2791,7 +2812,10 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
  elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
   catfp = download_file_from_ftp_file(infile);
  elif(re.findall(r"^(sftp)\:\/\/", infile) and haveparamiko):
-  catfp = download_file_from_sftp_file(infile);
+  if(__use_pysftp__):
+   catfp = download_file_from_pysftp_file(infile);
+  else:
+   catfp = download_file_from_sftp_file(infile);
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs);
@@ -4680,7 +4704,10 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
  elif(re.findall(r"^(sftp)\:\/\/", outfile) and haveparamiko):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   catfp.seek(0, 0);
-  upload_file_to_sftp_file(catfp, outfile);
+  if(__use_pysftp__):
+   upload_file_to_pysftp_file(catfp, outfile);
+  else:
+   upload_file_to_sftp_file(catfp, outfile);
  if(returnfp):
   catfp.seek(0, 0);
   return catfp;
