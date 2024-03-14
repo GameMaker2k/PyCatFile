@@ -85,6 +85,13 @@ except ImportError:
  except ImportError:
   import tarfile;
 
+haveparamiko = False;
+try:
+ import paramiko;
+ haveparamiko = True;
+except ImportError:
+ haveparamiko = False;
+
 if(sys.version[0]=="2"):
  try:
   from io import StringIO, BytesIO;
@@ -1226,6 +1233,8 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   catfp = outfile;
  elif(re.findall(r"^(ftp|ftps)\:\/\/", outfile)):
   catfp = BytesIO();
+ elif(re.findall(r"^(sftp)\:\/\/", outfile) and haveparamiko):
+  catfp = BytesIO();
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
@@ -1525,6 +1534,10 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   catfp.seek(0, 0);
   upload_file_to_ftp_file(catfp, outfile);
+ elif(re.findall(r"^(sftp)\:\/\/", outfile) and haveparamiko):
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp.seek(0, 0);
+  upload_file_to_sftp_file(catfp, outfile);
  if(returnfp):
   catfp.seek(0, 0);
   return catfp;
@@ -1568,6 +1581,8 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
  elif(re.findall(r"^(ftp|ftps)\:\/\/", outfile)):
+  catfp = BytesIO();
+ elif(re.findall(r"^(sftp)\:\/\/", outfile) and haveparamiko):
   catfp = BytesIO();
  else:
   fbasename = os.path.splitext(outfile)[0];
@@ -1803,6 +1818,10 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   catfp.seek(0, 0);
   upload_file_to_ftp_file(catfp, outfile);
+ elif(re.findall(r"^(sftp)\:\/\/", outfile) and haveparamiko):
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp.seek(0, 0);
+  upload_file_to_sftp_file(catfp, outfile);
  if(returnfp):
   catfp.seek(0, 0);
   return catfp;
@@ -1838,6 +1857,8 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
  elif(re.findall(r"^(ftp|ftps)\:\/\/", outfile)):
+  catfp = BytesIO();
+ elif(re.findall(r"^(sftp)\:\/\/", outfile) and haveparamiko):
   catfp = BytesIO();
  else:
   fbasename = os.path.splitext(outfile)[0];
@@ -2073,6 +2094,10 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   catfp.seek(0, 0);
   upload_file_to_ftp_file(catfp, outfile);
+ elif(re.findall(r"^(sftp)\:\/\/", outfile) and haveparamiko):
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp.seek(0, 0);
+  upload_file_to_sftp_file(catfp, outfile);
  if(returnfp):
   catfp.seek(0, 0);
   return catfp;
@@ -2113,6 +2138,8 @@ if(rarfile_support):
   elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
    catfp = outfile;
   elif(re.findall(r"^(ftp|ftps)\:\/\/", outfile)):
+   catfp = BytesIO();
+  elif(re.findall(r"^(sftp)\:\/\/", outfile) and haveparamiko):
    catfp = BytesIO();
   else:
    fbasename = os.path.splitext(outfile)[0];
@@ -2399,6 +2426,10 @@ if(rarfile_support):
    catfp = CompressArchiveFile(catfp, compression, formatspecs);
    catfp.seek(0, 0);
    upload_file_to_ftp_file(catfp, outfile);
+  elif(re.findall(r"^(sftp)\:\/\/", outfile) and haveparamiko):
+   catfp = CompressArchiveFile(catfp, compression, formatspecs);
+   catfp.seek(0, 0);
+   upload_file_to_sftp_file(catfp, outfile);
   if(returnfp):
    catfp.seek(0, 0)
    return catfp
@@ -2438,6 +2469,8 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
   catfp.seek(0, 0);
  elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
   catfp = download_file_from_ftp_file(infile);
+ elif(re.findall(r"^(sftp)\:\/\/", infile) and haveparamiko):
+  catfp = download_file_from_sftp_file(infile);
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs);
@@ -2588,6 +2621,8 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
   catfp.seek(0, 0);
  elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
   catfp = download_file_from_ftp_file(infile);
+ elif(re.findall(r"^(sftp)\:\/\/", infile) and haveparamiko):
+  catfp = download_file_from_sftp_file(infile);
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs);
@@ -2748,6 +2783,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   catfp.seek(0, 0);
  elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
   catfp = download_file_from_ftp_file(infile);
+ elif(re.findall(r"^(sftp)\:\/\/", infile) and haveparamiko):
+  catfp = download_file_from_sftp_file(infile);
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs);
@@ -4375,6 +4412,8 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   catfp = outfile;
  elif(re.findall(r"^(ftp|ftps)\:\/\/", outfile)):
   catfp = BytesIO();
+ elif(re.findall(r"^(sftp)\:\/\/", outfile) and haveparamiko):
+  catfp = BytesIO();
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
@@ -4631,6 +4670,10 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   catfp.seek(0, 0);
   upload_file_to_ftp_file(catfp, outfile);
+ elif(re.findall(r"^(sftp)\:\/\/", outfile) and haveparamiko):
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp.seek(0, 0);
+  upload_file_to_sftp_file(catfp, outfile);
  if(returnfp):
   catfp.seek(0, 0);
   return catfp;
@@ -5412,6 +5455,119 @@ def upload_file_to_ftp_string(ftpstring, url):
  ftpfile = upload_file_to_ftp_file(ftpfileo, url);
  ftpfileo.close();
  return ftpfile;
+
+if(haveparamiko):
+ def download_file_from_sftp_file(url):
+  urlparts = urlparse.urlparse(url);
+  file_name = os.path.basename(urlparts.path);
+  file_dir = os.path.dirname(urlparts.path);
+  if(urlparts.scheme=="http" or urlparts.scheme=="https"):
+   return False;
+  sftp_port = urlparts.port;
+  if(urlparts.port is None):
+   sftp_port = 22;
+  else:
+   sftp_port = urlparts.port;
+  if(urlparts.username is not None):
+   sftp_username = urlparts.username;
+  else:
+   sftp_username = "anonymous";
+  if(urlparts.password is not None):
+   sftp_password = urlparts.password;
+  elif(urlparts.password is None and urlparts.username=="anonymous"):
+   sftp_password = "anonymous";
+  else:
+   sftp_password = "";
+  if(urlparts.scheme!="sftp"):
+   return False;
+  ssh = paramiko.SSHClient();
+  ssh.load_system_host_keys();
+  ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy());
+  try:
+   ssh.connect(urlparts.hostname, port=sftp_port, username=urlparts.username, password=urlparts.password);
+  except paramiko.ssh_exception.SSHException:
+   return False;
+  except socket.gaierror:
+   log.info("Error With URL "+httpurl);
+   return False;
+  except socket.timeout:
+   log.info("Error With URL "+httpurl);
+   return False;
+  sftp = ssh.open_sftp();
+  sftpfile = BytesIO();
+  sftp.getfo(urlparts.path, sftpfile);
+  sftp.close();
+  ssh.close();
+  sftpfile.seek(0, 0);
+  return sftpfile;
+else:
+ def download_file_from_sftp_file(url):
+  return False;
+
+if(haveparamiko):
+ def download_file_from_sftp_string(url):
+  sftpfile = download_file_from_sftp_file(url);
+  return sftpfile.read();
+else:
+ def download_file_from_ftp_string(url):
+  return False;
+
+if(haveparamiko):
+ def upload_file_to_sftp_file(sftpfile, url):
+  urlparts = urlparse.urlparse(url);
+  file_name = os.path.basename(urlparts.path);
+  file_dir = os.path.dirname(urlparts.path);
+  sftp_port = urlparts.port;
+  if(urlparts.scheme=="http" or urlparts.scheme=="https"):
+   return False;
+  if(urlparts.port is None):
+   sftp_port = 22;
+  else:
+   sftp_port = urlparts.port;
+  if(urlparts.username is not None):
+   sftp_username = urlparts.username;
+  else:
+   sftp_username = "anonymous";
+  if(urlparts.password is not None):
+   sftp_password = urlparts.password;
+  elif(urlparts.password is None and urlparts.username=="anonymous"):
+   sftp_password = "anonymous";
+  else:
+   sftp_password = "";
+  if(urlparts.scheme!="sftp"):
+   return False;
+  ssh = paramiko.SSHClient();
+  ssh.load_system_host_keys();
+  ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy());
+  try:
+   ssh.connect(urlparts.hostname, port=sftp_port, username=urlparts.username, password=urlparts.password);
+  except paramiko.ssh_exception.SSHException:
+   return False;
+  except socket.gaierror:
+   log.info("Error With URL "+httpurl);
+   return False;
+  except socket.timeout:
+   log.info("Error With URL "+httpurl);
+   return False;
+  sftp = ssh.open_sftp();
+  sftp.putfo(sftpfile, urlparts.path);
+  sftp.close();
+  ssh.close();
+  sftpfile.seek(0, 0);
+  return sftpfile;
+else:
+ def upload_file_to_sftp_file(sftpfile, url):
+  return False;
+
+if(haveparamiko):
+ def upload_file_to_sftp_string(sftpstring, url):
+  sftpfileo = BytesIO(sftpstring);
+  sftpfile = upload_file_to_sftp_files(ftpfileo, url);
+  sftpfileo.close();
+  return sftpfile;
+else:
+ def upload_file_to_sftp_string(url):
+  return False;
 
 try:
  if(hasattr(shutil, "register_archive_format")):
