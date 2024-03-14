@@ -2800,8 +2800,6 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   seekend = fnumfiles;
  elif(seekend<0 and abs(seekend)<=fnumfiles and abs(seekend)>=seekstart):
   seekend = fnumfiles - abs(seekend);
- else:
-  seekend = fnumfiles;
  if(seekstart>0):
   il = 0;
   while(il < seekstart):
