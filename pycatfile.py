@@ -19,6 +19,12 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
 import io, os, re, sys, time, stat, zlib, base64, shutil, hashlib, datetime, logging, binascii, tempfile, zipfile, ftplib;
+from ftplib import FTP, FTP_TLS;
+if(sys.version[0]=="2"):
+ from urlparse import urlparse, urlunparse, urlsplit, urlunsplit, urljoin;
+elif(sys.version[0]>="3"):
+ from urllib.parse import urlunparse, urlsplit, urlunsplit, urljoin, urlencode;
+ import urllib.parse as urlparse;
 
 if os.name == 'nt':  # Only modify if on Windows
  if sys.version[0] == "2":
@@ -1218,6 +1224,8 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   catfp = BytesIO();
  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", outfile)):
+  catfp = BytesIO();
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
@@ -1513,6 +1521,10 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
    shutil.copyfileobj(catfp, sys.stdout.buffer);
   else:
    shutil.copyfileobj(catfp, sys.stdout);
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", outfile)):
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp.seek(0, 0);
+  upload_file_to_ftp_file(catfp, outfile);
  if(returnfp):
   catfp.seek(0, 0);
   return catfp;
@@ -1555,6 +1567,8 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   catfp = BytesIO();
  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", outfile)):
+  catfp = BytesIO();
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
@@ -1785,6 +1799,10 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
    shutil.copyfileobj(catfp, sys.stdout.buffer);
   else:
    shutil.copyfileobj(catfp, sys.stdout);
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", outfile)):
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp.seek(0, 0);
+  upload_file_to_ftp_file(catfp, outfile);
  if(returnfp):
   catfp.seek(0, 0);
   return catfp;
@@ -1819,6 +1837,8 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   catfp = BytesIO();
  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", outfile)):
+  catfp = BytesIO();
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
@@ -2049,6 +2069,10 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
    shutil.copyfileobj(catfp, sys.stdout.buffer);
   else:
    shutil.copyfileobj(catfp, sys.stdout);
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", outfile)):
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp.seek(0, 0);
+  upload_file_to_ftp_file(catfp, outfile);
  if(returnfp):
   catfp.seek(0, 0);
   return catfp;
@@ -2088,6 +2112,8 @@ if(rarfile_support):
    catfp = BytesIO();
   elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
    catfp = outfile;
+  elif(re.findall(r"^(ftp|ftps)\:\/\/", outfile)):
+   catfp = BytesIO();
   else:
    fbasename = os.path.splitext(outfile)[0];
    fextname = os.path.splitext(outfile)[1];
@@ -2366,9 +2392,13 @@ if(rarfile_support):
   if(outfile=="-"):
    catfp.seek(0, 0)
    if(hasattr(sys.stdout, "buffer")):
-    shutil.copyfileobj(catfp, sys.stdout.buffer)
+    shutil.copyfileobj(catfp, sys.stdout.buffer);
    else:
-    shutil.copyfileobj(catfp, sys.stdout)
+    shutil.copyfileobj(catfp, sys.stdout);
+  elif(re.findall(r"^(ftp|ftps)\:\/\/", outfile)):
+   catfp = CompressArchiveFile(catfp, compression, formatspecs);
+   catfp.seek(0, 0);
+   upload_file_to_ftp_file(catfp, outfile);
   if(returnfp):
    catfp.seek(0, 0)
    return catfp
@@ -2406,6 +2436,8 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
   if(not catfp):
    return False;
   catfp.seek(0, 0);
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
+  catfp = download_file_from_ftp_file(infile);
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs);
@@ -2554,6 +2586,8 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
   if(not catfp):
    return False;
   catfp.seek(0, 0);
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
+  catfp = download_file_from_ftp_file(infile);
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs);
@@ -2712,6 +2746,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   if(not catfp):
    return False;
   catfp.seek(0, 0);
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
+  catfp = download_file_from_ftp_file(infile);
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs);
@@ -4337,6 +4373,8 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   catfp = BytesIO();
  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", outfile)):
+  catfp = BytesIO();
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
@@ -4589,6 +4627,10 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
    shutil.copyfileobj(catfp, sys.stdout.buffer);
   else:
    shutil.copyfileobj(catfp, sys.stdout);
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", outfile)):
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp.seek(0, 0);
+  upload_file_to_ftp_file(catfp, outfile);
  if(returnfp):
   catfp.seek(0, 0);
   return catfp;
