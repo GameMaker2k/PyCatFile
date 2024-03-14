@@ -92,6 +92,13 @@ try:
 except ImportError:
  haveparamiko = False;
 
+havepysftp = False;
+try:
+ import pysftp;
+ havepysftp = True;
+except ImportError:
+ havepysftp = False;
+
 if(sys.version[0]=="2"):
  try:
   from io import StringIO, BytesIO;
@@ -5567,6 +5574,113 @@ if(haveparamiko):
   return sftpfile;
 else:
  def upload_file_to_sftp_string(url):
+  return False;
+
+if(havepysftp):
+ def download_file_from_pysftp_file(url):
+  urlparts = urlparse.urlparse(url);
+  file_name = os.path.basename(urlparts.path);
+  file_dir = os.path.dirname(urlparts.path);
+  if(urlparts.scheme=="http" or urlparts.scheme=="https"):
+   return False;
+  sftp_port = urlparts.port;
+  if(urlparts.port is None):
+   sftp_port = 22;
+  else:
+   sftp_port = urlparts.port;
+  if(urlparts.username is not None):
+   sftp_username = urlparts.username;
+  else:
+   sftp_username = "anonymous";
+  if(urlparts.password is not None):
+   sftp_password = urlparts.password;
+  elif(urlparts.password is None and urlparts.username=="anonymous"):
+   sftp_password = "anonymous";
+  else:
+   sftp_password = "";
+  if(urlparts.scheme!="sftp"):
+   return False;
+  try:
+   pysftp.Connection(urlparts.hostname, port=sftp_port, username=urlparts.username, password=urlparts.password);
+  except paramiko.ssh_exception.SSHException:
+   return False;
+  except socket.gaierror:
+   log.info("Error With URL "+url);
+   return False;
+  except socket.timeout:
+   log.info("Error With URL "+url);
+   return False;
+  sftp = ssh.open_sftp();
+  sftpfile = BytesIO();
+  sftp.getfo(urlparts.path, sftpfile);
+  sftp.close();
+  ssh.close();
+  sftpfile.seek(0, 0);
+  return sftpfile;
+else:
+ def download_file_from_pysftp_file(url):
+  return False;
+
+if(havepysftp):
+ def download_file_from_pysftp_string(url):
+  sftpfile = download_file_from_pysftp_file(url);
+  return sftpfile.read();
+else:
+ def download_file_from_ftp_string(url):
+  return False;
+
+if(havepysftp):
+ def upload_file_to_pysftp_file(sftpfile, url):
+  urlparts = urlparse.urlparse(url);
+  file_name = os.path.basename(urlparts.path);
+  file_dir = os.path.dirname(urlparts.path);
+  sftp_port = urlparts.port;
+  if(urlparts.scheme=="http" or urlparts.scheme=="https"):
+   return False;
+  if(urlparts.port is None):
+   sftp_port = 22;
+  else:
+   sftp_port = urlparts.port;
+  if(urlparts.username is not None):
+   sftp_username = urlparts.username;
+  else:
+   sftp_username = "anonymous";
+  if(urlparts.password is not None):
+   sftp_password = urlparts.password;
+  elif(urlparts.password is None and urlparts.username=="anonymous"):
+   sftp_password = "anonymous";
+  else:
+   sftp_password = "";
+  if(urlparts.scheme!="sftp"):
+   return False;
+  try:
+   pysftp.Connection(urlparts.hostname, port=sftp_port, username=urlparts.username, password=urlparts.password);
+  except paramiko.ssh_exception.SSHException:
+   return False;
+  except socket.gaierror:
+   log.info("Error With URL "+url);
+   return False;
+  except socket.timeout:
+   log.info("Error With URL "+url);
+   return False;
+  sftp = ssh.open_sftp();
+  sftp.putfo(sftpfile, urlparts.path);
+  sftp.close();
+  ssh.close();
+  sftpfile.seek(0, 0);
+  return sftpfile;
+else:
+ def upload_file_to_pysftp_file(sftpfile, url):
+  return False;
+
+if(havepysftp):
+ def upload_file_to_pysftp_string(sftpstring, url):
+  sftpfileo = BytesIO(sftpstring);
+  sftpfile = upload_file_to_pysftp_files(ftpfileo, url);
+  sftpfileo.close();
+  return sftpfile;
+else:
+ def upload_file_to_pysftp_string(url):
   return False;
 
 try:
