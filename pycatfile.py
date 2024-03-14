@@ -138,12 +138,13 @@ if(not havepysftp):
 __file_format_name__ = "CatFile";
 __program_name__ = "Py"+__file_format_name__;
 __file_format_lower__ = __file_format_name__.lower();
-__file_format_len__ = len(__file_format_name__);
-__file_format_hex__ = binascii.hexlify(__file_format_name__.encode("UTF-8")).decode("UTF-8");
+__file_format_magic__ = __file_format_name__;
+__file_format_len__ = len(__file_format_magic__);
+__file_format_hex__ = binascii.hexlify(__file_format_magic__.encode("UTF-8")).decode("UTF-8");
 __file_format_delimiter__ = "\x00";
 __file_format_ver__ = "001";
 __use_new_style__ = True;
-__file_format_list__ = [__file_format_name__, __file_format_lower__, __file_format_len__, __file_format_hex__, __file_format_delimiter__, __file_format_ver__, __use_new_style__];
+__file_format_list__ = [__file_format_name__, __file_format_magic__, __file_format_lower__, __file_format_len__, __file_format_hex__, __file_format_delimiter__, __file_format_ver__, __use_new_style__];
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 4, 0, "RC 1", 1);
@@ -666,9 +667,9 @@ def CheckCompressionType(infile, formatspecs=__file_format_list__, closefp=True)
  if(prefp==binascii.unhexlify("526172211a070100")):
   filetype = "rarfile";
  catfp.seek(0, 0);
- prefp = catfp.read(formatspecs[2]);
- if(prefp==binascii.unhexlify(formatspecs[3])):
-  filetype = formatspecs[1];
+ prefp = catfp.read(formatspecs[3]);
+ if(prefp==binascii.unhexlify(formatspecs[4])):
+  filetype = formatspecs[2];
  catfp.seek(0, 0);
  prefp = catfp.read(9);
  if(prefp==binascii.unhexlify("894c5a4f000d0a1a0a")):
@@ -705,7 +706,7 @@ def GetCompressionMimeType(infile, formatspecs=__file_format_list__):
   return archivefile_lzma_mimetype;
  if(compresscheck=="xz"):
   return archivefile_xz_mimetype;
- if(compresscheck=="catfile" or compresscheck=="cat" or compresscheck==formatspecs[1]):
+ if(compresscheck=="catfile" or compresscheck=="cat" or compresscheck==formatspecs[2]):
   return archivefile_cat_mimetype;
  if(not compresscheck):
   return False;
@@ -756,7 +757,7 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_list__):
    return False;
   catfp = BytesIO();
   catfp.write(lzma.decompress(fp.read()));
- if(compresscheck=="catfile" or compresscheck==formatspecs[1]):
+ if(compresscheck=="catfile" or compresscheck==formatspecs[2]):
   catfp = fp;
  if(not compresscheck):
   try:
@@ -835,7 +836,7 @@ def UncompressFile(infile, formatspecs=__file_format_list__, mode="rb"):
     filefp = lzma.open(infile, mode, encoding="UTF-8");
    except (ValueError, TypeError) as e:
     filefp = lzma.open(infile, mode);
-  if(compresscheck=="catfile" or compresscheck==formatspecs[1]):
+  if(compresscheck=="catfile" or compresscheck==formatspecs[2]):
    try:
     filefp = open(infile, mode, encoding="UTF-8");
    except (ValueError, TypeError) as e:
@@ -920,14 +921,14 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_list__):
   return False;
  if(compresscheck=="catfile"):
   return "catfile";
- if(compresscheck==formatspecs[1]):
-  return formatspecs[1];
+ if(compresscheck==formatspecs[2]):
+  return formatspecs[2];
  if(compresscheck=="tarfile"):
   return "tarfile";
  if(compresscheck=="zipfile"):
   return "zipfile";
  if(hasattr(infile, "read") or hasattr(infile, "write")):
-  catfp = UncompressArchiveFile(infile, formatspecs[1]);
+  catfp = UncompressArchiveFile(infile, formatspecs[2]);
  else:
   try:
    if(compresscheck=="gzip"):
@@ -971,9 +972,9 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_list__):
  if(prefp==binascii.unhexlify("43617446696c65")):
   filetype = "catfile";
  catfp.seek(0, 0);
- prefp = catfp.read(formatspecs[2]);
- if(prefp==binascii.unhexlify(formatspecs[3])):
-  filetype = formatspecs[1];
+ prefp = catfp.read(formatspecs[3]);
+ if(prefp==binascii.unhexlify(formatspecs[4])):
+  filetype = formatspecs[2];
  catfp.seek(0, 0);
  prefp = catfp.read(10);
  if(prefp==binascii.unhexlify("7061785f676c6f62616c")):
@@ -1005,7 +1006,7 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
  if(not hasattr(fp, "read") and not hasattr(fp, "write")):
   return False;
  fp.seek(0, 0);
- if(not compression or compression or compression=="catfile" or compression==formatspecs[1]):
+ if(not compression or compression or compression=="catfile" or compression==formatspecs[2]):
   compression = None;
  if(compression not in compressionlist and compression is None):
   compression = "auto";
@@ -1227,7 +1228,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
- if(not compression or compression or compression=="catfile" or compression==formatspecs[1]):
+ if(not compression or compression or compression=="catfile" or compression==formatspecs[2]):
   compression = None;
  if(compression not in compressionlist and compression is None):
   compression = "auto";
@@ -1249,9 +1250,9 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
   catfp = CompressOpenFile(outfile, compressionlevel);
- catver = formatspecs[5];
+ catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
+ fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
  catfp.write(fileheader.encode('UTF-8'));
  infilelist = [];
  if(infiles=="-"):
@@ -1283,7 +1284,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
  filetoinode = {};
  inodetocatinode = {};
  fnumfiles = format(int(len(GetDirList)), 'x').lower();
- fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[4]);
+ fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
  if(checksumtype=="none" or checksumtype==""):
   catfileheadercshex = format(0, 'x').lower();
  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -1304,7 +1305,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   catfileheadercshex = checksumoutstr.hexdigest().lower();
  else:
   catfileheadercshex = format(0, 'x').lower
- fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[4]);
+ fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[5]);
  catfp.write(fnumfilesa.encode('UTF-8'));
  try:
   catfp.flush();
@@ -1448,14 +1449,14 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
      fcontents += chunk;
   ftypehex = format(ftype, 'x').lower();
   extrafields = format(len(extradata), 'x').lower();
-  extrasizestr = AppendNullByte(extrafields, formatspecs[4]);
+  extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
   if(len(extradata)>0):
-   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[4]);
+   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
   extrasizelen = format(len(extrasizestr), 'x').lower();
-  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields], formatspecs[4]);
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields], formatspecs[5]);
   if(len(extradata)>0):
-   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[4]);
-  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[4]);
+   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
+  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
@@ -1487,9 +1488,9 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   else:
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
-  catfileoutstr = AppendNullByte(catheaersize, formatspecs[4]) + catfileoutstr;
+  catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -1510,11 +1511,11 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
    catfileheadercshex = checksumoutstr.hexdigest().lower();
   else:
    catfileheadercshex = format(0, 'x').lower();
-  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catfhend = (catfp.tell() - 1) + len(catfileoutstr);
   catfcontentstart = catfp.tell() + len(catfileoutstr);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = formatspecs[4].encode('UTF-8');
+  nullstrecd = formatspecs[5].encode('UTF-8');
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
@@ -1579,7 +1580,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
- if(not compression or compression or compression=="catfile" or compression==formatspecs[1]):
+ if(not compression or compression or compression=="catfile" or compression==formatspecs[2]):
   compression = None;
  if(compression not in compressionlist and compression is None):
   compression = "auto";
@@ -1601,9 +1602,9 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
   catfp = CompressOpenFile(outfile, compressionlevel);
- catver = formatspecs[5];
+ catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
+ fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
  catfp.write(fileheader.encode('UTF-8'));
  curinode = 0;
  curfid = 0;
@@ -1624,7 +1625,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
  except FileNotFoundError:
   return False;
  fnumfiles = format(int(len(tarfp.getmembers())), 'x').lower();
- fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[4]);
+ fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
  if(checksumtype=="none" or checksumtype==""):
   catfileheadercshex = format(0, 'x').lower();
  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -1645,7 +1646,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   catfileheadercshex = checksumoutstr.hexdigest().lower();
  else:
   catfileheadercshex = format(0, 'x').lower();
- fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[4]);
+ fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[5]);
  catfp.write(fnumfilesa.encode('UTF-8'));
  try:
   catfp.flush();
@@ -1735,14 +1736,14 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
      fcontents += chunk;
   ftypehex = format(ftype, 'x').lower();
   extrafields = format(len(extradata), 'x').lower();
-  extrasizestr = AppendNullByte(extrafields, formatspecs[4]);
+  extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
   if(len(extradata)>0):
-   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[4]);
+   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
   extrasizelen = format(len(extrasizestr), 'x').lower();
-  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields], formatspecs[4]);
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields], formatspecs[5]);
   if(len(extradata)>0):
-   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[4]);
-  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[4]);
+   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
+  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
   catfhend = (catfp.tell() - 1) + len(catfileoutstr);
   catfcontentstart = catfp.tell() + len(catfileoutstr);
   if(checksumtype=="none" or checksumtype==""):
@@ -1776,9 +1777,9 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   else:
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
-  catfileoutstr = AppendNullByte(catheaersize, formatspecs[4]) + catfileoutstr;
+  catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -1799,9 +1800,9 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
    catfileheadercshex = checksumoutstr.hexdigest().lower();
   else:
    catfileheadercshex = format(0, 'x').lower();
-  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = formatspecs[4].encode('UTF-8');
+  nullstrecd = formatspecs[5].encode('UTF-8');
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
@@ -1858,7 +1859,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
- if(not compression or compression or compression=="catfile" or compression==formatspecs[1]):
+ if(not compression or compression or compression=="catfile" or compression==formatspecs[2]):
   compression = None;
  if(compression not in compressionlist and compression is None):
   compression = "auto";
@@ -1880,9 +1881,9 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
   catfp = CompressOpenFile(outfile, compressionlevel);
- catver = formatspecs[5];
+ catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
+ fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
  catfp.write(fileheader.encode('UTF-8'));
  curinode = 0;
  curfid = 0;
@@ -1899,7 +1900,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
  if(ziptest):
   VerbosePrintOut("Bad file found!");
  fnumfiles = format(int(len(zipfp.infolist())), 'x').lower();
- fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[4]);
+ fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
  if(checksumtype=="none" or checksumtype==""):
   catfileheadercshex = format(0, 'x').lower();
  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -1920,7 +1921,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   catfileheadercshex = checksumoutstr.hexdigest().lower();
  else:
   catfileheadercshex = format(0, 'x').lower();
- fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[4]);
+ fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[5]);
  catfp.write(fnumfilesa.encode('UTF-8'));
  try:
   catfp.flush();
@@ -2014,14 +2015,14 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
    fcontents = zipfp.read(member.filename);
   ftypehex = format(ftype, 'x').lower();
   extrafields = format(len(extradata), 'x').lower();
-  extrasizestr = AppendNullByte(extrafields, formatspecs[4]);
+  extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
   if(len(extradata)>0):
-   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[4]);
+   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
   extrasizelen = format(len(extrasizestr), 'x').lower();
-  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields], formatspecs[4]);
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields], formatspecs[5]);
   if(len(extradata)>0):
-   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[4]);
-  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[4]);
+   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
+  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
   catfhend = (catfp.tell() - 1) + len(catfileoutstr);
   catfcontentstart = catfp.tell() + len(catfileoutstr);
   if(checksumtype=="none" or checksumtype==""):
@@ -2055,9 +2056,9 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   else:
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
-  catfileoutstr = AppendNullByte(catheaersize, formatspecs[4]) + catfileoutstr;
+  catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -2078,9 +2079,9 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
    catfileheadercshex = checksumoutstr.hexdigest().lower();
   else:
    catfileheadercshex = format(0, 'x').lower();
-  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = formatspecs[4].encode('UTF-8');
+  nullstrecd = formatspecs[5].encode('UTF-8');
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
@@ -2142,7 +2143,7 @@ if(rarfile_support):
    checksumtype="crc32";
   if(checksumtype=="none"):
    checksumtype = "";
-  if(not compression or compression or compression=="catfile" or compression==formatspecs[1]):
+  if(not compression or compression or compression=="catfile" or compression==formatspecs[2]):
    compression = None;
   if(compression not in compressionlist and compression is None):
    compression = "auto";
@@ -2164,9 +2165,9 @@ if(rarfile_support):
    fbasename = os.path.splitext(outfile)[0];
    fextname = os.path.splitext(outfile)[1];
    catfp = CompressOpenFile(outfile, compressionlevel);
-  catver = formatspecs[5];
+  catver = formatspecs[6];
   fileheaderver = str(int(catver.replace(".", "")));
-  fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
+  fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
   catfp.write(fileheader.encode('UTF-8'));
   curinode = 0;
   curfid = 0;
@@ -2183,7 +2184,7 @@ if(rarfile_support):
   if(rartest):
    VerbosePrintOut("Bad file found!");
   fnumfiles = format(int(len(rarfp.infolist())), 'x').lower();
-  fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[4]);
+  fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -2204,7 +2205,7 @@ if(rarfile_support):
    catfileheadercshex = checksumoutstr.hexdigest().lower();
   else:
    catfileheadercshex = format(0, 'x').lower();
-  fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[4]);
+  fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[5]);
   catfp.write(fnumfilesa.encode('UTF-8'));
   try:
    catfp.flush();
@@ -2349,14 +2350,14 @@ if(rarfile_support):
     fcontents = rarfp.read(member.filename);
    ftypehex = format(ftype, 'x').lower();
    extrafields = format(len(extradata), 'x').lower();
-   extrasizestr = AppendNullByte(extrafields, formatspecs[4]);
+   extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
    if(len(extradata)>0):
-    extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[4]);
+    extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
    extrasizelen = format(len(extrasizestr), 'x').lower();
-   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields], formatspecs[4]);
+   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields], formatspecs[5]);
    if(len(extradata)>0):
-    catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[4]);
-   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[4]);
+    catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
+   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
    catfhend = (catfp.tell() - 1) + len(catfileoutstr);
    catfcontentstart = catfp.tell() + len(catfileoutstr);
    if(checksumtype=="none" or checksumtype==""):
@@ -2390,9 +2391,9 @@ if(rarfile_support):
    else:
     catfileheadercshex = format(0, 'x').lower();
     catfilecontentcshex = format(0, 'x').lower();
-   tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+   tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
    catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
-   catfileoutstr = AppendNullByte(catheaersize, formatspecs[4]) + catfileoutstr
+   catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr
    if(checksumtype=="none" or checksumtype==""):
     catfileheadercshex = format(0, 'x').lower()
    elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -2413,9 +2414,9 @@ if(rarfile_support):
     catfileheadercshex = checksumoutstr.hexdigest().lower()
    else:
     catfileheadercshex = format(0, 'x').lower()
-   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4])
+   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5])
    catfileoutstrecd = catfileoutstr.encode('UTF-8')
-   nullstrecd = formatspecs[4].encode('UTF-8')
+   nullstrecd = formatspecs[5].encode('UTF-8')
    catfileout = catfileoutstrecd + fcontents + nullstrecd
    catfcontentend = (catfp.tell() - 1) + len(catfileout)
    catfp.write(catfileout)
@@ -2473,7 +2474,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
    return ZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(rarfile_support and checkcompressfile=="rarfile"):
    return RarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
-  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   if(not catfp):
    return False;
@@ -2505,7 +2506,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
    return ZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(rarfile_support and checkcompressfile=="rarfile"):
    return RarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
-  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   compresscheck = CheckCompressionType(infile, formatspecs, True);
   if(not compresscheck):
@@ -2541,16 +2542,16 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
   return False;
  except ValueError:
   return False;
- catheader = ReadFileHeaderData(catfp, 4, formatspecs[4]);
+ catheader = ReadFileHeaderData(catfp, 4, formatspecs[5]);
  catstring = catheader[0];
  catversion = re.findall(r"([\d]+)$", catstring);
  fprenumfiles = catheader[1];
  fnumfiles = int(fprenumfiles, 16);
  fprechecksumtype = catheader[2];
  fprechecksum = catheader[3];
- fileheader = AppendNullByte(catstring, formatspecs[4]);
+ fileheader = AppendNullByte(catstring, formatspecs[5]);
  fnumfileshex = format(int(fnumfiles), 'x').lower();
- fileheader = fileheader + AppendNullBytes([fnumfileshex, fprechecksumtype], formatspecs[4]);
+ fileheader = fileheader + AppendNullBytes([fnumfileshex, fprechecksumtype], formatspecs[5]);
  if(fprechecksumtype=="none" or fprechecksumtype==""):
   catfileheadercshex = format(0, 'x').lower();
  elif(fprechecksumtype=="crc16" or fprechecksumtype=="crc16_ansi" or fprechecksumtype=="crc16_ibm"):
@@ -2571,7 +2572,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
   catfileheadercshex = checksumoutstr.hexdigest().lower();
  else:
   catfileheadercshex = format(0, 'x').lower();
- fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[4]);
+ fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[5]);
  fheadtell = len(fileheader);
  if(fprechecksum!=catfileheadercshex and not skipchecksum):
   VerbosePrintOut("File Header Checksum Error with file " + infile + " at offset " + str(catfp.tell()));
@@ -2586,7 +2587,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
   il = -1;
   while(il < seekto):
    seekstart = catfp.tell();
-   preheaderdata = ReadFileHeaderData(catfp, 5, formatspecs[4]);
+   preheaderdata = ReadFileHeaderData(catfp, 5, formatspecs[5]);
    prefheadsize = int(preheaderdata[0], 16);
    prefseek = prefheadsize - (int(len(preheaderdata[1]) + 1) + int(len(preheaderdata[2]) + 1) + int(len(preheaderdata[3]) + 1) + int(len(preheaderdata[4]) + 1));
    preftype = int(preheaderdata[1], 16);
@@ -2628,7 +2629,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
    return ZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(rarfile_support and checkcompressfile=="rarfile"):
    return RarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
-  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   if(not catfp):
    return False;
@@ -2660,7 +2661,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
    return ZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(rarfile_support and checkcompressfile=="rarfile"):
    return RarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
-  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   compresscheck = CheckCompressionType(infile, formatspecs, True);
   if(not compresscheck):
@@ -2696,16 +2697,16 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
   return False;
  except ValueError:
   return False;
- catheader = ReadFileHeaderData(catfp, 4, formatspecs[4]);
+ catheader = ReadFileHeaderData(catfp, 4, formatspecs[5]);
  catstring = catheader[0];
  catversion = re.findall(r"([\d]+)$", catstring);
  fprenumfiles = catheader[1];
  fnumfiles = int(fprenumfiles, 16);
  fprechecksumtype = catheader[2];
  fprechecksum = catheader[3];
- fileheader = AppendNullByte(catstring, formatspecs[4]);
+ fileheader = AppendNullByte(catstring, formatspecs[5]);
  fnumfileshex = format(int(fnumfiles), 'x').lower();
- fileheader = fileheader + AppendNullBytes([fnumfileshex, fprechecksumtype], formatspecs[4]);
+ fileheader = fileheader + AppendNullBytes([fnumfileshex, fprechecksumtype], formatspecs[5]);
  if(fprechecksumtype=="none" or fprechecksumtype==""):
   catfileheadercshex = format(0, 'x').lower();
  elif(fprechecksumtype=="crc16" or fprechecksumtype=="crc16_ansi" or fprechecksumtype=="crc16_ibm"):
@@ -2726,7 +2727,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
   catfileheadercshex = checksumoutstr.hexdigest().lower();
  else:
   catfileheadercshex = format(0, 'x').lower();
- fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[4]);
+ fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[5]);
  fheadtell = len(fileheader);
  if(fprechecksum!=catfileheadercshex and not skipchecksum):
   VerbosePrintOut("File Header Checksum Error with file " + infile + " at offset " + str(catfp.tell()));
@@ -2739,7 +2740,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
   il = -1;
   while(il < seekto):
    seekstart = catfp.tell();
-   preheaderdata = ReadFileHeaderData(catfp, 5, formatspecs[4]);
+   preheaderdata = ReadFileHeaderData(catfp, 5, formatspecs[5]);
    prefheadsize = int(preheaderdata[0], 16);
    prefseek = prefheadsize - (int(len(preheaderdata[1]) + 1) + int(len(preheaderdata[2]) + 1) + int(len(preheaderdata[3]) + 1) + int(len(preheaderdata[4]) + 1));
    preftype = int(preheaderdata[1], 16);
@@ -2793,7 +2794,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(rarfile_support and checkcompressfile=="rarfile"):
    return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
-  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   if(not catfp):
    return False;
@@ -2825,7 +2826,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(rarfile_support and checkcompressfile=="rarfile"):
    return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
-  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[1]):
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   compresscheck = CheckCompressionType(infile, formatspecs, True);
   if(not compresscheck):
@@ -2861,16 +2862,16 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   return False;
  except ValueError:
   return False;
- catheader = ReadFileHeaderData(catfp, 4, formatspecs[4]);
+ catheader = ReadFileHeaderData(catfp, 4, formatspecs[5]);
  catstring = catheader[0];
  catversion = re.findall(r"([\d]+)$", catstring);
  fprenumfiles = catheader[1];
  fnumfiles = int(fprenumfiles, 16);
  fprechecksumtype = catheader[2];
  fprechecksum = catheader[3];
- fileheader = AppendNullByte(catstring, formatspecs[4]);
+ fileheader = AppendNullByte(catstring, formatspecs[5]);
  fnumfileshex = format(int(fnumfiles), 'x').lower();
- fileheader = fileheader + AppendNullBytes([fnumfileshex, fprechecksumtype], formatspecs[4]);
+ fileheader = fileheader + AppendNullBytes([fnumfileshex, fprechecksumtype], formatspecs[5]);
  if(fprechecksumtype=="none" or fprechecksumtype==""):
   catfileheadercshex = format(0, 'x').lower();
  elif(fprechecksumtype=="crc16" or fprechecksumtype=="crc16_ansi" or fprechecksumtype=="crc16_ibm"):
@@ -2891,7 +2892,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   catfileheadercshex = checksumoutstr.hexdigest().lower();
  else:
   catfileheadercshex = format(0, 'x').lower();
- fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[4]);
+ fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[5]);
  fheadtell = len(fileheader);
  if(fprechecksum!=catfileheadercshex and not skipchecksum):
   VerbosePrintOut("File Header Checksum Error with file " + infile + " at offset " + str(catfp.tell()));
@@ -2907,7 +2908,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
  if(seekstart>0):
   il = 0;
   while(il < seekstart):
-   preheaderdata = ReadFileHeaderData(catfp, 5, formatspecs[4]);
+   preheaderdata = ReadFileHeaderData(catfp, 5, formatspecs[5]);
    prefheadsize = int(preheaderdata[0], 16);
    prefseek = prefheadsize - (int(len(preheaderdata[1]) + 1) + int(len(preheaderdata[2]) + 1) + int(len(preheaderdata[3]) + 1) + int(len(preheaderdata[4]) + 1));
    preftype = int(preheaderdata[1], 16);
@@ -2921,10 +2922,10 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
  realidnum = 0;
  while(fileidnum<seekend):
   catfhstart = catfp.tell();
-  if(formatspecs[6]):
-   catheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[4]);
+  if(formatspecs[7]):
+   catheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
   else:
-   catheaderdata = ReadFileHeaderData(catfp, 23, formatspecs[4]);
+   catheaderdata = ReadFileHeaderData(catfp, 23, formatspecs[5]);
   catfheadsize = int(catheaderdata[0], 16);
   catftype = int(catheaderdata[1], 16);
   if(re.findall("^[.|/]", catheaderdata[2])):
@@ -2955,7 +2956,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   catfextrasize = int(catheaderdata[21], 16);
   catfextrafields = int(catheaderdata[22], 16);
   extrafieldslist = [];
-  if(formatspecs[6]):
+  if(formatspecs[7]):
    extrastart = 23;
    extraend = extrastart + catfextrafields;
    extrafieldslist = [];
@@ -2967,20 +2968,20 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    catfccs = catheaderdata[extrastart + 2].lower();
   else:
    extrafieldslist = [];
-   if(catfextrafields>0):
-    extrafieldslist = ReadFileHeaderData(catfp, catfextrafields, formatspecs[4]);
-   checksumsval = ReadFileHeaderData(catfp, 3, formatspecs[4]);
+   if(formatspecs[7]):
+    extrafieldslist = ReadFileHeaderData(catfp, catfextrafields, formatspecs[5]);
+   checksumsval = ReadFileHeaderData(catfp, 3, formatspecs[5]);
    catfchecksumtype = checksumsval[0].lower();
    catfcs = checksumsval[1].lower();
    catfccs = checksumsval[2].lower();
   hc = 0;
-  if(formatspecs[6]):
+  if(formatspecs[7]):
    hcmax = len(catheaderdata) - 2;
   else:
    hcmax = len(catheaderdata);
   hout = "";
   while(hc<hcmax):
-   hout = hout + AppendNullByte(catheaderdata[hc], formatspecs[4]);
+   hout = hout + AppendNullByte(catheaderdata[hc], formatspecs[5]);
    hc = hc + 1;
   catfnumfields = 24 + catfextrafields;
   if(catfchecksumtype=="none" or catfchecksumtype==""):
@@ -3077,9 +3078,9 @@ if(rarfile_support):
   return listcatfiles;
 
 def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False):
- catver = formatspecs[5];
+ catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
+ fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
  advancedlist = True;
  infilelist = [];
  if(infiles=="-"):
@@ -3112,12 +3113,13 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
  inodetocatinode = {};
  fileidnum = 0;
  fnumfiles = int(len(GetDirList));
- catver = formatspecs[5];
+ catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
+ fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
  fnumfileshex = format(int(fnumfiles), 'x').lower();
- fileheader = fileheader + AppendNullBytes([fnumfileshex, checksumtype], formatspecs[4]);
- catversion = fileheaderver;
+ fileheader = fileheader + AppendNullBytes([fnumfileshex, checksumtype], formatspecs[5]);
+ catversion = re.findall(r"([\d]+)$", fileheader);
+ catversions = re.search(r'(.*?)(\d+)$', catstring).groups();
  if(checksumtype=="none" or checksumtype==""):
   catfileheadercshex = format(0, 'x').lower();
  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -3138,9 +3140,9 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   catfileheadercshex = checksumoutstr.hexdigest().lower();
  else:
   catfileheadercshex = format(0, 'x').lower();
- fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[4]);
+ fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[5]);
  fheadtell = len(fileheader);
- catlist = {'fnumfiles': fnumfiles, 'fformat': formatspecs[0], 'fversion': catversion, 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
+ catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
  for curfname in GetDirList:
   if(re.findall("^[.|/]", curfname)):
    fname = curfname;
@@ -3276,15 +3278,15 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   extrafields = len(extradata);
   extrafieldslist = extradata;
   catfextrafields = extrafields;
-  extrasizestr = AppendNullByte(extrafields, formatspecs[4]);
+  extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
   if(len(extradata)>0):
-   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[4]);
+   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
   extrasizelen = len(extrasizestr);
   extrasizelenhex = format(extrasizelen, 'x').lower();
-  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), extrasizelenhex, format(catfextrafields, 'x').lower()], formatspecs[4]);
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), extrasizelenhex, format(catfextrafields, 'x').lower()], formatspecs[5]);
   if(len(extradata)>0):
-   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[4]);
-  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[4]);
+   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
+  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
   catfnumfields = 24 + catfextrafields;
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
@@ -3321,9 +3323,9 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   fheadtell += len(catfileoutstr);
   catfhend = fheadtell - 1;
   catfcontentstart = fheadtell;
-  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
-  catfileoutstr = AppendNullByte(catheaersize, formatspecs[4]) + catfileoutstr;
+  catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -3344,9 +3346,9 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
    catfileheadercshex = checksumoutstr.hexdigest().lower();
   else:
    catfileheadercshex = format(0, 'x').lower();
-  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = formatspecs[4].encode('UTF-8');
+  nullstrecd = formatspecs[5].encode('UTF-8');
   fheadtell += len(catfileoutstr) + 1;
   catfcontentend = fheadtell - 1;
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
@@ -3381,12 +3383,13 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
  except FileNotFoundError:
   return False;
  fnumfiles = int(len(tarfp.getmembers()));
- catver = formatspecs[5];
+ catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
+ fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
  fnumfileshex = format(int(fnumfiles), 'x').lower();
- fileheader = fileheader + AppendNullBytes([fnumfileshex, checksumtype], formatspecs[4]);
- catversion = fileheaderver;
+ fileheader = fileheader + AppendNullBytes([fnumfileshex, checksumtype], formatspecs[5]);
+ catversion = re.findall(r"([\d]+)$", fileheader);
+ catversions = re.search(r'(.*?)(\d+)$', catstring).groups();
  if(checksumtype=="none" or checksumtype==""):
   catfileheadercshex = format(0, 'x').lower();
  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -3407,9 +3410,9 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   catfileheadercshex = checksumoutstr.hexdigest().lower();
  else:
   catfileheadercshex = format(0, 'x').lower();
- fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[4]);
+ fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[5]);
  fheadtell = len(fileheader);
- catlist = {'fnumfiles': fnumfiles, 'fformat': formatspecs[0], 'fversion': catversion, 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
+ catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
  for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
   if(re.findall("^[.|/]", member.name)):
    fname = member.name;
@@ -3494,15 +3497,15 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   extrafields = len(extradata);
   extrafieldslist = extradata;
   catfextrafields = extrafields;
-  extrasizestr = AppendNullByte(extrafields, formatspecs[4]);
+  extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
   if(len(extradata)>0):
-   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[4]);
+   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
   extrasizelen = len(extrasizestr);
   extrasizelenhex = format(extrasizelen, 'x').lower();
-  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), extrasizelenhex, format(catfextrafields, 'x').lower()], formatspecs[4]);
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), extrasizelenhex, format(catfextrafields, 'x').lower()], formatspecs[5]);
   if(len(extradata)>0):
-   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[4]);
-  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[4]);
+   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
+  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
   catfnumfields = 24 + catfextrafields;
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
@@ -3539,9 +3542,9 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   fheadtell += len(catfileoutstr);
   catfhend = fheadtell - 1;
   catfcontentstart = fheadtell;
-  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
-  catfileoutstr = AppendNullByte(catheaersize, formatspecs[4]) + catfileoutstr;
+  catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -3562,9 +3565,9 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
    catfileheadercshex = checksumoutstr.hexdigest().lower();
   else:
    catfileheadercshex = format(0, 'x').lower();
-  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = formatspecs[4].encode('UTF-8');
+  nullstrecd = formatspecs[5].encode('UTF-8');
   fheadtell += len(catfileoutstr) + 1;
   catfcontentend = fheadtell - 1;
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
@@ -3596,12 +3599,13 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
  if(ziptest):
   VerbosePrintOut("Bad file found!");
  fnumfiles = int(len(zipfp.infolist()));
- catver = formatspecs[5];
+ catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
- catversion = fileheaderver;
+ fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
+ catversion = re.findall(r"([\d]+)$", fileheader);
+ catversions = re.search(r'(.*?)(\d+)$', catstring).groups();
  fnumfileshex = format(int(fnumfiles), 'x').lower();
- fileheader = fileheader + AppendNullBytes([fnumfileshex, checksumtype], formatspecs[4]);
+ fileheader = fileheader + AppendNullBytes([fnumfileshex, checksumtype], formatspecs[5]);
  if(checksumtype=="none" or checksumtype==""):
   catfileheadercshex = format(0, 'x').lower();
  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -3622,9 +3626,9 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   catfileheadercshex = checksumoutstr.hexdigest().lower();
  else:
   catfileheadercshex = format(0, 'x').lower();
- fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[4]);
+ fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[5]);
  fheadtell = len(fileheader);
- catlist = {'fnumfiles': fnumfiles, 'fformat': formatspecs[0], 'fversion': catversion, 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
+ catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
  for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
   if(re.findall("^[.|/]", member.filename)):
    fname = member.filename;
@@ -3713,15 +3717,15 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   extrafields = len(extradata);
   extrafieldslist = extradata;
   catfextrafields = extrafields;
-  extrasizestr = AppendNullByte(extrafields, formatspecs[4]);
+  extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
   if(len(extradata)>0):
-   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[4]);
+   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
   extrasizelen = len(extrasizestr);
   extrasizelenhex = format(extrasizelen, 'x').lower();
-  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), extrasizelenhex, format(catfextrafields, 'x').lower()], formatspecs[4]);
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), extrasizelenhex, format(catfextrafields, 'x').lower()], formatspecs[5]);
   if(len(extradata)>0):
-   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[4]);
-  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[4]);
+   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
+  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
   catfnumfields = 24 + catfextrafields;
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
@@ -3758,9 +3762,9 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   fheadtell += len(catfileoutstr);
   catfhend = fheadtell - 1;
   catfcontentstart = fheadtell;
-  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
-  catfileoutstr = AppendNullByte(catheaersize, formatspecs[4]) + catfileoutstr;
+  catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -3781,9 +3785,9 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
    catfileheadercshex = checksumoutstr.hexdigest().lower();
   else:
    catfileheadercshex = format(0, 'x').lower();
-  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = formatspecs[4].encode('UTF-8');
+  nullstrecd = formatspecs[5].encode('UTF-8');
   fheadtell += len(catfileoutstr) + 1;
   catfcontentend = fheadtell - 1;
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
@@ -3820,12 +3824,13 @@ if(rarfile_support):
   if(rartest):
    VerbosePrintOut("Bad file found!");
   fnumfiles = int(len(rarfp.infolist()));
-  catver = formatspecs[5];
+  catver = formatspecs[6];
   fileheaderver = str(int(catver.replace(".", "")));
-  fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
-  catversion = fileheaderver;
+  fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
+  catversion = re.findall(r"([\d]+)$", fileheader);
+  catversions = re.search(r'(.*?)(\d+)$', catstring).groups();
   fnumfileshex = format(int(fnumfiles), 'x').lower();
-  fileheader = fileheader + AppendNullBytes([fnumfileshex, checksumtype], formatspecs[4]);
+  fileheader = fileheader + AppendNullBytes([fnumfileshex, checksumtype], formatspecs[5]);
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -3846,9 +3851,9 @@ if(rarfile_support):
    catfileheadercshex = checksumoutstr.hexdigest().lower();
   else:
    catfileheadercshex = format(0, 'x').lower();
-  fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[4]);
+  fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[5]);
   fheadtell = len(fileheader);
-  catlist = {'fnumfiles': fnumfiles, 'fformat': formatspecs[0], 'fversion': catversion, 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
+  catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': {}};
   for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
    is_unix = False;
    is_windows = False;
@@ -3986,15 +3991,15 @@ if(rarfile_support):
    extrafields = len(extradata);
    extrafieldslist = extradata;
    catfextrafields = extrafields;
-   extrasizestr = AppendNullByte(extrafields, formatspecs[4]);
+   extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
    if(len(extradata)>0):
-    extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[4]);
+    extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
    extrasizelen = len(extrasizestr);
    extrasizelenhex = format(extrasizelen, 'x').lower();
-   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), extrasizelenhex, format(catfextrafields, 'x').lower()], formatspecs[4]);
+   catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fuid), 'x').lower(), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), extrasizelenhex, format(catfextrafields, 'x').lower()], formatspecs[5]);
    if(len(extradata)>0):
-    catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[4]);
-   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[4]);
+    catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
+   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
    catfnumfields = 24 + catfextrafields;
    if(checksumtype=="none" or checksumtype==""):
     catfileheadercshex = format(0, 'x').lower();
@@ -4028,9 +4033,9 @@ if(rarfile_support):
    fheadtell += len(catfileoutstr);
    catfhend = fheadtell - 1;
    catfcontentstart = fheadtell;
-   tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+   tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
    catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
-   catfileoutstr = AppendNullByte(catheaersize, formatspecs[4]) + catfileoutstr;
+   catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
    if(checksumtype=="none" or checksumtype==""):
     catfileheadercshex = format(0, 'x').lower();
    elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -4051,9 +4056,9 @@ if(rarfile_support):
     catfileheadercshex = checksumoutstr.hexdigest().lower();
    else:
     catfileheadercshex = format(0, 'x').lower();
-   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
    catfileoutstrecd = catfileoutstr.encode('UTF-8');
-   nullstrecd = formatspecs[4].encode('UTF-8');
+   nullstrecd = formatspecs[5].encode('UTF-8');
    fheadtell += len(catfileoutstr) + 1;
    catfcontentend = fheadtell - 1;
    catfileout = catfileoutstrecd + fcontents + nullstrecd;
@@ -4425,7 +4430,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
- if(not compression or compression or compression=="catfile" or compression==formatspecs[1]):
+ if(not compression or compression or compression=="catfile" or compression==formatspecs[2]):
   compression = None;
  if(compression not in compressionlist and compression is None):
   compression = "auto";
@@ -4449,16 +4454,16 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
   catfp = CompressOpenFile(outfile, compressionlevel);
- catver = formatspecs[5];
+ catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte(formatspecs[0] + fileheaderver, formatspecs[4]);
+ fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
  catfp.write(fileheader.encode('UTF-8'));
  lenlist = len(listcatfiles['ffilelist']);
  fnumfiles = int(listcatfiles['fnumfiles']);
  if(lenlist>fnumfiles or lenlist<fnumfiles):
   fnumfiles = lenlist;
  fnumfileshex = format(int(fnumfiles), 'x').lower();
- fnumfilesa = AppendNullBytes([fnumfileshex, checksumtype], formatspecs[4]);
+ fnumfilesa = AppendNullBytes([fnumfileshex, checksumtype], formatspecs[5]);
  if(checksumtype=="none" or checksumtype==""):
   catfileheadercshex = format(0, 'x').lower();
  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -4479,7 +4484,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   catfileheadercshex = checksumoutstr.hexdigest().lower();
  else:
   catfileheadercshex = format(0, 'x').lower();
- fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[4]);
+ fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[5]);
  catfp.write(fnumfilesa.encode('UTF-8'));
  try:
   catfp.flush();
@@ -4535,9 +4540,9 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
    listcatfiles['ffilelist'][reallcfi]['fextrafields'] = len(extradata);
    listcatfiles['ffilelist'][reallcfi]['fextralist'] = extradata;
   extrafields = format(int(listcatfiles['ffilelist'][reallcfi]['fextrafields']), 'x').lower();
-  extrasizestr = AppendNullByte(extrafields, formatspecs[4]);
+  extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
   if(len(extradata)>0):
-   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[4]);
+   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
   extrasizelen = format(len(extrasizestr), 'x').lower();
   fcontents = listcatfiles['ffilelist'][reallcfi]['fcontents'];
   if(followlink):
@@ -4570,9 +4575,9 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
      flinkinfo['fextrafields'] = len(extradata);
      flinkinfo['fextralist'] = extradata;
     extrafields = format(int(flinkinfo['fextrafields']), 'x').lower();
-    extrasizestr = AppendNullByte(extrafields, formatspecs[4]);
+    extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
     if(len(extradata)>0):
-     extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[4]);
+     extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
     extrasizelen = format(len(extrasizestr), 'x').lower();
     fcontents = flinkinfo['fcontents'];
     if(flinkinfo['ftype']!=0 and flinkinfo['ftype']!=7):
@@ -4601,7 +4606,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
     fcurinode = format(int(curinode), 'x').lower();
     curinode = curinode + 1;
   curfid = curfid + 1;
-  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields], formatspecs[4]);
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields], formatspecs[5]);
   if(listcatfiles['ffilelist'][reallcfi]['fextrafields']>0):
    extrafieldslist = [];
    exi = 0;
@@ -4609,8 +4614,8 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
    while(exi < exil):
     extrafieldslist.append(listcatfiles['ffilelist'][reallcfi]['fextralist']);
     exi = exi + 1;
-   catfileoutstr += AppendNullBytes([extrafieldslist], formatspecs[4]);
-  catfileoutstr += AppendNullBytes([checksumtype], formatspecs[4]);
+   catfileoutstr += AppendNullBytes([extrafieldslist], formatspecs[5]);
+  catfileoutstr += AppendNullBytes([checksumtype], formatspecs[5]);
   catfhend = (catfp.tell() - 1) + len(catfileoutstr);
   catfcontentstart = catfp.tell() + len(catfileoutstr);
   if(checksumtype=="none" or checksumtype==""):
@@ -4644,9 +4649,9 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   else:
    catfileheadercshex = format(0, 'x').lower();
    catfilecontentcshex = format(0, 'x').lower();
-  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
-  catfileoutstr = AppendNullByte(catheaersize, formatspecs[4]) + catfileoutstr;
+  catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
   if(checksumtype=="none" or checksumtype==""):
    catfileheadercshex = format(0, 'x').lower();
   elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -4667,9 +4672,9 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
    catfileheadercshex = checksumoutstr.hexdigest().lower();
   else:
    catfileheadercshex = format(0, 'x').lower();
-  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[4]);
+  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = formatspecs[4].encode('UTF-8');
+  nullstrecd = formatspecs[5].encode('UTF-8');
   catfileout = catfileoutstrecd + fcontents + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);

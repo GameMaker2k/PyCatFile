@@ -14,7 +14,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: catfile.py - Last Update: 3/13/2024 Ver. 0.4.0 RC 1 - Author: cooldude2k $
+    $FileInfo: catfile.py - Last Update: 3/3/2024 Ver. 0.3.0 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
@@ -60,11 +60,10 @@ __project__ = pycatfile.__project__;
 __program_name__ = pycatfile.__program_name__;
 __file_format_name__ = pycatfile.__file_format_name__;
 __file_format_lower__ = pycatfile.__file_format_lower__;
+__file_format_magic__ = pycatfile.__file_format_magic__;
 __file_format_len__ = pycatfile.__file_format_len__;
 __file_format_hex__ = pycatfile.__file_format_hex__;
 __file_format_delimiter__ = pycatfile.__file_format_delimiter__;
-__file_format_ver__ = pycatfile.__file_format_ver__;
-__use_new_style__ = pycatfile.__use_new_style__;
 __file_format_list__ = pycatfile.__file_format_list__;
 __project_url__ = pycatfile.__project_url__;
 __version_info__ = pycatfile.__version_info__;
@@ -96,10 +95,11 @@ getargs = argparser.parse_args();
 
 fname = getargs.format;
 fnamelower = fname.lower();
+fnamemagic = fname.lower();
 fnamelen = len(fname);
 fnamehex = binascii.hexlify(fname.encode("UTF-8")).decode("UTF-8");
 fnamever = getargs.formatver;
-fnamelist = [fname, fnamelower, fnamelen, fnamehex, getargs.delimiter, fnamever, True];
+fnamelist = [fname, fnamemagic, fnamelower, fnamelen, fnamehex, getargs.delimiter, fnamever];
 
 # Determine actions based on user input
 should_create = getargs.create and not getargs.extract and not getargs.list;
