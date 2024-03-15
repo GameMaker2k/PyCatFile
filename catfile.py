@@ -84,6 +84,7 @@ argparser.add_argument("-format", "--format", default=__file_format_list__[0], h
 argparser.add_argument("-delimiter", "--delimiter", default=__file_format_list__[5], help="Specify the format to use");
 argparser.add_argument("-formatver", "--formatver", default=__file_format_list__[6], help="Specify the format version");
 argparser.add_argument("-l", "-t", "--list", action="store_true", help="List files included in the concatenated file.");
+argparser.add_argument("-p", "-preserve", "--preserve", action="store_false", help="Preserve permissions and time of files");
 argparser.add_argument("-repack", "--repack", action="store_true", help="Re-concatenate files, fixing checksum errors if any.");
 argparser.add_argument("-o", "--output", default=None, help="Specify the name for the extracted concatenated files or the output concatenated file.");
 argparser.add_argument("-compression", "--compression", default="auto", help="Specify the compression method to use for concatenation.");
@@ -124,7 +125,7 @@ if should_repack:
  pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, False, [], fnamelist, getargs.verbose, False);
 
 if should_extract:
- pycatfile.UnPackArchiveFile(getargs.input, getargs.output, False, 0, 0, False, fnamelist, getargs.verbose, False);
+ pycatfile.UnPackArchiveFile(getargs.input, getargs.output, False, 0, 0, False, fnamelist, getargs.verbose, getargs.preserve, getargs.preserve, False);
 
 if should_list:
  if getargs.converttar:
