@@ -1778,7 +1778,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
    ftype = 6;
   elif(member.issparse()):
    ffullmode = member.mode;
-   ftype = 8;
+   ftype = 11;
   else:
    ffullmode = member.mode;
    ftype = 0;
@@ -3641,7 +3641,7 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
    ftype = 6;
   elif(member.issparse()):
    ffullmode = member.mode;
-   ftype = 8;
+   ftype = 11;
   else:
    ffullmode = member.mode;
    ftype = 0;
@@ -5376,7 +5376,7 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
    ftype = 6;
   elif(member.issparse()):
    ffullmode = member.mode;
-   ftype = 8;
+   ftype = 11;
   if(not verbose):
    VerbosePrintOut(member.name);
   elif(verbose):
@@ -5787,7 +5787,7 @@ def upload_file_to_ftp_string(ftpstring, url):
  ftpfileo.close();
  return ftpfile;
 
-def download_file_from_http_file(url, headers=geturls_headers_pycatfile_python_alt):
+def download_file_from_http_file(url, headers):
  # Parse the URL to extract username and password if present
  parsed_url = urlparse(url);
  username = parsed_url.username;
