@@ -102,7 +102,6 @@ fnamehex = binascii.hexlify(fname.encode("UTF-8")).decode("UTF-8");
 fnamever = getargs.formatver;
 fnamesty = __use_new_style__;
 fnamelist = [fname, fnamemagic, fnamelower, fnamelen, fnamehex, getargs.delimiter, fnamever, fnamesty];
-print(__file_format_list__, fnamelist);
 
 # Determine actions based on user input
 should_create = getargs.create and not getargs.extract and not getargs.list;
