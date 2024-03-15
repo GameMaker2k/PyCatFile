@@ -99,6 +99,13 @@ try:
 except ImportError:
  havepysftp = False;
 
+haverequests = False;
+try:
+ import requests;
+ haverequests = True;
+except ImportError:
+ haverequests = False;
+
 try:
  # Python 3 imports
  from urllib.request import Request, build_opener, HTTPBasicAuthHandler;
@@ -5779,6 +5786,49 @@ def upload_file_to_ftp_string(ftpstring, url):
  ftpfile = upload_file_to_ftp_file(ftpfileo, url);
  ftpfileo.close();
  return ftpfile;
+
+def download_file_from_http_file(url, headers):
+ # Parse the URL to extract username and password if present
+ parsed_url = urlparse(url);
+ username = parsed_url.username;
+ password = parsed_url.password;
+ # Rebuild the URL without the username and password
+ netloc = parsed_url.hostname;
+ if parsed_url.port:
+  netloc += ':' + str(parsed_url.port);
+ rebuilt_url = urlunparse((parsed_url.scheme, netloc, parsed_url.path, parsed_url.params, parsed_url.query, parsed_url.fragment));
+ if haverequests:
+  # Use the requests library if available
+  if username and password:
+   response = requests.get(rebuilt_url, headers=headers, auth=(username, password));
+  else:
+   response = requests.get(rebuilt_url, headers=headers);
+  # Open a temporary file object and write the data
+  temp_file = BytesIO(response.content);
+ else:
+  # Build a Request object for urllib
+  request = Request(rebuilt_url, headers=headers);
+  # Create an opener object for handling URLs
+  if username and password:
+   # Create a password manager
+   password_mgr = HTTPPasswordMgrWithDefaultRealm();
+   # Add the username and password
+   password_mgr.add_password(None, rebuilt_url, username, password);
+   # Create an authentication handler using the password manager
+   auth_handler = HTTPBasicAuthHandler(password_mgr);
+   # Build the opener with the authentication handler
+   opener = build_opener(auth_handler);
+  else:
+   opener = build_opener();
+  # Open the URL using the custom opener
+  response = opener.open(request);
+  data = response.read();
+  # Write the data to a temporary file object
+  temp_file = BytesIO(data);
+ # Reset file pointer to the start
+ temp_file.seek(0);
+ # Return the temporary file object
+ return temp_file;
 
 def download_file_from_http_file(url, headers=geturls_headers_pycatfile_python_alt):
  # Parse the URL to extract username and password if present
