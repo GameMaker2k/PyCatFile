@@ -106,6 +106,10 @@ try:
 except ImportError:
  haverequests = False;
 
+if(haverequests):
+ import urllib3;
+ logging.getLogger("urllib3").setLevel(logging.WARNING);
+
 try:
  # Python 3 imports
  from urllib.request import Request, build_opener, HTTPBasicAuthHandler;
