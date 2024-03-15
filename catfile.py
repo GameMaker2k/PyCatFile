@@ -95,7 +95,7 @@ getargs = argparser.parse_args();
 
 fname = getargs.format;
 fnamelower = fname.lower();
-fnamemagic = fname.lower();
+fnamemagic = fname;
 fnamelen = len(fname);
 fnamehex = binascii.hexlify(fname.encode("UTF-8")).decode("UTF-8");
 fnamever = getargs.formatver;
