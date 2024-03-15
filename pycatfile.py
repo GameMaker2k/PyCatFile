@@ -1662,16 +1662,44 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
  inodetofile = {};
  filetoinode = {};
  inodetocatinode = {};
- if(not os.path.exists(infile) or not os.path.isfile(infile)):
+ if(infile=="-"):
+  infile = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   shutil.copyfileobj(sys.stdin.buffer, infile);
+  else:
+   shutil.copyfileobj(sys.stdin, infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(re.findall(r"^(http|https)\:\/\/", infile)):
+  infile = download_file_from_http_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
+  infile = download_file_from_ftp_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(not os.path.exists(infile) or not os.path.isfile(infile)):
+  return False;
+ elif(os.path.exists(infile) and os.path.isfile(infile)):
+  try:
+   if(not tarfile.is_tarfile(infile)):
+    return False;
+  except AttributeError:
+   if(not is_tarfile(infile)):
+    return False;
+ else:
   return False;
  try:
-  if(not tarfile.is_tarfile(infile)):
-   return False;
- except AttributeError:
-  if(not is_tarfile(infile)):
-   return False;
- try:
-  tarfp = tarfile.open(infile, "r");
+  if(hasattr(infile, "read") or hasattr(infile, "write")):
+   tarfp = tarfile.open(fileobj=infile, mode="r");
+  else:
+   tarfp = tarfile.open(infile, "r");
  except FileNotFoundError:
   return False;
  fnumfiles = format(int(len(tarfp.getmembers())), 'x').lower();
@@ -1941,11 +1969,38 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
  inodetofile = {};
  filetoinode = {};
  inodetocatinode = {};
- if(not os.path.exists(infile) or not os.path.isfile(infile)):
+ if(infile=="-"):
+  infile = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   shutil.copyfileobj(sys.stdin.buffer, infile);
+  else:
+   shutil.copyfileobj(sys.stdin, infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(re.findall(r"^(http|https)\:\/\/", infile)):
+  infile = download_file_from_http_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
+  infile = download_file_from_ftp_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(not os.path.exists(infile) or not os.path.isfile(infile)):
+  return False;
+ else:
   return False;
  if(not zipfile.is_zipfile(infile)):
   return False;
- zipfp = zipfile.ZipFile(infile, "r", allowZip64=True);
+ try:
+  zipfp = zipfile.ZipFile(infile, "r", allowZip64=True);
+ except FileNotFoundError:
+  return False;
  ziptest = zipfp.testzip();
  if(ziptest):
   VerbosePrintOut("Bad file found!");
@@ -3471,16 +3526,44 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
  filetoinode = {};
  inodetocatinode = {};
  fileidnum = 0;
- if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
+ if(infile=="-"):
+  infile = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   shutil.copyfileobj(sys.stdin.buffer, infile);
+  else:
+   shutil.copyfileobj(sys.stdin, infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(re.findall(r"^(http|https)\:\/\/", infile)):
+  infile = download_file_from_http_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
+  infile = download_file_from_ftp_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(not os.path.exists(infile) or not os.path.isfile(infile)):
+  return False;
+ elif(os.path.exists(infile) and os.path.isfile(infile)):
+  try:
+   if(not tarfile.is_tarfile(infile)):
+    return False;
+  except AttributeError:
+   if(not is_tarfile(infile)):
+    return False;
+ else:
   return False;
  try:
-  if(not tarfile.is_tarfile(infiles)):
-   return False;
- except AttributeError:
-  if(not is_tarfile(infiles)):
-   return False;
- try:
-  tarfp = tarfile.open(infiles, "r");
+  if(hasattr(infile, "read") or hasattr(infile, "write")):
+   tarfp = tarfile.open(fileobj=infile, mode="r");
+  else:
+   tarfp = tarfile.open(infile, "r");
  except FileNotFoundError:
   return False;
  fnumfiles = int(len(tarfp.getmembers()));
@@ -3691,11 +3774,38 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
  filetoinode = {};
  inodetocatinode = {};
  fileidnum = 0;
- if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
+ if(infile=="-"):
+  infile = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   shutil.copyfileobj(sys.stdin.buffer, infile);
+  else:
+   shutil.copyfileobj(sys.stdin, infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(re.findall(r"^(http|https)\:\/\/", infile)):
+  infile = download_file_from_http_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
+  infile = download_file_from_ftp_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(not os.path.exists(infile) or not os.path.isfile(infile)):
   return False;
- if(not zipfile.is_zipfile(infiles)):
+ else:
   return False;
- zipfp = zipfile.ZipFile(infiles, "r", allowZip64=True);
+ if(not zipfile.is_zipfile(infile)):
+  return False;
+ try:
+  zipfp = zipfile.ZipFile(infile, "r", allowZip64=True);
+ except FileNotFoundError:
+  return False;
  ziptest = zipfp.testzip();
  if(ziptest):
   VerbosePrintOut("Bad file found!");
@@ -5166,18 +5276,44 @@ create_alias_function("", __file_format_name__, "StringListFiles", ArchiveFileLi
 
 def TarFileListFiles(infile, verbose=False, returnfp=False):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
- if(not os.path.exists(infile) or not os.path.isfile(infile)):
-  return False;
- try:
-  if(not tarfile.is_tarfile(infile)):
+ if(infile=="-"):
+  infile = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   shutil.copyfileobj(sys.stdin.buffer, infile);
+  else:
+   shutil.copyfileobj(sys.stdin, infile);
+  infile.seek(0, 0);
+  if(not infile):
    return False;
- except AttributeError:
+  infile.seek(0, 0);
+ elif(re.findall(r"^(http|https)\:\/\/", infile)):
+  infile = download_file_from_http_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
+  infile = download_file_from_ftp_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(not os.path.exists(infile) or not os.path.isfile(infile)):
+  return False;
+ elif(os.path.exists(infile) and os.path.isfile(infile)):
+  try:
+   if(not tarfile.is_tarfile(infile)):
+    return False;
+  except AttributeError:
    if(not is_tarfile(infile)):
     return False;
- lcfi = 0;
- returnval = {};
+ else:
+  return False;
  try:
-  tarfp = tarfile.open(infiles, "r");
+  if(hasattr(infile, "read") or hasattr(infile, "write")):
+   tarfp = tarfile.open(fileobj=infile, mode="r");
+  else:
+   tarfp = tarfile.open(infile, "r");
  except FileNotFoundError:
   return False;
  for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
@@ -5237,13 +5373,40 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
 
 def ZipFileListFiles(infile, verbose=False, returnfp=False):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
- if(not os.path.exists(infile) or not os.path.isfile(infile)):
+ if(infile=="-"):
+  infile = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   shutil.copyfileobj(sys.stdin.buffer, infile);
+  else:
+   shutil.copyfileobj(sys.stdin, infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(re.findall(r"^(http|https)\:\/\/", infile)):
+  infile = download_file_from_http_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
+  infile = download_file_from_ftp_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(not os.path.exists(infile) or not os.path.isfile(infile)):
+  return False;
+ else:
   return False;
  if(not zipfile.is_zipfile(infile)):
   return False;
+ try:
+  zipfp = zipfile.ZipFile(infile, "r", allowZip64=True);
+ except FileNotFoundError:
+  return False;
  lcfi = 0;
  returnval = {};
- zipfp = zipfile.ZipFile(infile, "r", allowZip64=True);
  ziptest = zipfp.testzip();
  if(ziptest):
   VerbosePrintOut("Bad file found!");
