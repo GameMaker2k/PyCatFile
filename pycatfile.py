@@ -2928,6 +2928,267 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
 
 create_alias_function("", __file_format_name__, "SeekToFileName", ArchiveFileSeekToFileName);
 
+def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False, returnfp=False):
+ if(verbose):
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+ if(hasattr(infile, "read") or hasattr(infile, "write")):
+  catfp = infile;
+  catfp.seek(0, 0);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
+  checkcompressfile = CheckCompressionSubType(catfp, formatspecs);
+  if(checkcompressfile=="tarfile"):
+   return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+  if(checkcompressfile=="zipfile"):
+   return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+  if(rarfile_support and checkcompressfile=="rarfile"):
+   return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
+   return False;
+  if(not catfp):
+   return False;
+  catfp.seek(0, 0);
+ elif(infile=="-"):
+  catfp = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   shutil.copyfileobj(sys.stdin.buffer, catfp);
+  else:
+   shutil.copyfileobj(sys.stdin, catfp);
+  catfp.seek(0, 0);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
+  if(not catfp):
+   return False;
+  catfp.seek(0, 0);
+ elif(re.findall(r"^(http|https)\:\/\/", infile)):
+  catfp = download_file_from_http_file(infile);
+  catfp.seek(0, 0);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
+  if(not catfp):
+   return False;
+  catfp.seek(0, 0);
+ elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
+  catfp = download_file_from_ftp_file(infile);
+  catfp.seek(0, 0);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
+  if(not catfp):
+   return False;
+  catfp.seek(0, 0);
+ elif(re.findall(r"^(sftp)\:\/\/", infile) and haveparamiko):
+  if(__use_pysftp__):
+   catfp = download_file_from_pysftp_file(infile);
+  else:
+   catfp = download_file_from_sftp_file(infile);
+  catfp.seek(0, 0);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
+  if(not catfp):
+   return False;
+  catfp.seek(0, 0);
+ else:
+  infile = RemoveWindowsPath(infile);
+  checkcompressfile = CheckCompressionSubType(infile, formatspecs);
+  if(checkcompressfile=="tarfile"):
+   return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+  if(checkcompressfile=="zipfile"):
+   return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+  if(rarfile_support and checkcompressfile=="rarfile"):
+   return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
+   return False;
+  compresscheck = CheckCompressionType(infile, formatspecs, True);
+  if(not compresscheck):
+   fextname = os.path.splitext(infile)[1];
+   if(fextname==".gz"):
+    compresscheck = "gzip";
+   if(fextname==".bz2"):
+    compresscheck = "bzip2";
+   if(fextname==".zst"):
+    compresscheck = "zstd";
+   if(fextname==".lz4" or fextname==".clz4"):
+    compresscheck = "lz4";
+   if(fextname==".lzo" or fextname==".lzop"):
+    compresscheck = "lzo";
+   if(fextname==".lzma" or fextname==".xz"):
+    compresscheck = "lzma";
+  if(not compresscheck):
+   return False;
+  catfp = UncompressFile(infile, formatspecs, "rb");
+ '''
+ try:
+  catfp.seek(0, 2);
+ except OSError:
+  SeekToEndOfFile(catfp);
+ except ValueError:
+  SeekToEndOfFile(catfp);
+ CatSize = catfp.tell();
+ CatSizeEnd = CatSize;
+ '''
+ try:
+  catfp.seek(0, 0);
+ except OSError:
+  return False;
+ except ValueError:
+  return False;
+ catheader = ReadFileHeaderData(catfp, 4, formatspecs[5]);
+ catstring = catheader[0];
+ catversion = re.findall(r"([\d]+)$", catstring);
+ fprenumfiles = catheader[1];
+ fnumfiles = int(fprenumfiles, 16);
+ fprechecksumtype = catheader[2];
+ fprechecksum = catheader[3];
+ il = 0; 
+ fileheader = AppendNullByte(catstring, formatspecs[5]);
+ fnumfileshex = format(int(fnumfiles), 'x').lower();
+ fileheader = fileheader + AppendNullBytes([fnumfileshex, fprechecksumtype], formatspecs[5]);
+ if(fprechecksumtype=="none" or fprechecksumtype==""):
+  catfileheadercshex = format(0, 'x').lower();
+ elif(fprechecksumtype=="crc16" or fprechecksumtype=="crc16_ansi" or fprechecksumtype=="crc16_ibm"):
+  catfileheadercshex = format(crc16(fileheader.encode('UTF-8')) & 0xffff, '04x').lower();
+ elif(fprechecksumtype=="crc16_ccitt"):
+  catfileheadercshex = format(crc16_ccitt(fileheader.encode('UTF-8')) & 0xffff, '04x').lower();
+ elif(fprechecksumtype=="adler32"):
+  catfileheadercshex = format(zlib.adler32(fileheader.encode('UTF-8')) & 0xffffffff, '08x').lower();
+ elif(fprechecksumtype=="crc32"):
+  catfileheadercshex = format(crc32(fileheader.encode('UTF-8')) & 0xffffffff, '08x').lower();
+ elif(fprechecksumtype=="crc64_ecma"):
+  catfileheadercshex = format(crc64_ecma(fileheader.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+ elif(fprechecksumtype=="crc64" or fprechecksumtype=="crc64_iso"):
+  catfileheadercshex = format(crc64_iso(fileheader.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+ elif(CheckSumSupportAlt(fprechecksumtype, hashlib_guaranteed)):
+  checksumoutstr = hashlib.new(fprechecksumtype);
+  checksumoutstr.update(fileheader.encode('UTF-8'));
+  catfileheadercshex = checksumoutstr.hexdigest().lower();
+ else:
+  catfileheadercshex = format(0, 'x').lower();
+ fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[5]);
+ if(verbose):
+  VerbosePrintOut("Checking File Header Checksum of file " + infile + " at offset " + str(0));
+ if(fprechecksum!=catfileheadercshex and not skipchecksum):
+  VerbosePrintOut("File Header Checksum Error with file " + infile + " at offset " + str(0));
+  return False;
+ while(il<fnumfiles):
+  catfhstart = catfp.tell();
+  if(formatspecs[7]):
+   catheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
+  else:
+   catheaderdata = ReadFileHeaderData(catfp, 23, formatspecs[5]);
+  catfheadsize = int(catheaderdata[0], 16);
+  catftype = int(catheaderdata[1], 16);
+  if(re.findall("^[.|/]", catheaderdata[2])):
+   catfname = catheaderdata[2];
+  else:
+   catfname = "./"+catheaderdata[2];
+  catfbasedir = os.path.dirname(catfname);
+  catflinkname = catheaderdata[3];
+  catfsize = int(catheaderdata[4], 16);
+  catfatime = int(catheaderdata[5], 16);
+  catfmtime = int(catheaderdata[6], 16);
+  catfctime = int(catheaderdata[7], 16);
+  catfbtime = int(catheaderdata[8], 16);
+  catfmode = int(catheaderdata[9], 16);
+  catfchmode = stat.S_IMODE(catfmode);
+  catftypemod = stat.S_IFMT(catfmode);
+  catfuid = int(catheaderdata[10], 16);
+  catfuname = catheaderdata[11];
+  catfgid = int(catheaderdata[12], 16);
+  catfgname = catheaderdata[13];
+  fid = int(catheaderdata[14], 16);
+  finode = int(catheaderdata[15], 16);
+  flinkcount = int(catheaderdata[16], 16);
+  catfdev_minor = int(catheaderdata[17], 16);
+  catfdev_major = int(catheaderdata[18], 16);
+  catfrdev_minor = int(catheaderdata[19], 16);
+  catfrdev_major = int(catheaderdata[20], 16);
+  catfextrasize = int(catheaderdata[21], 16);
+  catfextrafields = int(catheaderdata[22], 16);
+  extrafieldslist = [];
+  if(formatspecs[7]):
+   extrastart = 23;
+   extraend = extrastart + catfextrafields;
+   extrafieldslist = [];
+   if(extrastart<extraend):
+    extrafieldslist.append(catheaderdata[extrastart]);
+    extrastart = extrastart + 1;
+   catfchecksumtype = catheaderdata[extrastart].lower();
+   catfcs = catheaderdata[extrastart + 1].lower();
+   catfccs = catheaderdata[extrastart + 2].lower();
+  else:
+   extrafieldslist = [];
+   if(formatspecs[7]):
+    extrafieldslist = ReadFileHeaderData(catfp, catfextrafields, formatspecs[5]);
+   checksumsval = ReadFileHeaderData(catfp, 3, formatspecs[5]);
+   catfchecksumtype = checksumsval[0].lower();
+   catfcs = checksumsval[1].lower();
+   catfccs = checksumsval[2].lower();
+  hc = 0;
+  if(formatspecs[7]):
+   hcmax = len(catheaderdata) - 2;
+  else:
+   hcmax = len(catheaderdata);
+  hout = "";
+  while(hc<hcmax):
+   hout = hout + AppendNullByte(catheaderdata[hc], formatspecs[5]);
+   hc = hc + 1;
+  catfnumfields = 24 + catfextrafields;
+  if(catfchecksumtype=="none" or catfchecksumtype==""):
+   catnewfcs = 0;
+  elif(catfchecksumtype=="crc16" or catfchecksumtype=="crc16_ansi" or catfchecksumtype=="crc16_ibm"):
+   catnewfcs = format(crc16(hout.encode('UTF-8')) & 0xffff, '04x').lower();
+  elif(catfchecksumtype=="adler32"):
+   catnewfcs = format(zlib.adler32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
+  elif(catfchecksumtype=="crc32"):
+   catnewfcs = format(crc32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
+  elif(catfchecksumtype=="crc64_ecma"):
+   catnewfcs = format(crc64_ecma(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+  elif(catfchecksumtype=="crc64" or catfchecksumtype=="crc64_iso"):
+   catnewfcs = format(crc64_iso(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+  elif(CheckSumSupportAlt(catfchecksumtype, hashlib_guaranteed)):
+   checksumoutstr = hashlib.new(catfchecksumtype);
+   checksumoutstr.update(hout.encode('UTF-8'));
+   catnewfcs = checksumoutstr.hexdigest().lower();
+  if(verbose):
+   VerbosePrintOut("Checking File Header Checksum of file " + catfname + " at offset " + str(catfhstart));
+  if(catfcs!=catnewfcs and not skipchecksum):
+   VerbosePrintOut("File Header Checksum Error with file " + catfname + " at offset " + str(catfhstart));
+   return False;
+  catfhend = catfp.tell() - 1;
+  catfcontentstart = catfp.tell();
+  catfcontents = "";
+  pyhascontents = False;
+  if(catfsize>0):
+   catfcontents = catfp.read(catfsize);
+   if(catfchecksumtype=="none" or catfchecksumtype==""):
+    catnewfccs = 0;
+   elif(catfchecksumtype=="crc16" or catfchecksumtype=="crc16_ansi" or catfchecksumtype=="crc16_ibm"):
+    catnewfccs = format(crc16(catfcontents) & 0xffff, '04x').lower();
+   elif(catfchecksumtype=="crc16_ccitt"):
+    catnewfcs = format(crc16_ccitt(catfcontents) & 0xffff, '04x').lower();
+   elif(catfchecksumtype=="adler32"):
+    catnewfccs = format(zlib.adler32(catfcontents) & 0xffffffff, '08x').lower();
+   elif(catfchecksumtype=="crc32"):
+    catnewfccs = format(crc32(catfcontents) & 0xffffffff, '08x').lower();
+   elif(catfchecksumtype=="crc64_ecma"):
+    catnewfcs = format(crc64_ecma(catfcontents) & 0xffffffffffffffff, '016x').lower();
+   elif(catfchecksumtype=="crc64" or catfchecksumtype=="crc64_iso"):
+    catnewfcs = format(crc64_iso(catfcontents) & 0xffffffffffffffff, '016x').lower();
+   elif(CheckSumSupportAlt(catfchecksumtype, hashlib_guaranteed)):
+    checksumoutstr = hashlib.new(catfchecksumtype);
+    checksumoutstr.update(catfcontents);
+    catnewfccs = checksumoutstr.hexdigest().lower();
+   pyhascontents = True;
+   if(verbose):
+    VerbosePrintOut("Checking File Content Checksum of file " + catfname + " at offset " + str(catfcontentstart));
+   if(catfccs!=catnewfccs and skipchecksum):
+    VerbosePrintOut("File Content Checksum Error with file " + catfname + " at offset " + str(catfcontentstart));
+    return False;
+  catfp.seek(1, 1);
+  il = il + 1;
+ if(returnfp):
+  return catfp;
+ else:
+  catfp.close();
+  return True;
+
+create_alias_function("", __file_format_name__, "Validate", ArchiveFileValidate);
+
 def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
@@ -3192,7 +3453,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
     catnewfccs = checksumoutstr.hexdigest().lower();
    pyhascontents = True;
    if(catfccs!=catnewfccs and skipchecksum):
-    VerbosePrintOut("File Content Checksum Error with file " + catfname + " at offset " + str(catfhstart));
+    VerbosePrintOut("File Content Checksum Error with file " + catfname + " at offset " + str(catfcontentstart));
     return False;
   if(catfsize>0 and listonly):
    catfp.seek(catfsize, 1);
