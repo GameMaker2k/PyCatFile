@@ -65,6 +65,7 @@ __file_format_len__ = pycatfile.__file_format_len__;
 __file_format_hex__ = pycatfile.__file_format_hex__;
 __file_format_delimiter__ = pycatfile.__file_format_delimiter__;
 __file_format_list__ = pycatfile.__file_format_list__;
+__use_new_style__ = pycatfile.__use_new_style__;
 __project_url__ = pycatfile.__project_url__;
 __version_info__ = pycatfile.__version_info__;
 __version_date_info__ = pycatfile.__version_date_info__;
@@ -80,8 +81,8 @@ argparser.add_argument("-c", "--create", action="store_true", help="Perform conc
 argparser.add_argument("-checksum", "--checksum", default="crc32", help="Specify the type of checksum to use. Default is crc32.");
 argparser.add_argument("-e", "-x", "--extract", action="store_true", help="Perform extraction operation only.");
 argparser.add_argument("-format", "--format", default=__file_format_list__[0], help="Specify the format to use");
-argparser.add_argument("-delimiter", "--delimiter", default=__file_format_list__[4], help="Specify the format to use");
-argparser.add_argument("-formatver", "--formatver", default=__file_format_list__[5], help="Specify the format version");
+argparser.add_argument("-delimiter", "--delimiter", default=__file_format_list__[5], help="Specify the format to use");
+argparser.add_argument("-formatver", "--formatver", default=__file_format_list__[6], help="Specify the format version");
 argparser.add_argument("-l", "-t", "--list", action="store_true", help="List files included in the concatenated file.");
 argparser.add_argument("-repack", "--repack", action="store_true", help="Re-concatenate files, fixing checksum errors if any.");
 argparser.add_argument("-o", "--output", default=None, help="Specify the name for the extracted concatenated files or the output concatenated file.");
@@ -99,7 +100,9 @@ fnamemagic = fname;
 fnamelen = len(fname);
 fnamehex = binascii.hexlify(fname.encode("UTF-8")).decode("UTF-8");
 fnamever = getargs.formatver;
-fnamelist = [fname, fnamemagic, fnamelower, fnamelen, fnamehex, getargs.delimiter, fnamever];
+fnamesty = __use_new_style__;
+fnamelist = [fname, fnamemagic, fnamelower, fnamelen, fnamehex, getargs.delimiter, fnamever, fnamesty];
+print(__file_format_list__, fnamelist);
 
 # Determine actions based on user input
 should_create = getargs.create and not getargs.extract and not getargs.list;
