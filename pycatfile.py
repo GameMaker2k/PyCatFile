@@ -5787,7 +5787,7 @@ def upload_file_to_ftp_string(ftpstring, url):
  ftpfileo.close();
  return ftpfile;
 
-def download_file_from_http_file(url, headers):
+def download_file_from_http_file(url, headers=geturls_headers_pycatfile_python_alt):
  # Parse the URL to extract username and password if present
  parsed_url = urlparse(url);
  username = parsed_url.username;
