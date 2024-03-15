@@ -5092,7 +5092,7 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
    if(hasattr(os, "chown") and funame==listcatfiles['ffilelist'][lcfi]['funame'] and fgname==listcatfiles['ffilelist'][lcfi]['fgname'] and preservepermissions):
     os.chown(listcatfiles['ffilelist'][lcfi]['fname'], listcatfiles['ffilelist'][lcfi]['fuid'], listcatfiles['ffilelist'][lcfi]['fgid']);
    if(preservepermissions):
-    os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], int(listcatfiles['ffilelist'][lcfi]['fchmode'], 8));
+    os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], listcatfiles['ffilelist'][lcfi]['fchmode']);
    if(preservetime):
     os.utime(listcatfiles['ffilelist'][lcfi]['fname'], (listcatfiles['ffilelist'][lcfi]['fatime'], listcatfiles['ffilelist'][lcfi]['fmtime']));
   if(listcatfiles['ffilelist'][lcfi]['ftype']==1):
@@ -5133,7 +5133,7 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
      if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname'] and preservepermissions):
       os.chown(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
      if(preservepermissions):
-      os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], int(flinkinfo['fchmode'], 8));
+      os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fchmode']);
      if(preservetime):
       os.utime(listcatfiles['ffilelist'][lcfi]['fname'], (flinkinfo['fatime'], flinkinfo['fmtime']));
     if(flinkinfo['ftype']==1):
@@ -5141,15 +5141,18 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
     if(flinkinfo['ftype']==2):
      os.symlink(flinkinfo['flinkname'], listcatfiles['ffilelist'][lcfi]['fname']);
     if(flinkinfo['ftype']==5):
-     os.mkdir(listcatfiles['ffilelist'][lcfi]['fname'], int(flinkinfo['fchmode'], 8));
+     if(preservepermissions):
+      os.mkdir(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fchmode']);
+     else:
+      os.mkdir(listcatfiles['ffilelist'][lcfi]['fname']);
      if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname'] and preservepermissions):
       os.chown(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
      if(preservepermissions):
-      os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], int(flinkinfo['fchmode'], 8));
+      os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fchmode']);
      if(preservetime):
       os.utime(listcatfiles['ffilelist'][lcfi]['fname'], (flinkinfo['fatime'], flinkinfo['fmtime']));
     if(flinkinfo['ftype']==6 and hasattr(os, "mkfifo")):
-     os.mkfifo(listcatfiles['ffilelist'][lcfi]['fname'], int(flinkinfo['fchmode'], 8));
+     os.mkfifo(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fchmode']);
    else:
     os.link(listcatfiles['ffilelist'][lcfi]['flinkname'], listcatfiles['ffilelist'][lcfi]['fname']);
   if(listcatfiles['ffilelist'][lcfi]['ftype']==2):
@@ -5190,7 +5193,7 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
      if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname'] and preservepermissions):
       os.chown(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
      if(preservepermissions):
-      os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], int(flinkinfo['fchmode'], 8));
+      os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fchmode']);
      if(preservetime):
       os.utime(listcatfiles['ffilelist'][lcfi]['fname'], (flinkinfo['fatime'], flinkinfo['fmtime']));
     if(flinkinfo['ftype']==1):
@@ -5198,27 +5201,33 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
     if(flinkinfo['ftype']==2):
      os.symlink(flinkinfo['flinkname'], listcatfiles['ffilelist'][lcfi]['fname']);
     if(flinkinfo['ftype']==5):
-     os.mkdir(listcatfiles['ffilelist'][lcfi]['fname'], int(flinkinfo['fchmode'], 8));
+     if(preservepermissions):
+      os.mkdir(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fchmode']);
+     else:
+      os.mkdir(listcatfiles['ffilelist'][lcfi]['fname']);
      if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname'] and preservepermissions):
       os.chown(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
      if(preservepermissions):
-      os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], int(flinkinfo['fchmode'], 8));
+      os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fchmode']);
      if(preservetime):
       os.utime(listcatfiles['ffilelist'][lcfi]['fname'], (flinkinfo['fatime'], flinkinfo['fmtime']));
     if(flinkinfo['ftype']==6 and hasattr(os, "mkfifo")):
-     os.mkfifo(listcatfiles['ffilelist'][lcfi]['fname'], int(flinkinfo['fchmode'], 8));
+     os.mkfifo(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fchmode']);
    else:
     os.symlink(listcatfiles['ffilelist'][lcfi]['flinkname'], listcatfiles['ffilelist'][lcfi]['fname']);
   if(listcatfiles['ffilelist'][lcfi]['ftype']==5):
-   os.mkdir(listcatfiles['ffilelist'][lcfi]['fname'], int(listcatfiles['ffilelist'][lcfi]['fchmode'], 8));
+   if(preservepermissions):
+    os.mkdir(listcatfiles['ffilelist'][lcfi]['fname'], listcatfiles['ffilelist'][lcfi]['fchmode']);
+   else:
+    os.mkdir(listcatfiles['ffilelist'][lcfi]['fname']);
    if(hasattr(os, "chown") and funame==listcatfiles['ffilelist'][lcfi]['funame'] and fgname==listcatfiles['ffilelist'][lcfi]['fgname'] and preservepermissions):
     os.chown(listcatfiles['ffilelist'][lcfi]['fname'], listcatfiles['ffilelist'][lcfi]['fuid'], listcatfiles['ffilelist'][lcfi]['fgid']);
    if(preservepermissions):
-    os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], int(listcatfiles['ffilelist'][lcfi]['fchmode'], 8));
+    os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], listcatfiles['ffilelist'][lcfi]['fchmode']);
    if(preservetime):
     os.utime(listcatfiles['ffilelist'][lcfi]['fname'], (listcatfiles['ffilelist'][lcfi]['fatime'], listcatfiles['ffilelist'][lcfi]['fmtime']));
   if(listcatfiles['ffilelist'][lcfi]['ftype']==6 and hasattr(os, "mkfifo")):
-   os.mkfifo(listcatfiles['ffilelist'][lcfi]['fname'], int(listcatfiles['ffilelist'][lcfi]['fchmode'], 8));
+   os.mkfifo(listcatfiles['ffilelist'][lcfi]['fname'], listcatfiles['ffilelist'][lcfi]['fchmode']);
   lcfi = lcfi + 1;
  if(returnfp):
   return listcatfiles['ffilelist']['catfp'];
