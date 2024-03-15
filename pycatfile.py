@@ -24,7 +24,7 @@ if(sys.version[0]=="2"):
  from urlparse import urlparse, urlunparse, urlsplit, urlunsplit, urljoin;
 elif(sys.version[0]>="3"):
  from urllib.parse import urlunparse, urlsplit, urlunsplit, urljoin, urlencode;
- import urllib.parse as urlparse;
+ from urllib.parse import urlparse;
 
 if os.name == 'nt':  # Only modify if on Windows
  if sys.version[0] == "2":
@@ -98,6 +98,15 @@ try:
  havepysftp = True;
 except ImportError:
  havepysftp = False;
+
+try:
+ # Python 3 imports
+ from urllib.request import Request, build_opener, HTTPBasicAuthHandler;
+ from urllib.parse import urlparse;
+except ImportError:
+ # Python 2 imports
+ from urllib2 import Request, build_opener, HTTPBasicAuthHandler;
+ from urlparse import urlparse;
 
 if(sys.version[0]=="2"):
  try:
@@ -2510,13 +2519,30 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
   if(not catfp):
    return False;
   catfp.seek(0, 0);
+ elif(re.findall(r"^(http|https)\:\/\/", infile)):
+  catfp = download_file_from_http_file(infile);
+  catfp.seek(0, 0);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
+  if(not catfp):
+   return False;
+  catfp.seek(0, 0);
  elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
   catfp = download_file_from_ftp_file(infile);
+  catfp.seek(0, 0);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
+  if(not catfp):
+   return False;
+  catfp.seek(0, 0);
  elif(re.findall(r"^(sftp)\:\/\/", infile) and haveparamiko):
   if(__use_pysftp__):
    catfp = download_file_from_pysftp_file(infile);
   else:
    catfp = download_file_from_sftp_file(infile);
+  catfp.seek(0, 0);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
+  if(not catfp):
+   return False;
+  catfp.seek(0, 0);
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs);
@@ -2665,13 +2691,30 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
   if(not catfp):
    return False;
   catfp.seek(0, 0);
+ elif(re.findall(r"^(http|https)\:\/\/", infile)):
+  catfp = download_file_from_http_file(infile);
+  catfp.seek(0, 0);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
+  if(not catfp):
+   return False;
+  catfp.seek(0, 0);
  elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
   catfp = download_file_from_ftp_file(infile);
+  catfp.seek(0, 0);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
+  if(not catfp):
+   return False;
+  catfp.seek(0, 0);
  elif(re.findall(r"^(sftp)\:\/\/", infile) and haveparamiko):
   if(__use_pysftp__):
    catfp = download_file_from_pysftp_file(infile);
   else:
    catfp = download_file_from_sftp_file(infile);
+  catfp.seek(0, 0);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
+  if(not catfp):
+   return False;
+  catfp.seek(0, 0);
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs);
@@ -2830,13 +2873,30 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   if(not catfp):
    return False;
   catfp.seek(0, 0);
+ elif(re.findall(r"^(http|https)\:\/\/", infile)):
+  catfp = download_file_from_http_file(infile);
+  catfp.seek(0, 0);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
+  if(not catfp):
+   return False;
+  catfp.seek(0, 0);
  elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
   catfp = download_file_from_ftp_file(infile);
+  catfp.seek(0, 0);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
+  if(not catfp):
+   return False;
+  catfp.seek(0, 0);
  elif(re.findall(r"^(sftp)\:\/\/", infile) and haveparamiko):
   if(__use_pysftp__):
    catfp = download_file_from_pysftp_file(infile);
   else:
    catfp = download_file_from_sftp_file(infile);
+  catfp.seek(0, 0);
+  catfp = UncompressArchiveFile(catfp, formatspecs);
+  if(not catfp):
+   return False;
+  catfp.seek(0, 0);
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs);
@@ -5422,7 +5482,7 @@ if(rarfile_support):
 create_alias_function("Pack", __file_format_name__, "FromRarFileAlt", PackArchiveFileFromRarFileAlt);
 
 def download_file_from_ftp_file(url):
- urlparts = urlparse.urlparse(url);
+ urlparts = urlparse(url);
  file_name = os.path.basename(urlparts.path);
  file_dir = os.path.dirname(urlparts.path);
  if(urlparts.username is not None):
@@ -5469,7 +5529,7 @@ def download_file_from_ftp_string(url):
  return ftpfile.read();
 
 def upload_file_to_ftp_file(ftpfile, url):
- urlparts = urlparse.urlparse(url);
+ urlparts = urlparse(url);
  file_name = os.path.basename(urlparts.path);
  file_dir = os.path.dirname(urlparts.path);
  if(urlparts.username is not None):
@@ -5515,9 +5575,44 @@ def upload_file_to_ftp_string(ftpstring, url):
  ftpfileo.close();
  return ftpfile;
 
+def download_file_from_http_file(url, headers={}):
+ # Parse the URL to extract username and password if present
+ parsed_url = urlparse(url);
+ username = parsed_url.username;
+ password = parsed_url.password;
+ # Rebuild the URL without the username and password
+ rebuilt_url = parsed_url._replace(netloc=parsed_url.hostname).geturl();
+ # Create a Request object with the given URL (without credentials) and headers
+ request = Request(rebuilt_url, headers=headers);
+ # Create an opener object for handling URLs
+ if username and password:
+  # Create a password manager
+  password_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm() if 'urllib.request' in sys.modules else urllib2.HTTPPasswordMgrWithDefaultRealm();
+  # Add the username and password
+  password_mgr.add_password(None, rebuilt_url, username, password);
+  # Create an authentication handler using the password manager
+  auth_handler = HTTPBasicAuthHandler(password_mgr);
+  # Build the opener with the authentication handler
+  opener = build_opener(auth_handler);
+ else:
+  opener = build_opener();
+ # Open the URL using the custom opener
+ response = opener.open(request);
+ data = response.read();
+ # Write the data to a temporary file object
+ temp_file = BytesIO(data);
+ # Reset file pointer to the start
+ temp_file.seek(0);
+ # Return the temporary file object
+ return temp_file;
+
+def download_file_from_http_string(url, headers={}):
+ httpfile = download_file_from_http_file(url, headers);
+ return ftpfile.read();
+
 if(haveparamiko):
  def download_file_from_sftp_file(url):
-  urlparts = urlparse.urlparse(url);
+  urlparts = urlparse(url);
   file_name = os.path.basename(urlparts.path);
   file_dir = os.path.dirname(urlparts.path);
   if(urlparts.scheme=="http" or urlparts.scheme=="https"):
@@ -5573,7 +5668,7 @@ else:
 
 if(haveparamiko):
  def upload_file_to_sftp_file(sftpfile, url):
-  urlparts = urlparse.urlparse(url);
+  urlparts = urlparse(url);
   file_name = os.path.basename(urlparts.path);
   file_dir = os.path.dirname(urlparts.path);
   sftp_port = urlparts.port;
@@ -5630,7 +5725,7 @@ else:
 
 if(havepysftp):
  def download_file_from_pysftp_file(url):
-  urlparts = urlparse.urlparse(url);
+  urlparts = urlparse(url);
   file_name = os.path.basename(urlparts.path);
   file_dir = os.path.dirname(urlparts.path);
   if(urlparts.scheme=="http" or urlparts.scheme=="https"):
@@ -5683,7 +5778,7 @@ else:
 
 if(havepysftp):
  def upload_file_to_pysftp_file(sftpfile, url):
-  urlparts = urlparse.urlparse(url);
+  urlparts = urlparse(url);
   file_name = os.path.basename(urlparts.path);
   file_dir = os.path.dirname(urlparts.path);
   sftp_port = urlparts.port;
