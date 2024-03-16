@@ -3067,7 +3067,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
  invalid_archive = False;
  if(verbose):
   VerbosePrintOut("Checking File Header Checksum of file " + infile + " at offset " + str(0));
- if(fprechecksum!=catfileheadercshex and not skipchecksum):
+ if(fprechecksum!=catfileheadercshex):
   VerbosePrintOut("File Header Checksum Error with file " + infile + " at offset " + str(0));
   valid_archive = False;
   invalid_archive = True;
@@ -3153,7 +3153,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
    catnewfcs = checksumoutstr.hexdigest().lower();
   if(verbose):
    VerbosePrintOut("Checking File Header Checksum of file " + catfname + " at offset " + str(catfhstart));
-  if(catfcs!=catnewfcs and not skipchecksum):
+  if(catfcs!=catnewfcs):
    VerbosePrintOut("File Header Checksum Error with file " + catfname + " at offset " + str(catfhstart));
    valid_archive = False;
    invalid_archive = True;
@@ -3184,7 +3184,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
    pyhascontents = True;
    if(verbose):
     VerbosePrintOut("Checking File Content Checksum of file " + catfname + " at offset " + str(catfcontentstart));
-   if(catfccs!=catnewfccs and skipchecksum):
+   if(catfccs!=catnewfccs):
     VerbosePrintOut("File Content Checksum Error with file " + catfname + " at offset " + str(catfcontentstart));
     valid_archive = False;
     invalid_archive = True;
@@ -3197,6 +3197,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
    catfp.close();
    return True;
  else:
+  catfp.close();
   return False;
 
 create_alias_function("", __file_format_name__, "Validate", ArchiveFileValidate);
