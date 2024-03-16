@@ -3063,11 +3063,14 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
  else:
   catfileheadercshex = format(0, 'x').lower();
  fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[5]);
+ valid_archive = True;
+ invalid_archive = False;
  if(verbose):
   VerbosePrintOut("Checking File Header Checksum of file " + infile + " at offset " + str(0));
  if(fprechecksum!=catfileheadercshex and not skipchecksum):
   VerbosePrintOut("File Header Checksum Error with file " + infile + " at offset " + str(0));
-  return False;
+  valid_archive = False;
+  invalid_archive = True;
  while(il<fnumfiles):
   catfhstart = catfp.tell();
   if(formatspecs[7]):
@@ -3152,7 +3155,8 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
    VerbosePrintOut("Checking File Header Checksum of file " + catfname + " at offset " + str(catfhstart));
   if(catfcs!=catnewfcs and not skipchecksum):
    VerbosePrintOut("File Header Checksum Error with file " + catfname + " at offset " + str(catfhstart));
-   return False;
+   valid_archive = False;
+   invalid_archive = True;
   catfhend = catfp.tell() - 1;
   catfcontentstart = catfp.tell();
   catfcontents = "";
@@ -3182,14 +3186,18 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
     VerbosePrintOut("Checking File Content Checksum of file " + catfname + " at offset " + str(catfcontentstart));
    if(catfccs!=catnewfccs and skipchecksum):
     VerbosePrintOut("File Content Checksum Error with file " + catfname + " at offset " + str(catfcontentstart));
-    return False;
+    valid_archive = False;
+    invalid_archive = True;
   catfp.seek(1, 1);
   il = il + 1;
- if(returnfp):
-  return catfp;
+ if(valid_archive):
+  if(returnfp):
+   return catfp;
+  else:
+   catfp.close();
+   return True;
  else:
-  catfp.close();
-  return True;
+  return False;
 
 create_alias_function("", __file_format_name__, "Validate", ArchiveFileValidate);
 
