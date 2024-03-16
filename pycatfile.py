@@ -1695,6 +1695,15 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   if(not infile):
    return False;
   infile.seek(0, 0);
+ elif(re.findall(r"^(sftp)\:\/\/", infile) and haveparamiko):
+  if(__use_pysftp__):
+   infile = download_file_from_pysftp_file(infile);
+  else:
+   infile = download_file_from_sftp_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
  elif(not os.path.exists(infile) or not os.path.isfile(infile)):
   return False;
  elif(os.path.exists(infile) and os.path.isfile(infile)):
@@ -1998,6 +2007,15 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   infile.seek(0, 0);
  elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
   infile = download_file_from_ftp_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(re.findall(r"^(sftp)\:\/\/", infile) and haveparamiko):
+  if(__use_pysftp__):
+   infile = download_file_from_pysftp_file(infile);
+  else:
+   infile = download_file_from_sftp_file(infile);
   infile.seek(0, 0);
   if(not infile):
    return False;
@@ -2719,15 +2737,118 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
  if(seekto>=0):
   il = -1;
   while(il < seekto):
-   seekstart = catfp.tell();
-   preheaderdata = ReadFileHeaderData(catfp, 5, formatspecs[5]);
+   prefhstart = catfp.tell();
+   if(formatspecs[7]):
+    preheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
+   else:
+    preheaderdata = ReadFileHeaderData(catfp, 23, formatspecs[5]);
    prefheadsize = int(preheaderdata[0], 16);
-   prefseek = prefheadsize - (int(len(preheaderdata[1]) + 1) + int(len(preheaderdata[2]) + 1) + int(len(preheaderdata[3]) + 1) + int(len(preheaderdata[4]) + 1));
    preftype = int(preheaderdata[1], 16);
+   if(re.findall("^[.|/]", preheaderdata[2])):
+    prefname = preheaderdata[2];
+   else:
+    prefname = "./"+preheaderdata[2];
+   prefbasedir = os.path.dirname(prefname);
+   preflinkname = preheaderdata[3];
    prefsize = int(preheaderdata[4], 16);
-   catfp.seek(prefseek, 1);
-   catfp.seek(1, 1);
-   catfp.seek(prefsize, 1);
+   prefatime = int(preheaderdata[5], 16);
+   prefmtime = int(preheaderdata[6], 16);
+   prefctime = int(preheaderdata[7], 16);
+   prefbtime = int(preheaderdata[8], 16);
+   prefmode = int(preheaderdata[9], 16);
+   prefchmode = stat.S_IMODE(prefmode);
+   preftypemod = stat.S_IFMT(prefmode);
+   prefuid = int(preheaderdata[10], 16);
+   prefuname = preheaderdata[11];
+   prefgid = int(preheaderdata[12], 16);
+   prefgname = preheaderdata[13];
+   fid = int(preheaderdata[14], 16);
+   finode = int(preheaderdata[15], 16);
+   flinkcount = int(preheaderdata[16], 16);
+   prefdev_minor = int(preheaderdata[17], 16);
+   prefdev_major = int(preheaderdata[18], 16);
+   prefrdev_minor = int(preheaderdata[19], 16);
+   prefrdev_major = int(preheaderdata[20], 16);
+   prefextrasize = int(preheaderdata[21], 16);
+   prefextrafields = int(preheaderdata[22], 16);
+   extrafieldslist = [];
+   if(formatspecs[7]):
+    extrastart = 23;
+    extraend = extrastart + prefextrafields;
+    extrafieldslist = [];
+    if(extrastart<extraend):
+     extrafieldslist.append(preheaderdata[extrastart]);
+     extrastart = extrastart + 1;
+    prefchecksumtype = preheaderdata[extrastart].lower();
+    prefcs = preheaderdata[extrastart + 1].lower();
+    prefccs = preheaderdata[extrastart + 2].lower();
+   else:
+    extrafieldslist = [];
+    if(formatspecs[7]):
+     extrafieldslist = ReadFileHeaderData(catfp, prefextrafields, formatspecs[5]);
+    checksumsval = ReadFileHeaderData(catfp, 3, formatspecs[5]);
+    prefchecksumtype = checksumsval[0].lower();
+    prefcs = checksumsval[1].lower();
+    prefccs = checksumsval[2].lower();
+   hc = 0;
+   if(formatspecs[7]):
+    hcmax = len(preheaderdata) - 2;
+   else:
+    hcmax = len(preheaderdata);
+   hout = "";
+   while(hc<hcmax):
+    hout = hout + AppendNullByte(preheaderdata[hc], formatspecs[5]);
+    hc = hc + 1;
+   prefnumfields = 24 + prefextrafields;
+   if(prefchecksumtype=="none" or prefchecksumtype==""):
+    prenewfcs = 0;
+   elif(prefchecksumtype=="crc16" or prefchecksumtype=="crc16_ansi" or prefchecksumtype=="crc16_ibm"):
+    prenewfcs = format(crc16(hout.encode('UTF-8')) & 0xffff, '04x').lower();
+   elif(prefchecksumtype=="adler32"):
+    prenewfcs = format(zlib.adler32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   elif(prefchecksumtype=="crc32"):
+    prenewfcs = format(crc32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   elif(prefchecksumtype=="crc64_ecma"):
+    prenewfcs = format(crc64_ecma(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   elif(prefchecksumtype=="crc64" or prefchecksumtype=="crc64_iso"):
+    prenewfcs = format(crc64_iso(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   elif(CheckSumSupportAlt(prefchecksumtype, hashlib_guaranteed)):
+    checksumoutstr = hashlib.new(prefchecksumtype);
+    checksumoutstr.update(hout.encode('UTF-8'));
+    prenewfcs = checksumoutstr.hexdigest().lower();
+   if(prefcs!=prenewfcs and not skipchecksum):
+    VerbosePrintOut("File Header Checksum Error with file " + prefname + " at offset " + str(prefhstart));
+    return False;
+    valid_archive = False;
+    invalid_archive = True;
+   prefhend = catfp.tell() - 1;
+   prefcontentstart = catfp.tell();
+   prefcontents = "";
+   pyhascontents = False;
+   if(prefsize>0):
+    prefcontents = catfp.read(prefsize);
+    if(prefchecksumtype=="none" or prefchecksumtype==""):
+     prenewfccs = 0;
+    elif(prefchecksumtype=="crc16" or prefchecksumtype=="crc16_ansi" or prefchecksumtype=="crc16_ibm"):
+     prenewfccs = format(crc16(prefcontents) & 0xffff, '04x').lower();
+    elif(prefchecksumtype=="crc16_ccitt"):
+     prenewfcs = format(crc16_ccitt(prefcontents) & 0xffff, '04x').lower();
+    elif(prefchecksumtype=="adler32"):
+     prenewfccs = format(zlib.adler32(prefcontents) & 0xffffffff, '08x').lower();
+    elif(prefchecksumtype=="crc32"):
+     prenewfccs = format(crc32(prefcontents) & 0xffffffff, '08x').lower();
+    elif(prefchecksumtype=="crc64_ecma"):
+     prenewfcs = format(crc64_ecma(prefcontents) & 0xffffffffffffffff, '016x').lower();
+    elif(prefchecksumtype=="crc64" or prefchecksumtype=="crc64_iso"):
+     prenewfcs = format(crc64_iso(prefcontents) & 0xffffffffffffffff, '016x').lower();
+    elif(CheckSumSupportAlt(prefchecksumtype, hashlib_guaranteed)):
+     checksumoutstr = hashlib.new(prefchecksumtype);
+     checksumoutstr.update(prefcontents);
+     prenewfccs = checksumoutstr.hexdigest().lower();
+    pyhascontents = True;
+    if(prefccs!=prenewfccs and not skipchecksum):
+     VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
+     return False;
    catfp.seek(1, 1);
    il = il + 1;
  catfp.seek(seekstart, 0);
@@ -2889,15 +3010,118 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
  if(seekto>=0):
   il = -1;
   while(il < seekto):
-   seekstart = catfp.tell();
-   preheaderdata = ReadFileHeaderData(catfp, 5, formatspecs[5]);
+   prefhstart = catfp.tell();
+   if(formatspecs[7]):
+    preheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
+   else:
+    preheaderdata = ReadFileHeaderData(catfp, 23, formatspecs[5]);
    prefheadsize = int(preheaderdata[0], 16);
-   prefseek = prefheadsize - (int(len(preheaderdata[1]) + 1) + int(len(preheaderdata[2]) + 1) + int(len(preheaderdata[3]) + 1) + int(len(preheaderdata[4]) + 1));
    preftype = int(preheaderdata[1], 16);
+   if(re.findall("^[.|/]", preheaderdata[2])):
+    prefname = preheaderdata[2];
+   else:
+    prefname = "./"+preheaderdata[2];
+   prefbasedir = os.path.dirname(prefname);
+   preflinkname = preheaderdata[3];
    prefsize = int(preheaderdata[4], 16);
-   catfp.seek(prefseek, 1);
-   catfp.seek(1, 1);
-   catfp.seek(prefsize, 1);
+   prefatime = int(preheaderdata[5], 16);
+   prefmtime = int(preheaderdata[6], 16);
+   prefctime = int(preheaderdata[7], 16);
+   prefbtime = int(preheaderdata[8], 16);
+   prefmode = int(preheaderdata[9], 16);
+   prefchmode = stat.S_IMODE(prefmode);
+   preftypemod = stat.S_IFMT(prefmode);
+   prefuid = int(preheaderdata[10], 16);
+   prefuname = preheaderdata[11];
+   prefgid = int(preheaderdata[12], 16);
+   prefgname = preheaderdata[13];
+   fid = int(preheaderdata[14], 16);
+   finode = int(preheaderdata[15], 16);
+   flinkcount = int(preheaderdata[16], 16);
+   prefdev_minor = int(preheaderdata[17], 16);
+   prefdev_major = int(preheaderdata[18], 16);
+   prefrdev_minor = int(preheaderdata[19], 16);
+   prefrdev_major = int(preheaderdata[20], 16);
+   prefextrasize = int(preheaderdata[21], 16);
+   prefextrafields = int(preheaderdata[22], 16);
+   extrafieldslist = [];
+   if(formatspecs[7]):
+    extrastart = 23;
+    extraend = extrastart + prefextrafields;
+    extrafieldslist = [];
+    if(extrastart<extraend):
+     extrafieldslist.append(preheaderdata[extrastart]);
+     extrastart = extrastart + 1;
+    prefchecksumtype = preheaderdata[extrastart].lower();
+    prefcs = preheaderdata[extrastart + 1].lower();
+    prefccs = preheaderdata[extrastart + 2].lower();
+   else:
+    extrafieldslist = [];
+    if(formatspecs[7]):
+     extrafieldslist = ReadFileHeaderData(catfp, prefextrafields, formatspecs[5]);
+    checksumsval = ReadFileHeaderData(catfp, 3, formatspecs[5]);
+    prefchecksumtype = checksumsval[0].lower();
+    prefcs = checksumsval[1].lower();
+    prefccs = checksumsval[2].lower();
+   hc = 0;
+   if(formatspecs[7]):
+    hcmax = len(preheaderdata) - 2;
+   else:
+    hcmax = len(preheaderdata);
+   hout = "";
+   while(hc<hcmax):
+    hout = hout + AppendNullByte(preheaderdata[hc], formatspecs[5]);
+    hc = hc + 1;
+   prefnumfields = 24 + prefextrafields;
+   if(prefchecksumtype=="none" or prefchecksumtype==""):
+    prenewfcs = 0;
+   elif(prefchecksumtype=="crc16" or prefchecksumtype=="crc16_ansi" or prefchecksumtype=="crc16_ibm"):
+    prenewfcs = format(crc16(hout.encode('UTF-8')) & 0xffff, '04x').lower();
+   elif(prefchecksumtype=="adler32"):
+    prenewfcs = format(zlib.adler32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   elif(prefchecksumtype=="crc32"):
+    prenewfcs = format(crc32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   elif(prefchecksumtype=="crc64_ecma"):
+    prenewfcs = format(crc64_ecma(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   elif(prefchecksumtype=="crc64" or prefchecksumtype=="crc64_iso"):
+    prenewfcs = format(crc64_iso(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   elif(CheckSumSupportAlt(prefchecksumtype, hashlib_guaranteed)):
+    checksumoutstr = hashlib.new(prefchecksumtype);
+    checksumoutstr.update(hout.encode('UTF-8'));
+    prenewfcs = checksumoutstr.hexdigest().lower();
+   if(prefcs!=prenewfcs and not skipchecksum):
+    VerbosePrintOut("File Header Checksum Error with file " + prefname + " at offset " + str(prefhstart));
+    return False;
+    valid_archive = False;
+    invalid_archive = True;
+   prefhend = catfp.tell() - 1;
+   prefcontentstart = catfp.tell();
+   prefcontents = "";
+   pyhascontents = False;
+   if(prefsize>0):
+    prefcontents = catfp.read(prefsize);
+    if(prefchecksumtype=="none" or prefchecksumtype==""):
+     prenewfccs = 0;
+    elif(prefchecksumtype=="crc16" or prefchecksumtype=="crc16_ansi" or prefchecksumtype=="crc16_ibm"):
+     prenewfccs = format(crc16(prefcontents) & 0xffff, '04x').lower();
+    elif(prefchecksumtype=="crc16_ccitt"):
+     prenewfcs = format(crc16_ccitt(prefcontents) & 0xffff, '04x').lower();
+    elif(prefchecksumtype=="adler32"):
+     prenewfccs = format(zlib.adler32(prefcontents) & 0xffffffff, '08x').lower();
+    elif(prefchecksumtype=="crc32"):
+     prenewfccs = format(crc32(prefcontents) & 0xffffffff, '08x').lower();
+    elif(prefchecksumtype=="crc64_ecma"):
+     prenewfcs = format(crc64_ecma(prefcontents) & 0xffffffffffffffff, '016x').lower();
+    elif(prefchecksumtype=="crc64" or prefchecksumtype=="crc64_iso"):
+     prenewfcs = format(crc64_iso(prefcontents) & 0xffffffffffffffff, '016x').lower();
+    elif(CheckSumSupportAlt(prefchecksumtype, hashlib_guaranteed)):
+     checksumoutstr = hashlib.new(prefchecksumtype);
+     checksumoutstr.update(prefcontents);
+     prenewfccs = checksumoutstr.hexdigest().lower();
+    pyhascontents = True;
+    if(prefccs!=prenewfccs and not skipchecksum):
+     VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
+     return False;
    catfp.seek(1, 1);
    il = il + 1;
    filefound = False;
@@ -3345,14 +3569,118 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
  if(seekstart>0):
   il = 0;
   while(il < seekstart):
-   preheaderdata = ReadFileHeaderData(catfp, 5, formatspecs[5]);
+   prefhstart = catfp.tell();
+   if(formatspecs[7]):
+    preheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
+   else:
+    preheaderdata = ReadFileHeaderData(catfp, 23, formatspecs[5]);
    prefheadsize = int(preheaderdata[0], 16);
-   prefseek = prefheadsize - (int(len(preheaderdata[1]) + 1) + int(len(preheaderdata[2]) + 1) + int(len(preheaderdata[3]) + 1) + int(len(preheaderdata[4]) + 1));
    preftype = int(preheaderdata[1], 16);
+   if(re.findall("^[.|/]", preheaderdata[2])):
+    prefname = preheaderdata[2];
+   else:
+    prefname = "./"+preheaderdata[2];
+   prefbasedir = os.path.dirname(prefname);
+   preflinkname = preheaderdata[3];
    prefsize = int(preheaderdata[4], 16);
-   catfp.seek(prefseek, 1);
-   catfp.seek(1, 1);
-   catfp.seek(prefsize, 1);
+   prefatime = int(preheaderdata[5], 16);
+   prefmtime = int(preheaderdata[6], 16);
+   prefctime = int(preheaderdata[7], 16);
+   prefbtime = int(preheaderdata[8], 16);
+   prefmode = int(preheaderdata[9], 16);
+   prefchmode = stat.S_IMODE(prefmode);
+   preftypemod = stat.S_IFMT(prefmode);
+   prefuid = int(preheaderdata[10], 16);
+   prefuname = preheaderdata[11];
+   prefgid = int(preheaderdata[12], 16);
+   prefgname = preheaderdata[13];
+   fid = int(preheaderdata[14], 16);
+   finode = int(preheaderdata[15], 16);
+   flinkcount = int(preheaderdata[16], 16);
+   prefdev_minor = int(preheaderdata[17], 16);
+   prefdev_major = int(preheaderdata[18], 16);
+   prefrdev_minor = int(preheaderdata[19], 16);
+   prefrdev_major = int(preheaderdata[20], 16);
+   prefextrasize = int(preheaderdata[21], 16);
+   prefextrafields = int(preheaderdata[22], 16);
+   extrafieldslist = [];
+   if(formatspecs[7]):
+    extrastart = 23;
+    extraend = extrastart + prefextrafields;
+    extrafieldslist = [];
+    if(extrastart<extraend):
+     extrafieldslist.append(preheaderdata[extrastart]);
+     extrastart = extrastart + 1;
+    prefchecksumtype = preheaderdata[extrastart].lower();
+    prefcs = preheaderdata[extrastart + 1].lower();
+    prefccs = preheaderdata[extrastart + 2].lower();
+   else:
+    extrafieldslist = [];
+    if(formatspecs[7]):
+     extrafieldslist = ReadFileHeaderData(catfp, prefextrafields, formatspecs[5]);
+    checksumsval = ReadFileHeaderData(catfp, 3, formatspecs[5]);
+    prefchecksumtype = checksumsval[0].lower();
+    prefcs = checksumsval[1].lower();
+    prefccs = checksumsval[2].lower();
+   hc = 0;
+   if(formatspecs[7]):
+    hcmax = len(preheaderdata) - 2;
+   else:
+    hcmax = len(preheaderdata);
+   hout = "";
+   while(hc<hcmax):
+    hout = hout + AppendNullByte(preheaderdata[hc], formatspecs[5]);
+    hc = hc + 1;
+   prefnumfields = 24 + prefextrafields;
+   if(prefchecksumtype=="none" or prefchecksumtype==""):
+    prenewfcs = 0;
+   elif(prefchecksumtype=="crc16" or prefchecksumtype=="crc16_ansi" or prefchecksumtype=="crc16_ibm"):
+    prenewfcs = format(crc16(hout.encode('UTF-8')) & 0xffff, '04x').lower();
+   elif(prefchecksumtype=="adler32"):
+    prenewfcs = format(zlib.adler32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   elif(prefchecksumtype=="crc32"):
+    prenewfcs = format(crc32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   elif(prefchecksumtype=="crc64_ecma"):
+    prenewfcs = format(crc64_ecma(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   elif(prefchecksumtype=="crc64" or prefchecksumtype=="crc64_iso"):
+    prenewfcs = format(crc64_iso(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   elif(CheckSumSupportAlt(prefchecksumtype, hashlib_guaranteed)):
+    checksumoutstr = hashlib.new(prefchecksumtype);
+    checksumoutstr.update(hout.encode('UTF-8'));
+    prenewfcs = checksumoutstr.hexdigest().lower();
+   if(prefcs!=prenewfcs and not skipchecksum):
+    VerbosePrintOut("File Header Checksum Error with file " + prefname + " at offset " + str(prefhstart));
+    return False;
+    valid_archive = False;
+    invalid_archive = True;
+   prefhend = catfp.tell() - 1;
+   prefcontentstart = catfp.tell();
+   prefcontents = "";
+   pyhascontents = False;
+   if(prefsize>0):
+    prefcontents = catfp.read(prefsize);
+    if(prefchecksumtype=="none" or prefchecksumtype==""):
+     prenewfccs = 0;
+    elif(prefchecksumtype=="crc16" or prefchecksumtype=="crc16_ansi" or prefchecksumtype=="crc16_ibm"):
+     prenewfccs = format(crc16(prefcontents) & 0xffff, '04x').lower();
+    elif(prefchecksumtype=="crc16_ccitt"):
+     prenewfcs = format(crc16_ccitt(prefcontents) & 0xffff, '04x').lower();
+    elif(prefchecksumtype=="adler32"):
+     prenewfccs = format(zlib.adler32(prefcontents) & 0xffffffff, '08x').lower();
+    elif(prefchecksumtype=="crc32"):
+     prenewfccs = format(crc32(prefcontents) & 0xffffffff, '08x').lower();
+    elif(prefchecksumtype=="crc64_ecma"):
+     prenewfcs = format(crc64_ecma(prefcontents) & 0xffffffffffffffff, '016x').lower();
+    elif(prefchecksumtype=="crc64" or prefchecksumtype=="crc64_iso"):
+     prenewfcs = format(crc64_iso(prefcontents) & 0xffffffffffffffff, '016x').lower();
+    elif(CheckSumSupportAlt(prefchecksumtype, hashlib_guaranteed)):
+     checksumoutstr = hashlib.new(prefchecksumtype);
+     checksumoutstr.update(prefcontents);
+     prenewfccs = checksumoutstr.hexdigest().lower();
+    pyhascontents = True;
+    if(prefccs!=prenewfccs and not skipchecksum):
+     VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
+     return False;
    catfp.seek(1, 1);
    il = il + 1;
  fileidnum = seekstart;
@@ -3829,6 +4157,15 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   if(not infile):
    return False;
   infile.seek(0, 0);
+ elif(re.findall(r"^(sftp)\:\/\/", infile) and haveparamiko):
+  if(__use_pysftp__):
+   infile = download_file_from_pysftp_file(infile);
+  else:
+   infile = download_file_from_sftp_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
  elif(not os.path.exists(infile) or not os.path.isfile(infile)):
   return False;
  elif(os.path.exists(infile) and os.path.isfile(infile)):
@@ -4073,6 +4410,15 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   infile.seek(0, 0);
  elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
   infile = download_file_from_ftp_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(re.findall(r"^(sftp)\:\/\/", infile) and haveparamiko):
+  if(__use_pysftp__):
+   infile = download_file_from_pysftp_file(infile);
+  else:
+   infile = download_file_from_sftp_file(infile);
   infile.seek(0, 0);
   if(not infile):
    return False;
@@ -5600,6 +5946,15 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
   if(not infile):
    return False;
   infile.seek(0, 0);
+ elif(re.findall(r"^(sftp)\:\/\/", infile) and haveparamiko):
+  if(__use_pysftp__):
+   infile = download_file_from_pysftp_file(infile);
+  else:
+   infile = download_file_from_sftp_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
  elif(not os.path.exists(infile) or not os.path.isfile(infile)):
   return False;
  elif(os.path.exists(infile) and os.path.isfile(infile)):
@@ -5693,6 +6048,15 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
   infile.seek(0, 0);
  elif(re.findall(r"^(ftp|ftps)\:\/\/", infile)):
   infile = download_file_from_ftp_file(infile);
+  infile.seek(0, 0);
+  if(not infile):
+   return False;
+  infile.seek(0, 0);
+ elif(re.findall(r"^(sftp)\:\/\/", infile) and haveparamiko):
+  if(__use_pysftp__):
+   infile = download_file_from_pysftp_file(infile);
+  else:
+   infile = download_file_from_sftp_file(infile);
   infile.seek(0, 0);
   if(not infile):
    return False;
