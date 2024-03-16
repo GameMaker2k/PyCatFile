@@ -78,6 +78,7 @@ argparser.add_argument("-V", "--version", action="version", version=__program_na
 argparser.add_argument("-i", "-f", "--input", help="Specify the file(s) to concatenate or the concatenated file to extract.", required=True);
 argparser.add_argument("-d", "-v", "--verbose", action="store_true", help="Enable verbose mode to display various debugging information.");
 argparser.add_argument("-c", "--create", action="store_true", help="Perform concatenation operation only.");
+argparser.add_argument("-validate", "--validate", action="store_true", help="Validate CatFile checksums");
 argparser.add_argument("-checksum", "--checksum", default="crc32", help="Specify the type of checksum to use. Default is crc32.");
 argparser.add_argument("-e", "-x", "--extract", action="store_true", help="Perform extraction operation only.");
 argparser.add_argument("-format", "--format", default=__file_format_list__[0], help="Specify the format to use");
@@ -109,6 +110,7 @@ should_create = getargs.create and not getargs.extract and not getargs.list;
 should_extract = getargs.extract and not getargs.create and not getargs.list;
 should_list = getargs.list and not getargs.create and not getargs.extract;
 should_repack = getargs.create and getargs.repack;
+should_validate = getargs.validate;
 
 # Execute the appropriate functions based on determined actions and arguments
 if should_create:
@@ -121,13 +123,13 @@ if should_create:
  else:
   pycatfile.PackArchiveFile(getargs.input, getargs.output, getargs.text, getargs.compression, getargs.level, False, getargs.checksum, [], fnamelist, getargs.verbose, False);
 
-if should_repack:
+elif should_repack:
  pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, False, [], fnamelist, getargs.verbose, False);
 
-if should_extract:
+elif should_extract:
  pycatfile.UnPackArchiveFile(getargs.input, getargs.output, False, 0, 0, False, fnamelist, getargs.verbose, getargs.preserve, getargs.preserve, False);
 
-if should_list:
+elif should_list:
  if getargs.converttar:
   pycatfile.TarFileListFiles(getargs.input, getargs.verbose, False);
  elif getargs.convertzip:
@@ -136,3 +138,10 @@ if should_list:
   pycatfile.RarFileListFiles(getargs.input, getargs.verbose, False);
  else:
   pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, False, fnamelist, getargs.verbose, False);
+
+elif should_validate:
+ fvalid = pycatfile.RePackArchiveFile(getargs.input, fnamelist, getargs.verbose, False);
+ if(fvalid):
+  pycatfile.VerbosePrintOut("File is valid: " + str(getargs.input));
+ else:
+  pycatfile.VerbosePrintOut("File is invalid: " + str(getargs.input));
