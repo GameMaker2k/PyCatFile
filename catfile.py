@@ -140,7 +140,7 @@ elif should_list:
   pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, False, fnamelist, getargs.verbose, False);
 
 elif should_validate:
- fvalid = pycatfile.RePackArchiveFile(getargs.input, fnamelist, getargs.verbose, False);
+ fvalid = pycatfile.ArchiveFileValidate(getargs.input, fnamelist, getargs.verbose, False);
  if(fvalid):
   pycatfile.VerbosePrintOut("File is valid: " + str(getargs.input));
  else:
