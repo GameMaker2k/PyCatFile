@@ -1401,12 +1401,14 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
    ftype = 5;
   elif(stat.S_ISFIFO(fpremode)):
    ftype = 6;
-  elif(hasattr(stat, "S_ISDOOR") and stat.S_ISDOOR(fpremode)):
+  elif(stat.S_ISSOCK(fpremode)):
    ftype = 8;
-  elif(hasattr(stat, "S_ISPORT") and stat.S_ISPORT(fpremode)):
+  elif(hasattr(stat, "S_ISDOOR") and stat.S_ISDOOR(fpremode)):
    ftype = 9;
-  elif(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
+  elif(hasattr(stat, "S_ISPORT") and stat.S_ISPORT(fpremode)):
    ftype = 10;
+  elif(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
+   ftype = 111;
   else:
    ftype = 0;
   flinkname = "";
@@ -1765,7 +1767,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
    ftype = 6;
   elif(member.issparse()):
    ffullmode = member.mode;
-   ftype = 11;
+   ftype = 12;
   else:
    ffullmode = member.mode;
    ftype = 0;
@@ -3818,12 +3820,14 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
    ftype = 5;
   elif(stat.S_ISFIFO(fpremode)):
    ftype = 6;
-  elif(hasattr(stat, "S_ISDOOR") and stat.S_ISDOOR(fpremode)):
+  elif(stat.S_ISSOCK(fpremode)):
    ftype = 8;
-  elif(hasattr(stat, "S_ISPORT") and stat.S_ISPORT(fpremode)):
+  elif(hasattr(stat, "S_ISDOOR") and stat.S_ISDOOR(fpremode)):
    ftype = 9;
-  elif(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
+  elif(hasattr(stat, "S_ISPORT") and stat.S_ISPORT(fpremode)):
    ftype = 10;
+  elif(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
+   ftype = 11;
   else:
    ftype = 0;
   flinkname = "";
@@ -4120,7 +4124,7 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
    ftype = 6;
   elif(member.issparse()):
    ffullmode = member.mode;
-   ftype = 11;
+   ftype = 12;
   else:
    ffullmode = member.mode;
    ftype = 0;
@@ -5834,7 +5838,7 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
    ftype = 6;
   elif(member.issparse()):
    ffullmode = member.mode;
-   ftype = 11;
+   ftype = 12;
   if(not verbose):
    VerbosePrintOut(member.name);
   elif(verbose):
