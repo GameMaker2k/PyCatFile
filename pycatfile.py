@@ -6435,10 +6435,8 @@ def download_file_from_http_file(url, headers=geturls_headers_pycatfile_python_a
  if parsed_url.port:
    netloc += ':' + str(parsed_url.port);
  rebuilt_url = urlunparse((parsed_url.scheme, netloc, parsed_url.path, parsed_url.params, parsed_url.query, parsed_url.fragment));
-
  # Create a temporary file object
- temp_file = tempfile.TemporaryFile();
-
+ temp_file = BytesIO();
  if haverequests:
   # Use the requests library if available
   if username and password:
