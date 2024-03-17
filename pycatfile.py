@@ -6433,16 +6433,20 @@ def download_file_from_http_file(url, headers=geturls_headers_pycatfile_python_a
  # Rebuild the URL without the username and password
  netloc = parsed_url.hostname;
  if parsed_url.port:
-  netloc += ':' + str(parsed_url.port);
+   netloc += ':' + str(parsed_url.port);
  rebuilt_url = urlunparse((parsed_url.scheme, netloc, parsed_url.path, parsed_url.params, parsed_url.query, parsed_url.fragment));
+
+ # Create a temporary file object
+ temp_file = tempfile.TemporaryFile();
+
  if haverequests:
   # Use the requests library if available
   if username and password:
-   response = requests.get(rebuilt_url, headers=headers, auth=(username, password));
+   response = requests.get(rebuilt_url, headers=headers, auth=(username, password), stream=True);
   else:
-   response = requests.get(rebuilt_url, headers=headers);
-  # Open a temporary file object and write the data
-  temp_file = BytesIO(response.content);
+   response = requests.get(rebuilt_url, headers=headers, stream=True);
+  response.raw.decode_content = True
+  shutil.copyfileobj(response.raw, temp_file);
  else:
   # Build a Request object for urllib
   request = Request(rebuilt_url, headers=headers);
@@ -6457,12 +6461,9 @@ def download_file_from_http_file(url, headers=geturls_headers_pycatfile_python_a
    # Build the opener with the authentication handler
    opener = build_opener(auth_handler);
   else:
-   opener = build_opener();
-  # Open the URL using the custom opener
-  response = opener.open(request);
-  data = response.read();
-  # Write the data to a temporary file object
-  temp_file = BytesIO(data);
+      opener = build_opener();
+  with opener.open(request) as response:
+   shutil.copyfileobj(response, temp_file);
  # Reset file pointer to the start
  temp_file.seek(0);
  # Return the temporary file object
