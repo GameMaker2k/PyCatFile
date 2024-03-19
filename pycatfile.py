@@ -494,23 +494,24 @@ def ReadFileHeaderDataBySize(fp, delimiter=__file_format_delimiter__):
  return HeaderOut;
 
 def ReadFileHeaderDataBySizeWithContent(fp, delimiter=__file_format_delimiter__):
- headerpresize = ReadTillNullByte(fp, delimiter);
- headersize = int(headerpresize, 16);
- headercontent = str(fp.read(headersize).decode('UTF-8')).split(delimiter);
- fp.seek(1, 1);
- rocount = 0;
- roend = int(len(headercontent));
- HeaderOut = [headerpresize];
- while(rocount<roend):
-  HeaderOut.append(headercontent[rocount]);
-  rocount = rocount + 1;
- catfsize = int(catheaderdata[4], 16);
+ HeaderOut = ReadFileHeaderDataBySize(fp, delimiter);
+ catfsize = int(HeaderOut[4], 16);
  catfcontents = "".encode('UTF-8');
  if(catfsize>0):
-  catfcontents = catfp.read(catfsize);
- catfp.seek(1, 1);
+  catfcontents = fp.read(catfsize);
+ fp.seek(1, 1);
  HeaderOut.append(catfcontents);
  return HeaderOut;
+
+def ReadFileDataBySizeWithContent(fp, delimiter=__file_format_delimiter__):
+ catheader = ReadFileHeaderData(fp, 4, delimiter);
+ catfnumfiles = int(catheader[1], 16);
+ countnum = 0;
+ catflist = [];
+ while(countnum < catfnumfiles):
+  catflist.append(ReadFileHeaderDataBySizeWithContent(fp, delimiter));
+  countnum = countnum + 1;
+ return catflist;
 
 def ReadFileHeaderDataByList(fp, listval=[], delimiter=__file_format_delimiter__):
  rocount = 0;
@@ -539,26 +540,24 @@ def ReadFileHeaderDataByListSize(fp, listval=[], delimiter=__file_format_delimit
  return HeaderOut;
 
 def ReadFileHeaderDataByListSizeWithContent(fp, listval=[], delimiter=__file_format_delimiter__):
- headerpresize = ReadTillNullByte(fp, delimiter);
- headersize = int(headerpresize, 16);
- headercontent = str(fp.read(headersize).decode('UTF-8')).split(delimiter);
- fp.seek(1, 1);
- rocount = 0;
- listcount = 1;
- roend = int(len(headercontent));
- HeaderOut = {listval[0]: headerpresize};
- while(rocount<roend):
-  RoundArray = {listval[rocount]: headercontent[rocount]};
-  HeaderOut.update(RoundArray);
-  rocount = rocount + 1;
-  listcount = listcount + 1;
+ HeaderOut = ReadFileHeaderDataByListSize(fp, listval, delimiter);
  catfsize = int(HeaderOut[listval[4]], 16);
  catfcontents = "".encode('UTF-8');
  if(catfsize>0):
-  catfcontents = catfp.read(catfsize);
- catfp.seek(1, 1);
+  catfcontents = fp.read(catfsize);
+ fp.seek(1, 1);
  HeaderOut.update({listval[rocount+1]: catfcontents});
  return HeaderOut;
+
+def ReadFileDataByListSizeWithContent(fp, listval=[], delimiter=__file_format_delimiter__):
+ catheader = ReadFileHeaderData(fp, 4, delimiter);
+ catfnumfiles = int(catheader[1], 16);
+ countnum = 0;
+ catflist = [];
+ while(countnum < catfnumfiles):
+  catflist.append(ReadFileHeaderDataByListSizeWithContent(fp, listval, delimiter));
+  countnum = countnum + 1;
+ return catflist;
 
 def AppendNullByte(indata, delimiter=__file_format_delimiter__):
  outdata = str(indata) + delimiter;
