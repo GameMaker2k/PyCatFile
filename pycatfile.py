@@ -18,12 +18,12 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import io, os, re, sys, time, stat, zlib, base64, shutil, socket, hashlib, datetime, logging, binascii, tempfile, zipfile, ftplib, platform;
+import io, os, re, sys, time, stat, zlib, base64, shutil, socket, hashlib, datetime, logging, binascii, tempfile, zipfile, platform;
 from ftplib import FTP, FTP_TLS;
 if(sys.version[0]=="2"):
- from urlparse import urlparse, urlunparse, urlsplit, urlunsplit, urljoin;
+ from urlparse import urlparse, urlunparse;
 elif(sys.version[0]>="3"):
- from urllib.parse import urlunparse, urlsplit, urlunsplit, urljoin, urlencode;
+ from urllib.parse import urlunparse;
  from urllib.parse import urlparse;
 
 if os.name == 'nt':  # Only modify if on Windows
@@ -51,11 +51,6 @@ except NameError:
  pass;
 except AttributeError:
  pass;
-
-try:
- import simplejson as json;
-except ImportError:
- import json;
 
 try:
  from zlib import crc32;

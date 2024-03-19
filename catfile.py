@@ -18,43 +18,10 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import os, sys, logging, argparse, pycatfile, binascii;
+import sys, argparse, pycatfile, binascii;
 from io import open as open;
 
 rarfile_support = pycatfile.rarfile_support;
-
-if(sys.version[0]=="2"):
- try:
-  from io import StringIO, BytesIO;
- except ImportError:
-  try:
-   from cStringIO import StringIO;
-   from cStringIO import StringIO as BytesIO;
-  except ImportError:
-   from StringIO import StringIO;
-   from StringIO import StringIO as BytesIO;
-elif(sys.version[0]>="3"):
- from io import StringIO, BytesIO;
-else:
- teststringio = 0;
- if(teststringio<=0):
-  try:
-   from cStringIO import StringIO as BytesIO;
-   teststringio = 1;
-  except ImportError:
-   teststringio = 0;
- if(teststringio<=0):
-  try:
-   from StringIO import StringIO as BytesIO;
-   teststringio = 2;
-  except ImportError:
-   teststringio = 0;
- if(teststringio<=0):
-  try:
-   from io import BytesIO;
-   teststringio = 3;
-  except ImportError:
-   teststringio = 0;
 
 __project__ = pycatfile.__project__;
 __program_name__ = pycatfile.__program_name__;
