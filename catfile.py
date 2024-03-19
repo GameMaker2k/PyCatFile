@@ -18,8 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import sys, argparse, pycatfile, binascii;
-from io import open as open;
+import argparse, pycatfile, binascii;
 
 rarfile_support = pycatfile.rarfile_support;
 
