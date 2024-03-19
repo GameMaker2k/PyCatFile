@@ -555,16 +555,18 @@ def ReadInFileBySizeWithContent(infile, listonly=False, formatspecs=__file_forma
    fextname = os.path.splitext(infile)[1];
    if(fextname==".gz"):
     compresscheck = "gzip";
-   if(fextname==".bz2"):
+   elif(fextname==".bz2"):
     compresscheck = "bzip2";
-   if(fextname==".zst"):
+   elif(fextname==".zst"):
     compresscheck = "zstd";
-   if(fextname==".lz4" or fextname==".clz4"):
+   elif(fextname==".lz4" or fextname==".clz4"):
     compresscheck = "lz4";
-   if(fextname==".lzo" or fextname==".lzop"):
+   elif(fextname==".lzo" or fextname==".lzop"):
     compresscheck = "lzo";
-   if(fextname==".lzma" or fextname==".xz"):
+   elif(fextname==".lzma" or fextname==".xz"):
     compresscheck = "lzma";
+   else:
+    return False;
   if(not compresscheck):
    return False;
   fp = UncompressFile(infile, formatspecs, "rb");
@@ -658,16 +660,18 @@ def ReadInFileByListSizeWithContent(infile, listval=[], listonly=False, formatsp
    fextname = os.path.splitext(infile)[1];
    if(fextname==".gz"):
     compresscheck = "gzip";
-   if(fextname==".bz2"):
+   elif(fextname==".bz2"):
     compresscheck = "bzip2";
-   if(fextname==".zst"):
+   elif(fextname==".zst"):
     compresscheck = "zstd";
-   if(fextname==".lz4" or fextname==".clz4"):
+   elif(fextname==".lz4" or fextname==".clz4"):
     compresscheck = "lz4";
-   if(fextname==".lzo" or fextname==".lzop"):
+   elif(fextname==".lzo" or fextname==".lzop"):
     compresscheck = "lzo";
-   if(fextname==".lzma" or fextname==".xz"):
+   elif(fextname==".lzma" or fextname==".xz"):
     compresscheck = "lzma";
+   else:
+    return False;
   if(not compresscheck):
    return False;
   fp = UncompressFile(infile, formatspecs, "rb");
@@ -1122,16 +1126,18 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_list__):
   fextname = os.path.splitext(infile)[1];
   if(fextname==".gz"):
    compresscheck = "gzip";
-  if(fextname==".bz2"):
+  elif(fextname==".bz2"):
    compresscheck = "bzip2";
-  if(fextname==".zst"):
+  elif(fextname==".zst"):
    compresscheck = "zstd";
-  if(fextname==".lz4"):
+  elif(fextname==".lz4"):
    compresscheck = "lz4";
-  if(fextname==".lzo" or fextname==".lzop"):
+  elif(fextname==".lzo" or fextname==".lzop"):
    compresscheck = "lzo";
-  if(fextname==".lzma" or fextname==".xz"):
+  elif(fextname==".lzma" or fextname==".xz"):
    compresscheck = "lzma";
+  else:
+   return False;
  if(not compresscheck):
   return False;
  if(compresscheck=="catfile"):
@@ -2737,16 +2743,18 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
    fextname = os.path.splitext(infile)[1];
    if(fextname==".gz"):
     compresscheck = "gzip";
-   if(fextname==".bz2"):
+   elif(fextname==".bz2"):
     compresscheck = "bzip2";
-   if(fextname==".zst"):
+   elif(fextname==".zst"):
     compresscheck = "zstd";
-   if(fextname==".lz4" or fextname==".clz4"):
+   elif(fextname==".lz4" or fextname==".clz4"):
     compresscheck = "lz4";
-   if(fextname==".lzo" or fextname==".lzop"):
+   elif(fextname==".lzo" or fextname==".lzop"):
     compresscheck = "lzo";
-   if(fextname==".lzma" or fextname==".xz"):
+   elif(fextname==".lzma" or fextname==".xz"):
     compresscheck = "lzma";
+   else:
+    return False;
   if(not compresscheck):
    return False;
   catfp = UncompressFile(infile, formatspecs, "rb");
@@ -2995,16 +3003,18 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
    fextname = os.path.splitext(infile)[1];
    if(fextname==".gz"):
     compresscheck = "gzip";
-   if(fextname==".bz2"):
+   elif(fextname==".bz2"):
     compresscheck = "bzip2";
-   if(fextname==".zst"):
+   elif(fextname==".zst"):
     compresscheck = "zstd";
-   if(fextname==".lz4" or fextname==".clz4"):
+   elif(fextname==".lz4" or fextname==".clz4"):
     compresscheck = "lz4";
-   if(fextname==".lzo" or fextname==".lzop"):
+   elif(fextname==".lzo" or fextname==".lzop"):
     compresscheck = "lzo";
-   if(fextname==".lzma" or fextname==".xz"):
+   elif(fextname==".lzma" or fextname==".xz"):
     compresscheck = "lzma";
+   else:
+    return False;
   if(not compresscheck):
    return False;
   catfp = UncompressFile(infile, formatspecs, "rb");
@@ -3265,16 +3275,18 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
    fextname = os.path.splitext(infile)[1];
    if(fextname==".gz"):
     compresscheck = "gzip";
-   if(fextname==".bz2"):
+   elif(fextname==".bz2"):
     compresscheck = "bzip2";
-   if(fextname==".zst"):
+   elif(fextname==".zst"):
     compresscheck = "zstd";
-   if(fextname==".lz4" or fextname==".clz4"):
+   elif(fextname==".lz4" or fextname==".clz4"):
     compresscheck = "lz4";
-   if(fextname==".lzo" or fextname==".lzop"):
+   elif(fextname==".lzo" or fextname==".lzop"):
     compresscheck = "lzo";
-   if(fextname==".lzma" or fextname==".xz"):
+   elif(fextname==".lzma" or fextname==".xz"):
     compresscheck = "lzma";
+   else:
+    return False;
   if(not compresscheck):
    return False;
   catfp = UncompressFile(infile, formatspecs, "rb");
@@ -3533,16 +3545,18 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    fextname = os.path.splitext(infile)[1];
    if(fextname==".gz"):
     compresscheck = "gzip";
-   if(fextname==".bz2"):
+   elif(fextname==".bz2"):
     compresscheck = "bzip2";
-   if(fextname==".zst"):
+   elif(fextname==".zst"):
     compresscheck = "zstd";
-   if(fextname==".lz4" or fextname==".clz4"):
+   elif(fextname==".lz4" or fextname==".clz4"):
     compresscheck = "lz4";
-   if(fextname==".lzo" or fextname==".lzop"):
+   elif(fextname==".lzo" or fextname==".lzop"):
     compresscheck = "lzo";
-   if(fextname==".lzma" or fextname==".xz"):
+   elif(fextname==".lzma" or fextname==".xz"):
     compresscheck = "lzma";
+   else:
+    return False;
   if(not compresscheck):
    return False;
   catfp = UncompressFile(infile, formatspecs, "rb");
