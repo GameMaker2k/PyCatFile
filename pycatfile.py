@@ -493,25 +493,82 @@ def ReadFileHeaderDataBySize(fp, delimiter=__file_format_delimiter__):
   rocount = rocount + 1;
  return HeaderOut;
 
-def ReadFileHeaderDataBySizeWithContent(fp, delimiter=__file_format_delimiter__):
+def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, delimiter=__file_format_delimiter__):
  HeaderOut = ReadFileHeaderDataBySize(fp, delimiter);
  catfsize = int(HeaderOut[4], 16);
  catfcontents = "".encode('UTF-8');
- if(catfsize>0):
+ if(catfsize>0 and not listonly):
   catfcontents = fp.read(catfsize);
+ elif(catfsize>0 and listonly):
+  fp.seek(catfsize, 1);
  fp.seek(1, 1);
  HeaderOut.append(catfcontents);
  return HeaderOut;
 
-def ReadFileDataBySizeWithContent(fp, delimiter=__file_format_delimiter__):
+def ReadFileDataBySizeWithContent(fp, listonly=False, delimiter=__file_format_delimiter__):
  catheader = ReadFileHeaderData(fp, 4, delimiter);
  catfnumfiles = int(catheader[1], 16);
  countnum = 0;
  catflist = [];
  while(countnum < catfnumfiles):
-  catflist.append(ReadFileHeaderDataBySizeWithContent(fp, delimiter));
+  catflist.append(ReadFileHeaderDataBySizeWithContent(fp, listonly, delimiter));
   countnum = countnum + 1;
  return catflist;
+
+def ReadInFileBySizeWithContent(infile, listonly=False, formatspecs=__file_format_list__):
+ delimiter = formatspecs[5];
+ if(hasattr(infile, "read") or hasattr(infile, "write")):
+  fp = infile;
+  fp.seek(0, 0);
+  fp = UncompressArchiveFile(fp, formatspecs);
+  checkcompressfile = CheckCompressionSubType(fp, formatspecs);
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
+   return False;
+  if(not fp):
+   return False;
+  fp.seek(0, 0);
+ elif(infile=="-"):
+  fp = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   shutil.copyfileobj(sys.stdin.buffer, fp);
+  else:
+   shutil.copyfileobj(sys.stdin, fp);
+  fp.seek(0, 0);
+  fp = UncompressArchiveFile(fp, formatspecs);
+  if(not fp):
+   return False;
+  fp.seek(0, 0);
+ elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", infile)):
+  fp = download_file_from_internet_file(infile);
+  fp = UncompressArchiveFile(fp, formatspecs);
+  fp.seek(0, 0);
+  if(not fp):
+   return False;
+  fp.seek(0, 0);
+ else:
+  infile = RemoveWindowsPath(infile);
+  checkcompressfile = CheckCompressionSubType(infile, formatspecs);
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
+   return False;
+  compresscheck = CheckCompressionType(infile, formatspecs, True);
+  if(not compresscheck):
+   fextname = os.path.splitext(infile)[1];
+   if(fextname==".gz"):
+    compresscheck = "gzip";
+   if(fextname==".bz2"):
+    compresscheck = "bzip2";
+   if(fextname==".zst"):
+    compresscheck = "zstd";
+   if(fextname==".lz4" or fextname==".clz4"):
+    compresscheck = "lz4";
+   if(fextname==".lzo" or fextname==".lzop"):
+    compresscheck = "lzo";
+   if(fextname==".lzma" or fextname==".xz"):
+    compresscheck = "lzma";
+  if(not compresscheck):
+   return False;
+  fp = UncompressFile(infile, formatspecs, "rb");
+ return ReadFileDataBySizeWithContent(fp, listonly, delimiter);
 
 def ReadFileHeaderDataByList(fp, listval=[], delimiter=__file_format_delimiter__):
  rocount = 0;
@@ -539,25 +596,82 @@ def ReadFileHeaderDataByListSize(fp, listval=[], delimiter=__file_format_delimit
   listcount = listcount + 1;
  return HeaderOut;
 
-def ReadFileHeaderDataByListSizeWithContent(fp, listval=[], delimiter=__file_format_delimiter__):
+def ReadFileHeaderDataByListSizeWithContent(fp, listval=[], listonly=False, delimiter=__file_format_delimiter__):
  HeaderOut = ReadFileHeaderDataByListSize(fp, listval, delimiter);
  catfsize = int(HeaderOut[listval[4]], 16);
  catfcontents = "".encode('UTF-8');
- if(catfsize>0):
+ if(catfsize>0 and not listonly):
   catfcontents = fp.read(catfsize);
+ elif(catfsize>0 and listonly):
+  fp.seek(catfsize);
  fp.seek(1, 1);
  HeaderOut.update({listval[rocount+1]: catfcontents});
  return HeaderOut;
 
-def ReadFileDataByListSizeWithContent(fp, listval=[], delimiter=__file_format_delimiter__):
+def ReadFileDataByListSizeWithContent(fp, listval=[], listonly=False, delimiter=__file_format_delimiter__):
  catheader = ReadFileHeaderData(fp, 4, delimiter);
  catfnumfiles = int(catheader[1], 16);
  countnum = 0;
  catflist = [];
  while(countnum < catfnumfiles):
-  catflist.append(ReadFileHeaderDataByListSizeWithContent(fp, listval, delimiter));
+  catflist.append(ReadFileHeaderDataByListSizeWithContent(fp, listval, listonly, delimiter));
   countnum = countnum + 1;
  return catflist;
+
+def ReadInFileByListSizeWithContent(infile, listval=[], listonly=False, formatspecs=__file_format_list__):
+ delimiter = formatspecs[5];
+ if(hasattr(infile, "read") or hasattr(infile, "write")):
+  fp = infile;
+  fp.seek(0, 0);
+  fp = UncompressArchiveFile(fp, formatspecs);
+  checkcompressfile = CheckCompressionSubType(fp, formatspecs);
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
+   return False;
+  if(not fp):
+   return False;
+  fp.seek(0, 0);
+ elif(infile=="-"):
+  fp = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   shutil.copyfileobj(sys.stdin.buffer, fp);
+  else:
+   shutil.copyfileobj(sys.stdin, fp);
+  fp.seek(0, 0);
+  fp = UncompressArchiveFile(fp, formatspecs);
+  if(not fp):
+   return False;
+  fp.seek(0, 0);
+ elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", infile)):
+  fp = download_file_from_internet_file(infile);
+  fp = UncompressArchiveFile(fp, formatspecs);
+  fp.seek(0, 0);
+  if(not fp):
+   return False;
+  fp.seek(0, 0);
+ else:
+  infile = RemoveWindowsPath(infile);
+  checkcompressfile = CheckCompressionSubType(infile, formatspecs);
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
+   return False;
+  compresscheck = CheckCompressionType(infile, formatspecs, True);
+  if(not compresscheck):
+   fextname = os.path.splitext(infile)[1];
+   if(fextname==".gz"):
+    compresscheck = "gzip";
+   if(fextname==".bz2"):
+    compresscheck = "bzip2";
+   if(fextname==".zst"):
+    compresscheck = "zstd";
+   if(fextname==".lz4" or fextname==".clz4"):
+    compresscheck = "lz4";
+   if(fextname==".lzo" or fextname==".lzop"):
+    compresscheck = "lzo";
+   if(fextname==".lzma" or fextname==".xz"):
+    compresscheck = "lzma";
+  if(not compresscheck):
+   return False;
+  fp = UncompressFile(infile, formatspecs, "rb");
+ return ReadFileDataByListSizeWithContent(fp, listval, listonly, delimiter);
 
 def AppendNullByte(indata, delimiter=__file_format_delimiter__):
  outdata = str(indata) + delimiter;
