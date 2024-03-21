@@ -545,7 +545,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, 
   fp.seek(catfsize, 1);
  if(catfsize>0 and not listonly):
   newfccs = GetHeaderChecksum([catfcontents], HeaderOut[-3].lower(), formatspecs);
- elif(catfsize>0 and listonly):
+ else:
   newfccs = 0;
  if(fccs!=newfccs and not skipchecksum and not listonly):
   VerbosePrintOut("File Content Checksum Error with file " + fname + " at offset " + str(fcontentstart));
