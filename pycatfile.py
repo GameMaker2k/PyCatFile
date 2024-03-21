@@ -443,6 +443,39 @@ def GetDataFromArrayAlt(structure, path, default=None):
    return default;
  return element;
 
+def GetHeaderChecksum(inlist=[], checksumtype="crc32", formatspecs=__file_format_list__):
+ fileheader = AppendNullBytes(inlist, formatspecs[5]);
+ if(checksumtype=="none" or checksumtype==""):
+  catfileheadercshex = format(0, 'x').lower();
+ elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
+  catfileheadercshex = format(crc16(fileheader.encode('UTF-8')) & 0xffff, '04x').lower();
+ elif(checksumtype=="crc16_ccitt"):
+  catfileheadercshex = format(crc16_ccitt(fileheader.encode('UTF-8')) & 0xffff, '04x').lower();
+ elif(checksumtype=="adler32"):
+  catfileheadercshex = format(zlib.adler32(fileheader.encode('UTF-8')) & 0xffffffff, '08x').lower();
+ elif(checksumtype=="crc32"):
+  catfileheadercshex = format(crc32(fileheader.encode('UTF-8')) & 0xffffffff, '08x').lower();
+ elif(checksumtype=="crc64_ecma"):
+  catfileheadercshex = format(crc64_ecma(fileheader.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+ elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
+  catfileheadercshex = format(crc64_iso(fileheader.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+ elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
+  checksumoutstr = hashlib.new(checksumtype);
+  checksumoutstr.update(fileheader.encode('UTF-8'));
+  catfileheadercshex = checksumoutstr.hexdigest().lower();
+ else:
+  catfileheadercshex = format(0, 'x').lower();
+ return catfileheadercshex;
+
+def ValidateHeaderChecksum(inlist=[], checksumtype="crc32", inchecksum="0", formatspecs=__file_format_list__):
+ catfileheadercshex = GetHeaderChecksum(inlist, checksumtype, formatspecs);
+ inchecksum = inchecksum.lower();
+ catfileheadercshex = catfileheadercshex.lower();
+ if(inchecksum==catfileheadercshex):
+  return True;
+ else:
+  return False;
+
 def ReadTillNullByte(fp, delimiter=__file_format_delimiter__):
  curbyte = b"";
  curfullbyte = b"";
@@ -488,29 +521,52 @@ def ReadFileHeaderDataBySize(fp, delimiter=__file_format_delimiter__):
   rocount = rocount + 1;
  return HeaderOut;
 
-def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, delimiter=__file_format_delimiter__):
+def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
+ delimiter = formatspecs[5];
+ fheaderstart = fp.tell();
  HeaderOut = ReadFileHeaderDataBySize(fp, delimiter);
+ if(re.findall("^[.|/]", HeaderOut[2])):
+  fname = HeaderOut[2];
+ else:
+  fname = "./"+HeaderOut[2];
+ fchecksumtype = HeaderOut[-3].lower();
+ fcs = HeaderOut[-2].lower();
+ fccs = HeaderOut[-1].lower();
  catfsize = int(HeaderOut[4], 16);
+ newfcs = ValidateHeaderChecksum(HeaderOut[:-2], HeaderOut[-3].lower(), HeaderOut[-2].lower(), formatspecs);
+ if(fcs!=newfcs and not skipchecksum):
+  VerbosePrintOut("File Header Checksum Error with file " + fname + " at offset " + str(fheaderstart));
+  return False;
+ fcontentstart = fp.tell();
  catfcontents = "".encode('UTF-8');
  if(catfsize>0 and not listonly):
   catfcontents = fp.read(catfsize);
  elif(catfsize>0 and listonly):
   fp.seek(catfsize, 1);
+ newfccs = ValidateHeaderChecksum([catfcontents], HeaderOut[-3].lower(), HeaderOut[-1].lower(), formatspecs);
+ if(fccs!=newfccs and not skipchecksum and not listonly):
+  VerbosePrintOut("File Content Checksum Error with file " + fname + " at offset " + str(fcontentstart));
+  return False;
  fp.seek(1, 1);
  HeaderOut.append(catfcontents);
  return HeaderOut;
 
-def ReadFileDataBySizeWithContent(fp, listonly=False, delimiter=__file_format_delimiter__):
+def ReadFileDataBySizeWithContent(fp, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
+ delimiter = formatspecs[5];
  catheader = ReadFileHeaderData(fp, 4, delimiter);
+ headercheck = ValidateHeaderChecksum(catheader[:-1], catheader[2], catheader[3], formatspecs);
+ if(not headercheck and not skipchecksum):
+  VerbosePrintOut("File Header Checksum Error with file at offset " + str(0));
+  return False;
  catfnumfiles = int(catheader[1], 16);
  countnum = 0;
  catflist = [];
  while(countnum < catfnumfiles):
-  catflist.append(ReadFileHeaderDataBySizeWithContent(fp, listonly, delimiter));
+  catflist.append(ReadFileHeaderDataBySizeWithContent(fp, listonly, skipchecksum, formatspecs));
   countnum = countnum + 1;
  return catflist;
 
-def ReadInFileBySizeWithContent(infile, listonly=False, formatspecs=__file_format_list__):
+def ReadInFileBySizeWithContent(infile, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
  delimiter = formatspecs[5];
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   fp = infile;
@@ -565,7 +621,7 @@ def ReadInFileBySizeWithContent(infile, listonly=False, formatspecs=__file_forma
   if(not compresscheck):
    return False;
   fp = UncompressFile(infile, formatspecs, "rb");
- return ReadFileDataBySizeWithContent(fp, listonly, delimiter);
+ return ReadFileDataBySizeWithContent(fp, listonly, skipchecksum, formatspecs);
 
 def ReadFileHeaderDataByList(fp, listval=[], delimiter=__file_format_delimiter__):
  rocount = 0;
@@ -578,14 +634,10 @@ def ReadFileHeaderDataByList(fp, listval=[], delimiter=__file_format_delimiter__
  return HeaderOut;
 
 def ReadFileHeaderDataByListSize(fp, listval=[], delimiter=__file_format_delimiter__):
- headerpresize = ReadTillNullByte(fp, delimiter);
- headersize = int(headerpresize, 16);
- headercontent = str(fp.read(headersize).decode('UTF-8')).split(delimiter);
- fp.seek(1, 1);
+ headercontent = ReadFileHeaderDataBySize(fp, delimiter);
  rocount = 0;
- listcount = 1;
+ listcount = 0;
  roend = int(len(headercontent));
- HeaderOut = {listval[0]: headerpresize};
  while(rocount<roend):
   RoundArray = {listval[rocount]: headercontent[rocount]};
   HeaderOut.update(RoundArray);
@@ -593,7 +645,8 @@ def ReadFileHeaderDataByListSize(fp, listval=[], delimiter=__file_format_delimit
   listcount = listcount + 1;
  return HeaderOut;
 
-def ReadFileHeaderDataByListSizeWithContent(fp, listval=[], listonly=False, delimiter=__file_format_delimiter__):
+def ReadFileHeaderDataByListSizeWithContent(fp, listval=[], listonly=False, formatspecs=__file_format_list__):
+ delimiter = formatspecs[5];
  HeaderOut = ReadFileHeaderDataByListSize(fp, listval, delimiter);
  catfsize = int(HeaderOut[listval[4]], 16);
  catfcontents = "".encode('UTF-8');
@@ -602,10 +655,11 @@ def ReadFileHeaderDataByListSizeWithContent(fp, listval=[], listonly=False, deli
  elif(catfsize>0 and listonly):
   fp.seek(catfsize);
  fp.seek(1, 1);
- HeaderOut.update({listval[rocount+1]: catfcontents});
+ HeaderOut.update({listval[:-1]: catfcontents});
  return HeaderOut;
 
-def ReadFileDataByListSizeWithContent(fp, listval=[], listonly=False, delimiter=__file_format_delimiter__):
+def ReadFileDataByListSizeWithContent(fp, listval=[], listonly=False, formatspecs=__file_format_list__):
+ delimiter = formatspecs[5];
  catheader = ReadFileHeaderData(fp, 4, delimiter);
  catfnumfiles = int(catheader[1], 16);
  countnum = 0;
@@ -670,7 +724,7 @@ def ReadInFileByListSizeWithContent(infile, listval=[], listonly=False, formatsp
   if(not compresscheck):
    return False;
   fp = UncompressFile(infile, formatspecs, "rb");
- return ReadFileDataByListSizeWithContent(fp, listval, listonly, delimiter);
+ return ReadFileDataByListSizeWithContent(fp, listval, listonly, formatspecs);
 
 def AppendNullByte(indata, delimiter=__file_format_delimiter__):
  outdata = str(indata) + delimiter;
@@ -684,64 +738,6 @@ def AppendNullBytes(indata=[], delimiter=__file_format_delimiter__):
   outdata = outdata + AppendNullByte(indata[inum], delimiter);
   inum = inum + 1;
  return outdata;
-
-def ReadTillNullByteAlt(fp, delimiter=__file_format_delimiter__):
- """Read bytes from file pointer until a null byte is encountered."""
- bytes_list = []  # Use list for efficient append operation.
- while True:
-  cur_byte = fp.read(1);
-  if cur_byte == delimiter.encode() or not cur_byte:
-   break;
-  bytes_list.append(cur_byte);
- return b''.join(bytes_list).decode('UTF-8');
-
-def ReadUntilNullByteAlt(fp, delimiter=__file_format_delimiter__):
- return ReadTillNullByteAlt(fp, delimiter);
-
-def ReadFileHeaderDataAlt(fp, rounds=0, delimiter=__file_format_delimiter__):
- """Read multiple null-byte terminated strings from a file."""
- header_out = [];
- for round_count in range(rounds):
-  header_out[round_count] = ReadTillNullByteAlt(fp, delimiter);
- return header_out;
-
-def ReadFileHeaderDataBySizeAlt(fp, delimiter=__file_format_delimiter__):
- # Read and convert header size from hexadecimal to integer
- header_pre_size = ReadTillNullByte(fp, delimiter);
- header_size = int(header_pre_size, 16);
- # Read and split the header content
- header_content = str(fp.read(header_size).decode('UTF-8')).split(delimiter);
- fp.seek(1, 1);
- # Prepend the pre-size and return the combined list
- return [header_pre_size] + header_content;
-
-def ReadFileHeaderDataByListSizeAlt(fp, listval=[], delimiter=__file_format_delimiter__):
- # Read the size and content from the header
- header_pre_size = ReadTillNullByte(fp, delimiter);
- header_size = int(header_pre_size, 16);
- header_content = str(fp.read(header_size).decode('UTF-8')).split(delimiter);
- fp.seek(1, 1);
- # Initialize HeaderOut with the header pre-size if listval is not empty
- HeaderOut = {listval[0]: header_pre_size} if listval else {};
- # Map the remaining listval items to their corresponding header content, starting from the second item
- for i in range(1, min(len(header_content) + 1, len(listval))):
-  HeaderOut[listval[i]] = header_content[i - 1];  # -1 because header_content is 0-indexed
- return HeaderOut;
-
-def ReadFileHeaderDataByListAlt(fp, listval=[], delimiter=__file_format_delimiter__):
- """Read multiple null-byte terminated strings from a file."""
- header_out = {};
- for round_count in listval:
-  header_out.append(ReadTillNullByteAlt(fp, delimiter));
- return header_out;
-
-def AppendNullByteAlt(indata, delimiter=__file_format_delimiter__):
- """Append a null byte to the given data."""
- return str(indata) + delimiter;
-
-def AppendNullBytesAlt(indata=[], delimiter=__file_format_delimiter__):
- """Append a null byte to each element in the list and concatenate."""
- return delimiter.join(map(str, indata)) + delimiter;  # Efficient concatenation with null byte.
 
 def PrintPermissionString(fchmode, ftype):
  permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
@@ -2802,7 +2798,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
  fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[5]);
  fheadtell = len(fileheader);
  if(fprechecksum!=catfileheadercshex and not skipchecksum):
-  VerbosePrintOut("File Header Checksum Error with file " + infile + " at offset " + str(catfp.tell()));
+  VerbosePrintOut("File Header Checksum Error with file " + infile + " at offset " + str(0));
   return False;
  catversions = re.search(r'(.*?)(\d+)$', catstring).groups();
  catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}};
@@ -3062,7 +3058,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
  fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[5]);
  fheadtell = len(fileheader);
  if(fprechecksum!=catfileheadercshex and not skipchecksum):
-  VerbosePrintOut("File Header Checksum Error with file " + infile + " at offset " + str(catfp.tell()));
+  VerbosePrintOut("File Header Checksum Error with file " + infile + " at offset " + str(0));
   return False;
  catversions = re.search(r'(.*?)(\d+)$', catstring).groups();
  catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}};
