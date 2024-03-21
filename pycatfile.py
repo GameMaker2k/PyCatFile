@@ -443,35 +443,37 @@ def GetDataFromArrayAlt(structure, path, default=None):
    return default;
  return element;
 
-def GetHeaderChecksum(inlist=[], checksumtype="crc32", formatspecs=__file_format_list__):
+def GetHeaderChecksum(inlist=[], checksumtype="crc32", encodedata=True, formatspecs=__file_format_list__):
  if isinstance(inlist, list):
   fileheader = AppendNullBytes(inlist, formatspecs[5]);
  else:
   fileheader = AppendNullByte(inlist, formatspecs[5]);
+ if(encodedata):
+  fileheader = fileheader.encode('UTF-8');
  if(checksumtype=="none" or checksumtype==""):
   catfileheadercshex = format(0, 'x').lower();
  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
-  catfileheadercshex = format(crc16(fileheader.encode('UTF-8')) & 0xffff, '04x').lower();
+  catfileheadercshex = format(crc16(fileheader) & 0xffff, '04x').lower();
  elif(checksumtype=="crc16_ccitt"):
-  catfileheadercshex = format(crc16_ccitt(fileheader.encode('UTF-8')) & 0xffff, '04x').lower();
+  catfileheadercshex = format(crc16_ccitt(fileheader) & 0xffff, '04x').lower();
  elif(checksumtype=="adler32"):
-  catfileheadercshex = format(zlib.adler32(fileheader.encode('UTF-8')) & 0xffffffff, '08x').lower();
+  catfileheadercshex = format(zlib.adler32(fileheader) & 0xffffffff, '08x').lower();
  elif(checksumtype=="crc32"):
-  catfileheadercshex = format(crc32(fileheader.encode('UTF-8')) & 0xffffffff, '08x').lower();
+  catfileheadercshex = format(crc32(fileheader) & 0xffffffff, '08x').lower();
  elif(checksumtype=="crc64_ecma"):
-  catfileheadercshex = format(crc64_ecma(fileheader.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+  catfileheadercshex = format(crc64_ecma(fileheader) & 0xffffffffffffffff, '016x').lower();
  elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
-  catfileheadercshex = format(crc64_iso(fileheader.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+  catfileheadercshex = format(crc64_iso(fileheader) & 0xffffffffffffffff, '016x').lower();
  elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
   checksumoutstr = hashlib.new(checksumtype);
-  checksumoutstr.update(fileheader.encode('UTF-8'));
+  checksumoutstr.update(fileheader);
   catfileheadercshex = checksumoutstr.hexdigest().lower();
  else:
   catfileheadercshex = format(0, 'x').lower();
  return catfileheadercshex;
 
 def ValidateHeaderChecksum(inlist=[], checksumtype="crc32", inchecksum="0", formatspecs=__file_format_list__):
- catfileheadercshex = GetHeaderChecksum(inlist, checksumtype, formatspecs);
+ catfileheadercshex = GetHeaderChecksum(inlist, checksumtype, True, formatspecs);
  inchecksum = inchecksum.lower();
  catfileheadercshex = catfileheadercshex.lower();
  if(inchecksum==catfileheadercshex):
@@ -536,7 +538,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, 
  fcs = HeaderOut[-2].lower();
  fccs = HeaderOut[-1].lower();
  catfsize = int(HeaderOut[4], 16);
- newfcs = GetHeaderChecksum(HeaderOut[:-2], HeaderOut[-3].lower(), formatspecs);
+ newfcs = GetHeaderChecksum(HeaderOut[:-2], HeaderOut[-3].lower(), True, formatspecs);
  if(fcs!=newfcs and not skipchecksum):
   VerbosePrintOut("File Header Checksum Error with file " + fname + " at offset " + str(fheaderstart));
   return False;
@@ -547,7 +549,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, 
  elif(catfsize>0 and listonly):
   fp.seek(catfsize, 1);
  if(catfsize>0 and not listonly):
-  newfccs = GetHeaderChecksum(catfcontents, HeaderOut[-3].lower(), formatspecs);
+  newfccs = GetHeaderChecksum(catfcontents, HeaderOut[-3].lower(), False, formatspecs);
  else:
   newfccs = 0;
  if(fccs!=newfccs and not skipchecksum and not listonly):
