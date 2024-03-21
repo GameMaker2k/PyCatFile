@@ -472,11 +472,45 @@ def GetHeaderChecksum(inlist=[], checksumtype="crc32", encodedata=True, formatsp
   catfileheadercshex = format(0, 'x').lower();
  return catfileheadercshex;
 
+def GetFileChecksum(infile, checksumtype="crc32", encodedata=True, formatspecs=__file_format_list__):
+ if(encodedata):
+  infile = infile.encode('UTF-8');
+ if(checksumtype=="none" or checksumtype==""):
+  catinfilecshex = format(0, 'x').lower();
+ elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
+  catinfilecshex = format(crc16(infile) & 0xffff, '04x').lower();
+ elif(checksumtype=="crc16_ccitt"):
+  catinfilecshex = format(crc16_ccitt(infile) & 0xffff, '04x').lower();
+ elif(checksumtype=="adler32"):
+  catinfilecshex = format(zlib.adler32(infile) & 0xffffffff, '08x').lower();
+ elif(checksumtype=="crc32"):
+  catinfilecshex = format(crc32(infile) & 0xffffffff, '08x').lower();
+ elif(checksumtype=="crc64_ecma"):
+  catinfilecshex = format(crc64_ecma(infile) & 0xffffffffffffffff, '016x').lower();
+ elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
+  catinfilecshex = format(crc64_iso(infile) & 0xffffffffffffffff, '016x').lower();
+ elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
+  checksumoutstr = hashlib.new(checksumtype);
+  checksumoutstr.update(infile);
+  catinfilecshex = checksumoutstr.hexdigest().lower();
+ else:
+  catinfilecshex = format(0, 'x').lower();
+ return catinfilecshex;
+
 def ValidateHeaderChecksum(inlist=[], checksumtype="crc32", inchecksum="0", formatspecs=__file_format_list__):
  catfileheadercshex = GetHeaderChecksum(inlist, checksumtype, True, formatspecs);
  inchecksum = inchecksum.lower();
  catfileheadercshex = catfileheadercshex.lower();
  if(inchecksum==catfileheadercshex):
+  return True;
+ else:
+  return False;
+
+def ValidateFileChecksum(infile, checksumtype="crc32", inchecksum="0", formatspecs=__file_format_list__):
+ catinfilecshex = GetFileChecksum(infile, checksumtype, True, formatspecs);
+ inchecksum = inchecksum.lower();
+ catinfilecshex = catinfilecshex.lower();
+ if(inchecksum==catinfilecshex):
   return True;
  else:
   return False;
@@ -548,10 +582,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, 
   catfcontents = fp.read(catfsize);
  elif(catfsize>0 and listonly):
   fp.seek(catfsize, 1);
- if(catfsize>0 and not listonly):
-  newfccs = GetHeaderChecksum(catfcontents, HeaderOut[-3].lower(), False, formatspecs);
- else:
-  newfccs = 0;
+ newfccs = GetFileChecksum(catfcontents, HeaderOut[-3].lower(), False, formatspecs);
  if(fccs!=newfccs and not skipchecksum and not listonly):
   VerbosePrintOut("File Content Checksum Error with file " + fname + " at offset " + str(fcontentstart));
   return False;
@@ -630,109 +661,6 @@ def ReadInFileBySizeWithContent(infile, listonly=False, skipchecksum=False, form
    return False;
   fp = UncompressFile(infile, formatspecs, "rb");
  return ReadFileDataBySizeWithContent(fp, listonly, skipchecksum, formatspecs);
-
-def ReadFileHeaderDataByList(fp, listval=[], delimiter=__file_format_delimiter__):
- rocount = 0;
- roend = int(len(listval));
- HeaderOut = {};
- while(rocount<roend):
-  RoundArray = {listval[rocount]: ReadTillNullByte(fp, delimiter)};
-  HeaderOut.update(RoundArray);
-  rocount = rocount + 1;
- return HeaderOut;
-
-def ReadFileHeaderDataByListSize(fp, listval=[], delimiter=__file_format_delimiter__):
- headercontent = ReadFileHeaderDataBySize(fp, delimiter);
- rocount = 0;
- listcount = 0;
- roend = int(len(headercontent));
- while(rocount<roend):
-  RoundArray = {listval[rocount]: headercontent[rocount]};
-  HeaderOut.update(RoundArray);
-  rocount = rocount + 1;
-  listcount = listcount + 1;
- return HeaderOut;
-
-def ReadFileHeaderDataByListSizeWithContent(fp, listval=[], listonly=False, formatspecs=__file_format_list__):
- delimiter = formatspecs[5];
- HeaderOut = ReadFileHeaderDataByListSize(fp, listval, delimiter);
- catfsize = int(HeaderOut[listval[4]], 16);
- catfcontents = "".encode('UTF-8');
- if(catfsize>0 and not listonly):
-  catfcontents = fp.read(catfsize);
- elif(catfsize>0 and listonly):
-  fp.seek(catfsize);
- fp.seek(1, 1);
- HeaderOut.update({listval[:-1]: catfcontents});
- return HeaderOut;
-
-def ReadFileDataByListSizeWithContent(fp, listval=[], listonly=False, formatspecs=__file_format_list__):
- delimiter = formatspecs[5];
- catheader = ReadFileHeaderData(fp, 4, delimiter);
- catfnumfiles = int(catheader[1], 16);
- countnum = 0;
- catflist = [];
- while(countnum < catfnumfiles):
-  catflist.append(ReadFileHeaderDataByListSizeWithContent(fp, listval, listonly, delimiter));
-  countnum = countnum + 1;
- return catflist;
-
-def ReadInFileByListSizeWithContent(infile, listval=[], listonly=False, formatspecs=__file_format_list__):
- delimiter = formatspecs[5];
- if(hasattr(infile, "read") or hasattr(infile, "write")):
-  fp = infile;
-  fp.seek(0, 0);
-  fp = UncompressArchiveFile(fp, formatspecs);
-  checkcompressfile = CheckCompressionSubType(fp, formatspecs);
-  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
-   return False;
-  if(not fp):
-   return False;
-  fp.seek(0, 0);
- elif(infile=="-"):
-  fp = BytesIO();
-  if(hasattr(sys.stdin, "buffer")):
-   shutil.copyfileobj(sys.stdin.buffer, fp);
-  else:
-   shutil.copyfileobj(sys.stdin, fp);
-  fp.seek(0, 0);
-  fp = UncompressArchiveFile(fp, formatspecs);
-  if(not fp):
-   return False;
-  fp.seek(0, 0);
- elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", infile)):
-  fp = download_file_from_internet_file(infile);
-  fp = UncompressArchiveFile(fp, formatspecs);
-  fp.seek(0, 0);
-  if(not fp):
-   return False;
-  fp.seek(0, 0);
- else:
-  infile = RemoveWindowsPath(infile);
-  checkcompressfile = CheckCompressionSubType(infile, formatspecs);
-  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
-   return False;
-  compresscheck = CheckCompressionType(infile, formatspecs, True);
-  if(not compresscheck):
-   fextname = os.path.splitext(infile)[1];
-   if(fextname==".gz"):
-    compresscheck = "gzip";
-   elif(fextname==".bz2"):
-    compresscheck = "bzip2";
-   elif(fextname==".zst"):
-    compresscheck = "zstd";
-   elif(fextname==".lz4" or fextname==".clz4"):
-    compresscheck = "lz4";
-   elif(fextname==".lzo" or fextname==".lzop"):
-    compresscheck = "lzo";
-   elif(fextname==".lzma" or fextname==".xz"):
-    compresscheck = "lzma";
-   else:
-    return False;
-  if(not compresscheck):
-   return False;
-  fp = UncompressFile(infile, formatspecs, "rb");
- return ReadFileDataByListSizeWithContent(fp, listval, listonly, formatspecs);
 
 def AppendNullByte(indata, delimiter=__file_format_delimiter__):
  outdata = str(indata) + delimiter;
