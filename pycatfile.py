@@ -444,7 +444,10 @@ def GetDataFromArrayAlt(structure, path, default=None):
  return element;
 
 def GetHeaderChecksum(inlist=[], checksumtype="crc32", formatspecs=__file_format_list__):
- fileheader = AppendNullBytes(inlist, formatspecs[5]);
+ if isinstance(inlist, list):
+  fileheader = AppendNullBytes(inlist, formatspecs[5]);
+ else:
+  fileheader = AppendNullByte(inlist, formatspecs[5]);
  if(checksumtype=="none" or checksumtype==""):
   catfileheadercshex = format(0, 'x').lower();
  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
@@ -544,7 +547,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, 
  elif(catfsize>0 and listonly):
   fp.seek(catfsize, 1);
  if(catfsize>0 and not listonly):
-  newfccs = GetHeaderChecksum([catfcontents], HeaderOut[-3].lower(), formatspecs);
+  newfccs = GetHeaderChecksum(catfcontents, HeaderOut[-3].lower(), formatspecs);
  else:
   newfccs = 0;
  if(fccs!=newfccs and not skipchecksum and not listonly):
