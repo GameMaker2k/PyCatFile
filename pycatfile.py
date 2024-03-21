@@ -533,7 +533,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, 
  fcs = HeaderOut[-2].lower();
  fccs = HeaderOut[-1].lower();
  catfsize = int(HeaderOut[4], 16);
- newfcs = ValidateHeaderChecksum(HeaderOut[:-2], HeaderOut[-3].lower(), HeaderOut[-2].lower(), formatspecs);
+ newfcs = GetHeaderChecksum(HeaderOut[:-2], HeaderOut[-3].lower(), formatspecs);
  if(fcs!=newfcs and not skipchecksum):
   VerbosePrintOut("File Header Checksum Error with file " + fname + " at offset " + str(fheaderstart));
   return False;
@@ -543,7 +543,10 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, 
   catfcontents = fp.read(catfsize);
  elif(catfsize>0 and listonly):
   fp.seek(catfsize, 1);
- newfccs = ValidateHeaderChecksum([catfcontents], HeaderOut[-3].lower(), HeaderOut[-1].lower(), formatspecs);
+ if(catfsize>0 and not listonly):
+  newfccs = GetHeaderChecksum([catfcontents], HeaderOut[-3].lower(), formatspecs);
+ elif(catfsize>0 and listonly):
+  newfccs = 0;
  if(fccs!=newfccs and not skipchecksum and not listonly):
   VerbosePrintOut("File Content Checksum Error with file " + fname + " at offset " + str(fcontentstart));
   return False;
