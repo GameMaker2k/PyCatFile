@@ -571,24 +571,93 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, 
  fchecksumtype = HeaderOut[-3].lower();
  fcs = HeaderOut[-2].lower();
  fccs = HeaderOut[-1].lower();
- catfsize = int(HeaderOut[4], 16);
+ fsize = int(HeaderOut[4], 16);
  newfcs = GetHeaderChecksum(HeaderOut[:-2], HeaderOut[-3].lower(), True, formatspecs);
  if(fcs!=newfcs and not skipchecksum):
   VerbosePrintOut("File Header Checksum Error with file " + fname + " at offset " + str(fheaderstart));
   return False;
+ fhend = fp.tell() - 1;
  fcontentstart = fp.tell();
- catfcontents = "".encode('UTF-8');
- if(catfsize>0 and not listonly):
-  catfcontents = fp.read(catfsize);
- elif(catfsize>0 and listonly):
-  fp.seek(catfsize, 1);
- newfccs = GetFileChecksum(catfcontents, HeaderOut[-3].lower(), False, formatspecs);
+ fcontents = "".encode('UTF-8');
+ if(fsize>0 and not listonly):
+  fcontents = fp.read(fsize);
+ elif(fsize>0 and listonly):
+  fp.seek(fsize, 1);
+ newfccs = GetFileChecksum(fcontents, HeaderOut[-3].lower(), False, formatspecs);
  if(fccs!=newfccs and not skipchecksum and not listonly):
   VerbosePrintOut("File Content Checksum Error with file " + fname + " at offset " + str(fcontentstart));
   return False;
  fp.seek(1, 1);
- HeaderOut.append(catfcontents);
+ fcontentend = fp.tell() - 1;
+ HeaderOut.append(fcontents);
  return HeaderOut;
+
+def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
+ delimiter = formatspecs[5];
+ fheaderstart = fp.tell();
+ HeaderOut = ReadFileHeaderDataBySize(fp, delimiter);
+ fheadsize = int(HeaderOut[0], 16);
+ ftype = int(HeaderOut[1], 16);
+ if(re.findall("^[.|/]", HeaderOut[2])):
+  fname = HeaderOut[2];
+ else:
+  fname = "./"+HeaderOut[2];
+ fbasedir = os.path.dirname(fname);
+ flinkname = HeaderOut[3];
+ fsize = int(HeaderOut[4], 16);
+ fatime = int(HeaderOut[5], 16);
+ fmtime = int(HeaderOut[6], 16);
+ fctime = int(HeaderOut[7], 16);
+ fbtime = int(HeaderOut[8], 16);
+ fmode = int(HeaderOut[9], 16);
+ fchmode = stat.S_IMODE(fmode);
+ ftypemod = stat.S_IFMT(fmode);
+ fuid = int(HeaderOut[10], 16);
+ funame = HeaderOut[11];
+ fgid = int(HeaderOut[12], 16);
+ fgname = HeaderOut[13];
+ fid = int(HeaderOut[14], 16);
+ finode = int(HeaderOut[15], 16);
+ flinkcount = int(HeaderOut[16], 16);
+ fdev_minor = int(HeaderOut[17], 16);
+ fdev_major = int(HeaderOut[18], 16);
+ frdev_minor = int(HeaderOut[19], 16);
+ frdev_major = int(HeaderOut[20], 16);
+ fextrasize = int(HeaderOut[21], 16);
+ fextrafields = int(HeaderOut[22], 16);
+ extrafieldslist = [];
+ extrastart = 23;
+ extraend = extrastart + fextrafields;
+ extrafieldslist = [];
+ if(extrastart<extraend):
+  extrafieldslist.append(HeaderOut[extrastart]);
+  extrastart = extrastart + 1;
+ fnumfields = 24 + fextrafields;
+ fchecksumtype = HeaderOut[extrastart].lower();
+ fcs = HeaderOut[extrastart + 1].lower();
+ fccs = HeaderOut[extrastart + 2].lower();
+ newfcs = GetHeaderChecksum(HeaderOut[:-2], HeaderOut[-3].lower(), True, formatspecs);
+ if(fcs!=newfcs and not skipchecksum):
+  VerbosePrintOut("File Header Checksum Error with file " + fname + " at offset " + str(fheaderstart));
+  return False;
+ fhend = fp.tell() - 1;
+ fcontentstart = fp.tell();
+ fcontents = "".encode('UTF-8');
+ pyhascontents = False;
+ if(fsize>0 and not listonly):
+  fcontents = fp.read(fsize);
+  pyhascontents = True;
+ elif(fsize>0 and listonly):
+  fp.seek(fsize, 1);
+  pyhascontents = False;
+ newfccs = GetFileChecksum(fcontents, HeaderOut[-3].lower(), False, formatspecs);
+ if(fccs!=newfccs and not skipchecksum and not listonly):
+  VerbosePrintOut("File Content Checksum Error with file " + fname + " at offset " + str(fcontentstart));
+  return False;
+ fp.seek(1, 1);
+ fcontentend = fp.tell() - 1;
+ catlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': fchecksumtype, 'fnumfields': fnumfields, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextralist': extrafieldslist, 'fheaderchecksum': fcs, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontents': fcontents}
+ return catlist;
 
 def ReadFileDataBySizeWithContent(fp, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
  delimiter = formatspecs[5];
@@ -597,13 +666,96 @@ def ReadFileDataBySizeWithContent(fp, listonly=False, skipchecksum=False, format
  if(not headercheck and not skipchecksum):
   VerbosePrintOut("File Header Checksum Error with file at offset " + str(0));
   return False;
- catfnumfiles = int(catheader[1], 16);
+ fnumfiles = int(catheader[1], 16);
  countnum = 0;
- catflist = [];
- while(countnum < catfnumfiles):
-  catflist.append(ReadFileHeaderDataBySizeWithContent(fp, listonly, skipchecksum, formatspecs));
+ flist = [];
+ while(countnum < fnumfiles):
+  flist.append(ReadFileHeaderDataBySizeWithContent(fp, listonly, skipchecksum, formatspecs));
   countnum = countnum + 1;
- return catflist;
+ return flist;
+
+def ReadFileDataBySizeWithContentToArray(fp, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
+ delimiter = formatspecs[5];
+ catheader = ReadFileHeaderData(fp, 4, delimiter);
+ headercheck = ValidateHeaderChecksum(catheader[:-1], catheader[2], catheader[3], formatspecs);
+ if(not headercheck and not skipchecksum):
+  VerbosePrintOut("File Header Checksum Error with file at offset " + str(0));
+  return False;
+ catstring = catheader[0];
+ catversion = re.findall(r"([\d]+)$", catstring);
+ catversions = re.search(r'(.*?)(\d+)$', catstring).groups();
+ fprenumfiles = catheader[1];
+ fnumfiles = int(fprenumfiles, 16);
+ fprechecksumtype = catheader[2];
+ fprechecksum = catheader[3];
+ catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}};
+ countnum = 0;
+ while(countnum < fnumfiles):
+  catlist['ffilelist'].update({countnum: {'fid': countnum, 'fidalt': countnum}});
+  catlist['ffilelist'][countnum].update(ReadFileHeaderDataBySizeWithContentToArray(fp, listonly, skipchecksum, formatspecs));
+  countnum = countnum + 1;
+ return catlist;
+
+def ReadFileDataBySizeWithContentToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
+ if(isinstance(infile, dict)):
+  listcatfiles = infile;
+ else:
+  if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
+   return False;
+  listcatfiles = ReadFileDataBySizeWithContentToArray(infile, listonly, skipchecksum, formatspecs);
+ if(not listcatfiles):
+  return False;
+ catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
+ lenlist = len(listcatfiles['ffilelist']);
+ if(seekstart>0):
+  lcfi = seekstart;
+ else:
+  lcfi = 0;
+ if(seekend>0 and seekend<listcatfiles['fnumfiles']):
+  lcfx = seekend;
+ else:
+  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+   lcfx = listcatfiles['fnumfiles'];
+  else:
+   lcfx = int(listcatfiles['fnumfiles']);
+ while(lcfi < lcfx):
+  filetoidarray = {listcatfiles['ffilelist'][lcfi]['fname']: listcatfiles['ffilelist'][lcfi]['fid']};
+  idtofilearray = {listcatfiles['ffilelist'][lcfi]['fid']: listcatfiles['ffilelist'][lcfi]['fname']};
+  catarray['filetoid'].update(filetoidarray);
+  catarray['idtofile'].update(idtofilearray);
+  if(listcatfiles['ffilelist'][lcfi]['ftype']==0 or listcatfiles['ffilelist'][lcfi]['ftype']==7):
+   catarray['filetypes']['files']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['files']['idtofile'].update(idtofilearray);
+  if(listcatfiles['ffilelist'][lcfi]['ftype']==1):
+   catarray['filetypes']['hardlinks']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['hardlinks']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['links']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['links']['idtofile'].update(idtofilearray);
+  if(listcatfiles['ffilelist'][lcfi]['ftype']==2):
+   catarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['links']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['links']['idtofile'].update(idtofilearray);
+  if(listcatfiles['ffilelist'][lcfi]['ftype']==3):
+   catarray['filetypes']['character']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['character']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+  if(listcatfiles['ffilelist'][lcfi]['ftype']==4):
+   catarray['filetypes']['block']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['block']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+  if(listcatfiles['ffilelist'][lcfi]['ftype']==5):
+   catarray['filetypes']['directories']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['directories']['idtofile'].update(idtofilearray);
+  if(listcatfiles['ffilelist'][lcfi]['ftype']==6):
+   catarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+  lcfi = lcfi + 1;
+ return catarray;
 
 def ReadInFileBySizeWithContent(infile, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
  delimiter = formatspecs[5];
@@ -661,6 +813,124 @@ def ReadInFileBySizeWithContent(infile, listonly=False, skipchecksum=False, form
    return False;
   fp = UncompressFile(infile, formatspecs, "rb");
  return ReadFileDataBySizeWithContent(fp, listonly, skipchecksum, formatspecs);
+
+def ReadInFileBySizeWithContentToArray(infile, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
+ delimiter = formatspecs[5];
+ if(hasattr(infile, "read") or hasattr(infile, "write")):
+  fp = infile;
+  fp.seek(0, 0);
+  fp = UncompressArchiveFile(fp, formatspecs);
+  checkcompressfile = CheckCompressionSubType(fp, formatspecs);
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
+   return False;
+  if(not fp):
+   return False;
+  fp.seek(0, 0);
+ elif(infile=="-"):
+  fp = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   shutil.copyfileobj(sys.stdin.buffer, fp);
+  else:
+   shutil.copyfileobj(sys.stdin, fp);
+  fp.seek(0, 0);
+  fp = UncompressArchiveFile(fp, formatspecs);
+  if(not fp):
+   return False;
+  fp.seek(0, 0);
+ elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", infile)):
+  fp = download_file_from_internet_file(infile);
+  fp = UncompressArchiveFile(fp, formatspecs);
+  fp.seek(0, 0);
+  if(not fp):
+   return False;
+  fp.seek(0, 0);
+ else:
+  infile = RemoveWindowsPath(infile);
+  checkcompressfile = CheckCompressionSubType(infile, formatspecs);
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
+   return False;
+  compresscheck = CheckCompressionType(infile, formatspecs, True);
+  if(not compresscheck):
+   fextname = os.path.splitext(infile)[1];
+   if(fextname==".gz"):
+    compresscheck = "gzip";
+   elif(fextname==".bz2"):
+    compresscheck = "bzip2";
+   elif(fextname==".zst"):
+    compresscheck = "zstd";
+   elif(fextname==".lz4" or fextname==".clz4"):
+    compresscheck = "lz4";
+   elif(fextname==".lzo" or fextname==".lzop"):
+    compresscheck = "lzo";
+   elif(fextname==".lzma" or fextname==".xz"):
+    compresscheck = "lzma";
+   else:
+    return False;
+  if(not compresscheck):
+   return False;
+  fp = UncompressFile(infile, formatspecs, "rb");
+ return ReadFileDataBySizeWithContentToArray(fp, listonly, skipchecksum, formatspecs);
+
+def ReadInFileBySizeWithContentToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
+ if(isinstance(infile, dict)):
+  listcatfiles = infile;
+ else:
+  if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
+   infile = RemoveWindowsPath(infile);
+  listcatfiles = ReadInFileBySizeWithContentToArray(infile, listonly, skipchecksum, formatspecs);
+ if(not listcatfiles):
+  return False;
+ catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
+ lenlist = len(listcatfiles['ffilelist']);
+ if(seekstart>0):
+  lcfi = seekstart;
+ else:
+  lcfi = 0;
+ if(seekend>0 and seekend<listcatfiles['fnumfiles']):
+  lcfx = seekend;
+ else:
+  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+   lcfx = listcatfiles['fnumfiles'];
+  else:
+   lcfx = int(listcatfiles['fnumfiles']);
+ while(lcfi < lcfx):
+  filetoidarray = {listcatfiles['ffilelist'][lcfi]['fname']: listcatfiles['ffilelist'][lcfi]['fid']};
+  idtofilearray = {listcatfiles['ffilelist'][lcfi]['fid']: listcatfiles['ffilelist'][lcfi]['fname']};
+  catarray['filetoid'].update(filetoidarray);
+  catarray['idtofile'].update(idtofilearray);
+  if(listcatfiles['ffilelist'][lcfi]['ftype']==0 or listcatfiles['ffilelist'][lcfi]['ftype']==7):
+   catarray['filetypes']['files']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['files']['idtofile'].update(idtofilearray);
+  if(listcatfiles['ffilelist'][lcfi]['ftype']==1):
+   catarray['filetypes']['hardlinks']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['hardlinks']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['links']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['links']['idtofile'].update(idtofilearray);
+  if(listcatfiles['ffilelist'][lcfi]['ftype']==2):
+   catarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['links']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['links']['idtofile'].update(idtofilearray);
+  if(listcatfiles['ffilelist'][lcfi]['ftype']==3):
+   catarray['filetypes']['character']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['character']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+  if(listcatfiles['ffilelist'][lcfi]['ftype']==4):
+   catarray['filetypes']['block']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['block']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+  if(listcatfiles['ffilelist'][lcfi]['ftype']==5):
+   catarray['filetypes']['directories']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['directories']['idtofile'].update(idtofilearray);
+  if(listcatfiles['ffilelist'][lcfi]['ftype']==6):
+   catarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
+   catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+  lcfi = lcfi + 1;
+ return catarray;
 
 def AppendNullByte(indata, delimiter=__file_format_delimiter__):
  outdata = str(indata) + delimiter;
