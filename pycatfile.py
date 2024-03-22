@@ -674,7 +674,7 @@ def ReadFileDataBySizeWithContent(fp, listonly=False, skipchecksum=False, format
   countnum = countnum + 1;
  return flist;
 
-def ReadFileDataBySizeWithContentToArray(fp, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
+def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
  delimiter = formatspecs[5];
  catheader = ReadFileHeaderData(fp, 4, delimiter);
  headercheck = ValidateHeaderChecksum(catheader[:-1], catheader[2], catheader[3], formatspecs);
@@ -689,11 +689,77 @@ def ReadFileDataBySizeWithContentToArray(fp, listonly=False, skipchecksum=False,
  fprechecksumtype = catheader[2];
  fprechecksum = catheader[3];
  catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}};
- countnum = 0;
- while(countnum < fnumfiles):
-  catlist['ffilelist'].update({countnum: {'fid': countnum, 'fidalt': countnum}});
-  catlist['ffilelist'][countnum].update(ReadFileHeaderDataBySizeWithContentToArray(fp, listonly, skipchecksum, formatspecs));
+ if(seekstart<0 and seekstart>fnumfiles):
+   seekstart = 0;
+ if(seekend==0 or seekend>fnumfiles and seekend<seekstart):
+  seekend = fnumfiles;
+ elif(seekend<0 and abs(seekend)<=fnumfiles and abs(seekend)>=seekstart):
+  seekend = fnumfiles - abs(seekend);
+ if(seekstart>0):
+  il = 0;
+  while(il < seekstart):
+   prefhstart = catfp.tell();
+   preheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
+   prefsize = int(preheaderdata[4], 16);
+   hout = AppendNullBytes(preheaderdata, formatspecs[5]);
+   if(prefchecksumtype=="none" or prefchecksumtype==""):
+    prenewfcs = 0;
+   elif(prefchecksumtype=="crc16" or prefchecksumtype=="crc16_ansi" or prefchecksumtype=="crc16_ibm"):
+    prenewfcs = format(crc16(hout.encode('UTF-8')) & 0xffff, '04x').lower();
+   elif(prefchecksumtype=="adler32"):
+    prenewfcs = format(zlib.adler32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   elif(prefchecksumtype=="crc32"):
+    prenewfcs = format(crc32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
+   elif(prefchecksumtype=="crc64_ecma"):
+    prenewfcs = format(crc64_ecma(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   elif(prefchecksumtype=="crc64" or prefchecksumtype=="crc64_iso"):
+    prenewfcs = format(crc64_iso(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
+   elif(CheckSumSupportAlt(prefchecksumtype, hashlib_guaranteed)):
+    checksumoutstr = hashlib.new(prefchecksumtype);
+    checksumoutstr.update(hout.encode('UTF-8'));
+    prenewfcs = checksumoutstr.hexdigest().lower();
+   if(prefcs!=prenewfcs and not skipchecksum):
+    VerbosePrintOut("File Header Checksum Error with file " + prefname + " at offset " + str(prefhstart));
+    return False;
+    valid_archive = False;
+    invalid_archive = True;
+   prefhend = catfp.tell() - 1;
+   prefcontentstart = catfp.tell();
+   prefcontents = "";
+   pyhascontents = False;
+   if(prefsize>0):
+    prefcontents = catfp.read(prefsize);
+    if(prefchecksumtype=="none" or prefchecksumtype==""):
+     prenewfccs = 0;
+    elif(prefchecksumtype=="crc16" or prefchecksumtype=="crc16_ansi" or prefchecksumtype=="crc16_ibm"):
+     prenewfccs = format(crc16(prefcontents) & 0xffff, '04x').lower();
+    elif(prefchecksumtype=="crc16_ccitt"):
+     prenewfcs = format(crc16_ccitt(prefcontents) & 0xffff, '04x').lower();
+    elif(prefchecksumtype=="adler32"):
+     prenewfccs = format(zlib.adler32(prefcontents) & 0xffffffff, '08x').lower();
+    elif(prefchecksumtype=="crc32"):
+     prenewfccs = format(crc32(prefcontents) & 0xffffffff, '08x').lower();
+    elif(prefchecksumtype=="crc64_ecma"):
+     prenewfcs = format(crc64_ecma(prefcontents) & 0xffffffffffffffff, '016x').lower();
+    elif(prefchecksumtype=="crc64" or prefchecksumtype=="crc64_iso"):
+     prenewfcs = format(crc64_iso(prefcontents) & 0xffffffffffffffff, '016x').lower();
+    elif(CheckSumSupportAlt(prefchecksumtype, hashlib_guaranteed)):
+     checksumoutstr = hashlib.new(prefchecksumtype);
+     checksumoutstr.update(prefcontents);
+     prenewfccs = checksumoutstr.hexdigest().lower();
+    pyhascontents = True;
+    if(prefccs!=prenewfccs and not skipchecksum):
+     VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
+     return False;
+   catfp.seek(1, 1);
+   il = il + 1;
+ realidnum = 0;
+ countnum = seekstart;
+ while(countnum < seekend):
+  catlist['ffilelist'].update({realidnum: {'fid': realidnum, 'fidalt': realidnum}});
+  catlist['ffilelist'][realidnum].update(ReadFileHeaderDataBySizeWithContentToArray(fp, listonly, skipchecksum, formatspecs));
   countnum = countnum + 1;
+  realidnum = realidnum + 1;
  return catlist;
 
 def ReadFileDataBySizeWithContentToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
@@ -702,22 +768,17 @@ def ReadFileDataBySizeWithContentToArrayIndex(infile, seekstart=0, seekend=0, li
  else:
   if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
    return False;
-  listcatfiles = ReadFileDataBySizeWithContentToArray(infile, listonly, skipchecksum, formatspecs);
+  listcatfiles = ReadFileDataBySizeWithContentToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs);
  if(not listcatfiles):
   return False;
  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
  lenlist = len(listcatfiles['ffilelist']);
- if(seekstart>0):
-  lcfi = seekstart;
+ lcfi = 0;
+ lcfx = int(listcatfiles['fnumfiles']);
+ if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+  lcfx = int(lenlist);
  else:
-  lcfi = 0;
- if(seekend>0 and seekend<listcatfiles['fnumfiles']):
-  lcfx = seekend;
- else:
-  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
-   lcfx = listcatfiles['fnumfiles'];
-  else:
-   lcfx = int(listcatfiles['fnumfiles']);
+  lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   filetoidarray = {listcatfiles['ffilelist'][lcfi]['fname']: listcatfiles['ffilelist'][lcfi]['fid']};
   idtofilearray = {listcatfiles['ffilelist'][lcfi]['fid']: listcatfiles['ffilelist'][lcfi]['fname']};
@@ -757,7 +818,7 @@ def ReadFileDataBySizeWithContentToArrayIndex(infile, seekstart=0, seekend=0, li
   lcfi = lcfi + 1;
  return catarray;
 
-def ReadInFileBySizeWithContent(infile, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
+def ReadInFileBySizeWithContent(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
  delimiter = formatspecs[5];
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   fp = infile;
@@ -812,7 +873,7 @@ def ReadInFileBySizeWithContent(infile, listonly=False, skipchecksum=False, form
   if(not compresscheck):
    return False;
   fp = UncompressFile(infile, formatspecs, "rb");
- return ReadFileDataBySizeWithContent(fp, listonly, skipchecksum, formatspecs);
+ return ReadFileDataBySizeWithContent(fp, seekstart, seekend, listonly, skipchecksum, formatspecs);
 
 def ReadInFileBySizeWithContentToArray(infile, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
  delimiter = formatspecs[5];
@@ -882,17 +943,12 @@ def ReadInFileBySizeWithContentToArrayIndex(infile, seekstart=0, seekend=0, list
   return False;
  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
  lenlist = len(listcatfiles['ffilelist']);
- if(seekstart>0):
-  lcfi = seekstart;
+ lcfi = 0;
+ lcfx = int(listcatfiles['fnumfiles']);
+ if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+  lcfx = int(lenlist);
  else:
-  lcfi = 0;
- if(seekend>0 and seekend<listcatfiles['fnumfiles']):
-  lcfx = seekend;
- else:
-  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
-   lcfx = listcatfiles['fnumfiles'];
-  else:
-   lcfx = int(listcatfiles['fnumfiles']);
+  lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   filetoidarray = {listcatfiles['ffilelist'][lcfi]['fname']: listcatfiles['ffilelist'][lcfi]['fid']};
   idtofilearray = {listcatfiles['ffilelist'][lcfi]['fid']: listcatfiles['ffilelist'][lcfi]['fname']};
@@ -3825,32 +3881,11 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    else:
     preheaderdata = ReadFileHeaderData(catfp, 23, formatspecs[5]);
    prefheadsize = int(preheaderdata[0], 16);
-   preftype = int(preheaderdata[1], 16);
    if(re.findall("^[.|/]", preheaderdata[2])):
     prefname = preheaderdata[2];
    else:
     prefname = "./"+preheaderdata[2];
-   prefbasedir = os.path.dirname(prefname);
-   preflinkname = preheaderdata[3];
    prefsize = int(preheaderdata[4], 16);
-   prefatime = int(preheaderdata[5], 16);
-   prefmtime = int(preheaderdata[6], 16);
-   prefctime = int(preheaderdata[7], 16);
-   prefbtime = int(preheaderdata[8], 16);
-   prefmode = int(preheaderdata[9], 16);
-   prefchmode = stat.S_IMODE(prefmode);
-   preftypemod = stat.S_IFMT(prefmode);
-   prefuid = int(preheaderdata[10], 16);
-   prefuname = preheaderdata[11];
-   prefgid = int(preheaderdata[12], 16);
-   prefgname = preheaderdata[13];
-   fid = int(preheaderdata[14], 16);
-   finode = int(preheaderdata[15], 16);
-   flinkcount = int(preheaderdata[16], 16);
-   prefdev_minor = int(preheaderdata[17], 16);
-   prefdev_major = int(preheaderdata[18], 16);
-   prefrdev_minor = int(preheaderdata[19], 16);
-   prefrdev_major = int(preheaderdata[20], 16);
    prefextrasize = int(preheaderdata[21], 16);
    prefextrafields = int(preheaderdata[22], 16);
    extrafieldslist = [];
@@ -5151,17 +5186,12 @@ def ArchiveFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skip
  if(returnfp):
   catarray.update({'catfp': listcatfiles['catfp']});
  lenlist = len(listcatfiles['ffilelist']);
- if(seekstart>0):
-  lcfi = seekstart;
+ lcfi = 0;
+ lcfx = int(listcatfiles['fnumfiles']);
+ if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+  lcfx = int(lenlist);
  else:
-  lcfi = 0;
- if(seekend>0 and seekend<listcatfiles['fnumfiles']):
-  lcfx = seekend;
- else:
-  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
-   lcfx = listcatfiles['fnumfiles'];
-  else:
-   lcfx = int(listcatfiles['fnumfiles']);
+  lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   filetoidarray = {listcatfiles['ffilelist'][lcfi]['fname']: listcatfiles['ffilelist'][lcfi]['fid']};
   idtofilearray = {listcatfiles['ffilelist'][lcfi]['fid']: listcatfiles['ffilelist'][lcfi]['fname']};
@@ -5209,17 +5239,12 @@ def ListDirToArrayIndexAlt(infiles, dirlistfromtxt=False, followlink=False, seek
   return False;
  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
  lenlist = len(listcatfiles['ffilelist']);
- if(seekstart>0):
-  lcfi = seekstart;
+ lcfi = 0;
+ lcfx = int(listcatfiles['fnumfiles']);
+ if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+  lcfx = int(lenlist);
  else:
-  lcfi = 0;
- if(seekend>0 and seekend<listcatfiles['fnumfiles']):
-  lcfx = seekend;
- else:
-  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
-   lcfx = listcatfiles['fnumfiles'];
-  else:
-   lcfx = int(listcatfiles['fnumfiles']);
+  lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   filetoidarray = {listcatfiles['ffilelist'][lcfi]['fname']: listcatfiles['ffilelist'][lcfi]['fid']};
   idtofilearray = {listcatfiles['ffilelist'][lcfi]['fid']: listcatfiles['ffilelist'][lcfi]['fname']};
@@ -5265,17 +5290,12 @@ def TarFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, chec
   return False;
  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
  lenlist = len(listcatfiles['ffilelist']);
- if(seekstart>0):
-  lcfi = seekstart;
+ lcfi = 0;
+ lcfx = int(listcatfiles['fnumfiles']);
+ if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+  lcfx = int(lenlist);
  else:
-  lcfi = 0;
- if(seekend>0 and seekend<listcatfiles['fnumfiles']):
-  lcfx = seekend;
- else:
-  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
-   lcfx = listcatfiles['fnumfiles'];
-  else:
-   lcfx = int(listcatfiles['fnumfiles']);
+  lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   filetoidarray = {listcatfiles['ffilelist'][lcfi]['fname']: listcatfiles['ffilelist'][lcfi]['fid']};
   idtofilearray = {listcatfiles['ffilelist'][lcfi]['fid']: listcatfiles['ffilelist'][lcfi]['fname']};
@@ -5321,17 +5341,12 @@ def ZipFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, chec
   return False;
  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
  lenlist = len(listcatfiles['ffilelist']);
- if(seekstart>0):
-  lcfi = seekstart;
+ lcfi = 0;
+ lcfx = int(listcatfiles['fnumfiles']);
+ if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+  lcfx = int(lenlist);
  else:
-  lcfi = 0;
- if(seekend>0 and seekend<listcatfiles['fnumfiles']):
-  lcfx = seekend;
- else:
-  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
-   lcfx = listcatfiles['fnumfiles'];
-  else:
-   lcfx = int(listcatfiles['fnumfiles']);
+  lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   filetoidarray = {listcatfiles['ffilelist'][lcfi]['fname']: listcatfiles['ffilelist'][lcfi]['fid']};
   idtofilearray = {listcatfiles['ffilelist'][lcfi]['fid']: listcatfiles['ffilelist'][lcfi]['fname']};
@@ -5382,17 +5397,12 @@ if(rarfile_support):
    return False;
   catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
   lenlist = len(listcatfiles['ffilelist']);
-  if(seekstart>0):
-   lcfi = seekstart;
+  lcfi = 0;
+  lcfx = int(listcatfiles['fnumfiles']);
+  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+   lcfx = int(lenlist);
   else:
-   lcfi = 0;
-  if(seekend>0 and seekend<listcatfiles['fnumfiles']):
-   lcfx = seekend;
-  else:
-   if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
-    lcfx = listcatfiles['fnumfiles'];
-   else:
-    lcfx = int(listcatfiles['fnumfiles']);
+   lcfx = int(listcatfiles['fnumfiles']);
   while(lcfi < lcfx):
    filetoidarray = {listcatfiles['ffilelist'][lcfi]['fname']: listcatfiles['ffilelist'][lcfi]['fid']};
    idtofilearray = {listcatfiles['ffilelist'][lcfi]['fid']: listcatfiles['ffilelist'][lcfi]['fname']};
@@ -5551,12 +5561,12 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   pass;
  except AttributeError:
   pass;
- if(seekstart>0):
-  lcfi = seekstart;
- else:
-  lcfi = 0;
- if(seekend>0 and seekend<listcatfiles['fnumfiles']):
-  lcfx = seekend;
+ lenlist = len(listcatfiles['ffilelist']);
+ fnumfiles = int(listcatfiles['fnumfiles']);
+ lcfi = 0;
+ lcfx = int(listcatfiles['fnumfiles']);
+ if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+  lcfx = int(lenlist);
  else:
   lcfx = int(listcatfiles['fnumfiles']);
  curinode = 0;
@@ -5805,19 +5815,13 @@ def ArchiveFileArrayBase64Encode(infile, followlink=False, seekstart=0, seekend=
  if(not listcatfiles):
   return False;
  lenlist = len(listcatfiles['ffilelist']);
- if(seekstart>0):
-  lcfi = seekstart;
+ fnumfiles = int(listcatfiles['fnumfiles']);
+ lcfi = 0;
+ lcfx = int(listcatfiles['fnumfiles']);
+ if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+  lcfx = int(lenlist);
  else:
-  lcfi = 0;
- if(seekend>0 and seekend<listcatfiles['fnumfiles']):
-  lcfx = seekend;
- else:
-  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
-   lcfx = listcatfiles['fnumfiles'];
-  else:
-   lcfx = int(listcatfiles['fnumfiles']);
- if(lenlist>lcfx or lenlist<lcfx):
-  lcfx = lenlist;
+  lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   if(listcatfiles['ffilelist'][lcfi]['fhascontents']):
    listcatfiles['ffilelist'][lcfi]['fcontents'] = base64.b64encode(listcatfiles['ffilelist'][lcfi]['fcontents']).decode("UTF-8");
@@ -5843,19 +5847,13 @@ def ArchiveFileArrayBase64Decode(infile, followlink=False, seekstart=0, seekend=
  if(not listcatfiles):
   return False;
  lenlist = len(listcatfiles['ffilelist']);
- if(seekstart>0):
-  lcfi = seekstart;
+ fnumfiles = int(listcatfiles['fnumfiles']);
+ lcfi = 0;
+ lcfx = int(listcatfiles['fnumfiles']);
+ if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+  lcfx = int(lenlist);
  else:
-  lcfi = 0;
- if(seekend>0 and seekend<listcatfiles['fnumfiles']):
-  lcfx = seekend;
- else:
-  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
-   lcfx = listcatfiles['fnumfiles'];
-  else:
-   lcfx = int(listcatfiles['fnumfiles']);
- if(lenlist>lcfx or lenlist<lcfx):
-  lcfx = lenlist;
+  lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   if(listcatfiles['ffilelist'][lcfi]['fhascontents']):
    listcatfiles['ffilelist'][lcfi]['fcontents'] = base64.b64decode(listcatfiles['ffilelist'][lcfi]['fcontents'].encode("UTF-8"));
@@ -5883,19 +5881,13 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
  if(not listcatfiles):
   return False;
  lenlist = len(listcatfiles['ffilelist']);
- if(seekstart>0):
-  lcfi = seekstart;
+ fnumfiles = int(listcatfiles['fnumfiles']);
+ lcfi = 0;
+ lcfx = int(listcatfiles['fnumfiles']);
+ if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+  lcfx = int(lenlist);
  else:
-  lcfi = 0;
- if(seekend>0 and seekend<listcatfiles['fnumfiles']):
-  lcfx = seekend;
- else:
-  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
-   lcfx = listcatfiles['fnumfiles'];
-  else:
-   lcfx = int(listcatfiles['fnumfiles']);
- if(lenlist>lcfx or lenlist<lcfx):
-  lcfx = lenlist;
+  lcfx = int(listcatfiles['fnumfiles']);
  while(lcfi < lcfx):
   funame = "";
   try:
@@ -6099,8 +6091,13 @@ def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, for
  if(not listcatfiles):
   return False;
  lenlist = len(listcatfiles['ffilelist']);
+ fnumfiles = int(listcatfiles['fnumfiles']);
  lcfi = 0;
- lcfx = lenlist;
+ lcfx = int(listcatfiles['fnumfiles']);
+ if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+  lcfx = int(lenlist);
+ else:
+  lcfx = int(listcatfiles['fnumfiles']);
  returnval = {};
  while(lcfi < lcfx):
   returnval.update({lcfi: listcatfiles['ffilelist'][lcfi]['fname']});
@@ -6128,12 +6125,64 @@ def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, for
 
 create_alias_function("", __file_format_name__, "ListFiles", ArchiveFileListFiles);
 
-def ArchiveFileStringListFiles(catstr, followlink=False, skipchecksum=False, formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def ArchiveFileStringListFiles(catstr, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_list__, verbose=False, returnfp=False):
  catfp = BytesIO(catstr);
- listcatfiles = UnPackArchiveFile(catfp, None, followlink, skipchecksum, formatspecs, verbose, returnfp);
+ listcatfiles = ArchiveFileListFiles(catstr, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp);
  return listcatfiles;
 
 create_alias_function("", __file_format_name__, "StringListFiles", ArchiveFileListFiles);
+
+def ArchiveFileListFilesAlt(infile, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_list__, verbose=False, returnfp=False):
+ logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+ if(isinstance(infile, dict)):
+  listcatfiles = infile;
+ else:
+  if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
+   infile = RemoveWindowsPath(infile);
+  listcatfiles = ArchiveFileToArray(infile, seekstart, seekend, True, skipchecksum, formatspecs, returnfp);
+ if(not listcatfiles):
+  return False;
+ lenlist = len(listcatfiles['ffilelist']);
+ fnumfiles = int(listcatfiles['fnumfiles']);
+ lcfi = 0;
+ lcfx = int(listcatfiles['fnumfiles']);
+ if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+  lcfx = int(lenlist);
+ else:
+  lcfx = int(listcatfiles['fnumfiles']);
+ returnval = {};
+ while(lcfi < lcfx):
+  returnval.update({lcfi: listcatfiles['ffilelist'][lcfi]['fname']});
+  if(not verbose):
+   VerbosePrintOut(listcatfiles['ffilelist'][lcfi]['fname']);
+  if(verbose):
+   permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
+   printfname = listcatfiles['ffilelist'][lcfi]['fname'];
+   if(listcatfiles['ffilelist'][lcfi]['ftype']==1):
+    printfname = listcatfiles['ffilelist'][lcfi]['fname'] + " link to " + listcatfiles['ffilelist'][lcfi]['flinkname'];
+   if(listcatfiles['ffilelist'][lcfi]['ftype']==2):
+    printfname = listcatfiles['ffilelist'][lcfi]['fname'] + " -> " + listcatfiles['ffilelist'][lcfi]['flinkname'];
+   fuprint = listcatfiles['ffilelist'][lcfi]['funame'];
+   if(len(fuprint)<=0):
+    fuprint = listcatfiles['ffilelist'][lcfi]['fuid'];
+   fgprint = listcatfiles['ffilelist'][lcfi]['fgname'];
+   if(len(fgprint)<=0):
+    fgprint = listcatfiles['ffilelist'][lcfi]['fgid'];
+   VerbosePrintOut(PrintPermissionString(listcatfiles['ffilelist'][lcfi]['fmode'], listcatfiles['ffilelist'][lcfi]['ftype']) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(listcatfiles['ffilelist'][lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles['ffilelist'][lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname));
+  lcfi = lcfi + 1;
+ if(returnfp):
+  return listcatfiles['catfp'];
+ else:
+  return True;
+
+create_alias_function("", __file_format_name__, "ListFilesAlt", ArchiveFileListFilesAlt);
+
+def ArchiveFileStringListFilesAlt(catstr, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_list__, verbose=False, returnfp=False):
+ catfp = BytesIO(catstr);
+ listcatfiles = ArchiveFileListFilesAlt(catstr, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp);
+ return listcatfiles;
+
+create_alias_function("", __file_format_name__, "StringListFilesAlt", ArchiveFileListFilesAlt);
 
 def TarFileListFiles(infile, verbose=False, returnfp=False):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
