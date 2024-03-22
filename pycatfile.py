@@ -1314,7 +1314,7 @@ def UncompressStringAlt(infile):
  filefp = StringIO();
  outstring = UncompressString(infile);
  filefp.write(outstring);
- filefp.seek(0);
+ filefp.seek(0, 0);
  return filefp;
 
 def CheckCompressionSubType(infile, formatspecs=__file_format_list__):
@@ -6636,7 +6636,7 @@ def download_file_from_http_file(url, headers=geturls_headers_pycatfile_python_a
    netloc += ':' + str(urlparts.port);
  rebuilt_url = urlunparse((urlparts.scheme, netloc, urlparts.path, urlparts.params, urlparts.query, urlparts.fragment));
  # Create a temporary file object
- temp_file = BytesIO();
+ httpfile = BytesIO();
  if haverequests:
   # Use the requests library if available
   if username and password:
@@ -6644,7 +6644,7 @@ def download_file_from_http_file(url, headers=geturls_headers_pycatfile_python_a
   else:
    response = requests.get(rebuilt_url, headers=headers, stream=True);
   response.raw.decode_content = True
-  shutil.copyfileobj(response.raw, temp_file);
+  shutil.copyfileobj(response.raw, httpfile);
  else:
   # Build a Request object for urllib
   request = Request(rebuilt_url, headers=headers);
@@ -6661,11 +6661,11 @@ def download_file_from_http_file(url, headers=geturls_headers_pycatfile_python_a
   else:
       opener = build_opener();
   with opener.open(request) as response:
-   shutil.copyfileobj(response, temp_file);
+   shutil.copyfileobj(response, httpfile);
  # Reset file pointer to the start
- temp_file.seek(0);
+ httpfile.seek(0, 0);
  # Return the temporary file object
- return temp_file;
+ return httpfile;
 
 def download_file_from_http_string(url, headers=geturls_headers_pycatfile_python_alt):
  httpfile = download_file_from_http_file(url, headers);
