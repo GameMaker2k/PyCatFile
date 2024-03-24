@@ -2493,7 +2493,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
     fmode = format(int(stat.S_IFREG + 438), 'x').lower();
     fchmode = stat.S_IMODE(fmode);
     ftypemod = stat.S_IFMT(fmode);
-   if(member.is_dir()):
+   elif(member.is_dir()):
     fmode = format(int(stat.S_IFDIR + 511), 'x').lower();
     fchmode = stat.S_IMODE(fmode);
     ftypemod = stat.S_IFMT(fmode);
@@ -2508,7 +2508,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
     fmode = format(int(stat.S_IFREG + 438), 'x').lower();
     fchmode = stat.S_IMODE(fmode);
     ftypemod = stat.S_IFMT(fmode);
-   if(member.is_dir()):
+   elif(member.is_dir()):
     fmode = format(int(stat.S_IFDIR + 511), 'x').lower();
     fchmode = stat.S_IMODE(fmode);
     ftypemod = stat.S_IFMT(fmode);
@@ -4751,7 +4751,7 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
     fmode = format(int(stat.S_IFREG + 438), 'x').lower();
     fchmode = format(int(stat.S_IMODE(int(stat.S_IFREG + 438))), 'x').lower();
     ftypemod = format(int(stat.S_IFMT(int(stat.S_IFREG + 438))), 'x').lower();
-   if(member.is_dir()):
+   elif(member.is_dir()):
     fmode = format(int(stat.S_IFDIR + 511), 'x').lower();
     fchmode = format(int(stat.S_IMODE(int(stat.S_IFDIR + 511))), 'x').lower();
     ftypemod = format(int(stat.S_IFMT(int(stat.S_IFDIR + 511))), 'x').lower();
@@ -4764,7 +4764,7 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
     fmode = format(int(stat.S_IFREG + 438), 'x').lower();
     fchmode = format(int(stat.S_IMODE(int(stat.S_IFREG + 438))), 'x').lower();
     ftypemod = format(int(stat.S_IFMT(int(stat.S_IFREG + 438))), 'x').lower();
-   if(member.is_dir()):
+   elif(member.is_dir()):
     fmode = format(int(stat.S_IFDIR + 511), 'x').lower();
     fchmode = format(int(stat.S_IMODE(int(stat.S_IFDIR + 511))), 'x').lower();
     ftypemod = format(int(stat.S_IFMT(int(stat.S_IFDIR + 511))), 'x').lower();
@@ -6315,8 +6315,8 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
     fmode = int(stat.S_IFREG + 438);
     fchmode = int(stat.S_IMODE(fmode));
     ftypemod = int(stat.S_IFMT(fmode));
-   if(member.is_dir()):
-    fmode = int(stat.S_IFDIR + 511), 'x');
+   elif(member.is_dir()):
+    fmode = int(stat.S_IFDIR + 511);
     fchmode = int(stat.S_IMODE(int(stat.S_IFDIR + 511)));
     ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)));
   elif(zipinfo.create_system==3):
@@ -6330,10 +6330,10 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
     fmode = int(stat.S_IFREG + 438);
     fchmode = int(stat.S_IMODE(fmode));
     ftypemod = int(stat.S_IFMT(fmode));
-   if(member.is_dir()):
-    fmode = format(int(stat.S_IFDIR + 511);
-    fchmode = format(int(stat.S_IMODE(int(stat.S_IFDIR + 511)));
-    ftypemod = format(int(stat.S_IFMT(int(stat.S_IFDIR + 511)));
+   elif(member.is_dir()):
+    fmode = int(stat.S_IFDIR + 511);
+    fchmode = int(stat.S_IMODE(int(stat.S_IFDIR + 511)));
+    ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)));
   returnval.update({lcfi: member.filename});
   if(not verbose):
    VerbosePrintOut(member.filename);
