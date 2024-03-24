@@ -560,6 +560,14 @@ def ReadFileHeaderDataBySize(fp, delimiter=__file_format_delimiter__):
   rocount = rocount + 1;
  return HeaderOut;
 
+def ReadFileHeaderDataWoSize(fp, delimiter=__file_format_delimiter__):
+ headerdata = ReadFileHeaderData(fp, 23, delimiter);
+ fextrafields = int(headerdata[22], 16);
+ extrafieldslist = ReadFileHeaderData(fp, fextrafields, delimiter);
+ checksumsval = ReadFileHeaderData(fp, 3, delimiter);
+ HeaderOut = headerdata + extrafieldslist + checksumsval;
+ return HeaderOut;
+
 def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
  delimiter = formatspecs[5];
  fheaderstart = fp.tell();
@@ -595,7 +603,10 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, 
 def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
  delimiter = formatspecs[5];
  fheaderstart = fp.tell();
- HeaderOut = ReadFileHeaderDataBySize(fp, delimiter);
+ if(formatspecs[7]):
+  HeaderOut = ReadFileHeaderDataBySize(fp, delimiter);
+ else:
+  HeaderOut = ReadFileHeaderDataWoSize(fp, delimiter);
  fheadsize = int(HeaderOut[0], 16);
  ftype = int(HeaderOut[1], 16);
  if(re.findall("^[.|/]", HeaderOut[2])):
