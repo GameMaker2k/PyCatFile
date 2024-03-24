@@ -3127,7 +3127,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
    prefcs = preheaderdata[extrastart + 1].lower();
    prefccs = preheaderdata[extrastart + 2].lower();
    hc = 0;
-   hcmax = len(preheaderdata) - 2;);
+   hcmax = len(preheaderdata) - 2;
    hout = "";
    while(hc<hcmax):
     hout = hout + AppendNullByte(preheaderdata[hc], formatspecs[5]);
@@ -3864,7 +3864,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    prefextrasize = int(preheaderdata[21], 16);
    prefextrafields = int(preheaderdata[22], 16);
    extrafieldslist = [];
- . extrastart = 23;
+   extrastart = 23;
    extraend = extrastart + prefextrafields;
    extrafieldslist = [];
    if(extrastart<extraend):
