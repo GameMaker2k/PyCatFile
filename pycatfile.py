@@ -3086,7 +3086,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
    if(formatspecs[7]):
     preheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
    else:
-    preheaderdata = ReadFileHeaderData(catfp, 23, formatspecs[5]);
+    preheaderdata = ReadFileHeaderDataWoSize(catfp, formatspecs[5]);
    prefheadsize = int(preheaderdata[0], 16);
    preftype = int(preheaderdata[1], 16);
    if(re.findall("^[.|/]", preheaderdata[2])):
@@ -3117,29 +3117,17 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
    prefextrasize = int(preheaderdata[21], 16);
    prefextrafields = int(preheaderdata[22], 16);
    extrafieldslist = [];
-   if(formatspecs[7]):
-    extrastart = 23;
-    extraend = extrastart + prefextrafields;
-    extrafieldslist = [];
-    if(extrastart<extraend):
-     extrafieldslist.append(preheaderdata[extrastart]);
-     extrastart = extrastart + 1;
-    prefchecksumtype = preheaderdata[extrastart].lower();
-    prefcs = preheaderdata[extrastart + 1].lower();
-    prefccs = preheaderdata[extrastart + 2].lower();
-   else:
-    extrafieldslist = [];
-    if(formatspecs[7]):
-     extrafieldslist = ReadFileHeaderData(catfp, prefextrafields, formatspecs[5]);
-    checksumsval = ReadFileHeaderData(catfp, 3, formatspecs[5]);
-    prefchecksumtype = checksumsval[0].lower();
-    prefcs = checksumsval[1].lower();
-    prefccs = checksumsval[2].lower();
+   extrastart = 23;
+   extraend = extrastart + prefextrafields;
+   extrafieldslist = [];
+   if(extrastart<extraend):
+    extrafieldslist.append(preheaderdata[extrastart]);
+    extrastart = extrastart + 1;
+   prefchecksumtype = preheaderdata[extrastart].lower();
+   prefcs = preheaderdata[extrastart + 1].lower();
+   prefccs = preheaderdata[extrastart + 2].lower();
    hc = 0;
-   if(formatspecs[7]):
-    hcmax = len(preheaderdata) - 2;
-   else:
-    hcmax = len(preheaderdata);
+   hcmax = len(preheaderdata) - 2;);
    hout = "";
    while(hc<hcmax):
     hout = hout + AppendNullByte(preheaderdata[hc], formatspecs[5]);
@@ -3344,7 +3332,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
    if(formatspecs[7]):
     preheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
    else:
-    preheaderdata = ReadFileHeaderData(catfp, 23, formatspecs[5]);
+    preheaderdata = ReadFileHeaderDataWoSize(catfp, formatspecs[5]);
    prefheadsize = int(preheaderdata[0], 16);
    preftype = int(preheaderdata[1], 16);
    if(re.findall("^[.|/]", preheaderdata[2])):
@@ -3375,29 +3363,17 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
    prefextrasize = int(preheaderdata[21], 16);
    prefextrafields = int(preheaderdata[22], 16);
    extrafieldslist = [];
-   if(formatspecs[7]):
-    extrastart = 23;
-    extraend = extrastart + prefextrafields;
-    extrafieldslist = [];
-    if(extrastart<extraend):
-     extrafieldslist.append(preheaderdata[extrastart]);
-     extrastart = extrastart + 1;
-    prefchecksumtype = preheaderdata[extrastart].lower();
-    prefcs = preheaderdata[extrastart + 1].lower();
-    prefccs = preheaderdata[extrastart + 2].lower();
-   else:
-    extrafieldslist = [];
-    if(formatspecs[7]):
-     extrafieldslist = ReadFileHeaderData(catfp, prefextrafields, formatspecs[5]);
-    checksumsval = ReadFileHeaderData(catfp, 3, formatspecs[5]);
-    prefchecksumtype = checksumsval[0].lower();
-    prefcs = checksumsval[1].lower();
-    prefccs = checksumsval[2].lower();
+   extrastart = 23;
+   extraend = extrastart + prefextrafields;
+   extrafieldslist = [];
+   if(extrastart<extraend):
+    extrafieldslist.append(preheaderdata[extrastart]);
+    extrastart = extrastart + 1;
+   prefchecksumtype = preheaderdata[extrastart].lower();
+   prefcs = preheaderdata[extrastart + 1].lower();
+   prefccs = preheaderdata[extrastart + 2].lower();
    hc = 0;
-   if(formatspecs[7]):
-    hcmax = len(preheaderdata) - 2;
-   else:
-    hcmax = len(preheaderdata);
+   hcmax = len(preheaderdata) - 2;
    hout = "";
    while(hc<hcmax):
     hout = hout + AppendNullByte(preheaderdata[hc], formatspecs[5]);
@@ -3620,7 +3596,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
   if(formatspecs[7]):
    catheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
   else:
-   catheaderdata = ReadFileHeaderData(catfp, 23, formatspecs[5]);
+   catheaderdata = ReadFileHeaderDataWoSize(catfp, formatspecs[5]);
   catfheadsize = int(catheaderdata[0], 16);
   catftype = int(catheaderdata[1], 16);
   if(re.findall("^[.|/]", catheaderdata[2])):
@@ -3651,29 +3627,17 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
   catfextrasize = int(catheaderdata[21], 16);
   catfextrafields = int(catheaderdata[22], 16);
   extrafieldslist = [];
-  if(formatspecs[7]):
-   extrastart = 23;
-   extraend = extrastart + catfextrafields;
-   extrafieldslist = [];
-   if(extrastart<extraend):
-    extrafieldslist.append(catheaderdata[extrastart]);
-    extrastart = extrastart + 1;
-   catfchecksumtype = catheaderdata[extrastart].lower();
-   catfcs = catheaderdata[extrastart + 1].lower();
-   catfccs = catheaderdata[extrastart + 2].lower();
-  else:
-   extrafieldslist = [];
-   if(formatspecs[7]):
-    extrafieldslist = ReadFileHeaderData(catfp, catfextrafields, formatspecs[5]);
-   checksumsval = ReadFileHeaderData(catfp, 3, formatspecs[5]);
-   catfchecksumtype = checksumsval[0].lower();
-   catfcs = checksumsval[1].lower();
-   catfccs = checksumsval[2].lower();
+  extrastart = 23;
+  extraend = extrastart + catfextrafields;
+  extrafieldslist = [];
+  if(extrastart<extraend):
+   extrafieldslist.append(catheaderdata[extrastart]);
+   extrastart = extrastart + 1;
+  catfchecksumtype = catheaderdata[extrastart].lower();
+  catfcs = catheaderdata[extrastart + 1].lower();
+  catfccs = catheaderdata[extrastart + 2].lower();
   hc = 0;
-  if(formatspecs[7]):
-   hcmax = len(catheaderdata) - 2;
-  else:
-   hcmax = len(catheaderdata);
+  hcmax = len(catheaderdata) - 2;
   hout = "";
   while(hc<hcmax):
    hout = hout + AppendNullByte(catheaderdata[hc], formatspecs[5]);
@@ -3890,7 +3854,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    if(formatspecs[7]):
     preheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
    else:
-    preheaderdata = ReadFileHeaderData(catfp, 23, formatspecs[5]);
+    preheaderdata = ReadFileHeaderDataWoSize(catfp, formatspecs[5]);
    prefheadsize = int(preheaderdata[0], 16);
    if(re.findall("^[.|/]", preheaderdata[2])):
     prefname = preheaderdata[2];
@@ -3900,29 +3864,17 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    prefextrasize = int(preheaderdata[21], 16);
    prefextrafields = int(preheaderdata[22], 16);
    extrafieldslist = [];
-   if(formatspecs[7]):
-    extrastart = 23;
-    extraend = extrastart + prefextrafields;
-    extrafieldslist = [];
-    if(extrastart<extraend):
-     extrafieldslist.append(preheaderdata[extrastart]);
-     extrastart = extrastart + 1;
-    prefchecksumtype = preheaderdata[extrastart].lower();
-    prefcs = preheaderdata[extrastart + 1].lower();
-    prefccs = preheaderdata[extrastart + 2].lower();
-   else:
-    extrafieldslist = [];
-    if(formatspecs[7]):
-     extrafieldslist = ReadFileHeaderData(catfp, prefextrafields, formatspecs[5]);
-    checksumsval = ReadFileHeaderData(catfp, 3, formatspecs[5]);
-    prefchecksumtype = checksumsval[0].lower();
-    prefcs = checksumsval[1].lower();
-    prefccs = checksumsval[2].lower();
+ . extrastart = 23;
+   extraend = extrastart + prefextrafields;
+   extrafieldslist = [];
+   if(extrastart<extraend):
+    extrafieldslist.append(preheaderdata[extrastart]);
+    extrastart = extrastart + 1;
+   prefchecksumtype = preheaderdata[extrastart].lower();
+   prefcs = preheaderdata[extrastart + 1].lower();
+   prefccs = preheaderdata[extrastart + 2].lower();
    hc = 0;
-   if(formatspecs[7]):
-    hcmax = len(preheaderdata) - 2;
-   else:
-    hcmax = len(preheaderdata);
+   hcmax = len(preheaderdata) - 2;
    hout = "";
    while(hc<hcmax):
     hout = hout + AppendNullByte(preheaderdata[hc], formatspecs[5]);
@@ -3986,7 +3938,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   if(formatspecs[7]):
    catheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
   else:
-   catheaderdata = ReadFileHeaderData(catfp, 23, formatspecs[5]);
+   catheaderdata = ReadFileHeaderDataWoSize(catfp, formatspecs[5]);
   catfheadsize = int(catheaderdata[0], 16);
   catftype = int(catheaderdata[1], 16);
   if(re.findall("^[.|/]", catheaderdata[2])):
@@ -4017,29 +3969,17 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   catfextrasize = int(catheaderdata[21], 16);
   catfextrafields = int(catheaderdata[22], 16);
   extrafieldslist = [];
-  if(formatspecs[7]):
-   extrastart = 23;
-   extraend = extrastart + catfextrafields;
-   extrafieldslist = [];
-   if(extrastart<extraend):
-    extrafieldslist.append(catheaderdata[extrastart]);
-    extrastart = extrastart + 1;
-   catfchecksumtype = catheaderdata[extrastart].lower();
-   catfcs = catheaderdata[extrastart + 1].lower();
-   catfccs = catheaderdata[extrastart + 2].lower();
-  else:
-   extrafieldslist = [];
-   if(formatspecs[7]):
-    extrafieldslist = ReadFileHeaderData(catfp, catfextrafields, formatspecs[5]);
-   checksumsval = ReadFileHeaderData(catfp, 3, formatspecs[5]);
-   catfchecksumtype = checksumsval[0].lower();
-   catfcs = checksumsval[1].lower();
-   catfccs = checksumsval[2].lower();
+  extrastart = 23;
+  extraend = extrastart + catfextrafields;
+  extrafieldslist = [];
+  if(extrastart<extraend):
+   extrafieldslist.append(catheaderdata[extrastart]);
+   extrastart = extrastart + 1;
+  catfchecksumtype = catheaderdata[extrastart].lower();
+  catfcs = catheaderdata[extrastart + 1].lower();
+  catfccs = catheaderdata[extrastart + 2].lower();
   hc = 0;
-  if(formatspecs[7]):
-   hcmax = len(catheaderdata) - 2;
-  else:
-   hcmax = len(catheaderdata);
+  hcmax = len(catheaderdata) - 2;
   hout = "";
   while(hc<hcmax):
    hout = hout + AppendNullByte(catheaderdata[hc], formatspecs[5]);
