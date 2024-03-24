@@ -6310,7 +6310,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
   VerbosePrintOut("Bad file found!");
  for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
   if(zipinfo.create_system==0 or zipinfo.create_system==10):
-   fwinattributes = format(int(zipinfo.external_attr);
+   fwinattributes = int(zipinfo.external_attr);
    if(not member.is_dir()):
     fmode = int(stat.S_IFREG + 438);
     fchmode = int(stat.S_IMODE(fmode));
