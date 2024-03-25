@@ -2248,7 +2248,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   if(len(extradata)>0):
    extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
   extrasizelen = format(len(extrasizestr), 'x').lower();
-  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields], formatspecs[5]);
+  catfileoutstr = AppendNullBytes([ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields], formatspecs[5]);
   if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
