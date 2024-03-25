@@ -52,13 +52,13 @@ argparser.add_argument("-delimiter", "--delimiter", default=__file_format_list__
 argparser.add_argument("-formatver", "--formatver", default=__file_format_list__[6], help="Specify the format version");
 argparser.add_argument("-l", "-t", "--list", action="store_true", help="List files included in the concatenated file.");
 argparser.add_argument("-p", "-preserve", "--preserve", action="store_false", help="Preserve permissions and time of files");
-argparser.add_argument("-repack", "--repack", action="store_true", help="Re-concatenate files, fixing checksum errors if any.");
+argparser.add_argument("-R", "-repack", "--repack", action="store_true", help="Re-concatenate files, fixing checksum errors if any.");
 argparser.add_argument("-o", "--output", default=None, help="Specify the name for the extracted concatenated files or the output concatenated file.");
 argparser.add_argument("-compression", "--compression", default="auto", help="Specify the compression method to use for concatenation.");
 argparser.add_argument("-level", "--level", default=None, help="Specify the compression level for concatenation.");
 argparser.add_argument("-t", "-tar", "--converttar", action="store_true", help="Convert a tar file to a catfile.");
 argparser.add_argument("-z", "-zip", "--convertzip", action="store_true", help="Convert a zip file to a catfile.");
-argparser.add_argument("-rar", "--convertrar", action="store_true", help="Convert a rar file to a catfile.");
+argparser.add_argument("-r", "-rar", "--convertrar", action="store_true", help="Convert a rar file to a catfile.");
 argparser.add_argument("-T", "--text", action="store_true", help="Read file locations from a text file.");
 getargs = argparser.parse_args();
 
