@@ -861,7 +861,7 @@ def ReadInFileBySizeWithContent(infile, seekstart=0, seekend=0, listonly=False, 
   if(not fp):
    return False;
   fp.seek(0, 0);
- elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", infile)):
+ elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
   fp = download_file_from_internet_file(infile);
   fp = UncompressArchiveFile(fp, formatspecs);
   fp.seek(0, 0);
@@ -918,7 +918,7 @@ def ReadInFileBySizeWithContentToArray(infile, listonly=False, skipchecksum=Fals
   if(not fp):
    return False;
   fp.seek(0, 0);
- elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", infile)):
+ elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
   fp = download_file_from_internet_file(infile);
   fp = UncompressArchiveFile(fp, formatspecs);
   fp.seek(0, 0);
@@ -1736,7 +1736,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   catfp = BytesIO();
  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
- elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", outfile)):
+ elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
   catfp = BytesIO();
  else:
   fbasename = os.path.splitext(outfile)[0];
@@ -2039,7 +2039,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
    shutil.copyfileobj(catfp, sys.stdout.buffer);
   else:
    shutil.copyfileobj(catfp, sys.stdout);
- elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", outfile)):
+ elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   catfp.seek(0, 0);
   upload_file_to_internet_file(catfp, outfile);
@@ -2085,7 +2085,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   catfp = BytesIO();
  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
- elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", outfile)):
+ elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
   catfp = BytesIO();
  else:
   fbasename = os.path.splitext(outfile)[0];
@@ -2111,7 +2111,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   if(not infile):
    return False;
   infile.seek(0, 0);
- elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", infile)):
+ elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
   infile = download_file_from_internet_file(infile);
   infile.seek(0, 0);
   if(not infile):
@@ -2344,7 +2344,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
    shutil.copyfileobj(catfp, sys.stdout.buffer);
   else:
    shutil.copyfileobj(catfp, sys.stdout);
- elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", outfile)):
+ elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   catfp.seek(0, 0);
   upload_file_from_internet_file(catfp, outfile);
@@ -2382,7 +2382,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   catfp = BytesIO();
  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
- elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", outfile)):
+ elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
   catfp = BytesIO();
  else:
   fbasename = os.path.splitext(outfile)[0];
@@ -2408,7 +2408,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   if(not infile):
    return False;
   infile.seek(0, 0);
- elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", infile)):
+ elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
   infile = download_file_from_internet_file(infile);
   infile.seek(0, 0);
   if(not infile):
@@ -2656,7 +2656,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
    shutil.copyfileobj(catfp, sys.stdout.buffer);
   else:
    shutil.copyfileobj(catfp, sys.stdout);
- elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", outfile)):
+ elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   catfp.seek(0, 0);
   upload_file_to_internet_file(catfp, outfile);
@@ -2699,7 +2699,7 @@ if(rarfile_support):
    catfp = BytesIO();
   elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
    catfp = outfile;
-  elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", outfile)):
+  elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
    catfp = BytesIO();
   else:
    fbasename = os.path.splitext(outfile)[0];
@@ -2986,7 +2986,7 @@ if(rarfile_support):
     shutil.copyfileobj(catfp, sys.stdout.buffer);
    else:
     shutil.copyfileobj(catfp, sys.stdout);
-  elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", outfile)):
+  elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
    catfp = CompressArchiveFile(catfp, compression, formatspecs);
    catfp.seek(0, 0);
    upload_file_to_internet_file(catfp, outfile);
@@ -3027,7 +3027,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
   if(not catfp):
    return False;
   catfp.seek(0, 0);
- elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", infile)):
+ elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
   catfp = download_file_from_internet_file(infile);
   catfp.seek(0, 0);
   catfp = UncompressArchiveFile(catfp, formatspecs);
@@ -3276,7 +3276,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
   if(not catfp):
    return False;
   catfp.seek(0, 0);
- elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", infile)):
+ elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
   catfp = download_file_from_internet_file(infile);
   catfp = UncompressArchiveFile(catfp, formatspecs);
   catfp.seek(0, 0);
@@ -3537,7 +3537,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
   if(not catfp):
    return False;
   catfp.seek(0, 0);
- elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", infile)):
+ elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
   catfp = download_file_from_internet_file(infile);
   catfp = UncompressArchiveFile(catfp, formatspecs);
   catfp.seek(0, 0);
@@ -3796,7 +3796,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   if(not catfp):
    return False;
   catfp.seek(0, 0);
- elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", infile)):
+ elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
   catfp = download_file_from_internet_file(infile);
   catfp = UncompressArchiveFile(catfp, formatspecs);
   catfp.seek(0, 0);
@@ -4434,7 +4434,7 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   if(not infile):
    return False;
   infile.seek(0, 0);
- elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", infile)):
+ elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
   infile = download_file_from_internet_file(infile);
   infile.seek(0, 0);
   if(not infile):
@@ -4681,7 +4681,7 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   if(not infile):
    return False;
   infile.seek(0, 0);
- elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", infile)):
+ elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
   infile = download_file_from_internet_file(infile);
   infile.seek(0, 0);
   if(not infile):
@@ -5546,7 +5546,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   catfp = BytesIO();
  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
- elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", outfile)):
+ elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
   catfp = BytesIO();
  else:
   fbasename = os.path.splitext(outfile)[0];
@@ -5806,7 +5806,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
    shutil.copyfileobj(catfp, sys.stdout.buffer);
   else:
    shutil.copyfileobj(catfp, sys.stdout);
- elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", outfile)):
+ elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   catfp.seek(0, 0);
   upload_file_to_internet_file(catfp, outfile);
@@ -6232,7 +6232,7 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
   if(not infile):
    return False;
   infile.seek(0, 0);
- elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", infile)):
+ elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
   infile = download_file_from_internet_file(infile);
   infile.seek(0, 0);
   if(not infile):
@@ -6323,7 +6323,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
   if(not infile):
    return False;
   infile.seek(0, 0);
- elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", infile)):
+ elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
   infile = download_file_from_internet_file(infile);
   infile.seek(0, 0);
   if(not infile):
