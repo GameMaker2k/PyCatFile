@@ -279,6 +279,21 @@ def NormalizeRelativePath(inpath):
    outpath = "./" + inpath;
  return outpath;
 
+def PrependPath(base_dir, child_path):
+ # Check if base_dir is None or empty, if so, return child_path as is
+ if not base_dir:
+  return child_path;
+ # Ensure base_dir ends with exactly one slash
+ if not base_dir.endswith('/'):
+  base_dir += '/';
+ # Check if child_path starts with ./ or ../ (indicating a relative path)
+ if child_path.startswith('./') or child_path.startswith('../'):
+  # For relative paths, we don't alter the child_path
+  return base_dir + child_path;
+ else:
+  # For non-relative paths, ensure there's no starting slash on child_path to avoid double slashes
+  return base_dir + child_path.lstrip('/');
+
 def ListDir(dirpath, followlink=False, duplicates=False):
  if(isinstance(dirpath, (list, tuple, ))):
   dirpath = list(filter(None, dirpath));
@@ -5950,9 +5965,9 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
   except ImportError:
    fgname = "";
   if(verbose):
-   VerbosePrintOut(listcatfiles['ffilelist'][lcfi]['fname']);
+   VerbosePrintOut(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']));
   if(listcatfiles['ffilelist'][lcfi]['ftype']==0 or listcatfiles['ffilelist'][lcfi]['ftype']==7):
-   with open(listcatfiles['ffilelist'][lcfi]['fname'], "wb") as fpc:
+   with open(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), "wb") as fpc:
     fpc.write(listcatfiles['ffilelist'][lcfi]['fcontents'])
     try:
      fpc.flush()
@@ -5962,11 +5977,11 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
     except AttributeError:
      pass
    if(hasattr(os, "chown") and funame==listcatfiles['ffilelist'][lcfi]['funame'] and fgname==listcatfiles['ffilelist'][lcfi]['fgname'] and preservepermissions):
-    os.chown(listcatfiles['ffilelist'][lcfi]['fname'], listcatfiles['ffilelist'][lcfi]['fuid'], listcatfiles['ffilelist'][lcfi]['fgid']);
+    os.chown(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), listcatfiles['ffilelist'][lcfi]['fuid'], listcatfiles['ffilelist'][lcfi]['fgid']);
    if(preservepermissions):
-    os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], listcatfiles['ffilelist'][lcfi]['fchmode']);
+    os.chmod(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), listcatfiles['ffilelist'][lcfi]['fchmode']);
    if(preservetime):
-    os.utime(listcatfiles['ffilelist'][lcfi]['fname'], (listcatfiles['ffilelist'][lcfi]['fatime'], listcatfiles['ffilelist'][lcfi]['fmtime']));
+    os.utime(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), (listcatfiles['ffilelist'][lcfi]['fatime'], listcatfiles['ffilelist'][lcfi]['fmtime']));
   if(listcatfiles['ffilelist'][lcfi]['ftype']==1):
    if(followlink):
     getflinkpath = listcatfiles['ffilelist'][lcfi]['flinkname'];
@@ -5993,7 +6008,7 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
     except ImportError:
      fgname = "";
     if(flinkinfo['ftype'] == 0 or flinkinfo['ftype'] == 7):
-     with open(listcatfiles['ffilelist'][lcfi]['fname'], "wb") as fpc:
+     with open(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), "wb") as fpc:
       fpc.write(flinkinfo['fcontents'])
       try:
        fpc.flush()
@@ -6003,30 +6018,30 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
       except AttributeError:
        pass
      if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname'] and preservepermissions):
-      os.chown(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
+      os.chown(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), flinkinfo['fuid'], flinkinfo['fgid']);
      if(preservepermissions):
-      os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fchmode']);
+      os.chmod(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode']);
      if(preservetime):
-      os.utime(listcatfiles['ffilelist'][lcfi]['fname'], (flinkinfo['fatime'], flinkinfo['fmtime']));
+      os.utime(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), (flinkinfo['fatime'], flinkinfo['fmtime']));
     if(flinkinfo['ftype']==1):
-     os.link(flinkinfo['flinkname'], listcatfiles['ffilelist'][lcfi]['fname']);
+     os.link(flinkinfo['flinkname'], PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']));
     if(flinkinfo['ftype']==2):
-     os.symlink(flinkinfo['flinkname'], listcatfiles['ffilelist'][lcfi]['fname']);
+     os.symlink(flinkinfo['flinkname'], PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']));
     if(flinkinfo['ftype']==5):
      if(preservepermissions):
-      os.mkdir(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fchmode']);
+      os.mkdir(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode']);
      else:
-      os.mkdir(listcatfiles['ffilelist'][lcfi]['fname']);
+      os.mkdir(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']));
      if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname'] and preservepermissions):
-      os.chown(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
+      os.chown(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), flinkinfo['fuid'], flinkinfo['fgid']);
      if(preservepermissions):
-      os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fchmode']);
+      os.chmod(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode']);
      if(preservetime):
-      os.utime(listcatfiles['ffilelist'][lcfi]['fname'], (flinkinfo['fatime'], flinkinfo['fmtime']));
+      os.utime(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), (flinkinfo['fatime'], flinkinfo['fmtime']));
     if(flinkinfo['ftype']==6 and hasattr(os, "mkfifo")):
-     os.mkfifo(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fchmode']);
+     os.mkfifo(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode']);
    else:
-    os.link(listcatfiles['ffilelist'][lcfi]['flinkname'], listcatfiles['ffilelist'][lcfi]['fname']);
+    os.link(listcatfiles['ffilelist'][lcfi]['flinkname'], PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']));
   if(listcatfiles['ffilelist'][lcfi]['ftype']==2):
    if(followlink):
     getflinkpath = listcatfiles['ffilelist'][lcfi]['flinkname'];
@@ -6053,7 +6068,7 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
     except ImportError:
      fgname = "";
     if(flinkinfo['ftype']==0 or flinkinfo['ftype']==7):
-     with open(listcatfiles['ffilelist'][lcfi]['fname'], "wb") as fpc:
+     with open(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), "wb") as fpc:
       fpc.write(flinkinfo['fcontents'])
       try:
        fpc.flush()
@@ -6063,43 +6078,43 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
       except AttributeError:
        pass
      if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname'] and preservepermissions):
-      os.chown(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
+      os.chown(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), flinkinfo['fuid'], flinkinfo['fgid']);
      if(preservepermissions):
-      os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fchmode']);
+      os.chmod(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode']);
      if(preservetime):
-      os.utime(listcatfiles['ffilelist'][lcfi]['fname'], (flinkinfo['fatime'], flinkinfo['fmtime']));
+      os.utime(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), (flinkinfo['fatime'], flinkinfo['fmtime']));
     if(flinkinfo['ftype']==1):
-     os.link(flinkinfo['flinkname'], listcatfiles['ffilelist'][lcfi]['fname']);
+     os.link(flinkinfo['flinkname'], PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']));
     if(flinkinfo['ftype']==2):
-     os.symlink(flinkinfo['flinkname'], listcatfiles['ffilelist'][lcfi]['fname']);
+     os.symlink(flinkinfo['flinkname'], PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']));
     if(flinkinfo['ftype']==5):
      if(preservepermissions):
-      os.mkdir(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fchmode']);
+      os.mkdir(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode']);
      else:
-      os.mkdir(listcatfiles['ffilelist'][lcfi]['fname']);
+      os.mkdir(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']));
      if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname'] and preservepermissions):
-      os.chown(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fuid'], flinkinfo['fgid']);
+      os.chown(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), flinkinfo['fuid'], flinkinfo['fgid']);
      if(preservepermissions):
-      os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fchmode']);
+      os.chmod(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode']);
      if(preservetime):
-      os.utime(listcatfiles['ffilelist'][lcfi]['fname'], (flinkinfo['fatime'], flinkinfo['fmtime']));
+      os.utime(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), (flinkinfo['fatime'], flinkinfo['fmtime']));
     if(flinkinfo['ftype']==6 and hasattr(os, "mkfifo")):
-     os.mkfifo(listcatfiles['ffilelist'][lcfi]['fname'], flinkinfo['fchmode']);
+     os.mkfifo(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode']);
    else:
-    os.symlink(listcatfiles['ffilelist'][lcfi]['flinkname'], listcatfiles['ffilelist'][lcfi]['fname']);
+    os.symlink(listcatfiles['ffilelist'][lcfi]['flinkname'], PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']));
   if(listcatfiles['ffilelist'][lcfi]['ftype']==5):
    if(preservepermissions):
-    os.mkdir(listcatfiles['ffilelist'][lcfi]['fname'], listcatfiles['ffilelist'][lcfi]['fchmode']);
+    os.mkdir(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), listcatfiles['ffilelist'][lcfi]['fchmode']);
    else:
-    os.mkdir(listcatfiles['ffilelist'][lcfi]['fname']);
+    os.mkdir(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']));
    if(hasattr(os, "chown") and funame==listcatfiles['ffilelist'][lcfi]['funame'] and fgname==listcatfiles['ffilelist'][lcfi]['fgname'] and preservepermissions):
-    os.chown(listcatfiles['ffilelist'][lcfi]['fname'], listcatfiles['ffilelist'][lcfi]['fuid'], listcatfiles['ffilelist'][lcfi]['fgid']);
+    os.chown(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), listcatfiles['ffilelist'][lcfi]['fuid'], listcatfiles['ffilelist'][lcfi]['fgid']);
    if(preservepermissions):
-    os.chmod(listcatfiles['ffilelist'][lcfi]['fname'], listcatfiles['ffilelist'][lcfi]['fchmode']);
+    os.chmod(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), listcatfiles['ffilelist'][lcfi]['fchmode']);
    if(preservetime):
-    os.utime(listcatfiles['ffilelist'][lcfi]['fname'], (listcatfiles['ffilelist'][lcfi]['fatime'], listcatfiles['ffilelist'][lcfi]['fmtime']));
+    os.utime(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), (listcatfiles['ffilelist'][lcfi]['fatime'], listcatfiles['ffilelist'][lcfi]['fmtime']));
   if(listcatfiles['ffilelist'][lcfi]['ftype']==6 and hasattr(os, "mkfifo")):
-   os.mkfifo(listcatfiles['ffilelist'][lcfi]['fname'], listcatfiles['ffilelist'][lcfi]['fchmode']);
+   os.mkfifo(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), listcatfiles['ffilelist'][lcfi]['fchmode']);
   lcfi = lcfi + 1;
  if(returnfp):
   return listcatfiles['ffilelist']['catfp'];
