@@ -1058,6 +1058,224 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
   pass;
  return fp;
 
+def AppendFile(infile, fp, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__):
+ advancedlist = True;
+ if(infiles=="-"):
+  for line in sys.stdin:
+   infilelist.append(line.strip());
+  infilelist = list(filter(None, infilelist));
+ elif(infiles!="-" and dirlistfromtxt and os.path.exists(infiles) and (os.path.isfile(infiles) or infiles=="/dev/null" or infiles=="NUL")):
+  if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
+   return False;
+  with open(infiles, "r") as finfile:
+   for line in finfile:
+    infilelist.append(line.strip());
+  infilelist = list(filter(None, infilelist));
+ else:
+  if(isinstance(infiles, (list, tuple, ))):
+   infilelist = list(filter(None, infiles));
+  elif(isinstance(infiles, (str, ))):
+   infilelist = list(filter(None, [infiles]));
+ if(advancedlist):
+  GetDirList = ListDirAdvanced(infilelist, followlink, False);
+ else:
+  GetDirList = ListDir(infilelist, followlink, False);
+ if(not GetDirList):
+  return False;
+ curinode = 0;
+ curfid = 0;
+ inodelist = [];
+ inodetofile = {};
+ filetoinode = {};
+ inodetocatinode = {};
+ fnumfiles = int(len(GetDirList));
+ AppendFileHeader(fp, fnumfiles, checksumtype=, formatspecs);
+ fnumfiles = format(fnumfiles, 'x').lower();
+ for curfname in GetDirList:
+  catfhstart = catfp.tell();
+  if(re.findall("^[.|/]", curfname)):
+   fname = curfname;
+  else:
+   fname = "./"+curfname;
+  if(verbose):
+   VerbosePrintOut(fname);
+  if(not followlink or followlink is None):
+   fstatinfo = os.lstat(fname);
+  else:
+   fstatinfo = os.stat(fname);
+  fpremode = fstatinfo.st_mode;
+  finode = fstatinfo.st_ino;
+  flinkcount = fstatinfo.st_nlink;
+  ftype = 0;
+  if(stat.S_ISREG(fpremode)):
+   ftype = 0;
+  elif(stat.S_ISLNK(fpremode)):
+   ftype = 2;
+  elif(stat.S_ISCHR(fpremode)):
+   ftype = 3;
+  elif(stat.S_ISBLK(fpremode)):
+   ftype = 4;
+  elif(stat.S_ISDIR(fpremode)):
+   ftype = 5;
+  elif(stat.S_ISFIFO(fpremode)):
+   ftype = 6;
+  elif(stat.S_ISSOCK(fpremode)):
+   ftype = 8;
+  elif(hasattr(stat, "S_ISDOOR") and stat.S_ISDOOR(fpremode)):
+   ftype = 9;
+  elif(hasattr(stat, "S_ISPORT") and stat.S_ISPORT(fpremode)):
+   ftype = 10;
+  elif(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
+   ftype = 111;
+  else:
+   ftype = 0;
+  flinkname = "";
+  fcurfid = format(int(curfid), 'x').lower();
+  if(not followlink and finode!=0):
+   if(ftype!=1):
+    if(finode in inodelist):
+     ftype = 1;
+     flinkname = inodetofile[finode];
+     fcurinode = format(int(inodetocatinode[finode]), 'x').lower();
+    if(finode not in inodelist):
+     inodelist.append(finode);
+     inodetofile.update({finode: fname});
+     inodetocatinode.update({finode: curinode});
+     fcurinode = format(int(curinode), 'x').lower();
+     curinode = curinode + 1;
+  else:
+   fcurinode = format(int(curinode), 'x').lower();
+   curinode = curinode + 1;
+  curfid = curfid + 1;
+  if(ftype==2):
+   flinkname = os.readlink(fname);
+  fdev = fstatinfo.st_dev;
+  getfdev = GetDevMajorMinor(fdev);
+  fdev_minor = getfdev[0];
+  fdev_major = getfdev[1];
+  frdev = fstatinfo.st_dev;
+  if(hasattr(fstatinfo, "st_rdev")):
+   frdev = fstatinfo.st_rdev;
+  else:
+   frdev = fstatinfo.st_dev;
+  getfrdev = GetDevMajorMinor(frdev);
+  frdev_minor = getfrdev[0];
+  frdev_major = getfrdev[1];
+  if(ftype==1 or ftype==2 or ftype==3 or ftype==4 or ftype==5 or ftype==6):
+   fsize = format(int("0"), 'x').lower();
+  elif(ftype==0 or ftype==7):
+   fsize = format(int(fstatinfo.st_size), 'x').lower();
+  else:
+   fsize = format(int(fstatinfo.st_size)).lower();
+  fatime = format(int(fstatinfo.st_atime), 'x').lower();
+  fmtime = format(int(fstatinfo.st_mtime), 'x').lower();
+  fctime = format(int(fstatinfo.st_ctime), 'x').lower();
+  if(hasattr(fstatinfo, "st_birthtime")):
+   fbtime = format(int(fstatinfo.st_birthtime), 'x').lower();
+  else:
+   fbtime = format(int(fstatinfo.st_ctime), 'x').lower();
+  fmode = format(int(fstatinfo.st_mode), 'x').lower();
+  fchmode = format(int(stat.S_IMODE(fstatinfo.st_mode)), 'x').lower();
+  ftypemod = format(int(stat.S_IFMT(fstatinfo.st_mode)), 'x').lower();
+  fuid = format(int(fstatinfo.st_uid), 'x').lower();
+  fgid = format(int(fstatinfo.st_gid), 'x').lower();
+  funame = "";
+  try:
+   import pwd;
+   try:
+    userinfo = pwd.getpwuid(fstatinfo.st_uid);
+    funame = userinfo.pw_name;
+   except KeyError:
+    funame = "";
+  except ImportError:
+   funame = "";
+  fgname = "";
+  try:
+   import grp;
+   try:
+    groupinfo = grp.getgrgid(fstatinfo.st_gid);
+    fgname = groupinfo.gr_name;
+   except KeyError:
+    fgname = "";
+  except ImportError:
+   fgname = "";
+  fdev_minor = format(int(fdev_minor), 'x').lower();
+  fdev_major = format(int(fdev_major), 'x').lower();
+  frdev_minor = format(int(frdev_minor), 'x').lower();
+  frdev_major = format(int(frdev_major), 'x').lower();
+  finode = format(int(finode), 'x').lower();
+  flinkcount = format(int(flinkcount), 'x').lower();
+  if(hasattr(fstatinfo, "st_file_attributes")):
+   fwinattributes = format(int(fstatinfo.st_file_attributes), 'x').lower();
+  else:
+   fwinattributes = format(int(0), 'x').lower();
+  fcontents = "".encode('UTF-8');
+  chunk_size = 1024;
+  if(ftype == 0 or ftype == 7):
+   with open(fname, "rb") as fpc:
+    while(True):
+     chunk = fpc.read(chunk_size);
+     if(not chunk):
+      break
+     fcontents += chunk;
+  if(followlink and (ftype == 1 or ftype == 2)):
+   flstatinfo = os.stat(flinkname);
+   with open(flinkname, "rb") as fpc:
+    while(True):
+     chunk = fpc.read(chunk_size);
+     if(not chunk):
+      break;
+     fcontents += chunk;
+  ftypehex = format(ftype, 'x').lower();
+  catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
+  fp = AppendFileHeaderWithContent(fp, catoutlist, extradata, fcontent, checksumtype, formatspecs);
+ if(not compression):
+  fp = CompressArchiveFile(fp, compression, formatspecs);
+ fp.seek(0, 0);
+ return fp;
+
+def AppendFileToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, returnfp=False):
+ if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+  if(os.path.exists(outfile)):
+   os.unlink(outfile);
+ if(outfile=="-"):
+  verbose = False;
+  catfp = BytesIO();
+ elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
+  catfp = outfile;
+ elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+  catfp = BytesIO();
+ else:
+  fbasename = os.path.splitext(outfile)[0];
+  fextname = os.path.splitext(outfile)[1];
+  catfp = CompressOpenFile(outfile, compressionlevel);
+ catfp = AppendFile(infile, catfp, dirlistfromtxt, False, None, filevalues, extradata, , followlink, checksumtype, formatspecs);
+ if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  try:
+   catfp.flush();
+   os.fsync(catfp.fileno());
+  except io.UnsupportedOperation:
+   pass;
+  except AttributeError:
+   pass;
+ if(outfile=="-"):
+  catfp.seek(0, 0);
+  if(hasattr(sys.stdout, "buffer")):
+   shutil.copyfileobj(catfp, sys.stdout.buffer);
+  else:
+   shutil.copyfileobj(catfp, sys.stdout);
+ elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp.seek(0, 0);
+  upload_file_to_internet_file(catfp, outfile);
+ if(returnfp):
+  catfp.seek(0, 0);
+  return catfp;
+ else:
+  catfp.close();
+  return True;
+
 def PrintPermissionString(fchmode, ftype):
  permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
  permissionstr = "";
