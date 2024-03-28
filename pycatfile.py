@@ -495,30 +495,30 @@ def GetHeaderChecksum(inlist=[], checksumtype="crc32", encodedata=True, formatsp
   catfileheadercshex = format(0, 'x').lower();
  return catfileheadercshex;
 
-def GetFileChecksum(infile, checksumtype="crc32", encodedata=True, formatspecs=__file_format_list__):
+def GetFileChecksum(instr, checksumtype="crc32", encodedata=True, formatspecs=__file_format_list__):
  if(encodedata):
-  infile = infile.encode('UTF-8');
+  instr = instr.encode('UTF-8');
  if(checksumtype=="none" or checksumtype==""):
-  catinfilecshex = format(0, 'x').lower();
+  catinstrcshex = format(0, 'x').lower();
  elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
-  catinfilecshex = format(crc16(infile) & 0xffff, '04x').lower();
+  catinstrcshex = format(crc16(instr) & 0xffff, '04x').lower();
  elif(checksumtype=="crc16_ccitt"):
-  catinfilecshex = format(crc16_ccitt(infile) & 0xffff, '04x').lower();
+  catinstrcshex = format(crc16_ccitt(instr) & 0xffff, '04x').lower();
  elif(checksumtype=="adler32"):
-  catinfilecshex = format(zlib.adler32(infile) & 0xffffffff, '08x').lower();
+  catinstrcshex = format(zlib.adler32(instr) & 0xffffffff, '08x').lower();
  elif(checksumtype=="crc32"):
-  catinfilecshex = format(crc32(infile) & 0xffffffff, '08x').lower();
+  catinstrcshex = format(crc32(instr) & 0xffffffff, '08x').lower();
  elif(checksumtype=="crc64_ecma"):
-  catinfilecshex = format(crc64_ecma(infile) & 0xffffffffffffffff, '016x').lower();
+  catinstrcshex = format(crc64_ecma(instr) & 0xffffffffffffffff, '016x').lower();
  elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
-  catinfilecshex = format(crc64_iso(infile) & 0xffffffffffffffff, '016x').lower();
+  catinstrcshex = format(crc64_iso(instr) & 0xffffffffffffffff, '016x').lower();
  elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
   checksumoutstr = hashlib.new(checksumtype);
-  checksumoutstr.update(infile);
-  catinfilecshex = checksumoutstr.hexdigest().lower();
+  checksumoutstr.update(instr);
+  catinstrcshex = checksumoutstr.hexdigest().lower();
  else:
-  catinfilecshex = format(0, 'x').lower();
- return catinfilecshex;
+  catinstrcshex = format(0, 'x').lower();
+ return catinstrcshex;
 
 def ValidateHeaderChecksum(inlist=[], checksumtype="crc32", inchecksum="0", formatspecs=__file_format_list__):
  catfileheadercshex = GetHeaderChecksum(inlist, checksumtype, True, formatspecs);
@@ -1004,6 +1004,59 @@ def AppendNullBytes(indata=[], delimiter=__file_format_delimiter__):
   outdata = outdata + AppendNullByte(indata[inum], delimiter);
   inum = inum + 1;
  return outdata;
+
+def AppendFileHeader(fp, numfiles, checksumtype="crc32", formatspecs=__file_format_list__):
+ delimiter = formatspecs[5];
+ catver = formatspecs[6];
+ fileheaderver = str(int(catver.replace(".", "")));
+ fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
+ catfp.write(fileheader.encode('UTF-8'));
+ fnumfiles = format(int(numfiles), 'x').lower();
+ fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
+ catfileheadercshex = GetFileChecksum(fileheader + fnumfilesa, checksumtype, False, formatspecs);
+ fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[5]);
+ catfp.write(fnumfilesa.encode('UTF-8'));
+ try:
+  catfp.flush();
+  os.fsync(catfp.fileno());
+ except io.UnsupportedOperation:
+  pass;
+ except AttributeError:
+  pass;
+ return fp;
+
+def AppendFileListValue(fp, filevalues=[], extradata=[], filecontent="", checksumtype="crc32", formatspecs=__file_format_list__):
+ extrafields = format(len(extradata), 'x').lower();
+ extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
+ if(len(extradata)>0):
+  extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
+ extrasizelen = format(len(extrasizestr), 'x').lower();
+ catoutlen = len(filevalues) + len(extradata) + 3;
+ catoutlenhex = format(catoutlen, 'x').lower();
+ catoutlist.insert(0, catoutlenhex);
+ catfileoutstr = AppendNullBytes(catoutlist, formatspecs[5]);
+ catfileoutstr = AppendNullBytes(catoutlist, formatspecs[5]);
+ if(len(extradata)>0):
+  catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
+ catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
+ catfileheadercshex = GetFileChecksum(fileheader + fnumfilesa, checksumtype, False, formatspecs);
+ catfilecontentcshex = GetFileChecksum(filecontent, checksumtype, False, formatspecs);
+ tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
+ catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower();
+ catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
+ catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
+ catfileoutstrecd = catfileoutstr.encode('UTF-8');
+ nullstrecd = formatspecs[5].encode('UTF-8');
+ catfileout = catfileoutstrecd + filecontent + nullstrecd;
+ fp.write(catfileout);
+ try:
+  catfp.flush();
+  os.fsync(catfp.fileno());
+ except io.UnsupportedOperation:
+  pass;
+ except AttributeError:
+  pass;
+ return fp;
 
 def PrintPermissionString(fchmode, ftype):
  permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
