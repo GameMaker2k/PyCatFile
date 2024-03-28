@@ -721,7 +721,7 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
  catversions = re.search(r'(.*?)(\d+)$', catstring).groups();
  fprenumfiles = catheader[1];
  fnumfiles = int(fprenumfiles, 16);
- fprchecksumtype = catheader[2];
+ fprechecksumtype = catheader[2];
  fprechecksum = catheader[3];
  catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}};
  if(seekstart<0 and seekstart>fnumfiles):
