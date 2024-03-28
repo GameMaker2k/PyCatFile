@@ -1058,7 +1058,7 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
   pass;
  return fp;
 
-def AppendFile(infile, fp, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__):
+def AppendFile(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__):
  advancedlist = True;
  if(infiles=="-"):
   for line in sys.stdin:
@@ -1229,8 +1229,6 @@ def AppendFile(infile, fp, dirlistfromtxt=False, compression="auto", compression
   ftypehex = format(ftype, 'x').lower();
   catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
   fp = AppendFileHeaderWithContent(fp, catoutlist, extradata, fcontent, checksumtype, formatspecs);
- if(not compression):
-  fp = CompressArchiveFile(fp, compression, formatspecs);
  fp.seek(0, 0);
  return fp;
 
@@ -1249,7 +1247,7 @@ def AppendFileToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
   catfp = CompressOpenFile(outfile, compressionlevel);
- catfp = AppendFile(infile, catfp, dirlistfromtxt, False, None, filevalues, extradata, , followlink, checksumtype, formatspecs);
+ catfp = AppendFile(infile, catfp, dirlistfromtxt, filevalues, extradata, , followlink, checksumtype, formatspecs);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   try:
