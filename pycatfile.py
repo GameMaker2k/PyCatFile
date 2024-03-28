@@ -733,8 +733,8 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
  if(seekstart>0):
   il = 0;
   while(il < seekstart):
-   prefhstart = catfp.tell();
-   preheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
+   prefhstart = fp.tell();
+   preheaderdata = ReadFileHeaderDataBySize(fp, formatspecs[5]);
    prefsize = int(preheaderdata[4], 16);
    hout = AppendNullBytes(preheaderdata, formatspecs[5]);
    if(prefchecksumtype=="none" or prefchecksumtype==""):
@@ -758,12 +758,12 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
     return False;
     valid_archive = False;
     invalid_archive = True;
-   prefhend = catfp.tell() - 1;
-   prefcontentstart = catfp.tell();
+   prefhend = fp.tell() - 1;
+   prefcontentstart = fp.tell();
    prefcontents = "";
    pyhascontents = False;
    if(prefsize>0):
-    prefcontents = catfp.read(prefsize);
+    prefcontents = fp.read(prefsize);
     if(prefchecksumtype=="none" or prefchecksumtype==""):
      prenewfccs = 0;
     elif(prefchecksumtype=="crc16" or prefchecksumtype=="crc16_ansi" or prefchecksumtype=="crc16_ibm"):
@@ -786,7 +786,7 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
     if(prefccs!=prenewfccs and not skipchecksum):
      VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
      return False;
-   catfp.seek(1, 1);
+   fp.seek(1, 1);
    il = il + 1;
  realidnum = 0;
  countnum = seekstart;
