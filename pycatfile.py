@@ -737,6 +737,7 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
    preheaderdata = ReadFileHeaderDataBySize(fp, formatspecs[5]);
    prefsize = int(preheaderdata[5], 16);
    prenewfcs = GetHeaderChecksum(preheaderdata[:-2], preheaderdata[-3].lower(), True, formatspecs);
+   prefcs = preheaderdata[-2];
    if(prefcs!=prenewfcs and not skipchecksum):
     VerbosePrintOut("File Header Checksum Error with file " + prefname + " at offset " + str(prefhstart));
     return False;
@@ -749,6 +750,7 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
    if(prefsize>0):
     prefcontents = fp.read(prefsize);
     prenewfccs = GetFileChecksum(prefcontents, preheaderdata[-3].lower(), False, formatspecs);
+    prefccs = preheaderdata[-1];
     pyhascontents = True;
     if(prefccs!=prenewfccs and not skipchecksum):
      VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
