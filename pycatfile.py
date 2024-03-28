@@ -1025,7 +1025,7 @@ def AppendFileHeader(fp, numfiles, checksumtype="crc32", formatspecs=__file_form
   pass;
  return fp;
 
-def AppendFileListValue(fp, filevalues=[], extradata=[], filecontent="", checksumtype="crc32", formatspecs=__file_format_list__):
+def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="", checksumtype="crc32", formatspecs=__file_format_list__):
  extrafields = format(len(extradata), 'x').lower();
  extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
  if(len(extradata)>0):
