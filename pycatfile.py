@@ -595,14 +595,14 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, 
  delimiter = formatspecs[5];
  fheaderstart = fp.tell();
  HeaderOut = ReadFileHeaderDataBySize(fp, delimiter);
- if(re.findall("^[.|/]", HeaderOut[2])):
-  fname = HeaderOut[2];
+ if(re.findall("^[.|/]", HeaderOut[3])):
+  fname = HeaderOut[3];
  else:
-  fname = "./"+HeaderOut[2];
+  fname = "./"+HeaderOut[3];
  fchecksumtype = HeaderOut[-3].lower();
  fcs = HeaderOut[-2].lower();
  fccs = HeaderOut[-1].lower();
- fsize = int(HeaderOut[4], 16);
+ fsize = int(HeaderOut[5], 16);
  newfcs = GetHeaderChecksum(HeaderOut[:-2], HeaderOut[-3].lower(), True, formatspecs);
  if(fcs!=newfcs and not skipchecksum):
   VerbosePrintOut("File Header Checksum Error with file " + fname + " at offset " + str(fheaderstart));
@@ -735,7 +735,7 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
   while(il < seekstart):
    prefhstart = fp.tell();
    preheaderdata = ReadFileHeaderDataBySize(fp, formatspecs[5]);
-   prefsize = int(preheaderdata[4], 16);
+   prefsize = int(preheaderdata[5], 16);
    hout = AppendNullBytes(preheaderdata, formatspecs[5]);
    if(prefchecksumtype=="none" or prefchecksumtype==""):
     prenewfcs = 0;
@@ -3246,13 +3246,14 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
  catfp.seek(seekstart, 0);
  fileidnum = il;
  catfheadsize = int(preheaderdata[0], 16);
- catftype = int(preheaderdata[1], 16);
- if(re.findall("^[.|/]", preheaderdata[2])):
-  catfname = preheaderdata[2];
+ catfnumfields = int(preheaderdata[1], 16);
+ catftype = int(preheaderdata[2], 16);
+ if(re.findall("^[.|/]", preheaderdata[3])):
+  catfname = preheaderdata[3];
  else:
-  catfname = "./"+preheaderdata[2];
- catflinkname = preheaderdata[3];
- catfsize = int(preheaderdata[4], 16);
+  catfname = "./"+preheaderdata[3];
+ catflinkname = preheaderdata[4];
+ catfsize = int(preheaderdata[5], 16);
  catfbasedir = os.path.dirname(catfname);
  catlist = {'fid': fileidnum, 'foffset': catfp.tell(), 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize};
  if(returnfp):
@@ -3502,13 +3503,14 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
  catfp.seek(seekstart, 0);
  fileidnum = il;
  catfheadsize = int(preheaderdata[0], 16);
- catftype = int(preheaderdata[1], 16);
- if(re.findall("^[.|/]", preheaderdata[2])):
-  catfname = preheaderdata[2];
+ catfnumfields = int(preheaderdata[1], 16);
+ catftype = int(preheaderdata[2], 16);
+ if(re.findall("^[.|/]", preheaderdata[3])):
+  catfname = preheaderdata[3];
  else:
-  catfname = "./"+preheaderdata[2];
- catflinkname = preheaderdata[3];
- catfsize = int(preheaderdata[4], 16);
+  catfname = "./"+preheaderdata[3];
+ catflinkname = preheaderdata[4];
+ catfsize = int(preheaderdata[5], 16);
  catfbasedir = os.path.dirname(catfname);
  if(filefound):
   catlist = {'fid': fileidnum, 'foffset': catfp.tell(), 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize};
@@ -3921,7 +3923,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    if(re.findall("^[.|/]", preheaderdata[3])):
     prefname = preheaderdata[3];
    else:
-    prefname = "./"+preheaderdata[4];
+    prefname = "./"+preheaderdata[3];
    prefsize = int(preheaderdata[5], 16);
    prefextrasize = int(preheaderdata[23], 16);
    prefextrafields = int(preheaderdata[24], 16);
