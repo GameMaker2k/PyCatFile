@@ -1089,7 +1089,7 @@ def AppendFile(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], fo
  filetoinode = {};
  inodetocatinode = {};
  fnumfiles = int(len(GetDirList));
- AppendFileHeader(fp, fnumfiles, checksumtype=, formatspecs);
+ AppendFileHeader(fp, fnumfiles, checksumtype, formatspecs);
  fnumfiles = format(fnumfiles, 'x').lower();
  for curfname in GetDirList:
   catfhstart = catfp.tell();
@@ -1247,7 +1247,7 @@ def AppendFileToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
   catfp = CompressOpenFile(outfile, compressionlevel);
- catfp = AppendFile(infile, catfp, dirlistfromtxt, filevalues, extradata, , followlink, checksumtype, formatspecs);
+ catfp = AppendFile(infile, catfp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   try:
