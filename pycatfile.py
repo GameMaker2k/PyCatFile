@@ -1010,15 +1010,15 @@ def AppendFileHeader(fp, numfiles, checksumtype="crc32", formatspecs=__file_form
  catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
- catfp.write(fileheader.encode('UTF-8'));
+ fp.write(fileheader.encode('UTF-8'));
  fnumfiles = format(int(numfiles), 'x').lower();
  fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
- catfileheadercshex = GetFileChecksum(fileheader + fnumfilesa, checksumtype, False, formatspecs);
+ catfileheadercshex = GetFileChecksum(fileheader + fnumfilesa, checksumtype, True, formatspecs);
  fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[5]);
- catfp.write(fnumfilesa.encode('UTF-8'));
+ fp.write(fnumfilesa.encode('UTF-8'));
  try:
-  catfp.flush();
-  os.fsync(catfp.fileno());
+  fp.flush();
+  os.fsync(fp.fileno());
  except io.UnsupportedOperation:
   pass;
  except AttributeError:
@@ -1033,13 +1033,14 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
  extrasizelen = format(len(extrasizestr), 'x').lower();
  catoutlen = len(filevalues) + len(extradata) + 3;
  catoutlenhex = format(catoutlen, 'x').lower();
+ catoutlist = filevalues;
  catoutlist.insert(0, catoutlenhex);
  catfileoutstr = AppendNullBytes(catoutlist, formatspecs[5]);
  catfileoutstr = AppendNullBytes(catoutlist, formatspecs[5]);
  if(len(extradata)>0):
   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
- catfileheadercshex = GetFileChecksum(fileheader + fnumfilesa, checksumtype, False, formatspecs);
+ catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
  catfilecontentcshex = GetFileChecksum(filecontent, checksumtype, False, formatspecs);
  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
  catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower();
@@ -1050,8 +1051,8 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
  catfileout = catfileoutstrecd + filecontent + nullstrecd;
  fp.write(catfileout);
  try:
-  catfp.flush();
-  os.fsync(catfp.fileno());
+  fp.flush();
+  os.fsync(fp.fileno());
  except io.UnsupportedOperation:
   pass;
  except AttributeError:
@@ -1092,13 +1093,11 @@ def AppendFiles(infiles, fp, dirlistfromtxt=False, filevalues=[], extradata=[], 
  AppendFileHeader(fp, fnumfiles, checksumtype, formatspecs);
  fnumfiles = format(fnumfiles, 'x').lower();
  for curfname in GetDirList:
-  catfhstart = catfp.tell();
+  catfhstart = fp.tell();
   if(re.findall("^[.|/]", curfname)):
    fname = curfname;
   else:
    fname = "./"+curfname;
-  if(verbose):
-   VerbosePrintOut(fname);
   if(not followlink or followlink is None):
    fstatinfo = os.lstat(fname);
   else:
@@ -1228,7 +1227,7 @@ def AppendFiles(infiles, fp, dirlistfromtxt=False, filevalues=[], extradata=[], 
      fcontents += chunk;
   ftypehex = format(ftype, 'x').lower();
   catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
-  fp = AppendFileHeaderWithContent(fp, catoutlist, extradata, fcontent, checksumtype, formatspecs);
+  fp = AppendFileHeaderWithContent(fp, catoutlist, extradata, fcontents, checksumtype, formatspecs);
  fp.seek(0, 0);
  return fp;
 
@@ -1238,7 +1237,7 @@ def AppendFileToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto
    os.unlink(outfile);
  if(outfile=="-"):
   verbose = False;
-  catfp = BytesIO();
+  catfpfp = BytesIO();
  elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = outfile;
  elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
