@@ -50,7 +50,7 @@ pymodule['longdescription'] = 'A tar like file format name catfile after unix ca
 pymodule['platforms'] = 'OS Independent';
 pymodule['zipsafe'] = True;
 pymodule['pymodules'] = ['pycatfile'];
-pymodule['scripts'] = ['catfile.py'];
+pymodule['scripts'] = ['catfile.py', 'neocatfile.py'];
 pymodule['classifiers'] = [
  'Development Status :: 5 - Production/Stable',
  'Intended Audience :: Developers',
