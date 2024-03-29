@@ -1036,7 +1036,6 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
  catoutlist = filevalues;
  catoutlist.insert(0, catoutlenhex);
  catfileoutstr = AppendNullBytes(catoutlist, formatspecs[5]);
- catfileoutstr = AppendNullBytes(catoutlist, formatspecs[5]);
  if(len(extradata)>0):
   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
@@ -1231,7 +1230,7 @@ def AppendFiles(infiles, fp, dirlistfromtxt=False, filevalues=[], extradata=[], 
  fp.seek(0, 0);
  return fp;
 
-def AppendFileToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, returnfp=False):
+def AppendFilesToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, returnfp=False):
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   if(os.path.exists(outfile)):
    os.unlink(outfile);
@@ -1246,7 +1245,7 @@ def AppendFileToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
   catfp = CompressOpenFile(outfile, compressionlevel);
- catfp = AppendFile(infile, catfp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs);
+ catfp = AppendFiles(infile, catfp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   try:
