@@ -7272,6 +7272,14 @@ def download_file_from_internet_file(url, headers=geturls_headers_pycatfile_pyth
   return False;
  return False;
 
+def download_file_from_internet_uncompress_file(url, headers=geturls_headers_pycatfile_python_alt, formatspecs=__file_format_list__):
+  fp = download_file_from_internet_file(url);
+  fp = UncompressArchiveFile(fp, formatspecs);
+  fp.seek(0, 0);
+  if(not fp):
+   return False;
+ return fp;
+
 def download_file_from_internet_string(url, headers=geturls_headers_pycatfile_python_alt):
  urlparts = urlparse(url);
  if(urlparts.scheme=="http" or urlparts.scheme=="https"):
@@ -7286,6 +7294,14 @@ def download_file_from_internet_string(url, headers=geturls_headers_pycatfile_py
  else:
   return False;
  return False;
+
+def download_file_from_internet_uncompress_string(url, headers=geturls_headers_pycatfile_python_alt, formatspecs=__file_format_list__):
+  fp = download_file_from_internet_string(url);
+  fp = UncompressArchiveFile(fp, formatspecs);
+  fp.seek(0, 0);
+  if(not fp):
+   return False;
+ return fp;
 
 def upload_file_to_internet_file(ifp, url):
  urlparts = urlparse(url);
