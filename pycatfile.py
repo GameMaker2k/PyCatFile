@@ -7318,6 +7318,14 @@ def upload_file_to_internet_file(ifp, url):
   return False;
  return False;
 
+def upload_file_to_internet_compress_file(ifp, url, formatspecs=__file_format_list__):
+ catfp = CompressArchiveFile(catfp, compression, formatspecs);
+ if(not catfileout):
+  return False;
+ catfp.seek(0, 0);
+ upload_file_to_internet_file(catfp, outfile);
+ return True;
+
 def upload_file_to_internet_string(ifp, url):
  urlparts = urlparse(url);
  if(urlparts.scheme=="http" or urlparts.scheme=="https"):
@@ -7332,6 +7340,14 @@ def upload_file_to_internet_string(ifp, url):
  else:
   return False;
  return False;
+ 
+def upload_file_to_internet_compress_string(ifp, url, formatspecs=__file_format_list__):
+ catfp = CompressArchiveFile(BytesIO(ifp), compression, formatspecs);
+ if(not catfileout):
+  return False;
+ catfp.seek(0, 0);
+ upload_file_to_internet_file(catfp, outfile);
+ return True;
 
 try:
  if(hasattr(shutil, "register_archive_format")):
