@@ -1070,7 +1070,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
  elif(infiles!="-" and dirlistfromtxt and os.path.exists(infiles) and (os.path.isfile(infiles) or infiles=="/dev/null" or infiles=="NUL")):
   if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
    return False;
-  with open(infiles, "r") as finfile:
+  with UncompressFile(infiles, formatspecs, "r") as finfile:
    for line in finfile:
     infilelist.append(line.strip());
   infilelist = list(filter(None, infilelist));
@@ -2008,7 +2008,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
  elif(infiles!="-" and dirlistfromtxt and os.path.exists(infiles) and (os.path.isfile(infiles) or infiles=="/dev/null" or infiles=="NUL")):
   if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
    return False;
-  with open(infiles, "r") as finfile:
+  with UncompressFile(infiles, formatspecs, "r") as finfile:
    for line in finfile:
     infilelist.append(line.strip());
   infilelist = list(filter(None, infilelist));
@@ -4394,7 +4394,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
  elif(infiles!="-" and dirlistfromtxt and os.path.exists(infiles) and (os.path.isfile(infiles) or infiles=="/dev/null" or infiles=="NUL")):
   if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
    return False;
-  with open(infiles, "r") as finfile:
+  with UncompressFile(infiles, formatspecs, "r") as finfile:
    for line in finfile:
     infilelist.append(line.strip());
   infilelist = list(filter(None, infilelist));
