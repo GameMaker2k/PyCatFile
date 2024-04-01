@@ -1414,9 +1414,9 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
  fp.seek(0, 0);
  return fp;
 
-def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False):
+def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False):
  inlist = ReadInFileBySizeWithContentToList(infile, 0, 0, False, False, formatspecs);
- return AppendListsWithContent(inlist, fp, dirlistfromtxt, compression, compressionlevel, filevalues, extradata, followlink, checksumtype, formatspecs, verbose);
+ return AppendListsWithContent(inlist, fp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs, verbose);
 
 def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
