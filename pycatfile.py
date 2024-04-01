@@ -1216,14 +1216,14 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
    fwinattributes = format(int(0), 'x').lower();
   fcontents = "".encode('UTF-8');
   chunk_size = 1024;
-  if(ftype == 0 or ftype == 7):
+  if(ftype==0 or ftype==7):
    with open(fname, "rb") as fpc:
     while(True):
      chunk = fpc.read(chunk_size);
      if(not chunk):
       break
      fcontents += chunk;
-  if(followlink and (ftype == 1 or ftype == 2)):
+  if(followlink and (ftype==1 or ftype==2)):
    flstatinfo = os.stat(flinkname);
    with open(flinkname, "rb") as fpc:
     while(True):
@@ -2180,14 +2180,14 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
    fwinattributes = format(int(0), 'x').lower();
   fcontents = "".encode('UTF-8');
   chunk_size = 1024;
-  if(ftype == 0 or ftype == 7):
+  if(ftype==0 or ftype==7):
    with open(fname, "rb") as fpc:
     while(True):
      chunk = fpc.read(chunk_size);
      if(not chunk):
       break
      fcontents += chunk;
-  if(followlink and (ftype == 1 or ftype == 2)):
+  if(followlink and (ftype==1 or ftype==2)):
    flstatinfo = os.stat(flinkname);
    with open(flinkname, "rb") as fpc:
     while(True):
@@ -2490,7 +2490,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   fwinattributes = format(int(0), 'x').lower();
   fcontents = "".encode('UTF-8');
   chunk_size = 1024;
-  if(ftype == 0 or ftype == 7):
+  if(ftype==0 or ftype==7):
    with tarfp.extractfile(member) as fpc:
     while(True):
      chunk = fpc.read(chunk_size);
@@ -3002,14 +3002,14 @@ if(rarfile_support):
   for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
    is_unix = False;
    is_windows = False;
-   if(member.host_os == rarfile.RAR_OS_UNIX):
+   if(member.host_os==rarfile.RAR_OS_UNIX):
     is_windows = False;
     try:
      member.external_attr
      is_unix = True;
     except AttributeError:
      is_unix = False;
-   elif(member.host_os == rarfile.RAR_OS_WIN32):
+   elif(member.host_os==rarfile.RAR_OS_WIN32):
     is_unix = False;
     try:
      member.external_attr
@@ -4556,14 +4556,14 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
    fwinattributes = 0;
   fcontents = "".encode('UTF-8');
   chunk_size = 1024;
-  if(ftype == 0 or ftype == 7):
+  if(ftype==0 or ftype==7):
    with open(fname, "rb") as fpc:
     while(True):
      chunk = fpc.read(chunk_size);
      if(not chunk):
       break
      fcontents += chunk;
-  if(followlink and (ftype == 1 or ftype == 2)):
+  if(followlink and (ftype==1 or ftype==2)):
    flstatinfo = os.stat(flinkname);
    with open(flinkname, "rb") as fpc:
     while(True):
@@ -4811,7 +4811,7 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   fwinattributes = int(0);
   fcontents = "".encode('UTF-8');
   chunk_size = 1024;
-  if(ftype == 0 or ftype == 7):
+  if(ftype==0 or ftype==7):
    with tarfp.extractfile(member) as fpc:
     while(True):
      chunk = fpc.read(chunk_size);
@@ -5228,14 +5228,14 @@ if(rarfile_support):
   for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
    is_unix = False;
    is_windows = False;
-   if(member.host_os == rarfile.RAR_OS_UNIX):
+   if(member.host_os==rarfile.RAR_OS_UNIX):
     is_windows = False;
     try:
      member.external_attr
      is_unix = True;
     except AttributeError:
      is_unix = False;
-   elif(member.host_os == rarfile.RAR_OS_WIN32):
+   elif(member.host_os==rarfile.RAR_OS_WIN32):
     is_unix = False;
     try:
      member.external_attr
@@ -5883,7 +5883,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   frdev_major = format(int(listcatfiles['ffilelist'][reallcfi]['frmajor']), 'x').lower();
   if(len(listcatfiles['ffilelist'][reallcfi]['fextralist'])>listcatfiles['ffilelist'][reallcfi]['fextrafields'] and len(listcatfiles['ffilelist'][reallcfi]['fextralist'])>0):
    listcatfiles['ffilelist'][reallcfi]['fextrafields'] = len(listcatfiles['ffilelist'][reallcfi]['fextralist']);
-  if(len(extradata) > 0):
+  if(len(extradata)>0):
    listcatfiles['ffilelist'][reallcfi]['fextrafields'] = len(extradata);
    listcatfiles['ffilelist'][reallcfi]['fextralist'] = extradata;
   extrafields = format(int(listcatfiles['ffilelist'][reallcfi]['fextrafields']), 'x').lower();
@@ -5919,7 +5919,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
     frdev_major = format(int(flinkinfo['frmajor']), 'x').lower();
     if(len(flinkinfo['fextralist'])>flinkinfo['fextrafields'] and len(flinkinfo['fextralist'])>0):
      flinkinfo['fextrafields'] = len(flinkinfo['fextralist']);
-    if(len(extradata) > 0):
+    if(len(extradata)>0):
      flinkinfo['fextrafields'] = len(extradata);
      flinkinfo['fextralist'] = extradata;
     extrafields = format(int(flinkinfo['fextrafields']), 'x').lower();
@@ -5963,7 +5963,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
    extrafieldslist = [];
    exi = 0;
    exil = listcatfiles['ffilelist'][reallcfi]['fextrafields'];
-   while(exi < exil):
+   while(exi<exil):
     extrafieldslist.append(listcatfiles['ffilelist'][reallcfi]['fextralist']);
     exi = exi + 1;
    catfileoutstr += AppendNullBytes([extrafieldslist], formatspecs[5]);
@@ -6106,7 +6106,7 @@ def ArchiveFileArrayBase64Encode(infile, followlink=False, seekstart=0, seekend=
   lcfx = int(lenlist);
  else:
   lcfx = int(listcatfiles['fnumfiles']);
- while(lcfi < lcfx):
+ while(lcfi<lcfx):
   if(listcatfiles['ffilelist'][lcfi]['fhascontents']):
    listcatfiles['ffilelist'][lcfi]['fcontents'] = base64.b64encode(listcatfiles['ffilelist'][lcfi]['fcontents']).decode("UTF-8");
   lcfi = lcfi + 1;
@@ -6138,7 +6138,7 @@ def ArchiveFileArrayBase64Decode(infile, followlink=False, seekstart=0, seekend=
   lcfx = int(lenlist);
  else:
   lcfx = int(listcatfiles['fnumfiles']);
- while(lcfi < lcfx):
+ while(lcfi<lcfx):
   if(listcatfiles['ffilelist'][lcfi]['fhascontents']):
    listcatfiles['ffilelist'][lcfi]['fcontents'] = base64.b64decode(listcatfiles['ffilelist'][lcfi]['fcontents'].encode("UTF-8"));
   lcfi = lcfi + 1;
@@ -6172,7 +6172,7 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
   lcfx = int(lenlist);
  else:
   lcfx = int(listcatfiles['fnumfiles']);
- while(lcfi < lcfx):
+ while(lcfi<lcfx):
   funame = "";
   try:
    import pwd;
@@ -6236,7 +6236,7 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
       fgname = "";
     except ImportError:
      fgname = "";
-    if(flinkinfo['ftype'] == 0 or flinkinfo['ftype'] == 7):
+    if(flinkinfo['ftype']==0 or flinkinfo['ftype']==7):
      with open(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), "wb") as fpc:
       fpc.write(flinkinfo['fcontents'])
       try:
@@ -6383,7 +6383,7 @@ def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, for
  else:
   lcfx = int(listcatfiles['fnumfiles']);
  returnval = {};
- while(lcfi < lcfx):
+ while(lcfi<lcfx):
   returnval.update({lcfi: listcatfiles['ffilelist'][lcfi]['fname']});
   if(not verbose):
    VerbosePrintOut(listcatfiles['ffilelist'][lcfi]['fname']);
@@ -6435,7 +6435,7 @@ def ArchiveFileListFilesAlt(infile, seekstart=0, seekend=0, skipchecksum=False, 
  else:
   lcfx = int(listcatfiles['fnumfiles']);
  returnval = {};
- while(lcfi < lcfx):
+ while(lcfi<lcfx):
   returnval.update({lcfi: listcatfiles['ffilelist'][lcfi]['fname']});
   if(not verbose):
    VerbosePrintOut(listcatfiles['ffilelist'][lcfi]['fname']);
@@ -6703,14 +6703,14 @@ if(rarfile_support):
   for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
    is_unix = False;
    is_windows = False;
-   if(member.host_os == rarfile.RAR_OS_UNIX):
+   if(member.host_os==rarfile.RAR_OS_UNIX):
     is_windows = False;
     try:
      member.external_attr
      is_unix = True;
     except AttributeError:
      is_unix = False;
-   elif(member.host_os == rarfile.RAR_OS_WIN32):
+   elif(member.host_os==rarfile.RAR_OS_WIN32):
     is_unix = False;
     try:
      member.external_attr
