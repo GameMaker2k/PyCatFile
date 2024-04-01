@@ -1364,7 +1364,57 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
  fp.seek(0, 0);
  return fp;
 
-def AppendFilesWithContentToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False):
+ advancedlist = True;
+ if(verbose):
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+ GetDirList = inlist;
+ if(not GetDirList):
+  return False;
+ curinode = 0;
+ curfid = 0;
+ inodelist = [];
+ inodetofile = {};
+ filetoinode = {};
+ inodetocatinode = {};
+ fnumfiles = int(len(GetDirList));
+ AppendFileHeader(fp, fnumfiles, checksumtype, formatspecs);
+ fnumfiles = format(fnumfiles, 'x').lower();
+ for curfname in GetDirList:
+  ftype = format(curfname[0], 'x').lower();
+  if(re.findall("^[.|/]", curfname[1])):
+   fname = curfname[1];
+  else:
+   fname = "./"+curfname[1];
+  fbasedir = os.path.dirname(fname);
+  flinkname = curfname[2];
+  fsize = format(curfname[3], 'x').lower();
+  fatime = format(curfname[4], 'x').lower();
+  fmtime = format(curfname[5], 'x').lower();
+  fctime = format(curfname[6], 'x').lower();
+  fbtime = format(curfname[7], 'x').lower();
+  fmode = format(curfname[8], 'x').lower();
+  fwinattributes = format(curfname[9], 'x').lower();
+  fuid = format(curfname[10], 'x').lower();
+  funame = curfname[11];
+  fgid = format(curfname[12], 'x').lower();
+  fgname = curfname[13];
+  fid = format(curfname[14], 'x').lower();
+  finode = format(curfname[15], 'x').lower();
+  flinkcount = format(curfname[16], 'x').lower();
+  fdev_minor = format(curfname[17], 'x').lower();
+  fdev_major = format(curfname[18], 'x').lower();
+  frdev_minor = format(curfname[19], 'x').lower();
+  frdev_major = format(curfname[20], 'x').lower();
+  extradata = curfname[21];
+  fchecksumtype = curfname[22];
+  fcontents = curfname[23];
+  catoutlist = [ftype, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
+  fp = AppendFileHeaderWithContent(fp, catoutlist, extradata, fcontents, checksumtype, formatspecs);
+ fp.seek(0, 0);
+ return fp;
+
+def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   if(os.path.exists(outfile)):
    os.unlink(outfile);
@@ -1379,7 +1429,49 @@ def AppendFilesWithContentToOutFile(infile, outfile, dirlistfromtxt=False, compr
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
   catfp = CompressOpenFile(outfile, compressionlevel);
- catfp = AppendFilesWithContent(infile, catfp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs, verbose);
+ catfp = AppendFilesWithContent(infiles, catfp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs, verbose);
+ if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  try:
+   catfp.flush();
+   os.fsync(catfp.fileno());
+  except io.UnsupportedOperation:
+   pass;
+  except AttributeError:
+   pass;
+ if(outfile=="-"):
+  catfp.seek(0, 0);
+  if(hasattr(sys.stdout, "buffer")):
+   shutil.copyfileobj(catfp, sys.stdout.buffer);
+  else:
+   shutil.copyfileobj(catfp, sys.stdout);
+ elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp.seek(0, 0);
+  upload_file_to_internet_file(catfp, outfile);
+ if(returnfp):
+  catfp.seek(0, 0);
+  return catfp;
+ else:
+  catfp.close();
+  return True;
+
+def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
+ if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+  if(os.path.exists(outfile)):
+   os.unlink(outfile);
+ if(outfile=="-"):
+  verbose = False;
+  catfpfp = BytesIO();
+ elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
+  catfp = outfile;
+ elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+  catfp = BytesIO();
+ else:
+  fbasename = os.path.splitext(outfile)[0];
+  fextname = os.path.splitext(outfile)[1];
+  catfp = CompressOpenFile(outfile, compressionlevel);
+ catfp = AppendListsWithContent(inlist, catfp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs, verbose);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   try:
