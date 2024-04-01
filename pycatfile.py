@@ -691,7 +691,78 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, skipchecksum=
   return False;
  fp.seek(1, 1);
  fcontentend = fp.tell() - 1;
- catlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': fchecksumtype, 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextralist': extrafieldslist, 'fheaderchecksum': fcs, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontents': fcontents}
+ catlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': fchecksumtype, 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextralist': extrafieldslist, 'fheaderchecksum': fcs, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontents': fcontents};
+ return catlist;
+
+def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
+ delimiter = formatspecs[5];
+ fheaderstart = fp.tell();
+ if(formatspecs[7]):
+  HeaderOut = ReadFileHeaderDataBySize(fp, delimiter);
+ else:
+  HeaderOut = ReadFileHeaderDataWoSize(fp, delimiter);
+ fheadsize = int(HeaderOut[0], 16);
+ fnumfields = int(HeaderOut[1], 16);
+ ftype = int(HeaderOut[2], 16);
+ if(re.findall("^[.|/]", HeaderOut[3])):
+  fname = HeaderOut[3];
+ else:
+  fname = "./"+HeaderOut[3];
+ fbasedir = os.path.dirname(fname);
+ flinkname = HeaderOut[4];
+ fsize = int(HeaderOut[5], 16);
+ fatime = int(HeaderOut[6], 16);
+ fmtime = int(HeaderOut[7], 16);
+ fctime = int(HeaderOut[8], 16);
+ fbtime = int(HeaderOut[9], 16);
+ fmode = int(HeaderOut[10], 16);
+ fchmode = stat.S_IMODE(fmode);
+ ftypemod = stat.S_IFMT(fmode);
+ fwinattributes = int(HeaderOut[11], 16);
+ fuid = int(HeaderOut[12], 16);
+ funame = HeaderOut[13];
+ fgid = int(HeaderOut[14], 16);
+ fgname = HeaderOut[15];
+ fid = int(HeaderOut[16], 16);
+ finode = int(HeaderOut[17], 16);
+ flinkcount = int(HeaderOut[18], 16);
+ fdev_minor = int(HeaderOut[19], 16);
+ fdev_major = int(HeaderOut[20], 16);
+ frdev_minor = int(HeaderOut[21], 16);
+ frdev_major = int(HeaderOut[22], 16);
+ fextrasize = int(HeaderOut[23], 16);
+ fextrafields = int(HeaderOut[24], 16);
+ extrafieldslist = [];
+ extrastart = 25;
+ extraend = extrastart + fextrafields;
+ extrafieldslist = [];
+ if(extrastart<extraend):
+  extrafieldslist.append(HeaderOut[extrastart]);
+  extrastart = extrastart + 1;
+ fchecksumtype = HeaderOut[extrastart].lower();
+ fcs = HeaderOut[extrastart + 1].lower();
+ fccs = HeaderOut[extrastart + 2].lower();
+ newfcs = GetHeaderChecksum(HeaderOut[:-2], HeaderOut[-3].lower(), True, formatspecs);
+ if(fcs!=newfcs and not skipchecksum):
+  VerbosePrintOut("File Header Checksum Error with file " + fname + " at offset " + str(fheaderstart));
+  return False;
+ fhend = fp.tell() - 1;
+ fcontentstart = fp.tell();
+ fcontents = "".encode('UTF-8');
+ pyhascontents = False;
+ if(fsize>0 and not listonly):
+  fcontents = fp.read(fsize);
+  pyhascontents = True;
+ elif(fsize>0 and listonly):
+  fp.seek(fsize, 1);
+  pyhascontents = False;
+ newfccs = GetFileChecksum(fcontents, HeaderOut[-3].lower(), False, formatspecs);
+ if(fccs!=newfccs and not skipchecksum and not listonly):
+  VerbosePrintOut("File Content Checksum Error with file " + fname + " at offset " + str(fcontentstart));
+  return False;
+ fp.seek(1, 1);
+ fcontentend = fp.tell() - 1;
+ catlist = [ftype, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrafieldslist, fchecksumtype, fcontents];
  return catlist;
 
 def ReadFileDataBySizeWithContent(fp, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
@@ -822,62 +893,61 @@ def ReadFileDataBySizeWithContentToArrayIndex(infile, seekstart=0, seekend=0, li
   lcfi = lcfi + 1;
  return catarray;
 
-def ReadInFileBySizeWithContent(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
+def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
  delimiter = formatspecs[5];
- if(hasattr(infile, "read") or hasattr(infile, "write")):
-  fp = infile;
-  fp.seek(0, 0);
-  fp = UncompressArchiveFile(fp, formatspecs);
-  checkcompressfile = CheckCompressionSubType(fp, formatspecs);
-  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
-   return False;
-  if(not fp):
-   return False;
-  fp.seek(0, 0);
- elif(infile=="-"):
-  fp = BytesIO();
-  if(hasattr(sys.stdin, "buffer")):
-   shutil.copyfileobj(sys.stdin.buffer, fp);
-  else:
-   shutil.copyfileobj(sys.stdin, fp);
-  fp.seek(0, 0);
-  fp = UncompressArchiveFile(fp, formatspecs);
-  if(not fp):
-   return False;
-  fp.seek(0, 0);
- elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
-  fp = download_file_from_internet_file(infile);
-  fp = UncompressArchiveFile(fp, formatspecs);
-  fp.seek(0, 0);
-  if(not fp):
-   return False;
-  fp.seek(0, 0);
- else:
-  infile = RemoveWindowsPath(infile);
-  checkcompressfile = CheckCompressionSubType(infile, formatspecs);
-  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
-   return False;
-  compresscheck = CheckCompressionType(infile, formatspecs, True);
-  if(not compresscheck):
-   fextname = os.path.splitext(infile)[1];
-   if(fextname==".gz"):
-    compresscheck = "gzip";
-   elif(fextname==".bz2"):
-    compresscheck = "bzip2";
-   elif(fextname==".zst"):
-    compresscheck = "zstd";
-   elif(fextname==".lz4" or fextname==".clz4"):
-    compresscheck = "lz4";
-   elif(fextname==".lzo" or fextname==".lzop"):
-    compresscheck = "lzo";
-   elif(fextname==".lzma" or fextname==".xz"):
-    compresscheck = "lzma";
-   else:
+ catheader = ReadFileHeaderData(fp, 4, delimiter);
+ headercheck = ValidateHeaderChecksum(catheader[:-1], catheader[2], catheader[3], formatspecs);
+ if(not headercheck and not skipchecksum):
+  VerbosePrintOut("File Header Checksum Error with file at offset " + str(0));
+  return False;
+ catstring = catheader[0];
+ catversion = re.findall(r"([\d]+)$", catstring);
+ catversions = re.search(r'(.*?)(\d+)$', catstring).groups();
+ fprenumfiles = catheader[1];
+ fnumfiles = int(fprenumfiles, 16);
+ fprechecksumtype = catheader[2];
+ fprechecksum = catheader[3];
+ catlist = [];
+ if(seekstart<0 and seekstart>fnumfiles):
+   seekstart = 0;
+ if(seekend==0 or seekend>fnumfiles and seekend<seekstart):
+  seekend = fnumfiles;
+ elif(seekend<0 and abs(seekend)<=fnumfiles and abs(seekend)>=seekstart):
+  seekend = fnumfiles - abs(seekend);
+ if(seekstart>0):
+  il = 0;
+  while(il < seekstart):
+   prefhstart = fp.tell();
+   preheaderdata = ReadFileHeaderDataBySize(fp, formatspecs[5]);
+   prefsize = int(preheaderdata[5], 16);
+   prenewfcs = GetHeaderChecksum(preheaderdata[:-2], preheaderdata[-3].lower(), True, formatspecs);
+   prefcs = preheaderdata[-2];
+   if(prefcs!=prenewfcs and not skipchecksum):
+    VerbosePrintOut("File Header Checksum Error with file " + prefname + " at offset " + str(prefhstart));
     return False;
-  if(not compresscheck):
-   return False;
-  fp = UncompressFile(infile, formatspecs, "rb");
- return ReadFileDataBySizeWithContentToArray(fp, seekstart, seekend, listonly, skipchecksum, formatspecs);
+    valid_archive = False;
+    invalid_archive = True;
+   prefhend = fp.tell() - 1;
+   prefcontentstart = fp.tell();
+   prefcontents = "";
+   pyhascontents = False;
+   if(prefsize>0):
+    prefcontents = fp.read(prefsize);
+    prenewfccs = GetFileChecksum(prefcontents, preheaderdata[-3].lower(), False, formatspecs);
+    prefccs = preheaderdata[-1];
+    pyhascontents = True;
+    if(prefccs!=prenewfccs and not skipchecksum):
+     VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
+     return False;
+   fp.seek(1, 1);
+   il = il + 1;
+ realidnum = 0;
+ countnum = seekstart;
+ while(countnum < seekend):
+  catlist.append(ReadFileHeaderDataBySizeWithContentToList(fp, listonly, skipchecksum, formatspecs));
+  countnum = countnum + 1;
+  realidnum = realidnum + 1;
+ return catlist;
 
 def ReadInFileBySizeWithContentToArray(infile, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
  delimiter = formatspecs[5];
@@ -935,6 +1005,63 @@ def ReadInFileBySizeWithContentToArray(infile, listonly=False, skipchecksum=Fals
    return False;
   fp = UncompressFile(infile, formatspecs, "rb");
  return ReadFileDataBySizeWithContentToArray(fp, listonly, skipchecksum, formatspecs);
+
+def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
+ delimiter = formatspecs[5];
+ if(hasattr(infile, "read") or hasattr(infile, "write")):
+  fp = infile;
+  fp.seek(0, 0);
+  fp = UncompressArchiveFile(fp, formatspecs);
+  checkcompressfile = CheckCompressionSubType(fp, formatspecs);
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
+   return False;
+  if(not fp):
+   return False;
+  fp.seek(0, 0);
+ elif(infile=="-"):
+  fp = BytesIO();
+  if(hasattr(sys.stdin, "buffer")):
+   shutil.copyfileobj(sys.stdin.buffer, fp);
+  else:
+   shutil.copyfileobj(sys.stdin, fp);
+  fp.seek(0, 0);
+  fp = UncompressArchiveFile(fp, formatspecs);
+  if(not fp):
+   return False;
+  fp.seek(0, 0);
+ elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
+  fp = download_file_from_internet_file(infile);
+  fp = UncompressArchiveFile(fp, formatspecs);
+  fp.seek(0, 0);
+  if(not fp):
+   return False;
+  fp.seek(0, 0);
+ else:
+  infile = RemoveWindowsPath(infile);
+  checkcompressfile = CheckCompressionSubType(infile, formatspecs);
+  if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
+   return False;
+  compresscheck = CheckCompressionType(infile, formatspecs, True);
+  if(not compresscheck):
+   fextname = os.path.splitext(infile)[1];
+   if(fextname==".gz"):
+    compresscheck = "gzip";
+   elif(fextname==".bz2"):
+    compresscheck = "bzip2";
+   elif(fextname==".zst"):
+    compresscheck = "zstd";
+   elif(fextname==".lz4" or fextname==".clz4"):
+    compresscheck = "lz4";
+   elif(fextname==".lzo" or fextname==".lzop"):
+    compresscheck = "lzo";
+   elif(fextname==".lzma" or fextname==".xz"):
+    compresscheck = "lzma";
+   else:
+    return False;
+  if(not compresscheck):
+   return False;
+  fp = UncompressFile(infile, formatspecs, "rb");
+ return ReadFileDataBySizeWithContentToList(fp, seekstart, seekend, listonly, skipchecksum, formatspecs);
 
 def ReadInFileBySizeWithContentToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
  if(isinstance(infile, dict)):
