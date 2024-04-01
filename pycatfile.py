@@ -1414,6 +1414,10 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
  fp.seek(0, 0);
  return fp;
 
+def AppendInFileWithContent(infile, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False):
+ inlist = ReadInFileBySizeWithContentToList(infile, 0, 0, False, False, formatspecs);
+ return AppendListsWithContent(inlist, outfile, dirlistfromtxt, compression, compressionlevel, filevalues, extradata, followlink, checksumtype, formatspecs=__file_format_list__, verbose);
+
 def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   if(os.path.exists(outfile)):
@@ -1497,6 +1501,10 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
  else:
   catfp.close();
   return True;
+
+def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
+ inlist = ReadInFileBySizeWithContentToList(infile, 0, 0, False, False, formatspecs);
+ return AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt, compression, compressionlevel, filevalues, extradata, followlink, checksumtype, formatspecs=__file_format_list__, verbose, returnfp);
 
 def PrintPermissionString(fchmode, ftype):
  permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
