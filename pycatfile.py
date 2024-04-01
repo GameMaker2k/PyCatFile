@@ -1025,7 +1025,7 @@ def AppendFileHeader(fp, numfiles, checksumtype="crc32", formatspecs=__file_form
   pass;
  return fp;
 
-def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="", checksumtype="crc32", formatspecs=__file_format_list__, verbose=False):
+def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="", checksumtype="crc32", formatspecs=__file_format_list__):
  extrafields = format(len(extradata), 'x').lower();
  extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
  if(len(extradata)>0):
@@ -1237,7 +1237,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
  fp.seek(0, 0);
  return fp;
 
-def AppendFilesWithContentToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, returnfp=False):
+def AppendFilesWithContentToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   if(os.path.exists(outfile)):
    os.unlink(outfile);
