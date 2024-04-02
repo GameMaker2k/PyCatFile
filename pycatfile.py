@@ -1400,7 +1400,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
   catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
   fp = AppendFileHeaderWithContent(fp, catoutlist, extradata, fcontents, checksumtype, formatspecs);
  if(numfiles>0):
-  catfp.write(AppendNullBytes([0, 0], formatspecs[5]));
+  catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  fp.seek(0, 0);
  return fp;
 
@@ -1452,7 +1452,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
   catoutlist = [ftype, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
   fp = AppendFileHeaderWithContent(fp, catoutlist, extradata, fcontents, checksumtype, formatspecs);
  if(numfiles>0):
-  catfp.write(AppendNullBytes([0, 0], formatspecs[5]));
+  catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  fp.seek(0, 0);
  return fp;
 
@@ -2549,7 +2549,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   except AttributeError:
    pass;
  if(numfiles>0):
-  catfp.write(AppendNullBytes([0, 0], formatspecs[5]));
+  catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   try:
@@ -2854,7 +2854,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   except AttributeError:
    pass;
  if(numfiles>0):
-  catfp.write(AppendNullBytes([0, 0], formatspecs[5]));
+  catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   try:
@@ -3166,7 +3166,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   except AttributeError:
    pass;
  if(numfiles>0):
-  catfp.write(AppendNullBytes([0, 0], formatspecs[5]));
+  catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   try:
@@ -3496,7 +3496,7 @@ if(rarfile_support):
    except AttributeError:
     pass
   if(numfiles>0):
-   catfp.write(AppendNullBytes([0, 0], formatspecs[5]));
+   catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
   if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
    catfp = CompressArchiveFile(catfp, compression, formatspecs)
    try:
@@ -6351,7 +6351,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   lcfi = lcfi + 1;
   reallcfi = reallcfi + 1;
  if(lcfx>0):
-  catfp.write(AppendNullBytes([0, 0], formatspecs[5]));
+  catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   try:
