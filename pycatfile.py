@@ -1258,9 +1258,9 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
  inodetofile = {};
  filetoinode = {};
  inodetocatinode = {};
- fnumfiles = int(len(GetDirList));
+ numfiles = int(len(GetDirList));
+ fnumfiles = format(numfiles, 'x').lower();
  AppendFileHeader(fp, fnumfiles, checksumtype, formatspecs);
- fnumfiles = format(fnumfiles, 'x').lower();
  for curfname in GetDirList:
   catfhstart = fp.tell();
   if(re.findall("^[.|/]", curfname)):
@@ -1399,6 +1399,8 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
   ftypehex = format(ftype, 'x').lower();
   catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
   fp = AppendFileHeaderWithContent(fp, catoutlist, extradata, fcontents, checksumtype, formatspecs);
+ if(numfiles>0):
+  catfp.write(AppendNullBytes([0, 0], formatspecs[5]));
  fp.seek(0, 0);
  return fp;
 
@@ -1415,9 +1417,9 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
  inodetofile = {};
  filetoinode = {};
  inodetocatinode = {};
- fnumfiles = int(len(GetDirList));
+ numfiles = int(len(GetDirList));
+ fnumfiles = format(numfiles, 'x').lower();
  AppendFileHeader(fp, fnumfiles, checksumtype, formatspecs);
- fnumfiles = format(fnumfiles, 'x').lower();
  for curfname in GetDirList:
   ftype = format(curfname[0], 'x').lower();
   if(re.findall("^[.|/]", curfname[1])):
@@ -1449,6 +1451,8 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
   fcontents = curfname[23];
   catoutlist = [ftype, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
   fp = AppendFileHeaderWithContent(fp, catoutlist, extradata, fcontents, checksumtype, formatspecs);
+ if(numfiles>0):
+  catfp.write(AppendNullBytes([0, 0], formatspecs[5]));
  fp.seek(0, 0);
  return fp;
 
@@ -2294,6 +2298,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
  inodetofile = {};
  filetoinode = {};
  inodetocatinode = {};
+ numfiles = int(len(GetDirList));
  fnumfiles = format(int(len(GetDirList)), 'x').lower();
  fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
  if(checksumtype=="none" or checksumtype==""):
@@ -2543,6 +2548,8 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
    pass;
   except AttributeError:
    pass;
+ if(numfiles>0):
+  catfp.write(AppendNullBytes([0, 0], formatspecs[5]));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   try:
@@ -2651,6 +2658,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
    tarfp = tarfile.open(infile, "r");
  except FileNotFoundError:
   return False;
+ numfiles = int(len(tarfp.getmembers()));
  fnumfiles = format(int(len(tarfp.getmembers())), 'x').lower();
  fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
  if(checksumtype=="none" or checksumtype==""):
@@ -2845,6 +2853,8 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
    pass;
   except AttributeError:
    pass;
+ if(numfiles>0):
+  catfp.write(AppendNullBytes([0, 0], formatspecs[5]));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   try:
@@ -2940,6 +2950,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
  ziptest = zipfp.testzip();
  if(ziptest):
   VerbosePrintOut("Bad file found!");
+ numfiles = int(len(zipfp.infolist()));
  fnumfiles = format(int(len(zipfp.infolist())), 'x').lower();
  fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
  if(checksumtype=="none" or checksumtype==""):
@@ -3154,6 +3165,8 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
    pass;
   except AttributeError:
    pass;
+ if(numfiles>0):
+  catfp.write(AppendNullBytes([0, 0], formatspecs[5]));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   try:
@@ -3233,6 +3246,7 @@ if(rarfile_support):
   rartest = rarfp.testrar();
   if(rartest):
    VerbosePrintOut("Bad file found!");
+  numfiles = int(len(rarfp.infolist());
   fnumfiles = format(int(len(rarfp.infolist())), 'x').lower();
   fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
   if(checksumtype=="none" or checksumtype==""):
@@ -3481,6 +3495,8 @@ if(rarfile_support):
     pass
    except AttributeError:
     pass
+  if(numfiles>0):
+   catfp.write(AppendNullBytes([0, 0], formatspecs[5]));
   if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
    catfp = CompressArchiveFile(catfp, compression, formatspecs)
    try:
@@ -6334,6 +6350,8 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
    pass;
   lcfi = lcfi + 1;
   reallcfi = reallcfi + 1;
+ if(lcfx>0):
+  catfp.write(AppendNullBytes([0, 0], formatspecs[5]));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   try:
