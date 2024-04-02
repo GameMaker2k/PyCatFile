@@ -573,6 +573,8 @@ def ReadFileHeaderData(fp, rounds=0, delimiter=__file_format_delimiter__):
 def ReadFileHeaderDataBySize(fp, delimiter=__file_format_delimiter__):
  headerpresize = ReadTillNullByte(fp, delimiter);
  headersize = int(headerpresize, 16);
+ if(headersize<=0):
+  return [];
  headercontent = str(fp.read(headersize).decode('UTF-8')).split(delimiter);
  fp.seek(1, 1);
  rocount = 0;
@@ -587,6 +589,8 @@ def ReadFileHeaderDataWoSize(fp, delimiter=__file_format_delimiter__):
  preheaderdata = ReadFileHeaderData(fp, 2, delimiter);
  headersize = int(preheaderdata[0], 16);
  headernumfields = int(preheaderdata[1], 16);
+ if(headersize<=0 or headernumfields<=0):
+  return [];
  headerdata = ReadFileHeaderData(fp, headernumfields, delimiter);
  HeaderOut = preheaderdata + headerdata;
  return HeaderOut;
@@ -595,6 +599,8 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, 
  delimiter = formatspecs[5];
  fheaderstart = fp.tell();
  HeaderOut = ReadFileHeaderDataBySize(fp, delimiter);
+ if(len(HeaderOut)==0):
+  return False;
  if(re.findall("^[.|/]", HeaderOut[3])):
   fname = HeaderOut[3];
  else:
@@ -630,6 +636,8 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, skipchecksum=
   HeaderOut = ReadFileHeaderDataBySize(fp, delimiter);
  else:
   HeaderOut = ReadFileHeaderDataWoSize(fp, delimiter);
+ if(len(HeaderOut)==0):
+  return False;
  fheadsize = int(HeaderOut[0], 16);
  fnumfields = int(HeaderOut[1], 16);
  ftype = int(HeaderOut[2], 16);
@@ -701,6 +709,8 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, skipchecksum=F
   HeaderOut = ReadFileHeaderDataBySize(fp, delimiter);
  else:
   HeaderOut = ReadFileHeaderDataWoSize(fp, delimiter);
+ if(len(HeaderOut)==0):
+  return False;
  fheadsize = int(HeaderOut[0], 16);
  fnumfields = int(HeaderOut[1], 16);
  ftype = int(HeaderOut[2], 16);
@@ -781,7 +791,10 @@ def ReadFileDataBySizeWithContent(fp, listonly=False, skipchecksum=False, format
  countnum = 0;
  flist = [];
  while(countnum < fnumfiles):
-  flist.append(ReadFileHeaderDataBySizeWithContent(fp, listonly, skipchecksum, formatspecs));
+  HeaderOut = ReadFileHeaderDataBySizeWithContent(fp, listonly, skipchecksum, formatspecs)
+  if(len(HeaderOut)==0):
+   break;
+  flist.append(HeaderOut);
   countnum = countnum + 1;
  return flist;
 
@@ -816,6 +829,8 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
   while(il < seekstart):
    prefhstart = fp.tell();
    preheaderdata = ReadFileHeaderDataBySize(fp, formatspecs[5]);
+   if(len(preheaderdata)==0):
+    break;
    prefsize = int(preheaderdata[5], 16);
    prenewfcs = GetHeaderChecksum(preheaderdata[:-2], preheaderdata[-3].lower(), True, formatspecs);
    prefcs = preheaderdata[-2];
@@ -842,7 +857,10 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
  countnum = seekstart;
  while(countnum < seekend):
   catlist['ffilelist'].update({realidnum: {'fid': realidnum, 'fidalt': realidnum}});
-  catlist['ffilelist'][realidnum].update(ReadFileHeaderDataBySizeWithContentToArray(fp, listonly, skipchecksum, formatspecs));
+  HeaderOut = ReadFileHeaderDataBySizeWithContentToArray(fp, listonly, skipchecksum, formatspecs);
+  if(len(HeaderOut)):
+   break;
+  catlist['ffilelist'][realidnum].update(HeaderOut);
   countnum = countnum + 1;
   realidnum = realidnum + 1;
  return catlist;
@@ -934,6 +952,8 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
   while(il < seekstart):
    prefhstart = fp.tell();
    preheaderdata = ReadFileHeaderDataBySize(fp, formatspecs[5]);
+   if(len(preheaderdata)==0):
+    break;
    prefsize = int(preheaderdata[5], 16);
    prenewfcs = GetHeaderChecksum(preheaderdata[:-2], preheaderdata[-3].lower(), True, formatspecs);
    prefcs = preheaderdata[-2];
@@ -959,7 +979,10 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
  realidnum = 0;
  countnum = seekstart;
  while(countnum < seekend):
-  catlist.append(ReadFileHeaderDataBySizeWithContentToList(fp, listonly, skipchecksum, formatspecs));
+  HeaderOut = ReadFileHeaderDataBySizeWithContentToList(fp, listonly, skipchecksum, formatspecs);
+  if(len(HeaderOut)):
+   break;
+  catlist.append(HeaderOut);
   countnum = countnum + 1;
   realidnum = realidnum + 1;
  return catlist;
@@ -3622,6 +3645,8 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
     preheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
    else:
     preheaderdata = ReadFileHeaderDataWoSize(catfp, formatspecs[5]);
+   if(len(preheaderdata)==0):
+    break;
    prefheadsize = int(preheaderdata[0], 16);
    prefnumfields = int(preheaderdata[1], 16);
    preftype = int(preheaderdata[2], 16);
@@ -3875,6 +3900,8 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
     preheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
    else:
     preheaderdata = ReadFileHeaderDataWoSize(catfp, formatspecs[5]);
+   if(len(preheaderdata)==0):
+    break;
    prefheadsize = int(preheaderdata[0], 16);
    prefnumfields = int(preheaderdata[1], 16);
    preftype = int(preheaderdata[2], 16);
@@ -4146,6 +4173,8 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
    catheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
   else:
    catheaderdata = ReadFileHeaderDataWoSize(catfp, formatspecs[5]);
+  if(len(catheaderdata)==0):
+   break;
   catfheadsize = int(catheaderdata[0], 16);
   catfnumfields = int(catheaderdata[1], 16);
   catftype = int(catheaderdata[2], 16);
@@ -4410,6 +4439,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
     preheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
    else:
     preheaderdata = ReadFileHeaderDataWoSize(catfp, formatspecs[5]);
+   if(len(preheaderdata)==0):
+    break;
    prefheadsize = int(preheaderdata[0], 16);
    prefnumfields = int(preheaderdata[1], 16);
    if(re.findall("^[.|/]", preheaderdata[3])):
@@ -4494,6 +4525,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    catheaderdata = ReadFileHeaderDataBySize(catfp, formatspecs[5]);
   else:
    catheaderdata = ReadFileHeaderDataWoSize(catfp, formatspecs[5]);
+  if(len(catheaderdata)==0):
+   break;
   catfheadsize = int(catheaderdata[0], 16);
   catfnumfields = int(catheaderdata[1], 16);
   catftype = int(catheaderdata[2], 16);
