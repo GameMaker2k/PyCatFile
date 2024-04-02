@@ -3246,7 +3246,7 @@ if(rarfile_support):
   rartest = rarfp.testrar();
   if(rartest):
    VerbosePrintOut("Bad file found!");
-  numfiles = int(len(rarfp.infolist());
+  numfiles = int(len(rarfp.infolist()));
   fnumfiles = format(int(len(rarfp.infolist())), 'x').lower();
   fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
   if(checksumtype=="none" or checksumtype==""):
