@@ -767,7 +767,12 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, skipchecksum=F
 
 def ReadFileDataBySizeWithContent(fp, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
  delimiter = formatspecs[5];
+ curloc = fp.tell();
+ if(curloc>0):
+  fp.seek(0, 0);
  catheader = ReadFileHeaderData(fp, 4, delimiter);
+ if(curloc>0):
+  fp.seek(curloc, 0);
  headercheck = ValidateHeaderChecksum(catheader[:-1], catheader[2], catheader[3], formatspecs);
  if(not headercheck and not skipchecksum):
   VerbosePrintOut("File Header Checksum Error with file at offset " + str(0));
@@ -782,7 +787,12 @@ def ReadFileDataBySizeWithContent(fp, listonly=False, skipchecksum=False, format
 
 def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
  delimiter = formatspecs[5];
+ curloc = fp.tell();
+ if(curloc>0):
+  fp.seek(0, 0);
  catheader = ReadFileHeaderData(fp, 4, delimiter);
+ if(curloc>0):
+  fp.seek(curloc, 0);
  headercheck = ValidateHeaderChecksum(catheader[:-1], catheader[2], catheader[3], formatspecs);
  if(not headercheck and not skipchecksum):
   VerbosePrintOut("File Header Checksum Error with file at offset " + str(0));
@@ -895,7 +905,12 @@ def ReadFileDataBySizeWithContentToArrayIndex(infile, seekstart=0, seekend=0, li
 
 def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__):
  delimiter = formatspecs[5];
+ curloc = fp.tell();
+ if(curloc>0):
+  fp.seek(0, 0);
  catheader = ReadFileHeaderData(fp, 4, delimiter);
+ if(curloc>0):
+  fp.seek(curloc, 0);
  headercheck = ValidateHeaderChecksum(catheader[:-1], catheader[2], catheader[3], formatspecs);
  if(not headercheck and not skipchecksum):
   VerbosePrintOut("File Header Checksum Error with file at offset " + str(0));
@@ -3553,7 +3568,12 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
   return False;
  except ValueError:
   return False;
+ curloc = catfp.tell();
+ if(curloc>0):
+  catfp.seek(0, 0);
  catheader = ReadFileHeaderData(catfp, 4, formatspecs[5]);
+ if(curloc>0):
+  catfp.seek(curloc, 0);
  catstring = catheader[0];
  catversion = re.findall(r"([\d]+)$", catstring);
  fprenumfiles = catheader[1];
@@ -3803,7 +3823,12 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
   return False;
  except ValueError:
   return False;
+ curloc = catfp.tell();
+ if(curloc>0):
+  catfp.seek(0, 0);
  catheader = ReadFileHeaderData(catfp, 4, formatspecs[5]);
+ if(curloc>0):
+  catfp.seek(curloc, 0);
  catstring = catheader[0];
  catversion = re.findall(r"([\d]+)$", catstring);
  fprenumfiles = catheader[1];
@@ -4065,7 +4090,12 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
   return False;
  except ValueError:
   return False;
+ curloc = catfp.tell();
+ if(curloc>0):
+  catfp.seek(0, 0);
  catheader = ReadFileHeaderData(catfp, 4, formatspecs[5]);
+ if(curloc>0):
+  catfp.seek(curloc, 0);
  catstring = catheader[0];
  catversion = re.findall(r"([\d]+)$", catstring);
  fprenumfiles = catheader[1];
@@ -4324,7 +4354,12 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   return False;
  except ValueError:
   return False;
+ curloc = catfp.tell();
+ if(curloc>0):
+  catfp.seek(0, 0);
  catheader = ReadFileHeaderData(catfp, 4, formatspecs[5]);
+ if(curloc>0):
+  catfp.seek(curloc, 0);
  catstring = catheader[0];
  catversion = re.findall(r"([\d]+)$", catstring);
  fprenumfiles = catheader[1];
