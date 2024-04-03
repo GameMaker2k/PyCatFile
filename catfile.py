@@ -46,6 +46,7 @@ argparser.add_argument("-d", "-v", "--verbose", action="store_true", help="Enabl
 argparser.add_argument("-c", "--create", action="store_true", help="Perform concatenation operation only.");
 argparser.add_argument("-I", "-validate", "--validate", action="store_true", help="Validate CatFile checksums");
 argparser.add_argument("-C", "-checksum", "--checksum", default="crc32", help="Specify the type of checksum to use. Default is crc32.");
+argparser.add_argument("-S", "-skipchecksum", "--skipchecksum", default="crc32", help="Skip checksum check of files.");
 argparser.add_argument("-e", "-x", "--extract", action="store_true", help="Perform extraction operation only.");
 argparser.add_argument("-F", "-format", "--format", default=__file_format_list__[0], help="Specify the format to use");
 argparser.add_argument("-D", "-delimiter", "--delimiter", default=__file_format_list__[5], help="Specify the format to use");
@@ -90,10 +91,10 @@ if should_create:
   pycatfile.PackArchiveFile(getargs.input, getargs.output, getargs.text, getargs.compression, getargs.level, False, getargs.checksum, [], fnamelist, getargs.verbose, False);
 
 elif should_repack:
- pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, False, [], fnamelist, getargs.verbose, False);
+ pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamelist, getargs.verbose, False);
 
 elif should_extract:
- pycatfile.UnPackArchiveFile(getargs.input, getargs.output, False, 0, 0, False, fnamelist, getargs.verbose, getargs.preserve, getargs.preserve, False);
+ pycatfile.UnPackArchiveFile(getargs.input, getargs.output, False, 0, 0, getargs.skipchecksum, fnamelist, getargs.verbose, getargs.preserve, getargs.preserve, False);
 
 elif should_list:
  if getargs.converttar:
@@ -103,7 +104,7 @@ elif should_list:
  elif rarfile_support and getargs.convertrar:
   pycatfile.RarFileListFiles(getargs.input, getargs.verbose, False);
  else:
-  pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, False, fnamelist, getargs.verbose, False);
+  pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, getargs.skipchecksum, fnamelist, getargs.verbose, False);
 
 elif should_validate:
  fvalid = pycatfile.ArchiveFileValidate(getargs.input, fnamelist, getargs.verbose, False);
