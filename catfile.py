@@ -46,7 +46,7 @@ argparser.add_argument("-d", "-v", "--verbose", action="store_true", help="Enabl
 argparser.add_argument("-c", "--create", action="store_true", help="Perform concatenation operation only.");
 argparser.add_argument("-I", "-validate", "--validate", action="store_true", help="Validate CatFile checksums");
 argparser.add_argument("-C", "-checksum", "--checksum", default="crc32", help="Specify the type of checksum to use. Default is crc32.");
-argparser.add_argument("-S", "-skipchecksum", "--skipchecksum", default="crc32", help="Skip checksum check of files.");
+argparser.add_argument("-S", "-skipchecksum", "--skipchecksum", action="store_true", help="Skip checksum check of files.");
 argparser.add_argument("-e", "-x", "--extract", action="store_true", help="Perform extraction operation only.");
 argparser.add_argument("-F", "-format", "--format", default=__file_format_list__[0], help="Specify the format to use");
 argparser.add_argument("-D", "-delimiter", "--delimiter", default=__file_format_list__[5], help="Specify the format to use");
