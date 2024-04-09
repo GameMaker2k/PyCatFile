@@ -109,6 +109,6 @@ elif should_list:
 elif should_validate:
  fvalid = pycatfile.ArchiveFileValidate(getargs.input, fnamelist, getargs.verbose, False);
  if(fvalid):
-  pycatfile.VerbosePrintOut("File is valid: " + str(getargs.input));
+  pycatfile.VerbosePrintOut("File is valid: \n" + str(getargs.input));
  else:
-  pycatfile.VerbosePrintOut("File is invalid: " + str(getargs.input));
+  pycatfile.VerbosePrintOut("File is invalid: \n" + str(getargs.input));
