@@ -1307,7 +1307,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
      ftype = 1;
      flinkname = inodetofile[finode];
      fcurinode = format(int(inodetocatinode[finode]), 'x').lower();
-    if(finode not in inodelist):
+    elif(finode not in inodelist):
      inodelist.append(finode);
      inodetofile.update({finode: fname});
      inodetocatinode.update({finode: curinode});
@@ -2376,7 +2376,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
      ftype = 1;
      flinkname = inodetofile[finode];
      fcurinode = format(int(inodetocatinode[finode]), 'x').lower();
-    if(finode not in inodelist):
+    elif(finode not in inodelist):
      inodelist.append(finode);
      inodetofile.update({finode: fname});
      inodetocatinode.update({finode: curinode});
@@ -4794,7 +4794,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
      ftype = 1;
      flinkname = inodetofile[finode];
      fcurinode = inodetocatinode[finode];
-    if(finode not in inodelist):
+    elif(finode not in inodelist):
      inodelist.append(finode);
      inodetofile.update({finode: fname});
      inodetocatinode.update({finode: curinode});
