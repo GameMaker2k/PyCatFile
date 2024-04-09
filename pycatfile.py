@@ -4173,16 +4173,18 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
  valid_archive = True;
  invalid_archive = False;
  if(verbose):
-  VerbosePrintOut("Checking File Header Checksum of file at offset " + str(0));
   VerbosePrintOut(infile);
+  VerbosePrintOut("Number of Records " + str(fnumfiles));
  if(fprechecksum==catfileheadercshex):
   if(verbose):
-   VerbosePrintOut("File Header Checksum Passed");
+   VerbosePrintOut("File Header Checksum Passed at offset " + str(0));
  else:
   if(verbose):
-   VerbosePrintOut("File Header Checksum Error with file " + infile + " at offset " + str(0));
-  valid_archive = False;
-  invalid_archive = True;
+   VerbosePrintOut("File Header Checksum Failed at offset " + str(0));
+   valid_archive = False;
+   invalid_archive = True;
+ if(verbose):
+  VerbosePrintOut("");
  while(il<fnumfiles):
   catfhstart = catfp.tell();
   if(formatspecs[7]):
@@ -4255,14 +4257,14 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
    checksumoutstr.update(hout.encode('UTF-8'));
    catnewfcs = checksumoutstr.hexdigest().lower();
   if(verbose):
-   VerbosePrintOut("Checking File Header Checksum of file at offset " + str(catfhstart));
    VerbosePrintOut(catfname);
+   VerbosePrintOut("Record Number " + str(il) + "; File ID " + str(fid) + "; iNode Number " + str(finode));
   if(catfcs==catnewfcs):
    if(verbose):
-    VerbosePrintOut("File Header Checksum Passed");
+    VerbosePrintOut("File Header Checksum Passed at offset " + str(catfhstart));
   else:
    if(verbose):
-    VerbosePrintOut("File Header Checksum Error with file " + catfname + " at offset " + str(catfhstart));
+    VerbosePrintOut("File Header Checksum Failed at offset " + str(catfhstart));
    valid_archive = False;
    invalid_archive = True;
   catfhend = catfp.tell() - 1;
@@ -4290,15 +4292,12 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
     checksumoutstr.update(catfcontents);
     catnewfccs = checksumoutstr.hexdigest().lower();
    pyhascontents = True;
-   if(verbose):
-    VerbosePrintOut("Checking File Content Checksum of file at offset " + str(catfcontentstart));
-    VerbosePrintOut(catfname);
    if(catfccs==catnewfccs):
     if(verbose):
-     VerbosePrintOut("File Content Checksum Passed");
+     VerbosePrintOut("File Content Checksum Passed at offset " + str(catfcontentstart));
    else:
     if(verbose):
-     VerbosePrintOut("File Header Checksum Error with file " + catfname + " at offset " + str(catfcontentstart));
+     VerbosePrintOut("File Content Checksum Failed at offset " + str(catfcontentstart));
     valid_archive = False;
     invalid_archive = True;
   if(verbose):
