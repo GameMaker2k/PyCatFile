@@ -2749,7 +2749,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
    ftype = 0;
   flinkname = "";
   fcurfid = format(int(curfid), 'x').lower();
-  fcurinode = format(int(0), 'x').lower();
+  fcurinode = format(int(curfid), 'x').lower();
   curfid = curfid + 1;
   if(ftype==2):
    flinkname = member.linkname;
@@ -3018,7 +3018,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
    ftype = 5;
   flinkname = "";
   fcurfid = format(int(curfid), 'x').lower();
-  fcurinode = format(int(0), 'x').lower();
+  fcurinode = format(int(curfid), 'x').lower();
   curfid = curfid + 1;
   fdev_minor = format(int(0), 'x').lower();
   fdev_major = format(int(0), 'x').lower();
@@ -3345,7 +3345,7 @@ if(rarfile_support):
    if(ftype==2):
     flinkname = rarfp.read(member.filename).decode("UTF-8");
    fcurfid = format(int(curfid), 'x').lower();
-   fcurinode = format(int(0), 'x').lower();
+   fcurinode = format(int(curfid), 'x').lower();
    curfid = curfid + 1;
    fdev_minor = format(int(0), 'x').lower();
    fdev_major = format(int(0), 'x').lower();
@@ -5113,7 +5113,7 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   flinkname = "";
   fbasedir = os.path.dirname(fname);
   fcurfid = curfid;
-  fcurinode = 0;
+  fcurinode = curfid;
   finode = fcurinode;
   curfid = curfid + 1;
   if(ftype==2):
@@ -5332,7 +5332,7 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   flinkname = "";
   fbasedir = os.path.dirname(fname);
   fcurfid = curfid;
-  fcurinode = 0;
+  fcurinode = curfid;
   finode = fcurinode;
   curfid = curfid + 1;
   fdev_minor = 0;
@@ -5607,7 +5607,7 @@ if(rarfile_support):
     flinkname = rarfp.read(member.filename).decode("UTF-8");
    fbasedir = os.path.dirname(fname);
    fcurfid = curfid;
-   fcurinode = 0;
+   fcurinode = curfid;
    finode = fcurinode;
    curfid = curfid + 1;
    fdev_minor = 0;
