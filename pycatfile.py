@@ -161,6 +161,8 @@ __file_format_ver__ = "001";
 __use_new_style__ = True;
 __file_format_list__ = [__file_format_name__, __file_format_magic__, __file_format_lower__, __file_format_len__, __file_format_hex__, __file_format_delimiter__, __file_format_ver__, __use_new_style__];
 __project__ = __program_name__;
+__use_advanced_list__ = True;
+__use_alt_inode__ = False;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 7, 4, "RC 1", 1);
 __version_date_info__ = (2024, 4, 1, "RC 1", 1);
@@ -1227,7 +1229,8 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
  return fp;
 
 def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False):
- advancedlist = True;
+ advancedlist = __use_advanced_list__;
+ altinode = __use_alt_inode__;
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(infiles=="-"):
@@ -1306,12 +1309,18 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
     if(finode in inodelist):
      ftype = 1;
      flinkname = inodetofile[finode];
-     fcurinode = format(int(inodetocatinode[finode]), 'x').lower();
-    elif(finode not in inodelist):
+     if(altinode):
+      fcurinode = format(int(finode), 'x').lower();
+     else:
+      fcurinode = format(int(inodetocatinode[finode]), 'x').lower();
+    if(finode not in inodelist):
      inodelist.append(finode);
      inodetofile.update({finode: fname});
      inodetocatinode.update({finode: curinode});
-     fcurinode = format(int(curinode), 'x').lower();
+     if(altinode):
+      fcurinode = format(int(finode), 'x').lower();
+     else:
+      fcurinode = format(int(curinode), 'x').lower();
      curinode = curinode + 1;
   else:
    fcurinode = format(int(curinode), 'x').lower();
@@ -1405,7 +1414,6 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
  return fp;
 
 def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False):
- advancedlist = True;
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  GetDirList = inlist;
@@ -2237,7 +2245,8 @@ def CheckSumSupportAlt(checkfor, guaranteed=True):
   return False;
 
 def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
- advancedlist = True;
+ advancedlist = __use_advanced_list__;
+ altinode = __use_alt_inode__;
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -2375,12 +2384,18 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
     if(finode in inodelist):
      ftype = 1;
      flinkname = inodetofile[finode];
-     fcurinode = format(int(inodetocatinode[finode]), 'x').lower();
-    elif(finode not in inodelist):
+     if(altinode):
+      fcurinode = format(int(finode), 'x').lower();
+     else:
+      fcurinode = format(int(inodetocatinode[finode]), 'x').lower();
+    if(finode not in inodelist):
      inodelist.append(finode);
      inodetofile.update({finode: fname});
      inodetocatinode.update({finode: curinode});
-     fcurinode = format(int(curinode), 'x').lower();
+     if(altinode):
+      fcurinode = format(int(finode), 'x').lower();
+     else:
+      fcurinode = format(int(curinode), 'x').lower();
      curinode = curinode + 1;
   else:
    fcurinode = format(int(curinode), 'x').lower();
@@ -4686,7 +4701,8 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
  catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
- advancedlist = True;
+ advancedlist = __use_advanced_list__;
+ altinode = __use_alt_inode__;
  infilelist = [];
  if(infiles=="-"):
   for line in sys.stdin:
@@ -4793,12 +4809,18 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
     if(finode in inodelist):
      ftype = 1;
      flinkname = inodetofile[finode];
-     fcurinode = inodetocatinode[finode];
-    elif(finode not in inodelist):
+     if(altinode):
+      fcurinode = finode;
+     else:
+      fcurinode = inodetocatinode[finode];
+    if(finode not in inodelist):
      inodelist.append(finode);
      inodetofile.update({finode: fname});
      inodetocatinode.update({finode: curinode});
-     fcurinode = curinode;
+     if(altinode):
+      fcurinode = finode;
+     else:
+      fcurinode = curinode;
      curinode = curinode + 1;
   else:
    fcurinode = curinode;
@@ -5222,7 +5244,6 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
  return catlist;
 
 def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False):
- advancedlist = True;
  curinode = 0;
  curfid = 0;
  inodelist = [];
@@ -5488,7 +5509,6 @@ if(not rarfile_support):
 
 if(rarfile_support):
  def RarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False):
-  advancedlist = True;
   curinode = 0;
   curfid = 0;
   inodelist = [];
