@@ -6836,6 +6836,8 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
    tarfp = tarfile.open(infile, "r");
  except FileNotFoundError:
   return False;
+ lcfi = 0
+ returnval = {};
  for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
   returnval.update({lcfi: member.name});
   fpremode = member.mode;
