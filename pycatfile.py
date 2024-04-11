@@ -159,10 +159,10 @@ __file_format_hex__ = binascii.hexlify(__file_format_magic__.encode("UTF-8")).de
 __file_format_delimiter__ = "\x00";
 __file_format_ver__ = "001";
 __use_new_style__ = True;
-__file_format_list__ = [__file_format_name__, __file_format_magic__, __file_format_lower__, __file_format_len__, __file_format_hex__, __file_format_delimiter__, __file_format_ver__, __use_new_style__];
-__project__ = __program_name__;
 __use_advanced_list__ = True;
 __use_alt_inode__ = False;
+__file_format_list__ = [__file_format_name__, __file_format_magic__, __file_format_lower__, __file_format_len__, __file_format_hex__, __file_format_delimiter__, __file_format_ver__, __use_new_style__, __use_advanced_list__, __use_alt_inode__];
+__project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
 __version_info__ = (0, 7, 4, "RC 1", 1);
 __version_date_info__ = (2024, 4, 1, "RC 1", 1);
@@ -1229,8 +1229,8 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
  return fp;
 
 def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False):
- advancedlist = __use_advanced_list__;
- altinode = __use_alt_inode__;
+ advancedlist = formatspecs[8];
+ altinode = formatspecs[9];
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(infiles=="-"):
@@ -2245,8 +2245,8 @@ def CheckSumSupportAlt(checkfor, guaranteed=True):
   return False;
 
 def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
- advancedlist = __use_advanced_list__;
- altinode = __use_alt_inode__;
+ advancedlist = formatspecs[8];
+ altinode = formatspecs[9];
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -4701,8 +4701,8 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
  catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
- advancedlist = __use_advanced_list__;
- altinode = __use_alt_inode__;
+ advancedlist = formatspecs[8];
+ altinode = formatspecs[9];
  infilelist = [];
  if(infiles=="-"):
   for line in sys.stdin:
