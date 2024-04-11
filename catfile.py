@@ -112,6 +112,9 @@ elif should_list:
 
 elif should_validate:
  fvalid = pycatfile.ArchiveFileValidate(getargs.input, fnamelist, getargs.verbose, False);
+ if(not getargs.verbose):
+  import sys, logging;
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(fvalid):
   pycatfile.VerbosePrintOut("File is valid: \n" + str(getargs.input));
  else:
