@@ -46,24 +46,24 @@ argparser.add_argument("-V", "--version", action="version", version=__program_na
 argparser.add_argument("-i", "--input", help="Specify the file(s) to concatenate or the concatenated file to extract.", required=True);
 argparser.add_argument("-d", "--verbose", action="store_true", help="Enable verbose mode to display various debugging information.");
 argparser.add_argument("-c", "--create", action="store_true", help="Perform concatenation operation only.");
-argparser.add_argument("-v", "--validate", action="store_true", help="Validate CatFile checksums");
-argparser.add_argument("-C", "--checksum", default="crc32", help="Specify the type of checksum to use. Default is crc32.");
-argparser.add_argument("-s", "--skipchecksum", action="store_true", help="Skip checksum check of files.");
+argparser.add_argument("-v", "--validate", action="store_true", help="Validate CatFile checksums.");
+argparser.add_argument("-C", "--checksum", default="crc32", help="Specify the type of checksum to use. The default is crc32.");
+argparser.add_argument("-s", "--skipchecksum", action="store_true", help="Skip the checksum check of files.");
 argparser.add_argument("-e", "--extract", action="store_true", help="Perform extraction operation only.");
-argparser.add_argument("-F", "--format", default=__file_format_list__[0], help="Specify the format to use");
-argparser.add_argument("-D", "--delimiter", default=__file_format_list__[5], help="Specify the format to use");
-argparser.add_argument("-m", "--formatver", default=__file_format_list__[6], help="Specify the format version");
+argparser.add_argument("-F", "--format", default=__file_format_list__[0], help="Specify the format to use.");
+argparser.add_argument("-D", "--delimiter", default=__file_format_list__[5], help="Specify the delimiter to use.");
+argparser.add_argument("-m", "--formatver", default=__file_format_list__[6], help="Specify the format version.");
 argparser.add_argument("-l", "--list", action="store_true", help="List files included in the concatenated file.");
-argparser.add_argument("-p", "--preserve", action="store_false", help="Preserve permissions and time of files");
-argparser.add_argument("-R", "--repack", action="store_true", help="Re-concatenate files, fixing checksum errors if any.");
-argparser.add_argument("-o", "--output", default=None, help="Specify the name for the extracted concatenated files or the output concatenated file.");
+argparser.add_argument("-p", "--preserve", action="store_false", help="Preserve permissions and timestamps of files.");
+argparser.add_argument("-R", "--repack", action="store_true", help="Re-concatenate files, fixing checksum errors, if any.");
+argparser.add_argument("-o", "--output", default=None, help="Specify the name for the extracted or output concatenated files.");
 argparser.add_argument("-P", "--compression", default="auto", help="Specify the compression method to use for concatenation.");
 argparser.add_argument("-L", "--level", default=None, help="Specify the compression level for concatenation.");
-argparser.add_argument("-t", "--converttar", action="store_true", help="Convert a tar file to a catfile.");
-argparser.add_argument("-z", "--convertzip", action="store_true", help="Convert a zip file to a catfile.");
-argparser.add_argument("-r", "--convertrar", action="store_true", help="Convert a rar file to a catfile.");
+argparser.add_argument("-t", "--converttar", action="store_true", help="Convert a tar file to a CatFile.");
+argparser.add_argument("-z", "--convertzip", action="store_true", help="Convert a zip file to a CatFile.");
+argparser.add_argument("-r", "--convertrar", action="store_true", help="Convert a rar file to a CatFile.");
 argparser.add_argument("-T", "--text", action="store_true", help="Read file locations from a text file.");
-getargs = argparser.parse_args();
+getargs = argparser.parse_args()
 
 fname = getargs.format;
 fnamelower = fname.lower();
