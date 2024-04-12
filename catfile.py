@@ -62,7 +62,7 @@ argparser.add_argument("-L", "--level", default=None, help="Specify the compress
 argparser.add_argument("-t", "--converttar", action="store_true", help="Convert a tar file to a catfile.");
 argparser.add_argument("-z", "--convertzip", action="store_true", help="Convert a zip file to a catfile.");
 argparser.add_argument("-r", "--convertrar", action="store_true", help="Convert a rar file to a catfile.");
-argparser.add_argument("-t", "--text", action="store_true", help="Read file locations from a text file.");
+argparser.add_argument("-T", "--text", action="store_true", help="Read file locations from a text file.");
 getargs = argparser.parse_args();
 
 fname = getargs.format;
