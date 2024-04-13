@@ -56,8 +56,5 @@ cd ${OLDPATH}
 mv -v /tmp/pybundle/${outfilebin} ./bundle/python${PYVER}/${outfilebin}
 rm -rfv /tmp/pybundle
 cd ./bundle/python${PYVER}
-if [[ ${infile} = "mkhockeydata.py" ]]; then
- ${PYTHONPATH} ./${outfilebin} mksymlinks
-fi
 chmod -v +x ./${outfilebin}
 cd ${OLDPATH}
