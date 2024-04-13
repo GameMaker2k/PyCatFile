@@ -70,11 +70,10 @@ fnamelower = fname.lower();
 fnamemagic = fname;
 fnamelen = len(fname);
 fnamehex = binascii.hexlify(fname.encode("UTF-8")).decode("UTF-8");
-fnamever = getargs.formatver;
 fnamesty = __use_new_style__;
 fnamelst = __use_advanced_list__;
 fnameino = __use_alt_inode__;
-fnamelist = [fname, fnamemagic, fnamelower, fnamelen, fnamehex, getargs.delimiter, fnamever, fnamesty, fnamelst, fnameino];
+fnamelist = [fname, fnamemagic, fnamelower, fnamelen, fnamehex, getargs.delimiter, getargs.formatver, fnamesty, fnamelst, fnameino];
 
 # Determine actions based on user input
 should_create = getargs.create and not getargs.extract and not getargs.list;
