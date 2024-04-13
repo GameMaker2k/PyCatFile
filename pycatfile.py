@@ -3725,22 +3725,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
    while(hc<hcmax):
     hout = hout + AppendNullByte(preheaderdata[hc], formatspecs[5]);
     hc = hc + 1;
-   if(prefchecksumtype=="none" or prefchecksumtype==""):
-    prenewfcs = 0;
-   elif(prefchecksumtype=="crc16" or prefchecksumtype=="crc16_ansi" or prefchecksumtype=="crc16_ibm"):
-    prenewfcs = format(crc16(hout.encode('UTF-8')) & 0xffff, '04x').lower();
-   elif(prefchecksumtype=="adler32"):
-    prenewfcs = format(zlib.adler32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
-   elif(prefchecksumtype=="crc32"):
-    prenewfcs = format(crc32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
-   elif(prefchecksumtype=="crc64_ecma"):
-    prenewfcs = format(crc64_ecma(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
-   elif(prefchecksumtype=="crc64" or prefchecksumtype=="crc64_iso"):
-    prenewfcs = format(crc64_iso(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
-   elif(CheckSumSupportAlt(prefchecksumtype, hashlib_guaranteed)):
-    checksumoutstr = hashlib.new(prefchecksumtype);
-    checksumoutstr.update(hout.encode('UTF-8'));
-    prenewfcs = checksumoutstr.hexdigest().lower();
+   prenewfcs = GetFileChecksum(hout, preheaderdata[-3].lower(), True, formatspecs);
    if(prefcs!=prenewfcs and not skipchecksum):
     VerbosePrintOut("File Header Checksum Error with file " + prefname + " at offset " + str(prefhstart));
     return False;
@@ -3752,24 +3737,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
    pyhascontents = False;
    if(prefsize>0):
     prefcontents = catfp.read(prefsize);
-    if(prefchecksumtype=="none" or prefchecksumtype==""):
-     prenewfccs = 0;
-    elif(prefchecksumtype=="crc16" or prefchecksumtype=="crc16_ansi" or prefchecksumtype=="crc16_ibm"):
-     prenewfccs = format(crc16(prefcontents) & 0xffff, '04x').lower();
-    elif(prefchecksumtype=="crc16_ccitt"):
-     prenewfcs = format(crc16_ccitt(prefcontents) & 0xffff, '04x').lower();
-    elif(prefchecksumtype=="adler32"):
-     prenewfccs = format(zlib.adler32(prefcontents) & 0xffffffff, '08x').lower();
-    elif(prefchecksumtype=="crc32"):
-     prenewfccs = format(crc32(prefcontents) & 0xffffffff, '08x').lower();
-    elif(prefchecksumtype=="crc64_ecma"):
-     prenewfcs = format(crc64_ecma(prefcontents) & 0xffffffffffffffff, '016x').lower();
-    elif(prefchecksumtype=="crc64" or prefchecksumtype=="crc64_iso"):
-     prenewfcs = format(crc64_iso(prefcontents) & 0xffffffffffffffff, '016x').lower();
-    elif(CheckSumSupportAlt(prefchecksumtype, hashlib_guaranteed)):
-     checksumoutstr = hashlib.new(prefchecksumtype);
-     checksumoutstr.update(prefcontents);
-     prenewfccs = checksumoutstr.hexdigest().lower();
+    prenewfccs = GetFileChecksum(prefcontents, preheaderdata[-3].lower(), False, formatspecs);
     pyhascontents = True;
     if(prefccs!=prenewfccs and not skipchecksum):
      VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
@@ -3980,22 +3948,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
    while(hc<hcmax):
     hout = hout + AppendNullByte(preheaderdata[hc], formatspecs[5]);
     hc = hc + 1;
-   if(prefchecksumtype=="none" or prefchecksumtype==""):
-    prenewfcs = 0;
-   elif(prefchecksumtype=="crc16" or prefchecksumtype=="crc16_ansi" or prefchecksumtype=="crc16_ibm"):
-    prenewfcs = format(crc16(hout.encode('UTF-8')) & 0xffff, '04x').lower();
-   elif(prefchecksumtype=="adler32"):
-    prenewfcs = format(zlib.adler32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
-   elif(prefchecksumtype=="crc32"):
-    prenewfcs = format(crc32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
-   elif(prefchecksumtype=="crc64_ecma"):
-    prenewfcs = format(crc64_ecma(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
-   elif(prefchecksumtype=="crc64" or prefchecksumtype=="crc64_iso"):
-    prenewfcs = format(crc64_iso(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
-   elif(CheckSumSupportAlt(prefchecksumtype, hashlib_guaranteed)):
-    checksumoutstr = hashlib.new(prefchecksumtype);
-    checksumoutstr.update(hout.encode('UTF-8'));
-    prenewfcs = checksumoutstr.hexdigest().lower();
+   prenewfcs = GetFileChecksum(hout, preheaderdata[-3].lower(), True, formatspecs);
    if(prefcs!=prenewfcs and not skipchecksum):
     VerbosePrintOut("File Header Checksum Error with file " + prefname + " at offset " + str(prefhstart));
     return False;
@@ -4007,24 +3960,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
    pyhascontents = False;
    if(prefsize>0):
     prefcontents = catfp.read(prefsize);
-    if(prefchecksumtype=="none" or prefchecksumtype==""):
-     prenewfccs = 0;
-    elif(prefchecksumtype=="crc16" or prefchecksumtype=="crc16_ansi" or prefchecksumtype=="crc16_ibm"):
-     prenewfccs = format(crc16(prefcontents) & 0xffff, '04x').lower();
-    elif(prefchecksumtype=="crc16_ccitt"):
-     prenewfcs = format(crc16_ccitt(prefcontents) & 0xffff, '04x').lower();
-    elif(prefchecksumtype=="adler32"):
-     prenewfccs = format(zlib.adler32(prefcontents) & 0xffffffff, '08x').lower();
-    elif(prefchecksumtype=="crc32"):
-     prenewfccs = format(crc32(prefcontents) & 0xffffffff, '08x').lower();
-    elif(prefchecksumtype=="crc64_ecma"):
-     prenewfcs = format(crc64_ecma(prefcontents) & 0xffffffffffffffff, '016x').lower();
-    elif(prefchecksumtype=="crc64" or prefchecksumtype=="crc64_iso"):
-     prenewfcs = format(crc64_iso(prefcontents) & 0xffffffffffffffff, '016x').lower();
-    elif(CheckSumSupportAlt(prefchecksumtype, hashlib_guaranteed)):
-     checksumoutstr = hashlib.new(prefchecksumtype);
-     checksumoutstr.update(prefcontents);
-     prenewfccs = checksumoutstr.hexdigest().lower();
+    prenewfccs = GetFileChecksum(prefcontents, preheaderdata[-3].lower(), False, formatspecs);
     pyhascontents = True;
     if(prefccs!=prenewfccs and not skipchecksum):
      VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
@@ -4255,22 +4191,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
   while(hc<hcmax):
    hout = hout + AppendNullByte(catheaderdata[hc], formatspecs[5]);
    hc = hc + 1;
-  if(catfchecksumtype=="none" or catfchecksumtype==""):
-   catnewfcs = 0;
-  elif(catfchecksumtype=="crc16" or catfchecksumtype=="crc16_ansi" or catfchecksumtype=="crc16_ibm"):
-   catnewfcs = format(crc16(hout.encode('UTF-8')) & 0xffff, '04x').lower();
-  elif(catfchecksumtype=="adler32"):
-   catnewfcs = format(zlib.adler32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
-  elif(catfchecksumtype=="crc32"):
-   catnewfcs = format(crc32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
-  elif(catfchecksumtype=="crc64_ecma"):
-   catnewfcs = format(crc64_ecma(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
-  elif(catfchecksumtype=="crc64" or catfchecksumtype=="crc64_iso"):
-   catnewfcs = format(crc64_iso(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
-  elif(CheckSumSupportAlt(catfchecksumtype, hashlib_guaranteed)):
-   checksumoutstr = hashlib.new(catfchecksumtype);
-   checksumoutstr.update(hout.encode('UTF-8'));
-   catnewfcs = checksumoutstr.hexdigest().lower();
+  catnewfcs = GetFileChecksum(hout, catheaderdata[-3].lower(), True, formatspecs);
   if(verbose):
    VerbosePrintOut(catfname);
    VerbosePrintOut("Record Number " + str(il) + "; File ID " + str(fid) + "; iNode Number " + str(finode));
@@ -4288,24 +4209,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
   pyhascontents = False;
   if(catfsize>0):
    catfcontents = catfp.read(catfsize);
-   if(catfchecksumtype=="none" or catfchecksumtype==""):
-    catnewfccs = 0;
-   elif(catfchecksumtype=="crc16" or catfchecksumtype=="crc16_ansi" or catfchecksumtype=="crc16_ibm"):
-    catnewfccs = format(crc16(catfcontents) & 0xffff, '04x').lower();
-   elif(catfchecksumtype=="crc16_ccitt"):
-    catnewfcs = format(crc16_ccitt(catfcontents) & 0xffff, '04x').lower();
-   elif(catfchecksumtype=="adler32"):
-    catnewfccs = format(zlib.adler32(catfcontents) & 0xffffffff, '08x').lower();
-   elif(catfchecksumtype=="crc32"):
-    catnewfccs = format(crc32(catfcontents) & 0xffffffff, '08x').lower();
-   elif(catfchecksumtype=="crc64_ecma"):
-    catnewfcs = format(crc64_ecma(catfcontents) & 0xffffffffffffffff, '016x').lower();
-   elif(catfchecksumtype=="crc64" or catfchecksumtype=="crc64_iso"):
-    catnewfcs = format(crc64_iso(catfcontents) & 0xffffffffffffffff, '016x').lower();
-   elif(CheckSumSupportAlt(catfchecksumtype, hashlib_guaranteed)):
-    checksumoutstr = hashlib.new(catfchecksumtype);
-    checksumoutstr.update(catfcontents);
-    catnewfccs = checksumoutstr.hexdigest().lower();
+   catnewfccs = GetFileChecksum(catfcontents, catheaderdata[-3].lower(), False, formatspecs);
    pyhascontents = True;
    if(catfccs==catnewfccs):
     if(verbose):
@@ -4496,22 +4400,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    while(hc<hcmax):
     hout = hout + AppendNullByte(preheaderdata[hc], formatspecs[5]);
     hc = hc + 1;
-   if(prefchecksumtype=="none" or prefchecksumtype==""):
-    prenewfcs = 0;
-   elif(prefchecksumtype=="crc16" or prefchecksumtype=="crc16_ansi" or prefchecksumtype=="crc16_ibm"):
-    prenewfcs = format(crc16(hout.encode('UTF-8')) & 0xffff, '04x').lower();
-   elif(prefchecksumtype=="adler32"):
-    prenewfcs = format(zlib.adler32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
-   elif(prefchecksumtype=="crc32"):
-    prenewfcs = format(crc32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
-   elif(prefchecksumtype=="crc64_ecma"):
-    prenewfcs = format(crc64_ecma(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
-   elif(prefchecksumtype=="crc64" or prefchecksumtype=="crc64_iso"):
-    prenewfcs = format(crc64_iso(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
-   elif(CheckSumSupportAlt(prefchecksumtype, hashlib_guaranteed)):
-    checksumoutstr = hashlib.new(prefchecksumtype);
-    checksumoutstr.update(hout.encode('UTF-8'));
-    prenewfcs = checksumoutstr.hexdigest().lower();
+   prenewfcs = GetFileChecksum(hout, preheaderdata[-3].lower(), True, formatspecs);
    if(prefcs!=prenewfcs and not skipchecksum):
     VerbosePrintOut("File Header Checksum Error with file " + prefname + " at offset " + str(prefhstart));
     return False;
@@ -4523,24 +4412,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    pyhascontents = False;
    if(prefsize>0):
     prefcontents = catfp.read(prefsize);
-    if(prefchecksumtype=="none" or prefchecksumtype==""):
-     prenewfccs = 0;
-    elif(prefchecksumtype=="crc16" or prefchecksumtype=="crc16_ansi" or prefchecksumtype=="crc16_ibm"):
-     prenewfccs = format(crc16(prefcontents) & 0xffff, '04x').lower();
-    elif(prefchecksumtype=="crc16_ccitt"):
-     prenewfcs = format(crc16_ccitt(prefcontents) & 0xffff, '04x').lower();
-    elif(prefchecksumtype=="adler32"):
-     prenewfccs = format(zlib.adler32(prefcontents) & 0xffffffff, '08x').lower();
-    elif(prefchecksumtype=="crc32"):
-     prenewfccs = format(crc32(prefcontents) & 0xffffffff, '08x').lower();
-    elif(prefchecksumtype=="crc64_ecma"):
-     prenewfcs = format(crc64_ecma(prefcontents) & 0xffffffffffffffff, '016x').lower();
-    elif(prefchecksumtype=="crc64" or prefchecksumtype=="crc64_iso"):
-     prenewfcs = format(crc64_iso(prefcontents) & 0xffffffffffffffff, '016x').lower();
-    elif(CheckSumSupportAlt(prefchecksumtype, hashlib_guaranteed)):
-     checksumoutstr = hashlib.new(prefchecksumtype);
-     checksumoutstr.update(prefcontents);
-     prenewfccs = checksumoutstr.hexdigest().lower();
+    prenewfccs = GetFileChecksum(prefcontents, preheaderdata[-3].lower(), False, formatspecs);
     pyhascontents = True;
     if(prefccs!=prenewfccs and not skipchecksum):
      VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
@@ -4604,22 +4476,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   while(hc<hcmax):
    hout = hout + AppendNullByte(catheaderdata[hc], formatspecs[5]);
    hc = hc + 1;
-  if(catfchecksumtype=="none" or catfchecksumtype==""):
-   catnewfcs = 0;
-  elif(catfchecksumtype=="crc16" or catfchecksumtype=="crc16_ansi" or catfchecksumtype=="crc16_ibm"):
-   catnewfcs = format(crc16(hout.encode('UTF-8')) & 0xffff, '04x').lower();
-  elif(catfchecksumtype=="adler32"):
-   catnewfcs = format(zlib.adler32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
-  elif(catfchecksumtype=="crc32"):
-   catnewfcs = format(crc32(hout.encode('UTF-8')) & 0xffffffff, '08x').lower();
-  elif(catfchecksumtype=="crc64_ecma"):
-   catnewfcs = format(crc64_ecma(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
-  elif(catfchecksumtype=="crc64" or catfchecksumtype=="crc64_iso"):
-   catnewfcs = format(crc64_iso(hout.encode('UTF-8')) & 0xffffffffffffffff, '016x').lower();
-  elif(CheckSumSupportAlt(catfchecksumtype, hashlib_guaranteed)):
-   checksumoutstr = hashlib.new(catfchecksumtype);
-   checksumoutstr.update(hout.encode('UTF-8'));
-   catnewfcs = checksumoutstr.hexdigest().lower();
+  catnewfcs = GetFileChecksum(hout, catheaderdata[-3].lower(), True, formatspecs);
   if(catfcs!=catnewfcs and not skipchecksum):
    VerbosePrintOut("File Header Checksum Error with file " + catfname + " at offset " + str(catfhstart));
    return False;
@@ -4629,24 +4486,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   pyhascontents = False;
   if(catfsize>0 and not listonly):
    catfcontents = catfp.read(catfsize);
-   if(catfchecksumtype=="none" or catfchecksumtype==""):
-    catnewfccs = 0;
-   elif(catfchecksumtype=="crc16" or catfchecksumtype=="crc16_ansi" or catfchecksumtype=="crc16_ibm"):
-    catnewfccs = format(crc16(catfcontents) & 0xffff, '04x').lower();
-   elif(catfchecksumtype=="crc16_ccitt"):
-    catnewfcs = format(crc16_ccitt(catfcontents) & 0xffff, '04x').lower();
-   elif(catfchecksumtype=="adler32"):
-    catnewfccs = format(zlib.adler32(catfcontents) & 0xffffffff, '08x').lower();
-   elif(catfchecksumtype=="crc32"):
-    catnewfccs = format(crc32(catfcontents) & 0xffffffff, '08x').lower();
-   elif(catfchecksumtype=="crc64_ecma"):
-    catnewfcs = format(crc64_ecma(catfcontents) & 0xffffffffffffffff, '016x').lower();
-   elif(catfchecksumtype=="crc64" or catfchecksumtype=="crc64_iso"):
-    catnewfcs = format(crc64_iso(catfcontents) & 0xffffffffffffffff, '016x').lower();
-   elif(CheckSumSupportAlt(catfchecksumtype, hashlib_guaranteed)):
-    checksumoutstr = hashlib.new(catfchecksumtype);
-    checksumoutstr.update(catfcontents);
-    catnewfccs = checksumoutstr.hexdigest().lower();
+   catnewfccs = GetFileChecksum(catfcontents, catheaderdata[-3].lower(), False, formatspecs);
    pyhascontents = True;
    if(catfccs!=catnewfccs and skipchecksum):
     VerbosePrintOut("File Content Checksum Error with file " + catfname + " at offset " + str(catfcontentstart));
