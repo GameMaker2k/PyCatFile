@@ -3599,10 +3599,11 @@ if(py7zr_support):
   if(not os.path.exists(infile) or not os.path.isfile(infile)):
    return False;
   szpfp = py7zr.SevenZipFile(infile, mode="r");
-  sztest = szpfp.testzip();
-  sztestalt = szpfp.test();
-  if(sztest and sztestalt):
-   VerbosePrintOut("Bad file found!");
+  file_content = szpfp.readall();
+  #sztest = szpfp.testzip();
+  #sztestalt = szpfp.test();
+  #if(sztest and sztestalt):
+  # VerbosePrintOut("Bad file found!");
   numfiles = int(len(szpfp.list()));
   fnumfiles = format(int(len(szpfp.list())), 'x').lower();
   fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
@@ -3712,13 +3713,10 @@ if(py7zr_support):
    except ImportError:
     fgname = "";
    fcontents = "".encode('UTF-8');
-   print(ftype, fname);
    if(ftype==0):
-    file_content = szpfp.read(targets=[member.filename]);
-    fileop = file_content[member.filename].open();
-    fcontents = fileop.read();
-    fsize = format(int(fileop.tell()), 'x').lower();
-    fileop.close();
+    fcontents = file_content[member.filename].read();
+    fsize = format(len(fcontents), 'x').lower();
+    file_content[member.filename].close();
    ftypehex = format(ftype, 'x').lower();
    extrafields = format(len(extradata), 'x').lower();
    extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
@@ -5940,10 +5938,11 @@ if(py7zr_support):
   inodetocatinode = {};
   fileidnum = 0;
   szpfp = py7zr.SevenZipFile(infile, mode="r");
-  sztest = szpfp.testzip();
-  sztestalt = szpfp.test();
-  if(sztest and sztestalt):
-   VerbosePrintOut("Bad file found!");
+  file_content = szpfp.readall();
+  #sztest = szpfp.testzip();
+  #sztestalt = szpfp.test();
+  #if(sztest and sztestalt):
+  # VerbosePrintOut("Bad file found!");
   numfiles = int(len(szpfp.list()));
   catver = formatspecs[6];
   fileheaderver = str(int(catver.replace(".", "")));
@@ -6052,10 +6051,8 @@ if(py7zr_support):
     fgname = "";
    fcontents = "".encode('UTF-8');
    if(ftype==0):
-    file_content = szpfp.read(targets=[member.filename]);
-    fileop = file_content[member.filename].open();
-    fcontents = fileop.read();
-    fsize = int(fileop.tell());
+    fcontents = file_content[member.filename].read();
+    fsize = format(len(fcontents), 'x').lower();
     fileop.close();
    ftypehex = format(ftype, 'x').lower();
    extrafields = len(extradata);
@@ -6422,6 +6419,62 @@ if(rarfile_support):
    lcfi = lcfi + 1;
   return catarray;
 
+if(not py7zr_support):
+ def SevenZipFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False):
+  return False;
+
+if(py7zr_support):
+ def SevenZipFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False):
+  listcatfiles = SevenZipFileToArrayAlt(infiles, listonly, checksumtype, extradata, formatspecs, verbose);
+  if(not listcatfiles):
+   return False;
+  catarray = {'list': listcatfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {}, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}};
+  lenlist = len(listcatfiles['ffilelist']);
+  lcfi = 0;
+  lcfx = int(listcatfiles['fnumfiles']);
+  if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
+   lcfx = int(lenlist);
+  else:
+   lcfx = int(listcatfiles['fnumfiles']);
+  while(lcfi < lcfx):
+   filetoidarray = {listcatfiles['ffilelist'][lcfi]['fname']: listcatfiles['ffilelist'][lcfi]['fid']};
+   idtofilearray = {listcatfiles['ffilelist'][lcfi]['fid']: listcatfiles['ffilelist'][lcfi]['fname']};
+   catarray['filetoid'].update(filetoidarray);
+   catarray['idtofile'].update(idtofilearray);
+   if(listcatfiles['ffilelist'][lcfi]['ftype']==0 or listcatfiles['ffilelist'][lcfi]['ftype']==7):
+    catarray['filetypes']['files']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['files']['idtofile'].update(idtofilearray);
+   if(listcatfiles['ffilelist'][lcfi]['ftype']==1):
+    catarray['filetypes']['hardlinks']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['hardlinks']['idtofile'].update(idtofilearray);
+    catarray['filetypes']['links']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['links']['idtofile'].update(idtofilearray);
+   if(listcatfiles['ffilelist'][lcfi]['ftype']==2):
+    catarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
+    catarray['filetypes']['links']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['links']['idtofile'].update(idtofilearray);
+   if(listcatfiles['ffilelist'][lcfi]['ftype']==3):
+    catarray['filetypes']['character']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['character']['idtofile'].update(idtofilearray);
+    catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+   if(listcatfiles['ffilelist'][lcfi]['ftype']==4):
+    catarray['filetypes']['block']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['block']['idtofile'].update(idtofilearray);
+    catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+   catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+   if(listcatfiles['ffilelist'][lcfi]['ftype']==5):
+    catarray['filetypes']['directories']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['directories']['idtofile'].update(idtofilearray);
+   if(listcatfiles['ffilelist'][lcfi]['ftype']==6):
+    catarray['filetypes']['symlinks']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['symlinks']['idtofile'].update(idtofilearray);
+    catarray['filetypes']['devices']['filetoid'].update(filetoidarray);
+    catarray['filetypes']['devices']['idtofile'].update(idtofilearray);
+   lcfi = lcfi + 1;
+  return catarray;
+
 def ArchiveFileStringToArrayIndex(catstr, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  catfp = BytesIO(catstr);
  listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
@@ -6449,6 +6502,17 @@ if(rarfile_support):
  def RarFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
   catfp = BytesIO();
   catfp = PackArchiveFileFromRarFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
+  listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+  return listcatfiles;
+
+if(not rarfile_support):
+ def SevenZipFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
+  return False;
+
+if(rarfile_support):
+ def SevenZipFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
+  catfp = BytesIO();
+  catfp = PackArchiveFileFromSevenZipFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
   listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   return listcatfiles;
 
@@ -7513,6 +7577,111 @@ if(rarfile_support):
     if(len(fgprint)<=0):
      fgprint = str(fgid);
     VerbosePrintOut(PrintPermissionString(fmode, ftype) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.file_size).rjust(15) + " " + member.mtime.strftime('%Y-%m-%d %H:%M') + " " + printfname));
+   lcfi = lcfi + 1;
+  if(returnfp):
+   return listcatfiles['catfp'];
+  else:
+   return True;
+
+if(not py7zr_support):
+ def SevenZipFileListFiles(infile, verbose=False, returnfp=False):
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+  if(not os.path.exists(infile) or not os.path.isfile(infile)):
+   return False;
+
+if(py7zr_support):
+ def SevenZipFileListFiles(infile, verbose=False, returnfp=False):
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
+  if(not os.path.exists(infile) or not os.path.isfile(infile)):
+   return False;
+  lcfi = 0;
+  returnval = {};
+  szpfp = py7zr.SevenZipFile(infile, mode="r");
+  file_content = szpfp.readall();
+  #sztest = szpfp.testzip();
+  #sztestalt = szpfp.test();
+  #if(sztest and sztestalt):
+  # VerbosePrintOut("Bad file found!");
+  for member in sorted(szpfp.list(), key=lambda x: x.filename):
+   if(re.findall("^[.|/]", member.filename)):
+    fname = member.filename;
+   else:
+    fname = "./"+member.filename;
+   if(not member.is_directory):
+    fpremode = int(stat.S_IFREG + 438);
+   elif(member.is_directory):
+    fpremode = int(stat.S_IFDIR + 511);
+   fwinattributes = int(0);
+   if(member.is_directory):
+    fmode = int(stat.S_IFDIR + 511);
+    fchmode = int(stat.S_IMODE(int(stat.S_IFDIR + 511)));
+    ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)));
+   else:
+    fmode = int(stat.S_IFLNK + 438);
+    fchmode = int(stat.S_IMODE(int(stat.S_IFLNK + 438)));
+    ftypemod = int(stat.S_IFMT(int(stat.S_IFLNK + 438)));
+   returnval.update({lcfi: member.filename});
+   if(not verbose):
+    VerbosePrintOut(member.filename);
+   if(verbose):
+    permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
+    permissionstr = "";
+    for fmodval in str(oct(fmode))[-3:]:
+     permissionstr = permissionstr + permissions['access'].get(fmodval, '---');
+    fsize = int("0");
+    if(not member.is_directory):
+     ftype = 0;
+     permissionstr = "-" + permissionstr;
+     printfname = member.filename;
+    elif(member.is_directory):
+     ftype = 5;
+     permissionstr = "d" + permissionstr;
+     printfname = member.filename;
+    if(ftype==0):
+     fsize = len(file_content[member.filename].read());
+     file_content[member.filename].close();
+    try:
+     fuid = int(os.getuid());
+    except AttributeError:
+     fuid = int(0);
+    except KeyError:
+     fuid = int(0);
+    try:
+     fgid = int(os.getgid());
+    except AttributeError:
+     fgid = int(0);
+    except KeyError:
+     fgid = int(0);
+    try:
+     import pwd;
+     try:
+      userinfo = pwd.getpwuid(os.getuid());
+      funame = userinfo.pw_name;
+     except KeyError:
+      funame = "";
+     except AttributeError:
+      funame = "";
+    except ImportError:
+     funame = "";
+    fgname = "";
+    try:
+     import grp;
+     try:
+      groupinfo = grp.getgrgid(os.getgid());
+      fgname = groupinfo.gr_name;
+     except KeyError:
+      fgname = "";
+     except AttributeError:
+      fgname = "";
+    except ImportError:
+     fgname = "";
+    fuprint = funame;
+    if(len(fuprint)<=0):
+     fuprint = str(fuid);
+    fgprint = fgname;
+    if(len(fgprint)<=0):
+     fgprint = str(fgid);
+    VerbosePrintOut(PrintPermissionString(fmode, ftype) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(fsize).rjust(15) + " " + member.creationtime.strftime('%Y-%m-%d %H:%M') + " " + printfname));
    lcfi = lcfi + 1;
   if(returnfp):
    return listcatfiles['catfp'];
