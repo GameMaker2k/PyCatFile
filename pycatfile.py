@@ -3601,9 +3601,9 @@ if(py7zr_support):
   szpfp = py7zr.SevenZipFile(infile, mode="r");
   file_content = szpfp.readall();
   #sztest = szpfp.testzip();
-  #sztestalt = szpfp.test();
-  #if(sztest and sztestalt):
-  # VerbosePrintOut("Bad file found!");
+  sztestalt = szpfp.test();
+  if(sztestalt):
+   VerbosePrintOut("Bad file found!");
   numfiles = int(len(szpfp.list()));
   fnumfiles = format(int(len(szpfp.list())), 'x').lower();
   fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
@@ -5940,9 +5940,9 @@ if(py7zr_support):
   szpfp = py7zr.SevenZipFile(infile, mode="r");
   file_content = szpfp.readall();
   #sztest = szpfp.testzip();
-  #sztestalt = szpfp.test();
-  #if(sztest and sztestalt):
-  # VerbosePrintOut("Bad file found!");
+  sztestalt = szpfp.test();
+  if(sztestalt):
+   VerbosePrintOut("Bad file found!");
   numfiles = int(len(szpfp.list()));
   catver = formatspecs[6];
   fileheaderver = str(int(catver.replace(".", "")));
@@ -7599,9 +7599,9 @@ if(py7zr_support):
   szpfp = py7zr.SevenZipFile(infile, mode="r");
   file_content = szpfp.readall();
   #sztest = szpfp.testzip();
-  #sztestalt = szpfp.test();
-  #if(sztest and sztestalt):
-  # VerbosePrintOut("Bad file found!");
+  sztestalt = szpfp.test();
+  if(sztestalt):
+   VerbosePrintOut("Bad file found!");
   for member in sorted(szpfp.list(), key=lambda x: x.filename):
    if(re.findall("^[.|/]", member.filename)):
     fname = member.filename;
