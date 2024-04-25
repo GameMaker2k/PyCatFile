@@ -4585,7 +4585,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   if(rarfile_support and checkcompressfile=="rarfile"):
    return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(py7zr_support and checkcompressfile=="7zipfile"):
-   return SevenZipFileToArray(infile, , seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+   return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   compresscheck = CheckCompressionType(infile, formatspecs, True);
