@@ -117,7 +117,7 @@ should_validate = getargs.validate;
 # Execute the appropriate functions based on determined actions and arguments
 if should_create:
  if getargs.convert:
-  checkcompressfile = CheckCompressionSubType(getargs.input, fnamelist, True);
+  checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
   if(checkcompressfile=="tarfile"):
    pycatfile.PackArchiveFileFromTarFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
   elif(checkcompressfile=="zipfile"):
@@ -135,7 +135,7 @@ if should_create:
 
 elif should_repack:
  if getargs.convert:
-  checkcompressfile = CheckCompressionSubType(getargs.input, fnamelist, True);
+  checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
   if(checkcompressfile=="tarfile"):
    pycatfile.PackArchiveFileFromTarFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
   elif(checkcompressfile=="zipfile"):
@@ -153,7 +153,7 @@ elif should_repack:
 
 elif should_extract:
  if getargs.convert:
-  checkcompressfile = CheckCompressionSubType(getargs.input, fnamelist, True);
+  checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
   tempout = BytesIO();
   if(checkcompressfile=="tarfile"):
    pycatfile.PackArchiveFileFromTarFile(getargs.input, tempout, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
@@ -172,7 +172,7 @@ elif should_extract:
 
 elif should_list:
  if getargs.convert:
-  checkcompressfile = CheckCompressionSubType(getargs.input, fnamelist, True);
+  checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
   if(checkcompressfile=="tarfile"):
    pycatfile.TarFileListFiles(getargs.input, getargs.verbose, False);
   elif(checkcompressfile=="zipfile"):
@@ -190,7 +190,7 @@ elif should_list:
 
 elif should_validate:
  if getargs.convert:
-  checkcompressfile = CheckCompressionSubType(getargs.input, fnamelist, True);
+  checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
   tempout = BytesIO();
   if(checkcompressfile=="tarfile"):
    pycatfile.PackArchiveFileFromTarFile(getargs.input, tempout, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
