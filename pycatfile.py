@@ -3831,20 +3831,20 @@ if(py7zr_support):
 
 create_alias_function("Pack", __file_format_name__, "FromSevenZipFile", PackArchiveFileFromSevenZipFile);
 
-def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
+def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
   catfp.seek(0, 0);
   catfp = UncompressArchiveFile(catfp, formatspecs);
   checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True);
   if(checkcompressfile=="tarfile"):
-   return TarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
+   return TarFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
-   return ZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
+   return ZipFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(rarfile_support and checkcompressfile=="rarfile"):
-   return RarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
+   return RarFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(py7zr_support and checkcompressfile=="7zipfile"):
-   return SevenZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
+   return SevenZipFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   if(not catfp):
@@ -3872,13 +3872,13 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
   if(checkcompressfile=="tarfile"):
-   return TarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
+   return TarFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
-   return ZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
+   return ZipFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(rarfile_support and checkcompressfile=="rarfile"):
-   return RarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
+   return RarFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(py7zr_support and checkcompressfile=="7zipfile"):
-   return SevenZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
+   return SevenZipFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   compresscheck = CheckCompressionType(infile, formatspecs, True);
@@ -4060,7 +4060,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
 
 create_alias_function("", __file_format_name__, "SeekToFileNum", ArchiveFileSeekToFileNum);
 
-def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
+def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
   catfp.seek(0, 0);
@@ -4308,13 +4308,13 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
   catfp = UncompressArchiveFile(catfp, formatspecs);
   checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True);
   if(checkcompressfile=="tarfile"):
-   return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+   return TarFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
-   return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+   return ZipFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
   if(rarfile_support and checkcompressfile=="rarfile"):
-   return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+   return RarFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
   if(py7zr_support and checkcompressfile=="7zipfile"):
-   return SevenZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
+   return SevenZipFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   if(not catfp):
@@ -4342,13 +4342,13 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
   if(checkcompressfile=="tarfile"):
-   return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+   return TarFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
-   return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+   return ZipFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
   if(rarfile_support and checkcompressfile=="rarfile"):
-   return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+   return RarFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
   if(py7zr_support and checkcompressfile=="7zipfile"):
-   return SevenZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
+   return SevenZipFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   compresscheck = CheckCompressionType(infile, formatspecs, True);
@@ -4551,7 +4551,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   if(rarfile_support and checkcompressfile=="rarfile"):
    return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(py7zr_support and checkcompressfile=="7zipfile"):
-   return SevenZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
+   return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   if(not catfp):
@@ -4585,7 +4585,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   if(rarfile_support and checkcompressfile=="rarfile"):
    return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(py7zr_support and checkcompressfile=="7zipfile"):
-   return SevenZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
+   return SevenZipFileToArray(infile, , seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   compresscheck = CheckCompressionType(infile, formatspecs, True);
@@ -7706,7 +7706,7 @@ def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compress
  listcatfiles = ArchiveFileListFiles(outarray, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp);
  return listcatfiles;
 
-def ListDirListFilesAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=True, seekstart=0, seekend=0, skipchecksum=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def ListDirListFilesAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = ListDirToArrayAlt(infiles, dirlistfromtxt, followlink, listonly, checksumtype, formatspecs, verbose);
  listcatfiles = ArchiveFileListFiles(outarray, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp);
  return listcatfiles;
