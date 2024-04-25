@@ -14,7 +14,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 4/24/2024 Ver. 0.8.2 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 4/12/2024 Ver. 0.7.8 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
@@ -171,8 +171,8 @@ __use_alt_inode__ = False;
 __file_format_list__ = [__file_format_name__, __file_format_magic__, __file_format_lower__, __file_format_len__, __file_format_hex__, __file_format_delimiter__, __file_format_ver__, __use_new_style__, __use_advanced_list__, __use_alt_inode__];
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
-__version_info__ = (0, 8, 2, "RC 1", 1);
-__version_date_info__ = (2024, 4, 24, "RC 1", 1);
+__version_info__ = (0, 7, 8, "RC 1", 1);
+__version_date_info__ = (2024, 4, 12, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 __revision__ = __version_info__[3];
 __revision_id__ = "$Id$";
@@ -216,9 +216,6 @@ zipfile_mimetype = "application/zip";
 zipfile_zip_mimetype = zipfile_mimetype;
 rarfile_mimetype = "application/rar";
 rarfile_rar_mimetype = rarfile_mimetype;
-sevenzipfile_mimetype = "application/x-7z-compressed";
-sevenzipfile_7z_mimetype = sevenzipfile_mimetype;
-sevenzipfile_7zip_mimetype = sevenzipfile_mimetype;
 archivefile_mimetype = "application/x-"+__file_format_list__[1]+"";
 archivefile_cat_mimetype = archivefile_mimetype;
 archivefile_gzip_mimetype = "application/x-"+__file_format_list__[1]+"+gzip";
@@ -1005,7 +1002,7 @@ def ReadInFileBySizeWithContentToArray(infile, listonly=False, skipchecksum=Fals
   fp = infile;
   fp.seek(0, 0);
   fp = UncompressArchiveFile(fp, formatspecs);
-  checkcompressfile = CheckCompressionSubType(fp, formatspecs);
+  checkcompressfile = CheckCompressionSubType(fp, formatspecs, True);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   if(not fp):
@@ -1031,7 +1028,7 @@ def ReadInFileBySizeWithContentToArray(infile, listonly=False, skipchecksum=Fals
   fp.seek(0, 0);
  else:
   infile = RemoveWindowsPath(infile);
-  checkcompressfile = CheckCompressionSubType(infile, formatspecs);
+  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   compresscheck = CheckCompressionType(infile, formatspecs, True);
@@ -1062,7 +1059,7 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
   fp = infile;
   fp.seek(0, 0);
   fp = UncompressArchiveFile(fp, formatspecs);
-  checkcompressfile = CheckCompressionSubType(fp, formatspecs);
+  checkcompressfile = CheckCompressionSubType(fp, formatspecs, True);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   if(not fp):
@@ -1088,7 +1085,7 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
   fp.seek(0, 0);
  else:
   infile = RemoveWindowsPath(infile);
-  checkcompressfile = CheckCompressionSubType(infile, formatspecs);
+  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs[2]):
    return False;
   compresscheck = CheckCompressionType(infile, formatspecs, True);
@@ -1940,7 +1937,7 @@ def UncompressStringAlt(infile):
  filefp.seek(0, 0);
  return filefp;
 
-def CheckCompressionSubType(infile, formatspecs=__file_format_list__):
+def CheckCompressionSubType(infile, formatspecs=__file_format_list__, closefp=True):
  compresscheck = CheckCompressionType(infile, formatspecs, False);
  if(not compresscheck):
   fextname = os.path.splitext(infile)[1];
@@ -2025,7 +2022,8 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_list__):
  if(prefp==binascii.unhexlify("7061785f676c6f62616c")):
   filetype = "tarfile";
  catfp.seek(0, 0);
- catfp.close();
+ if(closefp):
+  catfp.close();
  return filetype;
 
 def GZipCompress(data, compresslevel=9):
@@ -3838,7 +3836,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
   catfp = infile;
   catfp.seek(0, 0);
   catfp = UncompressArchiveFile(catfp, formatspecs);
-  checkcompressfile = CheckCompressionSubType(catfp, formatspecs);
+  checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True);
   if(checkcompressfile=="tarfile"):
    return TarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
@@ -3872,7 +3870,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, skipchecksum=False, formatspecs=_
   catfp.seek(0, 0);
  else:
   infile = RemoveWindowsPath(infile);
-  checkcompressfile = CheckCompressionSubType(infile, formatspecs);
+  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
   if(checkcompressfile=="tarfile"):
    return TarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
@@ -4067,7 +4065,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
   catfp = infile;
   catfp.seek(0, 0);
   catfp = UncompressArchiveFile(catfp, formatspecs);
-  checkcompressfile = CheckCompressionSubType(catfp, formatspecs);
+  checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True);
   if(checkcompressfile=="tarfile"):
    return TarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
@@ -4101,7 +4099,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, skipchecksum=False, formats
   catfp.seek(0, 0);
  else:
   infile = RemoveWindowsPath(infile);
-  checkcompressfile = CheckCompressionSubType(infile, formatspecs);
+  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
   if(checkcompressfile=="tarfile"):
    return TarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
@@ -4308,7 +4306,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
   catfp = infile;
   catfp.seek(0, 0);
   catfp = UncompressArchiveFile(catfp, formatspecs);
-  checkcompressfile = CheckCompressionSubType(catfp, formatspecs);
+  checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True);
   if(checkcompressfile=="tarfile"):
    return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
@@ -4342,7 +4340,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
   catfp.seek(0, 0);
  else:
   infile = RemoveWindowsPath(infile);
-  checkcompressfile = CheckCompressionSubType(infile, formatspecs);
+  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
   if(checkcompressfile=="tarfile"):
    return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
@@ -4545,7 +4543,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   catfp = infile;
   catfp.seek(0, 0);
   catfp = UncompressArchiveFile(catfp, formatspecs);
-  checkcompressfile = CheckCompressionSubType(catfp, formatspecs);
+  checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True);
   if(checkcompressfile=="tarfile"):
    return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
@@ -4579,7 +4577,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   catfp.seek(0, 0);
  else:
   infile = RemoveWindowsPath(infile);
-  checkcompressfile = CheckCompressionSubType(infile, formatspecs);
+  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
   if(checkcompressfile=="tarfile"):
    return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile"):
