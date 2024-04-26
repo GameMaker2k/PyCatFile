@@ -129,7 +129,7 @@ if should_create:
   elif(py7zr_support and checkcompressfile=="7zipfile"):
    pycatfile.PackArchiveFileFromSevenZipFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
   else:
-   sys.exit(1)
+   sys.exit(1);
  else:
   pycatfile.PackArchiveFile(getargs.input, getargs.output, getargs.text, getargs.compression, getargs.level, False, getargs.checksum, [], fnamelist, getargs.verbose, False);
 
@@ -147,7 +147,7 @@ elif should_repack:
   elif(py7zr_support and checkcompressfile=="7zipfile"):
    pycatfile.PackArchiveFileFromSevenZipFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
   else:
-   sys.exit(1)
+   sys.exit(1);
  else:
   pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamelist, getargs.verbose, False);
 
@@ -166,7 +166,7 @@ elif should_extract:
   elif(py7zr_support and checkcompressfile=="7zipfile"):
    pycatfile.PackArchiveFileFromSevenZipFile(getargs.input, tempout, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
   else:
-   sys.exit(1)
+   sys.exit(1);
   getargs.input = tempout;
  pycatfile.UnPackArchiveFile(getargs.input, getargs.output, False, 0, 0, getargs.skipchecksum, fnamelist, getargs.verbose, getargs.preserve, getargs.preserve, False);
 
@@ -184,7 +184,7 @@ elif should_list:
   elif(py7zr_support and checkcompressfile=="7zipfile"):
    pycatfile.SevenZipFileListFiles(getargs.input, getargs.verbose, False);
   else:
-   sys.exit(1)
+   sys.exit(1);
  else:
   pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, getargs.skipchecksum, fnamelist, getargs.verbose, False);
 
@@ -203,7 +203,7 @@ elif should_validate:
   elif(py7zr_support and checkcompressfile=="7zipfile"):
    pycatfile.PackArchiveFileFromSevenZipFile(getargs.input, tempout, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
   else:
-   sys.exit(1)
+   sys.exit(1);
   getargs.input = tempout;
  fvalid = pycatfile.ArchiveFileValidate(getargs.input, fnamelist, getargs.verbose, False);
  if(not getargs.verbose):
