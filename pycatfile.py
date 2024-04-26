@@ -3831,6 +3831,24 @@ if(py7zr_support):
 
 create_alias_function("Pack", __file_format_name__, "FromSevenZipFile", PackArchiveFileFromSevenZipFile);
 
+def PackArchiveFileFromInFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+ checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
+ if(checkcompressfile=="tarfile"):
+  return PackArchiveFileFromTarFile(infile, outfile, compression, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
+ elif(checkcompressfile=="zipfile"):
+  return PackArchiveFileFromZipFile(infile, outfile, compression, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
+ elif(checkcompressfile=="catfile"):
+  return RePackArchiveFile(infile, outfile, compression, compressionlevel, False, 0, 0, checksumtype, False, extradata, formatspecs, verbose, returnfp);
+ elif(rarfile_support and checkcompressfile=="rarfile"):
+  return PackArchiveFileFromRarFile(infile, outfile, compression, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
+ elif(py7zr_support and checkcompressfile=="7zipfile"):
+  return PackArchiveFileFromSevenZipFile(infile, outfile, compression, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
+ else:
+  return False;
+ return False;
+
+create_alias_function("Pack", __file_format_name__, "FromInFile", PackArchiveFileFromInFile);
+
 def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
@@ -4854,6 +4872,22 @@ if(py7zr_support):
   catfp = PackArchiveFileFromSevenZipFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
   listcatfiles = ArchiveFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   return listcatfiles;
+
+def InFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_list__, returnfp=False):
+ checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
+ if(checkcompressfile=="tarfile"):
+  return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+ elif(checkcompressfile=="zipfile"):
+  return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+ elif(checkcompressfile=="catfile"):
+  return ArchiveFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+ elif(rarfile_support and checkcompressfile=="rarfile"):
+  return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+ elif(py7zr_support and checkcompressfile=="7zipfile"):
+  return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+ else:
+  return False;
+ return False;
 
 def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False):
  catver = formatspecs[6];
@@ -6155,6 +6189,22 @@ if(py7zr_support):
    catlist['ffilelist'].update({fileidnum: {'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fchecksumtype': checksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': fcontents} });
    fileidnum = fileidnum + 1;
   return catlist;
+
+def InFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False):
+ checkcompressfile = CheckCompressionSubType(infiles, formatspecs, True);
+ if(checkcompressfile=="tarfile"):
+  return TarFileToArrayAlt(infiles, listonly, checksumtype, extradata, formatspecs, verbose);
+ elif(checkcompressfile=="zipfile"):
+  return ZipFileToArrayAlt(infiles, listonly, checksumtype, extradata, formatspecs, verbose);
+ elif(checkcompressfile=="catfile"):
+  return ArchiveFileToArray(infile, 0, 0, listonly, False, formatspecs, False);
+ elif(rarfile_support and checkcompressfile=="rarfile"):
+  return RarFileToArrayAlt(infiles, listonly, checksumtype, extradata, formatspecs, verbose);
+ elif(py7zr_support and checkcompressfile=="7zipfile"):
+  return SevenZipFileToArrayAlt(infiles, listonly, checksumtype, extradata, formatspecs, verbose);
+ else:
+  return False;
+ return False;
 
 def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = BytesIO();
@@ -7700,6 +7750,22 @@ if(py7zr_support):
   else:
    return True;
 
+def InFileListFiles(infile, verbose=False, formatspecs=__file_format_list__, returnfp=False):
+ checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
+ if(checkcompressfile=="tarfile"):
+  return TarFileListFiles(infile, verbose, returnfp);
+ elif(checkcompressfile=="zipfile"):
+  return ZipFileListFiles(infile, verbose, returnfp);
+ elif(checkcompressfile=="catfile"):
+  return ArchiveFileListFiles(infile, verbose, returnfp);
+ elif(rarfile_support and checkcompressfile=="rarfile"):
+  return RarFileListFiles(infile, verbose, returnfp);
+ elif(py7zr_support and checkcompressfile=="7zipfile"):
+  return SevenZipFileListFiles(infile, verbose, returnfp);
+ else:
+  return False;
+ return False;
+
 def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = BytesIO();
  packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, formatspecs, False, True);
@@ -7742,8 +7808,7 @@ if(rarfile_support):
   listcatfiles = RePackArchiveFile(outarray, outfile, compression, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
   return listcatfiles;
 
-if(rarfile_support):
- create_alias_function("Pack", __file_format_name__, "FromRarFileAlt", PackArchiveFileFromRarFileAlt);
+create_alias_function("Pack", __file_format_name__, "FromRarFileAlt", PackArchiveFileFromRarFileAlt);
 
 if(not py7zr_support):
  def PackArchiveFileFromSevenZipFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
@@ -7755,8 +7820,7 @@ if(py7zr_support):
   listcatfiles = RePackArchiveFile(outarray, outfile, compression, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
   return listcatfiles;
 
-if(py7zr_support):
- create_alias_function("Pack", __file_format_name__, "FromSevenZipFileAlt", PackArchiveFileFromSevenZipFileAlt);
+create_alias_function("Pack", __file_format_name__, "FromSevenZipFileAlt", PackArchiveFileFromSevenZipFileAlt);
 
 def download_file_from_ftp_file(url):
  urlparts = urlparse(url);
