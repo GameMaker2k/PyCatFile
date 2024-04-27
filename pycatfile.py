@@ -3833,6 +3833,8 @@ create_alias_function("Pack", __file_format_name__, "FromSevenZipFile", PackArch
 
 def PackArchiveFileFromInFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
+ if(verbose):
+  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(checkcompressfile=="tarfile"):
   return PackArchiveFileFromTarFile(infile, outfile, compression, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
  elif(checkcompressfile=="zipfile"):
@@ -7751,6 +7753,7 @@ if(py7zr_support):
    return True;
 
 def InFileListFiles(infile, verbose=False, formatspecs=__file_format_list__, returnfp=False):
+ logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
  if(checkcompressfile=="tarfile"):
   return TarFileListFiles(infile, verbose, returnfp);
