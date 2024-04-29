@@ -14,7 +14,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 4/26/2024 Ver. 0.8.6 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 4/29/2024 Ver. 0.9.0 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
@@ -171,8 +171,8 @@ __use_alt_inode__ = False;
 __file_format_list__ = [__file_format_name__, __file_format_magic__, __file_format_lower__, __file_format_len__, __file_format_hex__, __file_format_delimiter__, __file_format_ver__, __use_new_style__, __use_advanced_list__, __use_alt_inode__];
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
-__version_info__ = (0, 8, 6, "RC 1", 1);
-__version_date_info__ = (2024, 4, 26, "RC 1", 1);
+__version_info__ = (0, 9, 0, "RC 1", 1);
+__version_date_info__ = (2024, 4, 29, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 __revision__ = __version_info__[3];
 __revision_id__ = "$Id$";
@@ -2614,6 +2614,8 @@ if(hasattr(shutil, "register_archive_format")):
 
 def PackArchiveFileFromDirList(infiles, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  return PackArchiveFile(infiles, outfile, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, returnfp);
+
+create_alias_function("Pack", __file_format_name__, "FromDirList", PackArchiveFileFromDirList);
 
 def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
@@ -7243,7 +7245,7 @@ def ArchiveFileStringListFiles(catstr, seekstart=0, seekend=0, skipchecksum=Fals
  listcatfiles = ArchiveFileListFiles(catstr, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp);
  return listcatfiles;
 
-create_alias_function("", __file_format_name__, "StringListFiles", ArchiveFileListFiles);
+create_alias_function("", __file_format_name__, "StringListFiles", ArchiveFileStringListFiles);
 
 def TarFileListFiles(infile, verbose=False, returnfp=False):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
