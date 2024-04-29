@@ -7760,7 +7760,7 @@ def InFileListFiles(infile, verbose=False, formatspecs=__file_format_list__, ret
  elif(checkcompressfile=="zipfile"):
   return ZipFileListFiles(infile, verbose, returnfp);
  elif(checkcompressfile=="catfile"):
-  return ArchiveFileListFiles(infile, verbose, returnfp);
+  return ArchiveFileListFilesAlt(infile, 0, 0, False, formatspecs, verbose, returnfp):
  elif(rarfile_support and checkcompressfile=="rarfile"):
   return RarFileListFiles(infile, verbose, returnfp);
  elif(py7zr_support and checkcompressfile=="7zipfile"):
