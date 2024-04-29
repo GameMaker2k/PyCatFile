@@ -118,17 +118,11 @@ should_validate = getargs.validate;
 if should_create:
  if getargs.convert:
   checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
-  if(checkcompressfile=="tarfile"):
-   pycatfile.PackArchiveFileFromTarFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
-  elif(checkcompressfile=="zipfile"):
-   pycatfile.PackArchiveFileFromZipFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
-  elif(checkcompressfile=="catfile"):
-   pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamelist, getargs.verbose, False);
-  elif(rarfile_support and checkcompressfile=="rarfile"):
-   pycatfile.PackArchiveFileFromRarFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
-  elif(py7zr_support and checkcompressfile=="7zipfile"):
-   pycatfile.PackArchiveFileFromSevenZipFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
+  if(checkcompressfile=="catfile"):
+   tmpout = pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamelist, getargs.verbose, False);
   else:
+   tmpout = pycatfile.PackArchiveFileFromInFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
+  if(not tmpout):
    sys.exit(1);
  else:
   pycatfile.PackArchiveFile(getargs.input, getargs.output, getargs.text, getargs.compression, getargs.level, False, getargs.checksum, [], fnamelist, getargs.verbose, False);
@@ -136,17 +130,11 @@ if should_create:
 elif should_repack:
  if getargs.convert:
   checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
-  if(checkcompressfile=="tarfile"):
-   pycatfile.PackArchiveFileFromTarFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
-  elif(checkcompressfile=="zipfile"):
-   pycatfile.PackArchiveFileFromZipFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
-  elif(checkcompressfile=="catfile"):
+  if(checkcompressfile=="catfile"):
    pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamelist, getargs.verbose, False);
-  elif(rarfile_support and checkcompressfile=="rarfile"):
-   pycatfile.PackArchiveFileFromRarFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
-  elif(py7zr_support and checkcompressfile=="7zipfile"):
-   pycatfile.PackArchiveFileFromSevenZipFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
   else:
+   pycatfile.PackArchiveFileFromInFile(getargs.input, getargs.output, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
+  if(not tmpout):
    sys.exit(1);
  else:
   pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamelist, getargs.verbose, False);
@@ -155,17 +143,11 @@ elif should_extract:
  if getargs.convert:
   checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
   tempout = BytesIO();
-  if(checkcompressfile=="tarfile"):
-   pycatfile.PackArchiveFileFromTarFile(getargs.input, tempout, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
-  elif(checkcompressfile=="zipfile"):
-   pycatfile.PackArchiveFileFromZipFile(getargs.input, tempout, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
-  elif(checkcompressfile=="catfile"):
-   pycatfile.RePackArchiveFile(getargs.input, tempout, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamelist, getargs.verbose, False);
-  elif(rarfile_support and checkcompressfile=="rarfile"):
-   pycatfile.PackArchiveFileFromRarFile(getargs.input, tempout, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
-  elif(py7zr_support and checkcompressfile=="7zipfile"):
-   pycatfile.PackArchiveFileFromSevenZipFile(getargs.input, tempout, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
+  if(checkcompressfile=="catfile"):
+   tmpout = pycatfile.RePackArchiveFile(getargs.input, tempout, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamelist, getargs.verbose, False);
   else:
+   tmpout = pycatfile.PackArchiveFileFromInFile(getargs.input, tempout, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
+  if(not tmpout):
    sys.exit(1);
   getargs.input = tempout;
  pycatfile.UnPackArchiveFile(getargs.input, getargs.output, False, 0, 0, getargs.skipchecksum, fnamelist, getargs.verbose, getargs.preserve, getargs.preserve, False);
@@ -173,17 +155,11 @@ elif should_extract:
 elif should_list:
  if getargs.convert:
   checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
-  if(checkcompressfile=="tarfile"):
-   pycatfile.TarFileListFiles(getargs.input, getargs.verbose, False);
-  elif(checkcompressfile=="zipfile"):
-   pycatfile.ZipFileListFiles(getargs.input, getargs.verbose, False);
-  elif(checkcompressfile=="catfile"):
-   pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, getargs.skipchecksum, fnamelist, getargs.verbose, False);
-  elif(rarfile_support and checkcompressfile=="rarfile"):
-   pycatfile.RarFileListFiles(getargs.input, getargs.verbose, False);
-  elif(py7zr_support and checkcompressfile=="7zipfile"):
-   pycatfile.SevenZipFileListFiles(getargs.input, getargs.verbose, False);
+  if(checkcompressfile=="catfile"):
+   tmpout = pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, getargs.skipchecksum, fnamelist, getargs.verbose, False);
   else:
+   tmpout = pycatfile.InFileListFiles(getargs.input, getargs.verbose, False);
+  if(not tmpout):
    sys.exit(1);
  else:
   pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, getargs.skipchecksum, fnamelist, getargs.verbose, False);
@@ -192,19 +168,13 @@ elif should_validate:
  if getargs.convert:
   checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
   tempout = BytesIO();
-  if(checkcompressfile=="tarfile"):
-   pycatfile.PackArchiveFileFromTarFile(getargs.input, tempout, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
-  elif(checkcompressfile=="zipfile"):
-   pycatfile.PackArchiveFileFromZipFile(getargs.input, tempout, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
-  elif(checkcompressfile=="catfile"):
-   pycatfile.RePackArchiveFile(getargs.input, tempout, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamelist, getargs.verbose, False);
-  elif(rarfile_support and checkcompressfile=="rarfile"):
-   pycatfile.PackArchiveFileFromRarFile(getargs.input, tempout, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
-  elif(py7zr_support and checkcompressfile=="7zipfile"):
-   pycatfile.PackArchiveFileFromSevenZipFile(getargs.input, tempout, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
+  if(checkcompressfile=="catfile"):
+   tmpout = pycatfile.RePackArchiveFile(getargs.input, tempout, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamelist, getargs.verbose, False);
   else:
-   sys.exit(1);
+   tmpout = pycatfile.PackArchiveFileFromInFile(getargs.input, tempout, getargs.compression, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
   getargs.input = tempout;
+  if(not tmpout):
+   sys.exit(1);
  fvalid = pycatfile.ArchiveFileValidate(getargs.input, fnamelist, getargs.verbose, False);
  if(not getargs.verbose):
   import sys, logging;

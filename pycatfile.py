@@ -7245,58 +7245,6 @@ def ArchiveFileStringListFiles(catstr, seekstart=0, seekend=0, skipchecksum=Fals
 
 create_alias_function("", __file_format_name__, "StringListFiles", ArchiveFileListFiles);
 
-def ArchiveFileListFilesAlt(infile, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_list__, verbose=False, returnfp=False):
- logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
- if(isinstance(infile, dict)):
-  listcatfiles = infile;
- else:
-  if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
-   infile = RemoveWindowsPath(infile);
-  listcatfiles = ArchiveFileToArray(infile, seekstart, seekend, True, skipchecksum, formatspecs, returnfp);
- if(not listcatfiles):
-  return False;
- lenlist = len(listcatfiles['ffilelist']);
- fnumfiles = int(listcatfiles['fnumfiles']);
- lcfi = 0;
- lcfx = int(listcatfiles['fnumfiles']);
- if(lenlist>listcatfiles['fnumfiles'] or lenlist<listcatfiles['fnumfiles']):
-  lcfx = int(lenlist);
- else:
-  lcfx = int(listcatfiles['fnumfiles']);
- returnval = {};
- while(lcfi<lcfx):
-  returnval.update({lcfi: listcatfiles['ffilelist'][lcfi]['fname']});
-  if(not verbose):
-   VerbosePrintOut(listcatfiles['ffilelist'][lcfi]['fname']);
-  if(verbose):
-   permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
-   printfname = listcatfiles['ffilelist'][lcfi]['fname'];
-   if(listcatfiles['ffilelist'][lcfi]['ftype']==1):
-    printfname = listcatfiles['ffilelist'][lcfi]['fname'] + " link to " + listcatfiles['ffilelist'][lcfi]['flinkname'];
-   if(listcatfiles['ffilelist'][lcfi]['ftype']==2):
-    printfname = listcatfiles['ffilelist'][lcfi]['fname'] + " -> " + listcatfiles['ffilelist'][lcfi]['flinkname'];
-   fuprint = listcatfiles['ffilelist'][lcfi]['funame'];
-   if(len(fuprint)<=0):
-    fuprint = listcatfiles['ffilelist'][lcfi]['fuid'];
-   fgprint = listcatfiles['ffilelist'][lcfi]['fgname'];
-   if(len(fgprint)<=0):
-    fgprint = listcatfiles['ffilelist'][lcfi]['fgid'];
-   VerbosePrintOut(PrintPermissionString(listcatfiles['ffilelist'][lcfi]['fmode'], listcatfiles['ffilelist'][lcfi]['ftype']) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(listcatfiles['ffilelist'][lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles['ffilelist'][lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname));
-  lcfi = lcfi + 1;
- if(returnfp):
-  return listcatfiles['catfp'];
- else:
-  return True;
-
-create_alias_function("", __file_format_name__, "ListFilesAlt", ArchiveFileListFilesAlt);
-
-def ArchiveFileStringListFilesAlt(catstr, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_list__, verbose=False, returnfp=False):
- catfp = BytesIO(catstr);
- listcatfiles = ArchiveFileListFilesAlt(catstr, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp);
- return listcatfiles;
-
-create_alias_function("", __file_format_name__, "StringListFilesAlt", ArchiveFileListFilesAlt);
-
 def TarFileListFiles(infile, verbose=False, returnfp=False):
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(infile=="-"):
@@ -7760,7 +7708,7 @@ def InFileListFiles(infile, verbose=False, formatspecs=__file_format_list__, ret
  elif(checkcompressfile=="zipfile"):
   return ZipFileListFiles(infile, verbose, returnfp);
  elif(checkcompressfile=="catfile"):
-  return ArchiveFileListFilesAlt(infile, 0, 0, False, formatspecs, verbose, returnfp);
+  return ArchiveFileListFiles(infile, 0, 0, False, formatspecs, verbose, returnfp);
  elif(rarfile_support and checkcompressfile=="rarfile"):
   return RarFileListFiles(infile, verbose, returnfp);
  elif(py7zr_support and checkcompressfile=="7zipfile"):
