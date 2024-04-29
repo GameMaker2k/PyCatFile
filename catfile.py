@@ -158,7 +158,7 @@ elif should_list:
   if(checkcompressfile=="catfile"):
    tmpout = pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, getargs.skipchecksum, fnamelist, getargs.verbose, False);
   else:
-   tmpout = pycatfile.InFileListFiles(getargs.input, getargs.verbose, False);
+   tmpout = pycatfile.InFileListFiles(getargs.input, getargs.verbose, fnamelist, False);
   if(not tmpout):
    sys.exit(1);
  else:
