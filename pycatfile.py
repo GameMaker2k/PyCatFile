@@ -57,6 +57,9 @@ try:
 except ImportError:
  from binascii import crc32;
 
+if(sys.version_info[0]==2):
+ FileNotFoundError = IOError;
+
 rarfile_support = False;
 try:
  import rarfile;
