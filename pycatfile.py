@@ -7849,9 +7849,9 @@ def upload_file_to_ftp_file(ftpfile, url):
   return False;
  if(urlparts.scheme=="sftp"):
   if(__use_pysftp__):
-   return upload_file_from_pysftp_file(url);
+   return upload_file_to_pysftp_file(url);
   else:
-   return upload_file_from_sftp_file(url);
+   return upload_file_to_sftp_file(url);
  elif(urlparts.scheme=="http" or urlparts.scheme=="https"):
   return False;
  ftp_port = urlparts.port;
@@ -8011,7 +8011,7 @@ if(haveparamiko):
   else:
    sftp_password = "";
   if(urlparts.scheme=="ftp"):
-   return upload_file_from_ftp_file(url);
+   return upload_file_to_ftp_file(url);
   elif(urlparts.scheme=="http" or urlparts.scheme=="https"):
    return False;
   if(urlparts.scheme!="sftp"):
@@ -8125,7 +8125,7 @@ if(havepysftp):
   else:
    sftp_password = "";
   if(urlparts.scheme=="ftp"):
-   return upload_file_from_ftp_file(url);
+   return upload_file_to_ftp_file(url);
   elif(urlparts.scheme=="http" or urlparts.scheme=="https"):
    return False;
   if(urlparts.scheme!="sftp"):
@@ -8211,12 +8211,12 @@ def upload_file_to_internet_file(ifp, url):
  if(urlparts.scheme=="http" or urlparts.scheme=="https"):
   return False;
  elif(urlparts.scheme=="ftp" or urlparts.scheme=="ftps"):
-  return upload_file_from_ftp_file(ifp, url);
+  return upload_file_to_ftp_file(ifp, url);
  elif(urlparts.scheme=="sftp"):
   if(__use_pysftp__ and havepysftp):
-   return upload_file_from_pysftp_file(ifp, url);
+   return upload_file_to_pysftp_file(ifp, url);
   else:
-   return download_file_from_sftp_file(ifp, url);
+   return upload_file_to_sftp_file(ifp, url);
  else:
   return False;
  return False;
@@ -8234,12 +8234,12 @@ def upload_file_to_internet_string(ifp, url):
  if(urlparts.scheme=="http" or urlparts.scheme=="https"):
   return False;
  elif(urlparts.scheme=="ftp" or urlparts.scheme=="ftps"):
-  return upload_file_from_ftp_string(ifp, url);
+  return upload_file_to_ftp_string(ifp, url);
  elif(urlparts.scheme=="sftp"):
   if(__use_pysftp__ and havepysftp):
-   return upload_file_from_pysftp_string(ifp, url);
+   return upload_file_to_pysftp_string(ifp, url);
   else:
-   return download_file_from_sftp_string(ifp, url);
+   return upload_file_to_sftp_string(ifp, url);
  else:
   return False;
  return False;
