@@ -2904,7 +2904,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
  elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
   catfp = CompressArchiveFile(catfp, compression, formatspecs);
   catfp.seek(0, 0);
-  upload_file_from_internet_file(catfp, outfile);
+  upload_file_to_internet_file(catfp, outfile);
  if(returnfp):
   catfp.seek(0, 0);
   return catfp;
