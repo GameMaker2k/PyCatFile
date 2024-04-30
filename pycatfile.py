@@ -1199,6 +1199,52 @@ def AppendFileHeader(fp, numfiles, checksumtype="crc32", formatspecs=__file_form
   pass;
  return fp;
 
+def MakeEmptyFilePointer(fp, checksumtype="crc32", formatspecs=__file_format_list__):
+ AppendFileHeader(fp, 0, checksumtype, formatspecs);
+ return fp;
+
+def MakeEmptyFile(outfile, compression="auto", compressionlevel=None, checksumtype="crc32", formatspecs=__file_format_list__, returnfp=False):
+ if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+  if(os.path.exists(outfile)):
+   os.unlink(outfile);
+ if(outfile=="-"):
+  verbose = False;
+  catfpfp = BytesIO();
+ elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
+  catfp = outfile;
+ elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+  catfp = BytesIO();
+ else:
+  fbasename = os.path.splitext(outfile)[0];
+  fextname = os.path.splitext(outfile)[1];
+  catfp = CompressOpenFile(outfile, compressionlevel);
+ catfp = AppendFileHeader(catfp, 0, checksumtype, formatspecs);
+ if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  try:
+   catfp.flush();
+   os.fsync(catfp.fileno());
+  except io.UnsupportedOperation:
+   pass;
+  except AttributeError:
+   pass;
+ if(outfile=="-"):
+  catfp.seek(0, 0);
+  if(hasattr(sys.stdout, "buffer")):
+   shutil.copyfileobj(catfp, sys.stdout.buffer);
+  else:
+   shutil.copyfileobj(catfp, sys.stdout);
+ elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp.seek(0, 0);
+  upload_file_to_internet_file(catfp, outfile);
+ if(returnfp):
+  catfp.seek(0, 0);
+  return catfp;
+ else:
+  catfp.close();
+  return True;
+
 def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="", checksumtype="crc32", formatspecs=__file_format_list__):
  extrafields = format(len(extradata), 'x').lower();
  extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
