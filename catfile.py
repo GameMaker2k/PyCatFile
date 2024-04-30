@@ -119,12 +119,12 @@ fnameino = __use_alt_inode__;
 fnamelist = [fname, fnamemagic, fnamelower, fnamelen, fnamehex, getargs.delimiter, getargs.formatver, fnamesty, fnamelst, fnameino];
 
 # Determine the primary action based on user input
-actions = ['pack', 'unpack', 'list', 'repack', 'validate'];
+actions = ['create', 'extract', 'list', 'repack', 'validate'];
 active_action = next((action for action in actions if getattr(getargs, action)), None);
 
 # Execute the appropriate functions based on determined actions and arguments
 if active_action:
- if active_action=='pack':
+ if active_action=='create':
   if getargs.convert:
    checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
    if(checkcompressfile=="catfile"):
@@ -146,7 +146,7 @@ if active_action:
     sys.exit(1);
   else:
    pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamelist, getargs.verbose, False);
- elif active_action=='unpack':
+ elif active_action=='extract':
   if getargs.convert:
    checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
    tempout = BytesIO();
