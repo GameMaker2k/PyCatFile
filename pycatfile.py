@@ -75,18 +75,18 @@ except ImportError:
  py7zr_support = False;
 
 try:
- from safetar import is_tarfile;
+ from xtarfile import is_tarfile;
 except ImportError:
  try:
-  from xtarfile import is_tarfile;
+  from safetar import is_tarfile;
  except ImportError:
   from tarfile import is_tarfile;
 
 try:
- import safetar as tarfile;
+ import xtarfile as tarfile;
 except ImportError:
  try:
-  import xtarfile as tarfile;
+  import safetar as tarfile;
  except ImportError:
   import tarfile;
 
@@ -1762,6 +1762,19 @@ def CheckCompressionType(infile, formatspecs=__file_format_list__, closefp=True)
  if(prefp==binascii.unhexlify("7061785f676c6f62616c")):
   filetype = "tarfile";
  catfp.seek(0, 0);
+ if(filetype=="gzip" or filetype=="bzip2" or filetype=="lzma" or filetype=="zstd" or filetype=="lz4"):
+  if(is_tarfile(catfp)):
+   filetype = "tarfile";
+ if(not filetype):
+  if(is_tarfile(catfp)):
+   filetype = "tarfile";
+  elif(zipfile.is_zipfile(catfp)):
+   filetype = "zipfile";
+  elif(rarfile.is_rarfile(catfp) or rarfile.is_rarfile_sfx(catfp)):
+   filetype = "rarile";
+  else:
+   filetype = False;
+ catfp.seek(0, 0);
  if(closefp):
   catfp.close();
  return filetype;
@@ -2002,7 +2015,18 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_list__, closefp=Tr
    compresscheck = "lzma";
   else:
    return False;
+ if(compresscheck=="gzip" or compresscheck=="bzip2" or compresscheck=="lzma" or compresscheck=="zstd" or compresscheck=="lz4"):
+  if(is_tarfile(catfp)):
+   filetype = "tarfile";
  if(not compresscheck):
+  if(is_tarfile(infile)):
+   return "tarfile";
+  elif(zipfile.is_zipfile(infile)):
+   return "zipfile";
+  elif(rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile)):
+   return "rarile";
+  else:
+   return False;
   return False;
  if(compresscheck=="catfile"):
   return "catfile";
