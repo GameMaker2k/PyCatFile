@@ -14,7 +14,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 5/1/2024 Ver. 0.9.4 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 5/1/2024 Ver. 0.9.6 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
@@ -174,7 +174,7 @@ __use_alt_inode__ = False;
 __file_format_list__ = [__file_format_name__, __file_format_magic__, __file_format_lower__, __file_format_len__, __file_format_hex__, __file_format_delimiter__, __file_format_ver__, __use_new_style__, __use_advanced_list__, __use_alt_inode__];
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
-__version_info__ = (0, 9, 4, "RC 1", 1);
+__version_info__ = (0, 9, 6, "RC 1", 1);
 __version_date_info__ = (2024, 5, 1, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 __revision__ = __version_info__[3];
@@ -2540,7 +2540,8 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   catfcontentstart = catfp.tell() + len(catfileoutstr);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = formatspecs[5].encode('UTF-8');
-  catfileout = catfileoutstrecd + fcontents + nullstrecd;
+  fcontents.seek(0, 0);
+  catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
   try:
@@ -2777,7 +2778,8 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = formatspecs[5].encode('UTF-8');
-  catfileout = catfileoutstrecd + fcontents + nullstrecd;
+  fcontents.seek(0, 0);
+  catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
   try:
@@ -3024,7 +3026,8 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = formatspecs[5].encode('UTF-8');
-  catfileout = catfileoutstrecd + fcontents + nullstrecd;
+  fcontents.seek(0, 0);
+  catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
   try:
@@ -3287,11 +3290,12 @@ if(rarfile_support):
    catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
    catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
    catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5])
-   catfileoutstrecd = catfileoutstr.encode('UTF-8')
-   nullstrecd = formatspecs[5].encode('UTF-8')
-   catfileout = catfileoutstrecd + fcontents + nullstrecd
-   catfcontentend = (catfp.tell() - 1) + len(catfileout)
-   catfp.write(catfileout)
+   catfileoutstrecd = catfileoutstr.encode('UTF-8');
+   nullstrecd = formatspecs[5].encode('UTF-8');
+   fcontents.seek(0, 0);
+   catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
+   catfcontentend = (catfp.tell() - 1) + len(catfileout);
+   catfp.write(catfileout);
    try:
     catfp.flush();
     os.fsync(catfp.fileno());
@@ -3499,11 +3503,12 @@ if(py7zr_support):
    catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
    catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
    catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5])
-   catfileoutstrecd = catfileoutstr.encode('UTF-8')
-   nullstrecd = formatspecs[5].encode('UTF-8')
-   catfileout = catfileoutstrecd + fcontents + nullstrecd
-   catfcontentend = (catfp.tell() - 1) + len(catfileout)
-   catfp.write(catfileout)
+   catfileoutstrecd = catfileoutstr.encode('UTF-8');
+   nullstrecd = formatspecs[5].encode('UTF-8');
+   fcontents.seek(0, 0);
+   catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
+   catfcontentend = (catfp.tell() - 1) + len(catfileout);
+   catfp.write(catfileout);
    try:
     catfp.flush();
     os.fsync(catfp.fileno());
@@ -4736,7 +4741,8 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   nullstrecd = formatspecs[5].encode('UTF-8');
   fheadtell += len(catfileoutstr) + 1;
   catfcontentend = fheadtell - 1;
-  catfileout = catfileoutstrecd + fcontents + nullstrecd;
+  fcontents.seek(0, 0);
+  catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
   pyhascontents = False;
   if(int(fsize)>0 and not listonly):
    pyhascontents = True;
@@ -4909,7 +4915,8 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   nullstrecd = formatspecs[5].encode('UTF-8');
   fheadtell += len(catfileoutstr) + 1;
   catfcontentend = fheadtell - 1;
-  catfileout = catfileoutstrecd + fcontents + nullstrecd;
+  fcontents.seek(0, 0);
+  catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
   pyhascontents = False;
   if(int(fsize)>0 and not listonly):
    pyhascontents = True;
@@ -5100,7 +5107,8 @@ def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
   nullstrecd = formatspecs[5].encode('UTF-8');
   fheadtell += len(catfileoutstr) + 1;
   catfcontentend = fheadtell - 1;
-  catfileout = catfileoutstrecd + fcontents + nullstrecd;
+  fcontents.seek(0, 0);
+  catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
   pyhascontents = False;
   if(int(fsize)>0 and not listonly):
    pyhascontents = True;
@@ -5309,7 +5317,8 @@ if(rarfile_support):
    nullstrecd = formatspecs[5].encode('UTF-8');
    fheadtell += len(catfileoutstr) + 1;
    catfcontentend = fheadtell - 1;
-   catfileout = catfileoutstrecd + fcontents + nullstrecd;
+   fcontents.seek(0, 0);
+   catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
    pyhascontents = False;
    if(int(fsize)>0 and not listonly):
     pyhascontents = True;
@@ -5463,7 +5472,8 @@ if(py7zr_support):
    nullstrecd = formatspecs[5].encode('UTF-8');
    fheadtell += len(catfileoutstr) + 1;
    catfcontentend = fheadtell - 1;
-   catfileout = catfileoutstrecd + fcontents + nullstrecd;
+   fcontents.seek(0, 0);
+   catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
    pyhascontents = False;
    if(int(fsize)>0 and not listonly):
     pyhascontents = True;
@@ -6061,7 +6071,8 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = formatspecs[5].encode('UTF-8');
-  catfileout = catfileoutstrecd + fcontents + nullstrecd;
+  fcontents.seek(0, 0);
+  catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
   catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
   try:
