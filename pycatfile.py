@@ -1335,7 +1335,6 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
  fnumfiles = format(numfiles, 'x').lower();
  AppendFileHeader(fp, fnumfiles, checksumtype, formatspecs);
  for curfname in GetDirList:
-  catfhstart = fp.tell();
   if(re.findall("^[.|/]", curfname)):
    fname = curfname;
   else:
@@ -2430,7 +2429,6 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
  except OSError as e:
   pass;
  for curfname in GetDirList:
-  catfhstart = catfp.tell();
   if(re.findall("^[.|/]", curfname)):
    fname = curfname;
   else:
@@ -2734,7 +2732,6 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
  except OSError as e:
   pass;
  for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
-  catfhstart = catfp.tell();
   if(re.findall("^[.|/]", member.name)):
    fname = member.name;
   else:
@@ -2966,7 +2963,6 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
  except OSError as e:
   pass;
  for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
-  catfhstart = catfp.tell();
   if(re.findall("^[.|/]", member.filename)):
    fname = member.filename;
   else:
@@ -3226,7 +3222,6 @@ if(rarfile_support):
    else:
     is_unix = False;
     is_windows = False;
-   catfhstart = catfp.tell();
    if(re.findall("^[.|/]", member.filename)):
     fname = member.filename;
    else:
@@ -3482,7 +3477,6 @@ if(py7zr_support):
   except OSError as e:
    pass;
   for member in sorted(szpfp.list(), key=lambda x: x.filename):
-   catfhstart = catfp.tell();
    if(re.findall("^[.|/]", member.filename)):
     fname = member.filename;
    else:
@@ -6048,7 +6042,6 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
  filetoinode = {};
  reallcfi = 0;
  while(lcfi < lcfx):
-  catfhstart = catfp.tell();
   if(re.findall("^[.|/]", listcatfiles['ffilelist'][reallcfi]['fname'])):
    fname = listcatfiles['ffilelist'][reallcfi]['fname'];
   else:
