@@ -1233,7 +1233,7 @@ def MakeEmptyFile(outfile, compression="auto", compressionlevel=None, checksumty
   catfp = CompressOpenFile(outfile, compressionlevel);
  catfp = AppendFileHeader(catfp, 0, checksumtype, formatspecs);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
   try:
    catfp.flush();
    os.fsync(catfp.fileno());
@@ -1250,7 +1250,7 @@ def MakeEmptyFile(outfile, compression="auto", compressionlevel=None, checksumty
   else:
    shutil.copyfileobj(catfp, sys.stdout);
  elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
   catfp.seek(0, 0);
   upload_file_to_internet_file(catfp, outfile);
  if(returnfp):
@@ -1551,7 +1551,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
   catfp = CompressOpenFile(outfile, compressionlevel);
  catfp = AppendFilesWithContent(infiles, catfp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs, verbose);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
   try:
    catfp.flush();
    os.fsync(catfp.fileno());
@@ -1568,7 +1568,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
   else:
    shutil.copyfileobj(catfp, sys.stdout);
  elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
   catfp.seek(0, 0);
   upload_file_to_internet_file(catfp, outfile);
  if(returnfp):
@@ -1598,7 +1598,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
   catfp = CompressOpenFile(outfile, compressionlevel);
  catfp = AppendListsWithContent(inlist, catfp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs, verbose);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
   try:
    catfp.flush();
    os.fsync(catfp.fileno());
@@ -1615,7 +1615,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
   else:
    shutil.copyfileobj(catfp, sys.stdout);
  elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
   catfp.seek(0, 0);
   upload_file_to_internet_file(catfp, outfile);
  if(returnfp):
@@ -2604,7 +2604,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
  if(numfiles>0):
   catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
   try:
    catfp.flush();
    os.fsync(catfp.fileno());
@@ -2621,7 +2621,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   else:
    shutil.copyfileobj(catfp, sys.stdout);
  elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
   catfp.seek(0, 0);
   upload_file_to_internet_file(catfp, outfile);
  if(returnfp):
@@ -2851,7 +2851,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
  if(numfiles>0):
   catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
   try:
    catfp.flush();
    os.fsync(catfp.fileno());
@@ -2868,7 +2868,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   else:
    shutil.copyfileobj(catfp, sys.stdout);
  elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
   catfp.seek(0, 0);
   upload_file_to_internet_file(catfp, outfile);
  if(returnfp):
@@ -3108,7 +3108,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
  if(numfiles>0):
   catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
   try:
    catfp.flush();
    os.fsync(catfp.fileno());
@@ -3125,7 +3125,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   else:
    shutil.copyfileobj(catfp, sys.stdout);
  elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
   catfp.seek(0, 0);
   upload_file_to_internet_file(catfp, outfile);
  if(returnfp):
@@ -3383,7 +3383,7 @@ if(rarfile_support):
   if(numfiles>0):
    catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
   if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
-   catfp = CompressArchiveFile(catfp, compression, formatspecs)
+   catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs)
    try:
     catfp.flush();
     os.fsync(catfp.fileno());
@@ -3400,7 +3400,7 @@ if(rarfile_support):
    else:
     shutil.copyfileobj(catfp, sys.stdout);
   elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
-   catfp = CompressArchiveFile(catfp, compression, formatspecs);
+   catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
    catfp.seek(0, 0);
    upload_file_to_internet_file(catfp, outfile);
   if(returnfp):
@@ -3605,7 +3605,7 @@ if(py7zr_support):
   if(numfiles>0):
    catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
   if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
-   catfp = CompressArchiveFile(catfp, compression, formatspecs)
+   catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs)
    try:
     catfp.flush();
     os.fsync(catfp.fileno());
@@ -3622,7 +3622,7 @@ if(py7zr_support):
    else:
     shutil.copyfileobj(catfp, sys.stdout);
   elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
-   catfp = CompressArchiveFile(catfp, compression, formatspecs);
+   catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
    catfp.seek(0, 0);
    upload_file_to_internet_file(catfp, outfile);
   if(returnfp):
@@ -6182,7 +6182,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
  if(lcfx>0):
   catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
   try:
    catfp.flush();
    os.fsync(catfp.fileno());
@@ -6199,7 +6199,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   else:
    shutil.copyfileobj(catfp, sys.stdout);
  elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
-  catfp = CompressArchiveFile(catfp, compression, formatspecs);
+  catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
   catfp.seek(0, 0);
   upload_file_to_internet_file(catfp, outfile);
  if(returnfp):
@@ -7480,7 +7480,7 @@ def upload_file_to_internet_file(ifp, url):
  return False;
 
 def upload_file_to_internet_compress_file(ifp, url, formatspecs=__file_format_list__):
- catfp = CompressArchiveFile(catfp, compression, formatspecs);
+ catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
  if(not catfileout):
   return False;
  catfp.seek(0, 0);
@@ -7503,7 +7503,7 @@ def upload_file_to_internet_string(ifp, url):
  return False;
  
 def upload_file_to_internet_compress_string(ifp, url, formatspecs=__file_format_list__):
- catfp = CompressArchiveFile(BytesIO(ifp), compression, formatspecs);
+ catfp = CompressArchiveFile(BytesIO(ifp), compression, compressionlevel, formatspecs);
  if(not catfileout):
   return False;
  catfp.seek(0, 0);
