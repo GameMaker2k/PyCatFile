@@ -1205,6 +1205,8 @@ def AppendFileHeader(fp, numfiles, checksumtype="crc32", formatspecs=__file_form
   pass;
  except AttributeError:
   pass;
+ except OSError as e:
+  pass;
  return fp;
 
 def MakeEmptyFilePointer(fp, checksumtype="crc32", formatspecs=__file_format_list__):
@@ -1214,7 +1216,10 @@ def MakeEmptyFilePointer(fp, checksumtype="crc32", formatspecs=__file_format_lis
 def MakeEmptyFile(outfile, compression="auto", compressionlevel=None, checksumtype="crc32", formatspecs=__file_format_list__, returnfp=False):
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   if(os.path.exists(outfile)):
-   os.unlink(outfile);
+   try:
+    os.unlink(outfile);
+   except OSError as e:
+    pass;
  if(outfile=="-"):
   verbose = False;
   catfpfp = BytesIO();
@@ -1235,6 +1240,8 @@ def MakeEmptyFile(outfile, compression="auto", compressionlevel=None, checksumty
   except io.UnsupportedOperation:
    pass;
   except AttributeError:
+   pass;
+  except OSError as e:
    pass;
  if(outfile=="-"):
   catfp.seek(0, 0);
@@ -1286,6 +1293,8 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
  except io.UnsupportedOperation:
   pass;
  except AttributeError:
+  pass;
+ except OSError as e:
   pass;
  return fp;
 
@@ -1525,7 +1534,10 @@ def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, filevalues=[], ext
 def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   if(os.path.exists(outfile)):
-   os.unlink(outfile);
+   try:
+    os.unlink(outfile);
+   except OSError as e:
+    pass;
  if(outfile=="-"):
   verbose = False;
   catfpfp = BytesIO();
@@ -1547,6 +1559,8 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
    pass;
   except AttributeError:
    pass;
+  except OSError as e:
+   pass;
  if(outfile=="-"):
   catfp.seek(0, 0);
   if(hasattr(sys.stdout, "buffer")):
@@ -1567,7 +1581,10 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
 def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   if(os.path.exists(outfile)):
-   os.unlink(outfile);
+   try:
+    os.unlink(outfile);
+   except OSError as e:
+    pass;
  if(outfile=="-"):
   verbose = False;
   catfpfp = BytesIO();
@@ -1588,6 +1605,8 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
   except io.UnsupportedOperation:
    pass;
   except AttributeError:
+   pass;
+  except OSError as e:
    pass;
  if(outfile=="-"):
   catfp.seek(0, 0);
@@ -2347,7 +2366,10 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   if(os.path.exists(outfile)):
-   os.unlink(outfile);
+   try:
+    os.unlink(outfile);
+   except OSError as e:
+    pass;
  if(outfile=="-"):
   verbose = False;
   catfp = BytesIO();
@@ -2404,6 +2426,8 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
  except io.UnsupportedOperation:
   pass;
  except AttributeError:
+  pass;
+ except OSError as e:
   pass;
  for curfname in GetDirList:
   catfhstart = catfp.tell();
@@ -2575,6 +2599,8 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
    pass;
   except AttributeError:
    pass;
+  except OSError as e:
+   pass;
  if(numfiles>0):
   catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -2585,6 +2611,8 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   except io.UnsupportedOperation:
    pass;
   except AttributeError:
+   pass;
+  except OSError as e:
    pass;
  if(outfile=="-"):
   catfp.seek(0, 0);
@@ -2631,7 +2659,10 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   if(os.path.exists(outfile)):
-   os.unlink(outfile);
+   try:
+    os.unlink(outfile);
+   except OSError as e:
+    pass;
  if(outfile=="-"):
   verbose = False;
   catfp = BytesIO();
@@ -2699,6 +2730,8 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
  except io.UnsupportedOperation:
   pass;
  except AttributeError:
+  pass;
+ except OSError as e:
   pass;
  for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
   catfhstart = catfp.tell();
@@ -2813,6 +2846,8 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
    pass;
   except AttributeError:
    pass;
+  except OSError as e:
+   pass;
  if(numfiles>0):
   catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -2823,6 +2858,8 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   except io.UnsupportedOperation:
    pass;
   except AttributeError:
+   pass;
+  except OSError as e:
    pass;
  if(outfile=="-"):
   catfp.seek(0, 0);
@@ -2859,7 +2896,10 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   if(os.path.exists(outfile)):
-   os.unlink(outfile);
+   try:
+    os.unlink(outfile);
+   except OSError as e:
+    pass;
  if(outfile=="-"):
   verbose = False;
   catfp = BytesIO();
@@ -2922,6 +2962,8 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
  except io.UnsupportedOperation:
   pass;
  except AttributeError:
+  pass;
+ except OSError as e:
   pass;
  for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
   catfhstart = catfp.tell();
@@ -3061,6 +3103,8 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
    pass;
   except AttributeError:
    pass;
+  except OSError as e:
+   pass;
  if(numfiles>0):
   catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -3071,6 +3115,8 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   except io.UnsupportedOperation:
    pass;
   except AttributeError:
+   pass;
+  except OSError as e:
    pass;
  if(outfile=="-"):
   catfp.seek(0, 0);
@@ -3112,7 +3158,10 @@ if(rarfile_support):
    logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
   if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
    if(os.path.exists(outfile)):
-    os.unlink(outfile);
+    try:
+     os.unlink(outfile);
+    except OSError as e:
+     pass;
   if(outfile=="-"):
    verbose = False;
    catfp = BytesIO();
@@ -3154,6 +3203,8 @@ if(rarfile_support):
   except io.UnsupportedOperation:
    pass;
   except AttributeError:
+   pass;
+  except OSError as e:
    pass;
   for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
    is_unix = False;
@@ -3324,9 +3375,11 @@ if(rarfile_support):
     catfp.flush();
     os.fsync(catfp.fileno());
    except io.UnsupportedOperation:
-    pass
+    pass;
    except AttributeError:
-    pass
+    pass;
+   except OSError as e:
+    pass;
   if(numfiles>0):
    catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
   if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -3335,9 +3388,11 @@ if(rarfile_support):
     catfp.flush();
     os.fsync(catfp.fileno());
    except io.UnsupportedOperation:
-    pass
+    pass;
    except AttributeError:
-    pass
+    pass;
+   except OSError as e:
+    pass;
   if(outfile=="-"):
    catfp.seek(0, 0)
    if(hasattr(sys.stdout, "buffer")):
@@ -3378,7 +3433,10 @@ if(py7zr_support):
    logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
   if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
    if(os.path.exists(outfile)):
-    os.unlink(outfile);
+    try:
+     os.unlink(outfile);
+    except OSError as e:
+     pass;
   if(outfile=="-"):
    verbose = False;
    catfp = BytesIO();
@@ -3420,6 +3478,8 @@ if(py7zr_support):
   except io.UnsupportedOperation:
    pass;
   except AttributeError:
+   pass;
+  except OSError as e:
    pass;
   for member in sorted(szpfp.list(), key=lambda x: x.filename):
    catfhstart = catfp.tell();
@@ -3537,9 +3597,11 @@ if(py7zr_support):
     catfp.flush();
     os.fsync(catfp.fileno());
    except io.UnsupportedOperation:
-    pass
+    pass;
    except AttributeError:
-    pass
+    pass;
+   except OSError as e:
+    pass;
   if(numfiles>0):
    catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
   if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -3548,9 +3610,11 @@ if(py7zr_support):
     catfp.flush();
     os.fsync(catfp.fileno());
    except io.UnsupportedOperation:
-    pass
+    pass;
    except AttributeError:
-    pass
+    pass;
+   except OSError as e:
+    pass;
   if(outfile=="-"):
    catfp.seek(0, 0);
    if(hasattr(sys.stdout, "buffer")):
@@ -5930,7 +5994,10 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   if(os.path.exists(outfile)):
-   os.unlink(outfile);
+   try:
+    os.unlink(outfile);
+   except OSError as e:
+    pass;
  if(not listcatfiles):
   return False;
  if(outfile=="-"):
@@ -5963,6 +6030,8 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
  except io.UnsupportedOperation:
   pass;
  except AttributeError:
+  pass;
+ except OSError as e:
   pass;
  lenlist = len(listcatfiles['ffilelist']);
  fnumfiles = int(listcatfiles['fnumfiles']);
@@ -6106,6 +6175,8 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
    pass;
   except AttributeError:
    pass;
+  except OSError as e:
+   pass;
   lcfi = lcfi + 1;
   reallcfi = reallcfi + 1;
  if(lcfx>0):
@@ -6118,6 +6189,8 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   except io.UnsupportedOperation:
    pass;
   except AttributeError:
+   pass;
+  except OSError as e:
    pass;
  if(outfile=="-"):
   catfp.seek(0, 0);
@@ -6210,9 +6283,11 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
      fpc.flush();
      os.fsync(fpc.fileno());
     except io.UnsupportedOperation:
-     pass
+     pass;
     except AttributeError:
-     pass
+     pass;
+    except OSError as e:
+     pass;
    if(hasattr(os, "chown") and funame==listcatfiles['ffilelist'][lcfi]['funame'] and fgname==listcatfiles['ffilelist'][lcfi]['fgname'] and preservepermissions):
     os.chown(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), listcatfiles['ffilelist'][lcfi]['fuid'], listcatfiles['ffilelist'][lcfi]['fgid']);
    if(preservepermissions):
@@ -6252,9 +6327,11 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
        fpc.flush();
        os.fsync(fpc.fileno());
       except io.UnsupportedOperation:
-       pass
+       pass;
       except AttributeError:
-       pass
+       pass;
+      except OSError as e:
+       pass;
      if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname'] and preservepermissions):
       os.chown(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), flinkinfo['fuid'], flinkinfo['fgid']);
      if(preservepermissions):
@@ -6313,9 +6390,11 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
        fpc.flush();
        os.fsync(fpc.fileno());
       except io.UnsupportedOperation:
-       pass
+       pass;
       except AttributeError:
-       pass
+       pass;
+      except OSError as e:
+       pass;
      if(hasattr(os, "chown") and funame==flinkinfo['funame'] and fgname==flinkinfo['fgname'] and preservepermissions):
       os.chown(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']), flinkinfo['fuid'], flinkinfo['fgid']);
      if(preservepermissions):
