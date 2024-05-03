@@ -4047,7 +4047,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksu
     prenewfccs = GetFileChecksum(prefcontents, preheaderdata[-3].lower(), False, formatspecs);
     pyhascontents = True;
     if(prefccs!=prenewfccs and not skipchecksum):
-     VerbosePrintOut("File Content "' != " with file " + prefname + " at offset " + str(prefcontentstart));
+     VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
      VerbosePrintOut("'" + str(prefccs) + "' != " + "'" + str(prenewfccs) + "'");
      return False;
    catfp.seek(1, 1);
