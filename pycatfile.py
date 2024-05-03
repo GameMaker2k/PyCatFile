@@ -877,7 +877,7 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
     prefccs = preheaderdata[-1];
     pyhascontents = True;
     if(prefccs!=prenewfccs and not skipchecksum):
-     VerbosePrintOut("File Content "' != " with file " + prefname + " at offset " + str(prefcontentstart));
+     VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
      VerbosePrintOut("'" + str(prefccs) + "' != " + "'" + str(prenewfccs) + "'");
      return False;
    fp.seek(1, 1);
