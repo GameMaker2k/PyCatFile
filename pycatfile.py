@@ -2582,13 +2582,10 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
   catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
-  catfhend = (catfp.tell() - 1) + len(catfileoutstr);
-  catfcontentstart = catfp.tell() + len(catfileoutstr);
   catfileoutstrecd = catfileoutstr.encode('UTF-8');
   nullstrecd = formatspecs[5].encode('UTF-8');
   fcontents.seek(0, 0);
   catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
-  catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
   try:
    catfp.flush();
@@ -2820,8 +2817,6 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
-  catfhend = (catfp.tell() - 1) + len(catfileoutstr);
-  catfcontentstart = catfp.tell() + len(catfileoutstr);
   catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
   fcontents.seek(0, 0);
   catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
@@ -2834,7 +2829,6 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   nullstrecd = formatspecs[5].encode('UTF-8');
   fcontents.seek(0, 0);
   catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
-  catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
   try:
    catfp.flush();
@@ -3076,8 +3070,6 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
-  catfhend = (catfp.tell() - 1) + len(catfileoutstr);
-  catfcontentstart = catfp.tell() + len(catfileoutstr);
   catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
   fcontents.seek(0, 0);
   catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
@@ -3090,7 +3082,6 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   nullstrecd = formatspecs[5].encode('UTF-8');
   fcontents.seek(0, 0);
   catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
-  catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
   try:
    catfp.flush();
@@ -3350,8 +3341,6 @@ if(rarfile_support):
    if(len(extradata)>0):
     catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
    catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
-   catfhend = (catfp.tell() - 1) + len(catfileoutstr);
-   catfcontentstart = catfp.tell() + len(catfileoutstr);
    catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
    fcontents.seek(0, 0);
    catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
@@ -3364,7 +3353,6 @@ if(rarfile_support):
    nullstrecd = formatspecs[5].encode('UTF-8');
    fcontents.seek(0, 0);
    catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
-   catfcontentend = (catfp.tell() - 1) + len(catfileout);
    catfp.write(catfileout);
    try:
     catfp.flush();
@@ -3571,8 +3559,6 @@ if(py7zr_support):
    if(len(extradata)>0):
     catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
    catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
-   catfhend = (catfp.tell() - 1) + len(catfileoutstr);
-   catfcontentstart = catfp.tell() + len(catfileoutstr);
    catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
    fcontents.seek(0, 0);
    catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
@@ -3585,7 +3571,6 @@ if(py7zr_support):
    nullstrecd = formatspecs[5].encode('UTF-8');
    fcontents.seek(0, 0);
    catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
-   catfcontentend = (catfp.tell() - 1) + len(catfileout);
    catfp.write(catfileout);
    try:
     catfp.flush();
@@ -6145,8 +6130,6 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
     exi = exi + 1;
    catfileoutstr += AppendNullBytes([extrafieldslist], formatspecs[5]);
   catfileoutstr += AppendNullBytes([checksumtype], formatspecs[5]);
-  catfhend = (catfp.tell() - 1) + len(catfileoutstr);
-  catfcontentstart = catfp.tell() + len(catfileoutstr);
   catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
   fcontents.seek(0, 0);
   catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
@@ -6159,7 +6142,6 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   nullstrecd = formatspecs[5].encode('UTF-8');
   fcontents.seek(0, 0);
   catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
-  catfcontentend = (catfp.tell() - 1) + len(catfileout);
   catfp.write(catfileout);
   try:
    catfp.flush();
