@@ -833,7 +833,7 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
  headercheck = ValidateHeaderChecksum(catheader[:-1], catheader[2], catheader[3], formatspecs);
  newfcs = GetHeaderChecksum(catheader[:-2], catheader[2], True, formatspecs);
  if(not headercheck and not skipchecksum):
-  VerbosePrintOut("File Header "' != " with file at offset " + str(0));
+  VerbosePrintOut("File Header Checksum Error with file at offset " + str(0));
   VerbosePrintOut("'" + str(newfcs) + "' != " + "'" + str(catheader[3]) + "'");
   return False;
  catstring = catheader[0];
@@ -861,7 +861,7 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
    prenewfcs = GetHeaderChecksum(preheaderdata[:-2], preheaderdata[-3].lower(), True, formatspecs);
    prefcs = preheaderdata[-2];
    if(prefcs!=prenewfcs and not skipchecksum):
-    VerbosePrintOut("File Header "' != " with file " + prefname + " at offset " + str(prefhstart));
+    VVerbosePrintOut("File Header Checksum Error with file " + prefname + " at offset " + str(prefhstart));
     VerbosePrintOut("'" + str(prefcs) + "' != " + "'" + str(prenewfcs) + "'");
     return False;
     valid_archive = False;
@@ -961,7 +961,7 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
  headercheck = ValidateHeaderChecksum(catheader[:-1], catheader[2], catheader[3], formatspecs);
  newfcs = GetHeaderChecksum(catheader[:-2], catheader[2], True, formatspecs);
  if(not headercheck and not skipchecksum):
-  VerbosePrintOut("File Header "' != " with file at offset " + str(0));
+  VerbosePrintOut("File Header Checksum Error with file at offset " + str(0));
   VerbosePrintOut("'" + str(newfcs) + "' != " + "'" + str(catheader[3]) + "'");
   return False;
  catstring = catheader[0];
@@ -989,7 +989,7 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
    prenewfcs = GetHeaderChecksum(preheaderdata[:-2], preheaderdata[-3].lower(), True, formatspecs);
    prefcs = preheaderdata[-2];
    if(prefcs!=prenewfcs and not skipchecksum):
-    VerbosePrintOut("File Header "' != " with file " + prefname + " at offset " + str(prefhstart));
+    VerbosePrintOut("File Header Checksum Error with file " + prefname + " at offset " + str(prefhstart));
     VerbosePrintOut("'" + str(prefcs) + "' != " + "'" + str(prenewfcs) + "'");
     return False;
     valid_archive = False;
@@ -4416,7 +4416,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
  fileheader = fileheader + AppendNullByte(catfileheadercshex, formatspecs[5]);
  fheadtell = len(fileheader);
  if(fprechecksum!=catfileheadercshex and not skipchecksum):
-  VerbosePrintOut("File Header "' != " with file " + infile + " at offset " + str(0));
+  VerbosePrintOut("File Header Checksum Error with file at offset " + str(0));
   VerbosePrintOut("'" + str(fprechecksum) + "' != " + "'" + str(catfileheadercshex) + "'");
   return False;
  catversions = re.search(r'(.*?)(\d+)$', catstring).groups();
