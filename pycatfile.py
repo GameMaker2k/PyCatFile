@@ -2153,8 +2153,8 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
  if(not hasattr(fp, "read") and not hasattr(fp, "write")):
   return False;
  fp.seek(0, 0);
- if(not compression or compression or compression=="catfile" or compression==formatspecs[2]):
-  compression = None;
+ if(not compression or compression=="catfile" or compression==formatspecs[2]):
+  compression = "auto";
  if(compression not in compressionlist and compression is None):
   compression = "auto";
  if(compression=="gzip"):
