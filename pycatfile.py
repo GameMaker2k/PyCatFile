@@ -2376,7 +2376,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
  if(checksumtype=="none"):
   checksumtype = "";
  if(not compression or compression=="catfile" or compression==formatspecs[2]):
-  compression = None;
+  compression = "auto";
  if(compression not in compressionlist and compression is None):
   compression = "auto";
  if(verbose):
@@ -2665,7 +2665,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
  if(checksumtype=="none"):
   checksumtype = "";
  if(not compression or compression=="catfile" or compression==formatspecs[2]):
-  compression = None;
+  compression = "auto";
  if(compression not in compressionlist and compression is None):
   compression = "auto";
  if(verbose):
@@ -2898,7 +2898,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
  if(checksumtype=="none"):
   checksumtype = "";
  if(not compression or compression=="catfile" or compression==formatspecs[2]):
-  compression = None;
+  compression = "auto";
  if(compression not in compressionlist and compression is None):
   compression = "auto";
  if(verbose):
@@ -3156,7 +3156,7 @@ if(rarfile_support):
   if(checksumtype=="none"):
    checksumtype = "";
   if(not compression or compression=="catfile" or compression==formatspecs[2]):
-   compression = None;
+   compression = "auto";
   if(compression not in compressionlist and compression is None):
    compression = "auto";
   if(verbose):
@@ -3427,7 +3427,7 @@ if(py7zr_support):
   if(checksumtype=="none"):
    checksumtype = "";
   if(not compression or compression=="catfile" or compression==formatspecs[2]):
-   compression = None;
+   compression = "auto";
   if(compression not in compressionlist and compression is None):
    compression = "auto";
   if(verbose):
@@ -6001,7 +6001,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
  if(checksumtype=="none"):
   checksumtype = "";
  if(not compression or compression=="catfile" or compression==formatspecs[2]):
-  compression = None;
+  compression = "auto";
  if(compression not in compressionlist and compression is None):
   compression = "auto";
  if(verbose):
