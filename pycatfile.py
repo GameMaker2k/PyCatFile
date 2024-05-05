@@ -1246,7 +1246,7 @@ def MakeEmptyFile(outfile, compression="auto", compressionlevel=None, checksumty
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  catfp = CompressOpenFile(outfile, compressionlevel);
+  catfp = CompressOpenFile(outfile, True, compressionlevel);
  catfp = AppendFileHeader(catfp, 0, checksumtype, formatspecs);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
@@ -1563,7 +1563,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  catfp = CompressOpenFile(outfile, compressionlevel);
+  catfp = CompressOpenFile(outfile, True, compressionlevel);
  catfp = AppendFilesWithContent(infiles, catfp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs, verbose);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
@@ -1610,7 +1610,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  catfp = CompressOpenFile(outfile, compressionlevel);
+  catfp = CompressOpenFile(outfile, True, compressionlevel);
  catfp = AppendListsWithContent(inlist, catfp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs, verbose);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
@@ -1900,6 +1900,8 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_list__):
     catfp.write(lzma.decompress(fp.read()));
    except lzma.LZMAError:
     return False;
+  if(compresscheck!="catfile" or compresscheck!=formatspecs[2]):
+   fp.close();
  return catfp;
 
 create_alias_function("Uncompress", __file_format_name__, "", UncompressArchiveFile);
@@ -2241,7 +2243,7 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
 
 create_alias_function("Compress", __file_format_name__, "", CompressArchiveFile);
 
-def CompressOpenFile(outfile, compressionlevel=None):
+def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
  if(outfile is None):
   return False;
  fbasename = os.path.splitext(outfile)[0];
@@ -2257,7 +2259,7 @@ def CompressOpenFile(outfile, compressionlevel=None):
  else:
   mode = "wb";
  try:
-  if(fextname not in outextlistwd):
+  if(fextname not in outextlistwd or not compressionenable):
    try:
     outfp = open(outfile, "wb", encoding="UTF-8");
    except (ValueError, TypeError) as e:
@@ -2373,7 +2375,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
- if(not compression or compression or compression=="catfile" or compression==formatspecs[2]):
+ if(not compression or compression=="catfile" or compression==formatspecs[2]):
   compression = None;
  if(compression not in compressionlist and compression is None):
   compression = "auto";
@@ -2395,7 +2397,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  catfp = CompressOpenFile(outfile, compressionlevel);
+  catfp = CompressOpenFile(outfile, True, compressionlevel);
  catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
@@ -2662,7 +2664,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
- if(not compression or compression or compression=="catfile" or compression==formatspecs[2]):
+ if(not compression or compression=="catfile" or compression==formatspecs[2]):
   compression = None;
  if(compression not in compressionlist and compression is None):
   compression = "auto";
@@ -2684,7 +2686,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  catfp = CompressOpenFile(outfile, compressionlevel);
+  catfp = CompressOpenFile(outfile, True, compressionlevel);
  catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
@@ -2895,7 +2897,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
- if(not compression or compression or compression=="catfile" or compression==formatspecs[2]):
+ if(not compression or compression=="catfile" or compression==formatspecs[2]):
   compression = None;
  if(compression not in compressionlist and compression is None):
   compression = "auto";
@@ -2917,7 +2919,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  catfp = CompressOpenFile(outfile, compressionlevel);
+  catfp = CompressOpenFile(outfile, True, compressionlevel);
  catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
@@ -3153,7 +3155,7 @@ if(rarfile_support):
    checksumtype="crc32";
   if(checksumtype=="none"):
    checksumtype = "";
-  if(not compression or compression or compression=="catfile" or compression==formatspecs[2]):
+  if(not compression or compression=="catfile" or compression==formatspecs[2]):
    compression = None;
   if(compression not in compressionlist and compression is None):
    compression = "auto";
@@ -3175,7 +3177,7 @@ if(rarfile_support):
   else:
    fbasename = os.path.splitext(outfile)[0];
    fextname = os.path.splitext(outfile)[1];
-   catfp = CompressOpenFile(outfile, compressionlevel);
+   catfp = CompressOpenFile(outfile, True, compressionlevel);
   catver = formatspecs[6];
   fileheaderver = str(int(catver.replace(".", "")));
   fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
@@ -3424,7 +3426,7 @@ if(py7zr_support):
    checksumtype="crc32";
   if(checksumtype=="none"):
    checksumtype = "";
-  if(not compression or compression or compression=="catfile" or compression==formatspecs[2]):
+  if(not compression or compression=="catfile" or compression==formatspecs[2]):
    compression = None;
   if(compression not in compressionlist and compression is None):
    compression = "auto";
@@ -3446,7 +3448,7 @@ if(py7zr_support):
   else:
    fbasename = os.path.splitext(outfile)[0];
    fextname = os.path.splitext(outfile)[1];
-   catfp = CompressOpenFile(outfile, compressionlevel);
+   catfp = CompressOpenFile(outfile, True, compressionlevel);
   catver = formatspecs[6];
   fileheaderver = str(int(catver.replace(".", "")));
   fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
@@ -5998,7 +6000,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   checksumtype="crc32";
  if(checksumtype=="none"):
   checksumtype = "";
- if(not compression or compression or compression=="catfile" or compression==formatspecs[2]):
+ if(not compression or compression=="catfile" or compression==formatspecs[2]):
   compression = None;
  if(compression not in compressionlist and compression is None):
   compression = "auto";
@@ -6022,7 +6024,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  catfp = CompressOpenFile(outfile, compressionlevel);
+  catfp = CompressOpenFile(outfile, True, compressionlevel);
  catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
