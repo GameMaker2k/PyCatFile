@@ -2400,8 +2400,6 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   catfp = CompressOpenFile(outfile, True, compressionlevel);
  catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
- catfp.write(fileheader.encode('UTF-8'));
  infilelist = [];
  if(infiles=="-"):
   for line in sys.stdin:
@@ -2432,20 +2430,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
  filetoinode = {};
  inodetocatinode = {};
  numfiles = int(len(GetDirList));
- fnumfiles = format(int(len(GetDirList)), 'x').lower();
- fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
- catfileheadercshex = GetFileChecksum(fileheader + fnumfilesa, checksumtype, True, formatspecs);
- fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[5]);
- catfp.write(fnumfilesa.encode('UTF-8'));
- try:
-  catfp.flush();
-  os.fsync(catfp.fileno());
- except io.UnsupportedOperation:
-  pass;
- except AttributeError:
-  pass;
- except OSError as e:
-  pass;
+ AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
  for curfname in GetDirList:
   if(re.findall("^[.|/]", curfname)):
    fname = curfname;
@@ -2579,41 +2564,9 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
     shutil.copyfileobj(fpc, fcontents);
   fcontents.seek(0, 0);
   ftypehex = format(ftype, 'x').lower();
-  extrafields = format(len(extradata), 'x').lower();
-  extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
-  if(len(extradata)>0):
-   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
-  extrasizelen = format(len(extrasizestr), 'x').lower();
-  catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields];
-  catoutlen = len(catoutlist) + len(extradata) + 3;
-  catoutlenhex = format(catoutlen, 'x').lower();
-  catoutlist.insert(0, catoutlenhex);
-  catfileoutstr = AppendNullBytes(catoutlist, formatspecs[5]);
-  if(len(extradata)>0):
-   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
-  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
-  catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
-  fcontents.seek(0, 0);
-  catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
-  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
-  catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower();
-  catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
-  catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
-  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
-  catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = formatspecs[5].encode('UTF-8');
-  fcontents.seek(0, 0);
-  catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
-  catfp.write(catfileout);
-  try:
-   catfp.flush();
-   os.fsync(catfp.fileno());
-  except io.UnsupportedOperation:
-   pass;
-  except AttributeError:
-   pass;
-  except OSError as e:
-   pass;
+  catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
+  AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
+  fcontents.close();
  if(numfiles>0):
   catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -2689,8 +2642,6 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   catfp = CompressOpenFile(outfile, True, compressionlevel);
  catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
- catfp.write(fileheader.encode('UTF-8'));
  curinode = 0;
  curfid = 0;
  inodelist = [];
@@ -2732,20 +2683,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
  except FileNotFoundError:
   return False;
  numfiles = int(len(tarfp.getmembers()));
- fnumfiles = format(int(len(tarfp.getmembers())), 'x').lower();
- fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
- catfileheadercshex = GetFileChecksum(fileheader + fnumfilesa, checksumtype, True, formatspecs);
- fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[5]);
- catfp.write(fnumfilesa.encode('UTF-8'));
- try:
-  catfp.flush();
-  os.fsync(catfp.fileno());
- except io.UnsupportedOperation:
-  pass;
- except AttributeError:
-  pass;
- except OSError as e:
-  pass;
+ AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
  for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
   if(re.findall("^[.|/]", member.name)):
    fname = member.name;
@@ -2822,41 +2760,9 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
     shutil.copyfileobj(fpc, fcontents);
   fcontents.seek(0, 0);
   ftypehex = format(ftype, 'x').lower();
-  extrafields = format(len(extradata), 'x').lower();
-  extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
-  if(len(extradata)>0):
-   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
-  extrasizelen = format(len(extrasizestr), 'x').lower();
-  catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields];
-  catoutlen = len(catoutlist) + len(extradata) + 3;
-  catoutlenhex = format(catoutlen, 'x').lower();
-  catoutlist.insert(0, catoutlenhex);
-  catfileoutstr = AppendNullBytes(catoutlist, formatspecs[5]);
-  if(len(extradata)>0):
-   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
-  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
-  catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
-  fcontents.seek(0, 0);
-  catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
-  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
-  catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower();
-  catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
-  catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
-  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
-  catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = formatspecs[5].encode('UTF-8');
-  fcontents.seek(0, 0);
-  catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
-  catfp.write(catfileout);
-  try:
-   catfp.flush();
-   os.fsync(catfp.fileno());
-  except io.UnsupportedOperation:
-   pass;
-  except AttributeError:
-   pass;
-  except OSError as e:
-   pass;
+  catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
+  AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
+  fcontents.close();
  if(numfiles>0):
   catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -2922,8 +2828,6 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   catfp = CompressOpenFile(outfile, True, compressionlevel);
  catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
- catfp.write(fileheader.encode('UTF-8'));
  curinode = 0;
  curfid = 0;
  inodelist = [];
@@ -2960,20 +2864,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
  if(ziptest):
   VerbosePrintOut("Bad file found!");
  numfiles = int(len(zipfp.infolist()));
- fnumfiles = format(int(len(zipfp.infolist())), 'x').lower();
- fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
- catfileheadercshex = GetFileChecksum(fileheader + fnumfilesa, checksumtype, True, formatspecs);
- fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[5]);
- catfp.write(fnumfilesa.encode('UTF-8'));
- try:
-  catfp.flush();
-  os.fsync(catfp.fileno());
- except io.UnsupportedOperation:
-  pass;
- except AttributeError:
-  pass;
- except OSError as e:
-  pass;
+ AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
  for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
   if(re.findall("^[.|/]", member.filename)):
    fname = member.filename;
@@ -3075,41 +2966,9 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
    fcontents.write(zipfp.read(member.filename));
   fcontents.seek(0, 0);
   ftypehex = format(ftype, 'x').lower();
-  extrafields = format(len(extradata), 'x').lower();
-  extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
-  if(len(extradata)>0):
-   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
-  extrasizelen = format(len(extrasizestr), 'x').lower();
-  catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields];
-  catoutlen = len(catoutlist) + len(extradata) + 3;
-  catoutlenhex = format(catoutlen, 'x').lower();
-  catoutlist.insert(0, catoutlenhex);
-  catfileoutstr = AppendNullBytes(catoutlist, formatspecs[5]);
-  if(len(extradata)>0):
-   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
-  catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
-  catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
-  fcontents.seek(0, 0);
-  catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
-  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
-  catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower();
-  catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
-  catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
-  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
-  catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = formatspecs[5].encode('UTF-8');
-  fcontents.seek(0, 0);
-  catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
-  catfp.write(catfileout);
-  try:
-   catfp.flush();
-   os.fsync(catfp.fileno());
-  except io.UnsupportedOperation:
-   pass;
-  except AttributeError:
-   pass;
-  except OSError as e:
-   pass;
+  catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
+  AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
+  fcontents.close();
  if(numfiles>0):
   catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -3180,8 +3039,6 @@ if(rarfile_support):
    catfp = CompressOpenFile(outfile, True, compressionlevel);
   catver = formatspecs[6];
   fileheaderver = str(int(catver.replace(".", "")));
-  fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
-  catfp.write(fileheader.encode('UTF-8'));
   curinode = 0;
   curfid = 0;
   inodelist = [];
@@ -3197,11 +3054,7 @@ if(rarfile_support):
   if(rartest):
    VerbosePrintOut("Bad file found!");
   numfiles = int(len(rarfp.infolist()));
-  fnumfiles = format(int(len(rarfp.infolist())), 'x').lower();
-  fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
-  catfileheadercshex = GetFileChecksum(fileheader + fnumfilesa, checksumtype, True, formatspecs);
-  fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[5]);
-  catfp.write(fnumfilesa.encode('UTF-8'));
+  AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
   try:
    catfp.flush();
    os.fsync(catfp.fileno());
@@ -3346,41 +3199,9 @@ if(rarfile_support):
     fcontents.write(rarfp.read(member.filename));
    fcontents.seek(0, 0);
    ftypehex = format(ftype, 'x').lower();
-   extrafields = format(len(extradata), 'x').lower();
-   extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
-   if(len(extradata)>0):
-    extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
-   extrasizelen = format(len(extrasizestr), 'x').lower();
-   catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields];
-   catoutlen = len(catoutlist) + len(extradata) + 3;
-   catoutlenhex = format(catoutlen, 'x').lower();
-   catoutlist.insert(0, catoutlenhex);
-   catfileoutstr = AppendNullBytes(catoutlist, formatspecs[5]);
-   if(len(extradata)>0):
-    catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
-   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
-   catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
-   fcontents.seek(0, 0);
-   catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
-   tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
-   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower();
-   catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
-   catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
-   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5])
-   catfileoutstrecd = catfileoutstr.encode('UTF-8');
-   nullstrecd = formatspecs[5].encode('UTF-8');
-   fcontents.seek(0, 0);
-   catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
-   catfp.write(catfileout);
-   try:
-    catfp.flush();
-    os.fsync(catfp.fileno());
-   except io.UnsupportedOperation:
-    pass;
-   except AttributeError:
-    pass;
-   except OSError as e:
-    pass;
+   catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
+   AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
+   fcontents.close();
   if(numfiles>0):
    catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
   if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -3451,8 +3272,6 @@ if(py7zr_support):
    catfp = CompressOpenFile(outfile, True, compressionlevel);
   catver = formatspecs[6];
   fileheaderver = str(int(catver.replace(".", "")));
-  fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
-  catfp.write(fileheader.encode('UTF-8'));
   curinode = 0;
   curfid = 0;
   inodelist = [];
@@ -3468,20 +3287,7 @@ if(py7zr_support):
   if(sztestalt):
    VerbosePrintOut("Bad file found!");
   numfiles = int(len(szpfp.list()));
-  fnumfiles = format(int(len(szpfp.list())), 'x').lower();
-  fnumfilesa = AppendNullBytes([fnumfiles, checksumtype], formatspecs[5]);
-  catfileheadercshex = GetFileChecksum(fileheader + fnumfilesa, checksumtype, True, formatspecs);
-  fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[5]);
-  catfp.write(fnumfilesa.encode('UTF-8'));
-  try:
-   catfp.flush();
-   os.fsync(catfp.fileno());
-  except io.UnsupportedOperation:
-   pass;
-  except AttributeError:
-   pass;
-  except OSError as e:
-   pass;
+  AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
   for member in sorted(szpfp.list(), key=lambda x: x.filename):
    if(re.findall("^[.|/]", member.filename)):
     fname = member.filename;
@@ -3564,41 +3370,9 @@ if(py7zr_support):
     file_content[member.filename].close();
    fcontents.seek(0, 0);
    ftypehex = format(ftype, 'x').lower();
-   extrafields = format(len(extradata), 'x').lower();
-   extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
-   if(len(extradata)>0):
-    extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
-   extrasizelen = format(len(extrasizestr), 'x').lower();
-   catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields];
-   catoutlen = len(catoutlist) + len(extradata) + 3;
-   catoutlenhex = format(catoutlen, 'x').lower();
-   catoutlist.insert(0, catoutlenhex);
-   catfileoutstr = AppendNullBytes(catoutlist, formatspecs[5]);
-   if(len(extradata)>0):
-    catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs[5]);
-   catfileoutstr = catfileoutstr + AppendNullByte(checksumtype, formatspecs[5]);
-   catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
-   fcontents.seek(0, 0);
-   catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
-   tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
-   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower();
-   catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
-   catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
-   catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5])
-   catfileoutstrecd = catfileoutstr.encode('UTF-8');
-   nullstrecd = formatspecs[5].encode('UTF-8');
-   fcontents.seek(0, 0);
-   catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
-   catfp.write(catfileout);
-   try:
-    catfp.flush();
-    os.fsync(catfp.fileno());
-   except io.UnsupportedOperation:
-    pass;
-   except AttributeError:
-    pass;
-   except OSError as e:
-    pass;
+   catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
+   AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
+   fcontents.close();
   if(numfiles>0):
    catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
   if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -6027,26 +5801,11 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   catfp = CompressOpenFile(outfile, True, compressionlevel);
  catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
- fileheader = AppendNullByte(formatspecs[1] + fileheaderver, formatspecs[5]);
- catfp.write(fileheader.encode('UTF-8'));
  lenlist = len(listcatfiles['ffilelist']);
  fnumfiles = int(listcatfiles['fnumfiles']);
  if(lenlist>fnumfiles or lenlist<fnumfiles):
   fnumfiles = lenlist;
- fnumfileshex = format(int(fnumfiles), 'x').lower();
- fnumfilesa = AppendNullBytes([fnumfileshex, checksumtype], formatspecs[5]);
- catfileheadercshex = GetFileChecksum(fileheader + fnumfilesa, checksumtype, True, formatspecs);
- fnumfilesa = fnumfilesa + AppendNullByte(catfileheadercshex, formatspecs[5]);
- catfp.write(fnumfilesa.encode('UTF-8'));
- try:
-  catfp.flush();
-  os.fsync(catfp.fileno());
- except io.UnsupportedOperation:
-  pass;
- except AttributeError:
-  pass;
- except OSError as e:
-  pass;
+ AppendFileHeader(catfp, fnumfiles, checksumtype, formatspecs);
  lenlist = len(listcatfiles['ffilelist']);
  fnumfiles = int(listcatfiles['fnumfiles']);
  lcfi = 0;
@@ -6083,21 +5842,15 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   fgname = listcatfiles['ffilelist'][reallcfi]['fgname'];
   finode = listcatfiles['ffilelist'][reallcfi]['finode'];
   flinkcount = listcatfiles['ffilelist'][reallcfi]['flinkcount'];
-  fwinattributes = flinkinfo['ffilelist'][reallcfi]['fwinattributes'];
+  fwinattributes = listcatfiles['ffilelist'][reallcfi]['fwinattributes'];
   fdev_minor = format(int(listcatfiles['ffilelist'][reallcfi]['fminor']), 'x').lower();
   fdev_major = format(int(listcatfiles['ffilelist'][reallcfi]['fmajor']), 'x').lower();
   frdev_minor = format(int(listcatfiles['ffilelist'][reallcfi]['frminor']), 'x').lower();
   frdev_major = format(int(listcatfiles['ffilelist'][reallcfi]['frmajor']), 'x').lower();
   if(len(listcatfiles['ffilelist'][reallcfi]['fextralist'])>listcatfiles['ffilelist'][reallcfi]['fextrafields'] and len(listcatfiles['ffilelist'][reallcfi]['fextralist'])>0):
    listcatfiles['ffilelist'][reallcfi]['fextrafields'] = len(listcatfiles['ffilelist'][reallcfi]['fextralist']);
-  if(len(extradata)>0):
-   listcatfiles['ffilelist'][reallcfi]['fextrafields'] = len(extradata);
-   listcatfiles['ffilelist'][reallcfi]['fextralist'] = extradata;
-  extrafields = format(int(listcatfiles['ffilelist'][reallcfi]['fextrafields']), 'x').lower();
-  extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
-  if(len(extradata)>0):
-   extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
-  extrasizelen = format(len(extrasizestr), 'x').lower();
+  if(not followlink and len(extradata)<0):
+   extradata = listcatfiles['ffilelist'][reallcfi]['fextralist'];
   fcontents = listcatfiles['ffilelist'][reallcfi]['fcontents'];
   if(followlink):
    if(listcatfiles['ffilelist'][reallcfi]['ftype']==1 or listcatfiles['ffilelist'][reallcfi]['ftype']==2):
@@ -6126,14 +5879,8 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
     frdev_major = format(int(flinkinfo['frmajor']), 'x').lower();
     if(len(flinkinfo['fextralist'])>flinkinfo['fextrafields'] and len(flinkinfo['fextralist'])>0):
      flinkinfo['fextrafields'] = len(flinkinfo['fextralist']);
-    if(len(extradata)>0):
-     flinkinfo['fextrafields'] = len(extradata);
-     flinkinfo['fextralist'] = extradata;
-    extrafields = format(int(flinkinfo['fextrafields']), 'x').lower();
-    extrasizestr = AppendNullByte(extrafields, formatspecs[5]);
-    if(len(extradata)>0):
-     extrasizestr = extrasizestr + AppendNullBytes(extradata, formatspecs[5]);
-    extrasizelen = format(len(extrasizestr), 'x').lower();
+    if(len(extradata)<0):
+     extradata = flinkinfo['fextralist'];
     fcontents = flinkinfo['fcontents'];
     ftypehex = format(flinkinfo['ftype'], 'x').lower();
   else:
@@ -6151,42 +5898,9 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
     fcurinode = format(int(curinode), 'x').lower();
     curinode = curinode + 1;
   curfid = curfid + 1;
-  catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, extrasizelen, extrafields];
-  catoutlen = len(catoutlist) + len(extradata) + 3;
-  catoutlenhex = format(catoutlen, 'x').lower();
-  catoutlist.insert(0, catoutlenhex);
-  catfileoutstr = AppendNullBytes(catoutlist, formatspecs[5]);
-  if(listcatfiles['ffilelist'][reallcfi]['fextrafields']>0):
-   extrafieldslist = [];
-   exi = 0;
-   exil = listcatfiles['ffilelist'][reallcfi]['fextrafields'];
-   while(exi<exil):
-    extrafieldslist.append(listcatfiles['ffilelist'][reallcfi]['fextralist']);
-    exi = exi + 1;
-   catfileoutstr += AppendNullBytes([extrafieldslist], formatspecs[5]);
-  catfileoutstr += AppendNullBytes([checksumtype], formatspecs[5]);
-  catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
-  fcontents.seek(0, 0);
-  catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
-  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
-  catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower();
-  catfileoutstr = AppendNullByte(catheaersize, formatspecs[5]) + catfileoutstr;
-  catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
-  catfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs[5]);
-  catfileoutstrecd = catfileoutstr.encode('UTF-8');
-  nullstrecd = formatspecs[5].encode('UTF-8');
-  fcontents.seek(0, 0);
-  catfileout = catfileoutstrecd + fcontents.read() + nullstrecd;
-  catfp.write(catfileout);
-  try:
-   catfp.flush();
-   os.fsync(catfp.fileno());
-  except io.UnsupportedOperation:
-   pass;
-  except AttributeError:
-   pass;
-  except OSError as e:
-   pass;
+  catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
+  AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
+  fcontents.close();
   lcfi = lcfi + 1;
   reallcfi = reallcfi + 1;
  if(lcfx>0):
