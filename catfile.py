@@ -20,6 +20,14 @@
 from __future__ import absolute_import, division, print_function, unicode_literals;
 import sys, argparse, pycatfile, binascii;
 
+# Conditional import and signal handling for Unix-like systems
+if os.name != 'nt':  # Not Windows
+ import signal;
+ def handler(signum, frame):
+  pycatfile.VerbosePrintOut("Received SIGPIPE, exiting gracefully.","info");
+  sys.exit(0);
+signal.signal(signal.SIGPIPE, handler);
+
 rarfile_support = pycatfile.rarfile_support;
 py7zr_support = pycatfile.py7zr_support;
 
