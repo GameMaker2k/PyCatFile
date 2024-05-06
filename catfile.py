@@ -18,7 +18,7 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import sys, argparse, pycatfile, binascii;
+import os, sys, argparse, pycatfile, binascii;
 
 # Conditional import and signal handling for Unix-like systems
 if os.name != 'nt':  # Not Windows
