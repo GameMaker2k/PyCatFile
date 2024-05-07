@@ -4494,7 +4494,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   catftypemod = stat.S_IFMT(catfmode);
   catfwinattributes = int(catheaderdata[11], 16);
   catfcompression = catheaderdata[12];
-  catfcsize = int(catheaderdata[13]);
+  catfcsize = int(catheaderdata[13], 16);
   catfuid = int(catheaderdata[14], 16);
   catfuname = catheaderdata[15];
   catfgid = int(catheaderdata[16], 16);
