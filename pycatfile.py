@@ -1531,7 +1531,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
      cfcontents.seek(0, 2);
      cfsize = cfcontents.tell();
      if(ucfsize > cfsize):
-      fcsize = cfsize;
+      fcsize = format(int(cfsize), 'x').lower();
       fcompression = compression;
       fcontents.close();
       fcontents = cfcontents;
@@ -1550,7 +1550,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
      cfcontents.seek(0, 2);
      cfsize = cfcontents.tell();
      if(ucfsize > cfsize):
-      fcsize = cfsize;
+      fcsize = format(int(cfsize), 'x').lower();
       fcompression = compression;
       fcontents.close();
       fcontents = cfcontents;
@@ -2647,7 +2647,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
      cfcontents.seek(0, 2);
      cfsize = cfcontents.tell();
      if(ucfsize > cfsize):
-      fcsize = cfsize;
+      fcsize = format(int(cfsize), 'x').lower();
       fcompression = compression;
       fcontents.close();
       fcontents = cfcontents;
@@ -2668,7 +2668,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
      cfcontents.seek(0, 2);
      cfsize = cfcontents.tell();
      if(ucfsize > cfsize):
-      fcsize = cfsize;
+      fcsize = format(int(cfsize), 'x').lower();
       fcompression = compression;
       fcontents.close();
       fcontents = cfcontents;
@@ -2881,7 +2881,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
      cfcontents.seek(0, 2);
      cfsize = cfcontents.tell();
      if(ucfsize > cfsize):
-      fcsize = cfsize;
+      fcsize = format(int(cfsize), 'x').lower();
       fcompression = compression;
       fcontents.close();
       fcontents = cfcontents;
@@ -3106,7 +3106,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
     cfcontents.seek(0, 2);
     cfsize = cfcontents.tell();
     if(ucfsize > cfsize):
-     fcsize = cfsize;
+     fcsize = format(int(cfsize), 'x').lower();
      fcompression = compression;
      fcontents.close();
      fcontents = cfcontents;
@@ -3358,7 +3358,7 @@ if(rarfile_support):
      cfcontents.seek(0, 2);
      cfsize = cfcontents.tell();
      if(ucfsize > cfsize):
-      fcsize = cfsize;
+      fcsize = format(int(cfsize), 'x').lower();
       fcompression = compression;
       fcontents.close();
       fcontents = cfcontents;
@@ -3548,7 +3548,7 @@ if(py7zr_support):
      cfcontents.seek(0, 2);
      cfsize = cfcontents.tell();
      if(ucfsize > cfsize):
-      fcsize = cfsize;
+      fcsize = format(int(cfsize), 'x').lower();
       fcompression = compression;
       fcontents.close();
       fcontents = cfcontents;
@@ -3754,7 +3754,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=Fals
    preftypemod = stat.S_IFMT(prefmode);
    prefwinattributes = int(preheaderdata[11], 16);
    prefcompression = preheaderdata[12];
-   prefcsize = preheaderdata[13];
+   prefcsize = int(preheaderdata[13], 16);
    prefuid = int(preheaderdata[14], 16);
    prefuname = preheaderdata[15];
    prefgid = int(preheaderdata[16], 16);
@@ -3970,7 +3970,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksu
    preftypemod = stat.S_IFMT(prefmode);
    prefwinattributes = int(preheaderdata[11], 16);
    prefcompression = preheaderdata[12];
-   prefcsize = preheaderdata[13];
+   prefcsize = int(preheaderdata[13], 16);
    prefuid = int(preheaderdata[14], 16);
    prefuname = preheaderdata[15];
    prefgid = int(preheaderdata[16], 16);
@@ -4207,7 +4207,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
   catftypemod = stat.S_IFMT(catfmode);
   catfwinattributes = int(catheaderdata[11], 16);
   catfcompression = catheaderdata[12];
-  catfcsize = catheaderdata[13];
+  catfcsize = int(catheaderdata[13], 16);
   catfuid = int(catheaderdata[14], 16);
   catfuname = catheaderdata[15];
   catfgid = int(catheaderdata[16], 16);
@@ -4494,7 +4494,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   catftypemod = stat.S_IFMT(catfmode);
   catfwinattributes = int(catheaderdata[11], 16);
   catfcompression = catheaderdata[12];
-  catfcsize = catheaderdata[13];
+  catfcsize = int(catheaderdata[13]);
   catfuid = int(catheaderdata[14], 16);
   catfuname = catheaderdata[15];
   catfgid = int(catheaderdata[16], 16);
@@ -6065,11 +6065,11 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   funame = listcatfiles['ffilelist'][reallcfi]['funame'];
   fgid = format(int(listcatfiles['ffilelist'][reallcfi]['fgid']), 'x').lower();
   fgname = listcatfiles['ffilelist'][reallcfi]['fgname'];
-  finode = format(listcatfiles['ffilelist'][reallcfi]['finode'], 'x').lower();
-  flinkcount = format(listcatfiles['ffilelist'][reallcfi]['flinkcount'], 'x').lower();
-  fwinattributes = format(listcatfiles['ffilelist'][reallcfi]['fwinattributes'], 'x').lower();
+  finode = format(int(listcatfiles['ffilelist'][reallcfi]['finode']), 'x').lower();
+  flinkcount = format(int(listcatfiles['ffilelist'][reallcfi]['flinkcount']), 'x').lower();
+  fwinattributes = format(int(listcatfiles['ffilelist'][reallcfi]['fwinattributes']), 'x').lower();
   fcompression = listcatfiles['ffilelist'][reallcfi]['fcompression'];
-  fcsize = listcatfiles['ffilelist'][reallcfi]['fcsize'];
+  fcsize = format(int(listcatfiles['ffilelist'][reallcfi]['fcsize']), 'x').lower();
   fdev_minor = format(int(listcatfiles['ffilelist'][reallcfi]['fminor']), 'x').lower();
   fdev_major = format(int(listcatfiles['ffilelist'][reallcfi]['fmajor']), 'x').lower();
   frdev_minor = format(int(listcatfiles['ffilelist'][reallcfi]['frminor']), 'x').lower();
@@ -6097,11 +6097,11 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
     funame = flinkinfo['funame'];
     fgid = format(int(flinkinfo['fgid']), 'x').lower();
     fgname = flinkinfo['fgname'];
-    finode = format(flinkinfo['finode'], 'x').lower();
-    flinkcount = format(flinkinfo['flinkcount'], 'x').lower();
-    fwinattributes = format(flinkinfo['fwinattributes'], 'x').lower();
+    finode = format(int(flinkinfo['finode']), 'x').lower();
+    flinkcount = format(int(flinkinfo['flinkcount']), 'x').lower();
+    fwinattributes = format(int(flinkinfo['fwinattributes']), 'x').lower();
     fcompression = flinkinfo['fcompression'];
-    fcsize = flinkinfo['fcsize'];
+    fcsize = format(int(flinkinfo['fcsize']), 'x').lower();
     fdev_minor = format(int(flinkinfo['fminor']), 'x').lower();
     fdev_major = format(int(flinkinfo['fmajor']), 'x').lower();
     frdev_minor = format(int(flinkinfo['frminor']), 'x').lower();
