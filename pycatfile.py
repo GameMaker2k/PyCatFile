@@ -1530,7 +1530,6 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
      cfcontents = CompressArchiveFile(cfcontents, compression, compressionlevel, formatspecs);
      cfcontents.seek(0, 2);
      cfsize = cfcontents.tell();
-     print(ucfsize, cfsize);
      if(ucfsize > cfsize):
       fcsize = cfsize;
       fcompression = compression;
@@ -1550,7 +1549,6 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
      cfcontents = CompressArchiveFile(cfcontents, compression, compressionlevel, formatspecs);
      cfcontents.seek(0, 2);
      cfsize = cfcontents.tell();
-     print(ucfsize, cfsize);
      if(ucfsize > cfsize):
       fcsize = cfsize;
       fcompression = compression;
@@ -2648,7 +2646,6 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
      cfcontents = CompressArchiveFile(cfcontents, compression, compressionlevel, formatspecs);
      cfcontents.seek(0, 2);
      cfsize = cfcontents.tell();
-     print(ucfsize, cfsize);
      if(ucfsize > cfsize):
       fcsize = cfsize;
       fcompression = compression;
@@ -2670,7 +2667,6 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
      cfcontents = CompressArchiveFile(cfcontents, compression, compressionlevel, formatspecs);
      cfcontents.seek(0, 2);
      cfsize = cfcontents.tell();
-     print(ucfsize, cfsize);
      if(ucfsize > cfsize):
       fcsize = cfsize;
       fcompression = compression;
@@ -2884,7 +2880,6 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
      cfcontents = CompressArchiveFile(cfcontents, compression, compressionlevel, formatspecs);
      cfcontents.seek(0, 2);
      cfsize = cfcontents.tell();
-     print(ucfsize, cfsize);
      if(ucfsize > cfsize):
       fcsize = cfsize;
       fcompression = compression;
@@ -3110,7 +3105,6 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
     cfcontents = CompressArchiveFile(cfcontents, compression, compressionlevel, formatspecs);
     cfcontents.seek(0, 2);
     cfsize = cfcontents.tell();
-    print(ucfsize, cfsize);
     if(ucfsize > cfsize):
      fcsize = cfsize;
      fcompression = compression;
@@ -3363,7 +3357,6 @@ if(rarfile_support):
      cfcontents = CompressArchiveFile(cfcontents, compression, compressionlevel, formatspecs);
      cfcontents.seek(0, 2);
      cfsize = cfcontents.tell();
-     print(ucfsize, cfsize);
      if(ucfsize > cfsize):
       fcsize = cfsize;
       fcompression = compression;
@@ -3554,7 +3547,6 @@ if(py7zr_support):
      cfcontents = CompressArchiveFile(cfcontents, compression, compressionlevel, formatspecs);
      cfcontents.seek(0, 2);
      cfsize = cfcontents.tell();
-     print(ucfsize, cfsize);
      if(ucfsize > cfsize):
       fcsize = cfsize;
       fcompression = compression;
