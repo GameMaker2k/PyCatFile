@@ -2373,7 +2373,7 @@ def CheckSumSupportAlt(checkfor, guaranteed=True):
  else:
   return False;
 
-def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  advancedlist = formatspecs[8];
  altinode = formatspecs[9];
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
@@ -2405,7 +2405,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  catfp = CompressOpenFile(outfile, True, compressionlevel);
+  catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel);
  catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
  infilelist = [];
@@ -2568,10 +2568,42 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   if(ftype==0 or ftype==7):
    with open(fname, "rb") as fpc:
     shutil.copyfileobj(fpc, fcontents);
+    if(not compresswholefile):
+     fcontents.seek(0, 2);
+     ucfsize = fcontents.tell();
+     fcontents.seek(0, 0);
+     cfcontents = BytesIO();
+     shutil.copyfileobj(fcontents, cfcontents);
+     cfcontents.seek(0, 0);
+     cfcontents = CompressArchiveFile(cfcontents, compression, compressionlevel, formatspecs);
+     cfcontents.seek(0, 2);
+     cfsize = cfcontents.tell();
+     print(ucfsize, cfsize);
+     if(ucfsize > cfsize):
+      fcsize = cfsize;
+      fcompression = compression;
+      fcontents.close();
+      fcontents = cfcontents;
   if(followlink and (ftype==1 or ftype==2)):
    flstatinfo = os.stat(flinkname);
    with open(flinkname, "rb") as fpc:
     shutil.copyfileobj(fpc, fcontents);
+    if(not compresswholefile):
+     fcontents.seek(0, 2);
+     ucfsize = fcontents.tell();
+     fcontents.seek(0, 0);
+     cfcontents = BytesIO();
+     shutil.copyfileobj(fcontents, cfcontents);
+     cfcontents.seek(0, 0);
+     cfcontents = CompressArchiveFile(cfcontents, compression, compressionlevel, formatspecs);
+     cfcontents.seek(0, 2);
+     cfsize = cfcontents.tell();
+     print(ucfsize, cfsize);
+     if(ucfsize > cfsize):
+      fcsize = cfsize;
+      fcompression = compression;
+      fcontents.close();
+      fcontents = cfcontents;
   fcontents.seek(0, 0);
   ftypehex = format(ftype, 'x').lower();
   catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
@@ -2611,15 +2643,15 @@ create_alias_function("Pack", __file_format_name__, "", PackArchiveFile);
 
 if(hasattr(shutil, "register_archive_format")):
  def PackArchiveFileFunc(archive_name, source_dir, **kwargs):
-  return PackArchiveFile(source_dir, archive_name, False, "auto", None, False, "crc32", [], __file_format_delimiter__, False, False);
+  return PackArchiveFile(source_dir, archive_name, False, "auto", True, None, False, "crc32", [], __file_format_delimiter__, False, False);
  create_alias_function("Pack", __file_format_name__, "Func", PackArchiveFileFunc);
 
-def PackArchiveFileFromDirList(infiles, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
- return PackArchiveFile(infiles, outfile, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, returnfp);
+def PackArchiveFileFromDirList(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+ return PackArchiveFile(infiles, outfile, dirlistfromtxt, compression, compresswholefile, compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, returnfp);
 
 create_alias_function("Pack", __file_format_name__, "FromDirList", PackArchiveFileFromDirList);
 
-def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -2649,7 +2681,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  catfp = CompressOpenFile(outfile, True, compressionlevel);
+  catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel);
  catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
  curinode = 0;
@@ -2770,6 +2802,22 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
   if(ftype==0 or ftype==7):
    with tarfp.extractfile(member) as fpc:
     shutil.copyfileobj(fpc, fcontents);
+    if(not compresswholefile):
+     fcontents.seek(0, 2);
+     ucfsize = fcontents.tell();
+     fcontents.seek(0, 0);
+     cfcontents = BytesIO();
+     shutil.copyfileobj(fcontents, cfcontents);
+     cfcontents.seek(0, 0);
+     cfcontents = CompressArchiveFile(cfcontents, compression, compressionlevel, formatspecs);
+     cfcontents.seek(0, 2);
+     cfsize = cfcontents.tell();
+     print(ucfsize, cfsize);
+     if(ucfsize > cfsize):
+      fcsize = cfsize;
+      fcompression = compression;
+      fcontents.close();
+      fcontents = cfcontents;
   fcontents.seek(0, 0);
   ftypehex = format(ftype, 'x').lower();
   catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
@@ -2807,7 +2855,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compressionl
 
 create_alias_function("Pack", __file_format_name__, "FromTarFile", PackArchiveFileFromTarFile);
 
-def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -2837,7 +2885,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  catfp = CompressOpenFile(outfile, True, compressionlevel);
+  catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel);
  catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
  curinode = 0;
@@ -2978,6 +3026,22 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compressionl
   fcontents = BytesIO();
   if(ftype==0):
    fcontents.write(zipfp.read(member.filename));
+   if(not compresswholefile):
+    fcontents.seek(0, 2);
+    ucfsize = fcontents.tell();
+    fcontents.seek(0, 0);
+    cfcontents = BytesIO();
+    shutil.copyfileobj(fcontents, cfcontents);
+    cfcontents.seek(0, 0);
+    cfcontents = CompressArchiveFile(cfcontents, compression, compressionlevel, formatspecs);
+    cfcontents.seek(0, 2);
+    cfsize = cfcontents.tell();
+    print(ucfsize, cfsize);
+    if(ucfsize > cfsize):
+     fcsize = cfsize;
+     fcompression = compression;
+     fcontents.close();
+     fcontents = cfcontents;
   fcontents.seek(0, 0);
   ftypehex = format(ftype, 'x').lower();
   catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
@@ -3020,7 +3084,7 @@ if(not rarfile_support):
   return False
 
 if(rarfile_support):
- def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+ def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
   if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
    outfile = RemoveWindowsPath(outfile);
   checksumtype = checksumtype.lower();
@@ -3050,7 +3114,7 @@ if(rarfile_support):
   else:
    fbasename = os.path.splitext(outfile)[0];
    fextname = os.path.splitext(outfile)[1];
-   catfp = CompressOpenFile(outfile, True, compressionlevel);
+   catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel);
   catver = formatspecs[6];
   fileheaderver = str(int(catver.replace(".", "")));
   curinode = 0;
@@ -3213,6 +3277,22 @@ if(rarfile_support):
    fcontents = BytesIO();
    if(ftype==0):
     fcontents.write(rarfp.read(member.filename));
+    if(not compresswholefile):
+     fcontents.seek(0, 2);
+     ucfsize = fcontents.tell();
+     fcontents.seek(0, 0);
+     cfcontents = BytesIO();
+     shutil.copyfileobj(fcontents, cfcontents);
+     cfcontents.seek(0, 0);
+     cfcontents = CompressArchiveFile(cfcontents, compression, compressionlevel, formatspecs);
+     cfcontents.seek(0, 2);
+     cfsize = cfcontents.tell();
+     print(ucfsize, cfsize);
+     if(ucfsize > cfsize):
+      fcsize = cfsize;
+      fcompression = compression;
+      fcontents.close();
+      fcontents = cfcontents;
    fcontents.seek(0, 0);
    ftypehex = format(ftype, 'x').lower();
    catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
@@ -3255,7 +3335,7 @@ if(not py7zr_support):
   return False
 
 if(py7zr_support):
- def PackArchiveFileFromSevenZipFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+ def PackArchiveFileFromSevenZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
   if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
    outfile = RemoveWindowsPath(outfile);
   checksumtype = checksumtype.lower();
@@ -3285,7 +3365,7 @@ if(py7zr_support):
   else:
    fbasename = os.path.splitext(outfile)[0];
    fextname = os.path.splitext(outfile)[1];
-   catfp = CompressOpenFile(outfile, True, compressionlevel);
+   catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel);
   catver = formatspecs[6];
   fileheaderver = str(int(catver.replace(".", "")));
   curinode = 0;
@@ -3386,6 +3466,22 @@ if(py7zr_support):
     fcontents.write(file_content[member.filename].read());
     fsize = format(fcontents.tell(), 'x').lower();
     file_content[member.filename].close();
+    if(not compresswholefile):
+     fcontents.seek(0, 2);
+     ucfsize = fcontents.tell();
+     fcontents.seek(0, 0);
+     cfcontents = BytesIO();
+     shutil.copyfileobj(fcontents, cfcontents);
+     cfcontents.seek(0, 0);
+     cfcontents = CompressArchiveFile(cfcontents, compression, compressionlevel, formatspecs);
+     cfcontents.seek(0, 2);
+     cfsize = cfcontents.tell();
+     print(ucfsize, cfsize);
+     if(ucfsize > cfsize):
+      fcsize = cfsize;
+      fcompression = compression;
+      fcontents.close();
+      fcontents = cfcontents;
    fcontents.seek(0, 0);
    ftypehex = format(ftype, 'x').lower();
    catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
@@ -3628,7 +3724,10 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=Fals
    prefcontents = "";
    pyhascontents = False;
    if(prefsize>0):
-    prefcontents = catfp.read(prefsize);
+    if(prefcompression):
+     prefcontents = catfp.read(prefsize);
+    else:
+     prefcontents = catfp.read(prefcsize);
     prenewfccs = GetFileChecksum(prefcontents, preheaderdata[-3].lower(), False, formatspecs);
     pyhascontents = True;
     if(prefccs!=prenewfccs and not skipchecksum):
@@ -3841,7 +3940,10 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksu
    prefcontents = "";
    pyhascontents = False;
    if(prefsize>0):
-    prefcontents = catfp.read(prefsize);
+    if(prefcompression):
+     prefcontents = catfp.read(prefsize);
+    else:
+     prefcontents = catfp.read(prefcsize);
     prenewfccs = GetFileChecksum(prefcontents, preheaderdata[-3].lower(), False, formatspecs);
     pyhascontents = True;
     if(prefccs!=prenewfccs and not skipchecksum):
@@ -4082,7 +4184,10 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
   catfcontents = "";
   pyhascontents = False;
   if(catfsize>0):
-   catfcontents = catfp.read(catfsize);
+   if(catfcompression):
+    catfcontents = catfp.read(catfsize);
+   else:
+    catfcontents = catfp.read(catfcsize);
    catnewfccs = GetFileChecksum(catfcontents, catheaderdata[-3].lower(), False, formatspecs);
    pyhascontents = True;
    if(catfccs==catnewfccs):
@@ -4244,6 +4349,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    else:
     prefname = "./"+preheaderdata[3];
    prefsize = int(preheaderdata[5], 16);
+   prefcsize = int(preheaderdata[13], 16);
    prefextrasize = int(preheaderdata[24], 16);
    prefextrafields = int(preheaderdata[25], 16);
    extrafieldslist = [];
@@ -4274,7 +4380,10 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    prefcontents = "";
    pyhascontents = False;
    if(prefsize>0):
-    prefcontents = catfp.read(prefsize);
+    if(catfcompression):
+     catfcontents = catfp.read(prefsize);
+    else:
+     catfcontents = catfp.read(prefcsize);
     prenewfccs = GetFileChecksum(prefcontents, preheaderdata[-3].lower(), False, formatspecs);
     pyhascontents = True;
     if(prefccs!=prenewfccs and not skipchecksum):
@@ -4351,10 +4460,16 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
   catfcontentstart = catfp.tell();
   catfcontents = BytesIO();
   pyhascontents = False;
-  catfcontents.seek(0, 0);
   if(catfsize>0 and not listonly):
-   catfcontents.write(catfp.read(catfsize));
+   if(catfcompression):
+    catfcontents.write(catfp.read(catfsize));
+   else:
+    catfcontents.write(catfp.read(catfcsize));
+   catfcontents.seek(0, 0);
    catnewfccs = GetFileChecksum(catfcontents.read(), catheaderdata[-3].lower(), False, formatspecs);
+   if(not catfcompression):
+    catfcontents.seek(0, 0);
+    catfcontents = UncompressArchiveFile(catfcontents, formatspecs);
    pyhascontents = True;
    if(catfccs!=catnewfccs and skipchecksum):
     VerbosePrintOut("File Content Checksum Error with file " + catfname + " at offset " + str(catfcontentstart));
