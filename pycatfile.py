@@ -4421,6 +4421,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    else:
     prefname = "./"+preheaderdata[3];
    prefsize = int(preheaderdata[5], 16);
+   prefcompression = preheaderdata[12];
    prefcsize = int(preheaderdata[13], 16);
    prefextrasize = int(preheaderdata[24], 16);
    prefextrafields = int(preheaderdata[25], 16);
@@ -4452,10 +4453,10 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
    prefcontents = "";
    pyhascontents = False;
    if(prefsize>0):
-    if(catfcompression=="none" or catfcompression=="" or catfcompression=="auto"):
-     catfcontents = catfp.read(prefsize);
+    if(prefcompression=="none" or prefcompression=="" or prefcompression=="auto"):
+     prefcontents = catfp.read(prefsize);
     else:
-     catfcontents = catfp.read(prefcsize);
+     prefcontents = catfp.read(prefcsize);
     prenewfccs = GetFileChecksum(prefcontents, preheaderdata[-3].lower(), False, formatspecs);
     pyhascontents = True;
     if(prefccs!=prenewfccs and not skipchecksum):
