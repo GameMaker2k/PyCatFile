@@ -5980,7 +5980,7 @@ def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", compr
  listcatfiles = ArchiveFileToArrayIndex(outarray, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
  return listcatfiles;
 
-def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  if(isinstance(infile, dict)):
   prelistcatfiles = ArchiveFileToArrayIndex(infile, seekstart, seekend, False, skipchecksum, formatspecs, returnfp);
   listcatfiles = prelistcatfiles['list'];
@@ -6023,7 +6023,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  catfp = CompressOpenFile(outfile, True, compressionlevel);
+  catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel);
  catver = formatspecs[6];
  fileheaderver = str(int(catver.replace(".", "")));
  lenlist = len(listcatfiles['ffilelist']);
@@ -6079,6 +6079,23 @@ def RePackArchiveFile(infile, outfile, compression="auto", compressionlevel=None
   if(not followlink and len(extradata)<0):
    extradata = listcatfiles['ffilelist'][reallcfi]['fextralist'];
   fcontents = listcatfiles['ffilelist'][reallcfi]['fcontents'];
+  fcompression = "";
+  fcsize = format(int(0), 'x').lower();
+  if(not compresswholefile):
+   fcontents.seek(0, 2);
+   ucfsize = fcontents.tell();
+   fcontents.seek(0, 0);
+   cfcontents = BytesIO();
+   shutil.copyfileobj(fcontents, cfcontents);
+   cfcontents.seek(0, 0);
+   cfcontents = CompressArchiveFile(cfcontents, compression, compressionlevel, formatspecs);
+   cfcontents.seek(0, 2);
+   cfsize = cfcontents.tell();
+   if(ucfsize > cfsize):
+    fcsize = format(int(cfsize), 'x').lower();
+    fcompression = compression;
+    fcontents.close();
+    fcontents = cfcontents;
   if(followlink):
    if(listcatfiles['ffilelist'][reallcfi]['ftype']==1 or listcatfiles['ffilelist'][reallcfi]['ftype']==2):
     getflinkpath = listcatfiles['ffilelist'][reallcfi]['flinkname'];
