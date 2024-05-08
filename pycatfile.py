@@ -4255,9 +4255,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
   catfcontentstart = catfp.tell();
   catfcontents = "";
   pyhascontents = False;
-  if(catfsize>0):
-
-  if(catfsize>0 and not listonly):
+  if(catfsize>0):):
    if(catfcompression=="none" or catfcompression=="" or catfcompression=="auto"):
     catfcontents = catfp.read(catfsize);
    else:
