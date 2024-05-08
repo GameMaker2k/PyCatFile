@@ -1687,7 +1687,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
   catfp = CompressOpenFile(outfile, True, compressionlevel);
- catfp = AppendListsWithContent(inlist, catfp, dirlistfromtxt, filevalues, extradata, compression=, compresswholefile, compressionlevel, followlink, checksumtype, formatspecs, verbose);
+ catfp = AppendListsWithContent(inlist, catfp, dirlistfromtxt, filevalues, extradata, compression, compresswholefile, compressionlevel, followlink, checksumtype, formatspecs, verbose);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
   try:
@@ -2506,7 +2506,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
  filetoinode = {};
  inodetocatinode = {};
  numfiles = int(len(GetDirList));
- AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
+ catfp = AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
  for curfname in GetDirList:
   if(re.findall("^[.|/]", curfname)):
    fname = curfname;
@@ -2675,7 +2675,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   fcontents.seek(0, 0);
   ftypehex = format(ftype, 'x').lower();
   catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
-  AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
+  catfp = AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
   fcontents.close();
  if(numfiles>0):
   catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
@@ -2793,7 +2793,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
  except FileNotFoundError:
   return False;
  numfiles = int(len(tarfp.getmembers()));
- AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
+ catfp = AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
  for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
   if(re.findall("^[.|/]", member.name)):
    fname = member.name;
@@ -2890,7 +2890,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
   fcontents.seek(0, 0);
   ftypehex = format(ftype, 'x').lower();
   catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
-  AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
+  catfp = AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
   fcontents.close();
  if(numfiles>0):
   catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
@@ -2993,7 +2993,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
  if(ziptest):
   VerbosePrintOut("Bad file found!");
  numfiles = int(len(zipfp.infolist()));
- AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
+ catfp = AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
  for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
   if(re.findall("^[.|/]", member.filename)):
    fname = member.filename;
@@ -3115,7 +3115,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
   fcontents.seek(0, 0);
   ftypehex = format(ftype, 'x').lower();
   catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
-  AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
+  catfp = AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
   fcontents.close();
  if(numfiles>0):
   catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
@@ -3202,7 +3202,7 @@ if(rarfile_support):
   if(rartest):
    VerbosePrintOut("Bad file found!");
   numfiles = int(len(rarfp.infolist()));
-  AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
+  catfp = AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
   try:
    catfp.flush();
    os.fsync(catfp.fileno());
@@ -3367,7 +3367,7 @@ if(rarfile_support):
    fcontents.seek(0, 0);
    ftypehex = format(ftype, 'x').lower();
    catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
-   AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
+   catfp = AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
    fcontents.close();
   if(numfiles>0):
    catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
@@ -3557,7 +3557,7 @@ if(py7zr_support):
    fcontents.seek(0, 0);
    ftypehex = format(ftype, 'x').lower();
    catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
-   AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
+   catfp = AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
    fcontents.close();
   if(numfiles>0):
    catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
@@ -6147,7 +6147,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
   if(fcompression=="auto" or fcompression=="none"):
    fcompression = "";
   catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
-  AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
+  catfp = AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
   fcontents.close();
   lcfi = lcfi + 1;
   reallcfi = reallcfi + 1;
