@@ -4261,7 +4261,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_list__, verbose=False,
    else:
     catfcontents = catfp.read(catfcsize);
    catnewfccs = GetFileChecksum(catfcontents, catheaderdata[-3].lower(), False, formatspecs);
-   pyhascontents = True;;
+   pyhascontents = True;
    if(catfccs==catnewfccs):
     if(verbose):
      VerbosePrintOut("File Content Checksum Passed at offset " + str(catfcontentstart));
