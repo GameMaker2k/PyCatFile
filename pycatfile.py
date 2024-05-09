@@ -633,12 +633,12 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, 
  fcontentstart = fp.tell();
  fcontents = BytesIO();
  if(fsize>0 and not listonly):
-  if(fcompression=="none" or fcompression==""):
+  if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
    fcontents.write(fp.read(fsize));
   else:
    fcontents.write(fp.read(fcsize));
  elif(fsize>0 and listonly):
-  if(fcompression=="none" or fcompression==""):
+  if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
    fp.seek(fsize, 1);
   else:
    fp.seek(fcsize, 1);
@@ -648,7 +648,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, 
   VerbosePrintOut("File Content Checksum Error with file " + fname + " at offset " + str(fcontentstart));
   VerbosePrintOut("'" + str(fccs) + "' != " + "'" + str(newfccs) + "'");
   return False;
- if(fcompression=="none" or fcompression==""):
+ if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
   pass;
  else:
   fcontents.seek(0, 0);
@@ -720,13 +720,13 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, skipchecksum=
  fcontents = BytesIO();
  pyhascontents = False;
  if(fsize>0 and not listonly):
-  if(fcompression=="none" or fcompression==""):
+  if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
    fcontents.write(fp.read(fsize));
   else:
    fcontents.write(fp.read(fcsize));
   pyhascontents = True;
  elif(fsize>0 and listonly):
-  if(fcompression=="none" or fcompression==""):
+  if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
    fp.seek(fsize, 1);
   else:
    fp.seek(fcsize, 1);
@@ -737,7 +737,7 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, skipchecksum=
   VerbosePrintOut("File Content Checksum Error with file " + fname + " at offset " + str(fcontentstart));
   VerbosePrintOut("'" + str(fccs) + "' != " + "'" + str(newfccs) + "'");
   return False;
- if(fcompression=="none" or fcompression==""):
+ if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
   pass;
  else:
   fcontents.seek(0, 0);
@@ -810,13 +810,13 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, skipchecksum=F
  fcontents = BytesIO();
  pyhascontents = False;
  if(fsize>0 and not listonly):
-  if(fcompression=="none" or fcompression==""):
+  if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
    fcontents.write(fp.read(fsize));
   else:
    fcontents.write(fp.read(fcsize));
   pyhascontents = True;
  elif(fsize>0 and listonly):
-  if(fcompression=="none" or fcompression==""):
+  if(fcompression=="none" or fcompression=="" or fcompression=="atuo"):
    fp.seek(fsize, 1);
   else:
    fp.seek(fcsize, 1);
@@ -827,7 +827,7 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, skipchecksum=F
   VerbosePrintOut("File Content Checksum Error with file " + fname + " at offset " + str(fcontentstart));
   VerbosePrintOut("'" + str(fccs) + "' != " + "'" + str(newfccs) + "'");
   return False;
- if(fcompression=="none" or fcompression==""):
+ if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
   pass;
  else:
   fcontents.seek(0, 0);
@@ -1026,6 +1026,8 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
    if(len(preheaderdata)==0):
     break;
    prefsize = int(preheaderdata[5], 16);
+   prefcompression = preheaderdata[12];
+   prefcsize = int(preheaderdata[13], 16);
    prenewfcs = GetHeaderChecksum(preheaderdata[:-2], preheaderdata[-3].lower(), True, formatspecs);
    prefcs = preheaderdata[-2];
    if(prefcs!=prenewfcs and not skipchecksum):
@@ -1039,7 +1041,10 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
    prefcontents = "";
    pyhascontents = False;
    if(prefsize>0):
-    prefcontents = fp.read(prefsize);
+    if(prefcompression=="none" or prefcompression=="" or prefcompression=="auto"):
+     prefcontents = catfp.read(prefsize);
+    else:
+     prefcontents = catfp.read(prefcsize);
     prenewfccs = GetFileChecksum(prefcontents, preheaderdata[-3].lower(), False, formatspecs);
     prefccs = preheaderdata[-1];
     pyhascontents = True;
@@ -1732,7 +1737,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
-  catfp = CompressOpenFile(outfile, True, compressionlevel);
+  catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel);
  catfp = AppendListsWithContent(inlist, catfp, dirlistfromtxt, filevalues, extradata, compression, compresswholefile, compressionlevel, followlink, checksumtype, formatspecs, verbose);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
   catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
@@ -1762,9 +1767,9 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
   catfp.close();
   return True;
 
-def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
  inlist = ReadInFileBySizeWithContentToList(infile, 0, 0, False, False, formatspecs);
- return AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt, compression, compressionlevel, filevalues, extradata, followlink, checksumtype, formatspecs, verbose, returnfp);
+ return AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt, compression, compresswholefile, compressionlevel, filevalues, extradata, followlink, checksumtype, formatspecs, verbose, returnfp);
 
 def PrintPermissionString(fchmode, ftype):
  permissions = { 'access': { '0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': ('r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx') }, 'roles': { 0: 'owner', 1: 'group', 2: 'other' } };
