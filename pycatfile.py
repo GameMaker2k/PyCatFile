@@ -1647,7 +1647,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
   fmode = format(curfname[8], 'x').lower();
   fwinattributes = format(curfname[9], 'x').lower();
   fcompression = curfname[10];
-  fcsize = int(curfname[11], 16);
+  fcsize = format(curfname[11], 'x').lower();
   fuid = format(curfname[12], 'x').lower();
   funame = curfname[13];
   fgid = format(curfname[14], 'x').lower();
@@ -1663,10 +1663,10 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
   fchecksumtype = curfname[24];
   fcontents = curfname[25];
   catoutlist = [ftype, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
-  fp = AppendFileHeaderWithContent(fp, catoutlist, extradata, fcontents, checksumtype, formatspecs);
+  fcontents.seek(0, 0);
+  fp = AppendFileHeaderWithContent(fp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
  if(numfiles>0):
-  catfp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
- fp.seek(0, 0);
+  fp.write(AppendNullBytes([0, 0], formatspecs[5]).encode("UTF-8"));
  return fp;
 
 def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False):
