@@ -927,7 +927,7 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
  while(countnum < seekend):
   catlist['ffilelist'].update({realidnum: {'fid': realidnum, 'fidalt': realidnum}});
   HeaderOut = ReadFileHeaderDataBySizeWithContentToArray(fp, listonly, skipchecksum, formatspecs);
-  if(len(HeaderOut)):
+  if(len(HeaderOut)==0):
    break;
   catlist['ffilelist'][realidnum].update(HeaderOut);
   countnum = countnum + 1;
@@ -1058,7 +1058,7 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
  countnum = seekstart;
  while(countnum < seekend):
   HeaderOut = ReadFileHeaderDataBySizeWithContentToList(fp, listonly, skipchecksum, formatspecs);
-  if(len(HeaderOut)):
+  if(len(HeaderOut)==0):
    break;
   catlist.append(HeaderOut);
   countnum = countnum + 1;
