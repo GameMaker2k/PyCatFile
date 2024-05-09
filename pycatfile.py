@@ -3287,7 +3287,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
 create_alias_function("Pack", __file_format_name__, "FromZipFile", PackArchiveFileFromZipFile);
 
 if(not rarfile_support):
- def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+ def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
   return False
 
 if(rarfile_support):
@@ -3562,7 +3562,7 @@ if(rarfile_support):
 create_alias_function("Pack", __file_format_name__, "FromRarFile", PackArchiveFileFromRarFile);
 
 if(not py7zr_support):
- def PackArchiveFileFromSevenZipFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+ def PackArchiveFileFromSevenZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
   return False
 
 if(py7zr_support):
@@ -3774,12 +3774,12 @@ if(py7zr_support):
 
 create_alias_function("Pack", __file_format_name__, "FromSevenZipFile", PackArchiveFileFromSevenZipFile);
 
-def PackArchiveFileFromInFile(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def PackArchiveFileFromInFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(checkcompressfile=="tarfile"):
-  return PackArchiveFileFromTarFile(infile, outfile, compression, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
+  return PackArchiveFileFromTarFile(infile, outfile, compression, compresswholefile, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
  elif(checkcompressfile=="zipfile"):
   return PackArchiveFileFromZipFile(infile, outfile, compression, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
  elif(checkcompressfile=="catfile"):
@@ -5785,9 +5785,9 @@ def InFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[]
   return False;
  return False;
 
-def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = BytesIO();
- packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, True);
+ packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compresswholefile, compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, True);
  listcatfiles = ArchiveFileToArray(outarray, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  return listcatfiles;
 
@@ -6157,9 +6157,9 @@ if(py7zr_support):
   listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   return listcatfiles;
 
-def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = BytesIO();
- packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, formatspecs, verbose, True);
+ packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compresswholefile, compressionlevel, followlink, checksumtype, formatspecs, verbose, True);
  listcatfiles = ArchiveFileToArrayIndex(outarray, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
  return listcatfiles;
 
@@ -6389,17 +6389,17 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
 
 create_alias_function("RePack", __file_format_name__, "", RePackArchiveFile);
 
-def RePackArchiveFileFromString(catstr, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", skipchecksum=False, extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def RePackArchiveFileFromString(catstr, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", skipchecksum=False, extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  catfp = BytesIO(catstr);
- listcatfiles = RePackArchiveFile(catfp, compression, compressionlevel, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp);
+ listcatfiles = RePackArchiveFile(catfp, compression, compresswholefile, compressionlevel, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp);
  return listcatfiles;
 
 create_alias_function("RePack", __file_format_name__, "FromString", RePackArchiveFileFromString);
 
-def PackArchiveFileFromListDir(infiles, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def PackArchiveFileFromListDir(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = BytesIO();
- packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, True);
- listcatfiles = RePackArchiveFile(outarray, outfile, compression, compressionlevel, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp);
+ packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compresswholefile, compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, True);
+ listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile, compressionlevel, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp);
  return listcatfiles;
 
 create_alias_function("Pack", __file_format_name__, "FromListDir", PackArchiveFileFromListDir);
@@ -7155,9 +7155,9 @@ def InFileListFiles(infile, verbose=False, formatspecs=__file_format_list__, ret
   return False;
  return False;
 
-def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype="crc32", formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = BytesIO();
- packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compressionlevel, followlink, checksumtype, formatspecs, False, True);
+ packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compresswholefile, compressionlevel, followlink, checksumtype, formatspecs, False, True);
  listcatfiles = ArchiveFileListFiles(outarray, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp);
  return listcatfiles;
 
@@ -7166,47 +7166,47 @@ def ListDirListFilesAlt(infiles, dirlistfromtxt=False, followlink=False, listonl
  listcatfiles = ArchiveFileListFiles(outarray, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp);
  return listcatfiles;
 
-def PackArchiveFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, compression="auto", compressionlevel=None, followlink=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def PackArchiveFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = ListDirToArrayAlt(infiles, dirlistfromtxt, followlink, False, checksumtype, extradata, formatspecs, False);
- listcatfiles = RePackArchiveFile(outarray, outfile, compression, compressionlevel, followlink, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp);
+ listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile, compressionlevel, followlink, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp);
  return listcatfiles;
 
 create_alias_function("Pack", __file_format_name__, "FromListDirAlt", PackArchiveFileFromListDirAlt);
 
-def PackArchiveFileFromTarFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def PackArchiveFileFromTarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = TarFileToArrayAlt(infile, False, checksumtype, extradata, formatspecs, False);
- listcatfiles = RePackArchiveFile(outarray, outfile, compression, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
+ listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
  return listcatfiles;
 
 create_alias_function("Pack", __file_format_name__, "FromTarFileAlt", PackArchiveFileFromTarFileAlt);
 
-def PackArchiveFileFromZipFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+def PackArchiveFileFromZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
  outarray = ZipFileToArrayAlt(infile, False, checksumtype, extradata, formatspecs, False);
- listcatfiles = RePackArchiveFile(outarray, outfile, compression, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
+ listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
  return listcatfiles;
 
 create_alias_function("Pack", __file_format_name__, "FromZipFileAlt", PackArchiveFileFromZipFileAlt);
 
 if(not rarfile_support):
- def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+ def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
   return False;
 
 if(rarfile_support):
- def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+ def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
   outarray = RarFileToArrayAlt(infile, False, checksumtype, extradata, formatspecs, False);
-  listcatfiles = RePackArchiveFile(outarray, outfile, compression, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
+  listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
   return listcatfiles;
 
 create_alias_function("Pack", __file_format_name__, "FromRarFileAlt", PackArchiveFileFromRarFileAlt);
 
 if(not py7zr_support):
- def PackArchiveFileFromSevenZipFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+ def PackArchiveFileFromSevenZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
   return False;
 
 if(py7zr_support):
- def PackArchiveFileFromSevenZipFileAlt(infile, outfile, compression="auto", compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
+ def PackArchiveFileFromSevenZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_list__, verbose=False, returnfp=False):
   outarray = SevenZipFileToArrayAlt(infile, False, checksumtype, extradata, formatspecs, False);
-  listcatfiles = RePackArchiveFile(outarray, outfile, compression, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
+  listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
   return listcatfiles;
 
 create_alias_function("Pack", __file_format_name__, "FromSevenZipFileAlt", PackArchiveFileFromSevenZipFileAlt);
