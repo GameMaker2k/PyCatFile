@@ -633,12 +633,12 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, 
  fcontentstart = fp.tell();
  fcontents = BytesIO();
  if(fsize>0 and not listonly):
-  if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
+  if(fcompression=="none" or fcompression==""):
    fcontents.write(fp.read(fsize));
   else:
    fcontents.write(fp.read(fcsize));
  elif(fsize>0 and listonly):
-  if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
+  if(fcompression=="none" or fcompression==""):
    fp.seek(fsize, 1);
   else:
    fp.seek(fcsize, 1);
@@ -648,7 +648,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, 
   VerbosePrintOut("File Content Checksum Error with file " + fname + " at offset " + str(fcontentstart));
   VerbosePrintOut("'" + str(fccs) + "' != " + "'" + str(newfccs) + "'");
   return False;
- if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
+ if(fcompression=="none" or fcompression==""):
   pass;
  else:
   fcontents.seek(0, 0);
@@ -720,13 +720,13 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, skipchecksum=
  fcontents = BytesIO();
  pyhascontents = False;
  if(fsize>0 and not listonly):
-  if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
+  if(fcompression=="none" or fcompression==""):
    fcontents.write(fp.read(fsize));
   else:
    fcontents.write(fp.read(fcsize));
   pyhascontents = True;
  elif(fsize>0 and listonly):
-  if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
+  if(fcompression=="none" or fcompression==""):
    fp.seek(fsize, 1);
   else:
    fp.seek(fcsize, 1);
@@ -737,7 +737,7 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, skipchecksum=
   VerbosePrintOut("File Content Checksum Error with file " + fname + " at offset " + str(fcontentstart));
   VerbosePrintOut("'" + str(fccs) + "' != " + "'" + str(newfccs) + "'");
   return False;
- if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
+ if(fcompression=="none" or fcompression==""):
   pass;
  else:
   fcontents.seek(0, 0);
@@ -810,13 +810,13 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, skipchecksum=F
  fcontents = BytesIO();
  pyhascontents = False;
  if(fsize>0 and not listonly):
-  if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
+  if(fcompression=="none" or fcompression==""):
    fcontents.write(fp.read(fsize));
   else:
    fcontents.write(fp.read(fcsize));
   pyhascontents = True;
  elif(fsize>0 and listonly):
-  if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
+  if(fcompression=="none" or fcompression==""):
    fp.seek(fsize, 1);
   else:
    fp.seek(fcsize, 1);
@@ -827,7 +827,7 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, skipchecksum=F
   VerbosePrintOut("File Content Checksum Error with file " + fname + " at offset " + str(fcontentstart));
   VerbosePrintOut("'" + str(fccs) + "' != " + "'" + str(newfccs) + "'");
   return False;
- if(fcompression=="none" or fcompression=="" or fcompression=="auto"):
+ if(fcompression=="none" or fcompression==""):
   pass;
  else:
   fcontents.seek(0, 0);
@@ -1524,6 +1524,29 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
      fcontents.seek(0, 2);
      ucfsize = fcontents.tell();
      fcontents.seek(0, 0);
+     if(compression=="auto"):
+      ilsize = len(compressionlistalt);
+      ilmin = 0;
+      ilcsize = [];
+      while(ilmin < ilsize):
+       cfcontents = BytesIO();
+       shutil.copyfileobj(fcontents, cfcontents);
+       fcontents.seek(0, 0);
+       cfcontents.seek(0, 0);
+       cfcontents = CompressArchiveFile(cfcontents, compressionlistalt[ilmin], compressionlevel, formatspecs);
+       if(cfcontents):
+        cfcontents.seek(0, 2);
+        ilcsize.append(cfcontents.tell());
+        cfcontents.close();
+       else:
+        try:
+         ilcsize.append(sys.maxint);
+        except AttributeError:
+         ilcsize.append(sys.maxsize);
+       ilmin = ilmin + 1;
+      ilcmin = ilcsize.index(min(ilcsize));
+      compression = compressionlistalt[ilcmin];
+     fcontents.seek(0, 0);
      cfcontents = BytesIO();
      shutil.copyfileobj(fcontents, cfcontents);
      cfcontents.seek(0, 0);
@@ -1543,6 +1566,29 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
      fcontents.seek(0, 2);
      ucfsize = fcontents.tell();
      fcontents.seek(0, 0);
+     if(compression=="auto"):
+      ilsize = len(compressionlistalt);
+      ilmin = 0;
+      ilcsize = [];
+      while(ilmin < ilsize):
+       cfcontents = BytesIO();
+       shutil.copyfileobj(fcontents, cfcontents);
+       fcontents.seek(0, 0);
+       cfcontents.seek(0, 0);
+       cfcontents = CompressArchiveFile(cfcontents, compressionlistalt[ilmin], compressionlevel, formatspecs);
+       if(cfcontents):
+        cfcontents.seek(0, 2);
+        ilcsize.append(cfcontents.tell());
+        cfcontents.close();
+       else:
+        try:
+         ilcsize.append(sys.maxint);
+        except AttributeError:
+         ilcsize.append(sys.maxsize);
+       ilmin = ilmin + 1;
+      ilcmin = ilcsize.index(min(ilcsize));
+      compression = compressionlistalt[ilcmin];
+     fcontents.seek(0, 0);
      cfcontents = BytesIO();
      shutil.copyfileobj(fcontents, cfcontents);
      cfcontents.seek(0, 0);
@@ -1554,7 +1600,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
       fcompression = compression;
       fcontents.close();
       fcontents = cfcontents;
-  if(fcompression=="auto" or fcompression=="none"):
+  if(fcompression=="none"):
    fcompression = "";
   fcontents.seek(0, 0);
   ftypehex = format(ftype, 'x').lower();
@@ -2640,6 +2686,29 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
      fcontents.seek(0, 2);
      ucfsize = fcontents.tell();
      fcontents.seek(0, 0);
+     if(compression=="auto"):
+      ilsize = len(compressionlistalt);
+      ilmin = 0;
+      ilcsize = [];
+      while(ilmin < ilsize):
+       cfcontents = BytesIO();
+       shutil.copyfileobj(fcontents, cfcontents);
+       fcontents.seek(0, 0);
+       cfcontents.seek(0, 0);
+       cfcontents = CompressArchiveFile(cfcontents, compressionlistalt[ilmin], compressionlevel, formatspecs);
+       if(cfcontents):
+        cfcontents.seek(0, 2);
+        ilcsize.append(cfcontents.tell());
+        cfcontents.close();
+       else:
+        try:
+         ilcsize.append(sys.maxint);
+        except AttributeError:
+         ilcsize.append(sys.maxsize);
+       ilmin = ilmin + 1;
+      ilcmin = ilcsize.index(min(ilcsize));
+      compression = compressionlistalt[ilcmin];
+     fcontents.seek(0, 0);
      cfcontents = BytesIO();
      shutil.copyfileobj(fcontents, cfcontents);
      cfcontents.seek(0, 0);
@@ -2651,7 +2720,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
       fcompression = compression;
       fcontents.close();
       fcontents = cfcontents;
-  if(fcompression=="auto" or fcompression=="none"):
+  if(fcompression=="none"):
    fcompression = "";
   if(followlink and (ftype==1 or ftype==2)):
    flstatinfo = os.stat(flinkname);
@@ -2660,6 +2729,29 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
     if(not compresswholefile):
      fcontents.seek(0, 2);
      ucfsize = fcontents.tell();
+     fcontents.seek(0, 0);
+     if(compression=="auto"):
+      ilsize = len(compressionlistalt);
+      ilmin = 0;
+      ilcsize = [];
+      while(ilmin < ilsize):
+       cfcontents = BytesIO();
+       shutil.copyfileobj(fcontents, cfcontents);
+       fcontents.seek(0, 0);
+       cfcontents.seek(0, 0);
+       cfcontents = CompressArchiveFile(cfcontents, compressionlistalt[ilmin], compressionlevel, formatspecs);
+       if(cfcontents):
+        cfcontents.seek(0, 2);
+        ilcsize.append(cfcontents.tell());
+        cfcontents.close();
+       else:
+        try:
+         ilcsize.append(sys.maxint);
+        except AttributeError:
+         ilcsize.append(sys.maxsize);
+       ilmin = ilmin + 1;
+      ilcmin = ilcsize.index(min(ilcsize));
+      compression = compressionlistalt[ilcmin];
      fcontents.seek(0, 0);
      cfcontents = BytesIO();
      shutil.copyfileobj(fcontents, cfcontents);
@@ -2874,6 +2966,29 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
      fcontents.seek(0, 2);
      ucfsize = fcontents.tell();
      fcontents.seek(0, 0);
+     if(compression=="auto"):
+      ilsize = len(compressionlistalt);
+      ilmin = 0;
+      ilcsize = [];
+      while(ilmin < ilsize):
+       cfcontents = BytesIO();
+       shutil.copyfileobj(fcontents, cfcontents);
+       fcontents.seek(0, 0);
+       cfcontents.seek(0, 0);
+       cfcontents = CompressArchiveFile(cfcontents, compressionlistalt[ilmin], compressionlevel, formatspecs);
+       if(cfcontents):
+        cfcontents.seek(0, 2);
+        ilcsize.append(cfcontents.tell());
+        cfcontents.close();
+       else:
+        try:
+         ilcsize.append(sys.maxint);
+        except AttributeError:
+         ilcsize.append(sys.maxsize);
+       ilmin = ilmin + 1;
+      ilcmin = ilcsize.index(min(ilcsize));
+      compression = compressionlistalt[ilcmin];
+     fcontents.seek(0, 0);
      cfcontents = BytesIO();
      shutil.copyfileobj(fcontents, cfcontents);
      cfcontents.seek(0, 0);
@@ -2885,7 +3000,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
       fcompression = compression;
       fcontents.close();
       fcontents = cfcontents;
-  if(fcompression=="auto" or fcompression=="none"):
+  if(fcompression=="none"):
    fcompression = "";
   fcontents.seek(0, 0);
   ftypehex = format(ftype, 'x').lower();
@@ -3099,6 +3214,23 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
     fcontents.seek(0, 2);
     ucfsize = fcontents.tell();
     fcontents.seek(0, 0);
+    if(compression=="auto"):
+     ilsize = len(compressionlistalt);
+     ilmin = 0;
+     ilcsize = [];
+     while(ilmin < ilsize):
+      cfcontents = BytesIO();
+      shutil.copyfileobj(fcontents, cfcontents);
+      fcontents.seek(0, 0);
+      cfcontents.seek(0, 0);
+      cfcontents = CompressArchiveFile(cfcontents, compressionlistalt[ilmin], compressionlevel, formatspecs);
+      cfcontents.seek(0, 2);
+      ilcsize.append(cfcontents.tell());
+      cfcontents.close();
+      ilmin = ilmin + 1;
+     ilcmin = ilcsize.index(min(ilcsize));
+     compression = compressionlistalt[ilcmin];
+    fcontents.seek(0, 0);
     cfcontents = BytesIO();
     shutil.copyfileobj(fcontents, cfcontents);
     cfcontents.seek(0, 0);
@@ -3110,7 +3242,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
      fcompression = compression;
      fcontents.close();
      fcontents = cfcontents;
-  if(fcompression=="auto" or fcompression=="none"):
+  if(fcompression=="none"):
    fcompression = "";
   fcontents.seek(0, 0);
   ftypehex = format(ftype, 'x').lower();
@@ -3351,6 +3483,29 @@ if(rarfile_support):
      fcontents.seek(0, 2);
      ucfsize = fcontents.tell();
      fcontents.seek(0, 0);
+     if(compression=="auto"):
+      ilsize = len(compressionlistalt);
+      ilmin = 0;
+      ilcsize = [];
+      while(ilmin < ilsize):
+       cfcontents = BytesIO();
+       shutil.copyfileobj(fcontents, cfcontents);
+       fcontents.seek(0, 0);
+       cfcontents.seek(0, 0);
+       cfcontents = CompressArchiveFile(cfcontents, compressionlistalt[ilmin], compressionlevel, formatspecs);
+       if(cfcontents):
+        cfcontents.seek(0, 2);
+        ilcsize.append(cfcontents.tell());
+        cfcontents.close();
+       else:
+        try:
+         ilcsize.append(sys.maxint);
+        except AttributeError:
+         ilcsize.append(sys.maxsize);
+       ilmin = ilmin + 1;
+      ilcmin = ilcsize.index(min(ilcsize));
+      compression = compressionlistalt[ilcmin];
+     fcontents.seek(0, 0);
      cfcontents = BytesIO();
      shutil.copyfileobj(fcontents, cfcontents);
      cfcontents.seek(0, 0);
@@ -3362,7 +3517,7 @@ if(rarfile_support):
       fcompression = compression;
       fcontents.close();
       fcontents = cfcontents;
-   if(fcompression=="auto" or fcompression=="none"):
+   if(fcompression=="none"):
     fcompression = "";
    fcontents.seek(0, 0);
    ftypehex = format(ftype, 'x').lower();
@@ -3541,6 +3696,29 @@ if(py7zr_support):
      fcontents.seek(0, 2);
      ucfsize = fcontents.tell();
      fcontents.seek(0, 0);
+     if(compression=="auto"):
+      ilsize = len(compressionlistalt);
+      ilmin = 0;
+      ilcsize = [];
+      while(ilmin < ilsize):
+       cfcontents = BytesIO();
+       shutil.copyfileobj(fcontents, cfcontents);
+       fcontents.seek(0, 0);
+       cfcontents.seek(0, 0);
+       cfcontents = CompressArchiveFile(cfcontents, compressionlistalt[ilmin], compressionlevel, formatspecs);
+       if(cfcontents):
+        cfcontents.seek(0, 2);
+        ilcsize.append(cfcontents.tell());
+        cfcontents.close();
+       else:
+        try:
+         ilcsize.append(sys.maxint);
+        except AttributeError:
+         ilcsize.append(sys.maxsize);
+       ilmin = ilmin + 1;
+      ilcmin = ilcsize.index(min(ilcsize));
+      compression = compressionlistalt[ilcmin];
+     fcontents.seek(0, 0);
      cfcontents = BytesIO();
      shutil.copyfileobj(fcontents, cfcontents);
      cfcontents.seek(0, 0);
@@ -3552,7 +3730,7 @@ if(py7zr_support):
       fcompression = compression;
       fcontents.close();
       fcontents = cfcontents;
-   if(fcompression=="auto" or fcompression=="none"):
+   if(fcompression=="none"):
     fcompression = "";
    fcontents.seek(0, 0);
    ftypehex = format(ftype, 'x').lower();
@@ -6085,6 +6263,29 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
    fcontents.seek(0, 2);
    ucfsize = fcontents.tell();
    fcontents.seek(0, 0);
+   if(compression=="auto"):
+    ilsize = len(compressionlistalt);
+    ilmin = 0;
+    ilcsize = [];
+    while(ilmin < ilsize):
+     cfcontents = BytesIO();
+     shutil.copyfileobj(fcontents, cfcontents);
+     fcontents.seek(0, 0);
+     cfcontents.seek(0, 0);
+     cfcontents = CompressArchiveFile(cfcontents, compressionlistalt[ilmin], compressionlevel, formatspecs);
+     if(cfcontents):
+      cfcontents.seek(0, 2);
+      ilcsize.append(cfcontents.tell());
+      cfcontents.close();
+     else:
+      try:
+       ilcsize.append(sys.maxint);
+      except AttributeError:
+       ilcsize.append(sys.maxsize);
+     ilmin = ilmin + 1;
+    ilcmin = ilcsize.index(min(ilcsize));
+    compression = compressionlistalt[ilcmin];
+   fcontents.seek(0, 0);
    cfcontents = BytesIO();
    shutil.copyfileobj(fcontents, cfcontents);
    cfcontents.seek(0, 0);
@@ -6144,7 +6345,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
     fcurinode = format(int(curinode), 'x').lower();
     curinode = curinode + 1;
   curfid = curfid + 1;
-  if(fcompression=="auto" or fcompression=="none"):
+  if(fcompression=="none"):
    fcompression = "";
   catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major];
   catfp = AppendFileHeaderWithContent(catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs);
