@@ -566,19 +566,23 @@ def ReadTillNullByteOld(fp, delimiter=__file_format_dict__['format_delimiter']):
 def ReadUntilNullByteOld(fp, delimiter=__file_format_dict__['format_delimiter']):
  return ReadTillNullByteOld(fp, delimiter);
 
-def ReadTillNullByte(fp, delimiter=__file_format_dict__['format_delimiter']):
- curfullbyte = bytearray();  # Efficient for concatenating bytes
- nullbyte = delimiter.encode("UTF-8");  # Encode the delimiter to bytes
+def ReadTillNullByte(fp, delimiter=__file_format_dict__['format_delimiter'], max_read=10485760):
+ curfullbyte = bytearray();
+ nullbyte = delimiter.encode("UTF-8");
+ total_read = 0;  # Track the total number of bytes read
  while True:
   curbyte = fp.read(1);
   if curbyte == nullbyte or not curbyte:
    break;
-  curfullbyte.extend(curbyte);  # Extend bytearray with the byte read
+  curfullbyte.extend(curbyte);
+  total_read += 1;
+  if total_read >= max_read:
+   raise MemoryError("Maximum read limit reached without finding the delimiter.");
  # Decode the full byte array to string once out of the loop
  try:
   return curfullbyte.decode('UTF-8');
  except UnicodeDecodeError:
-  # Attempt to handle partially read UTF-8 sequences
+  # Handle potential partial UTF-8 characters
   for i in range(1, 4):
    try:
     return curfullbyte[:-i].decode('UTF-8');
@@ -586,8 +590,8 @@ def ReadTillNullByte(fp, delimiter=__file_format_dict__['format_delimiter']):
     continue;
   raise;  # Re-raise if decoding fails even after trimming
 
-def ReadUntilNullByte(fp, delimiter=__file_format_dict__['format_delimiter']):
- return ReadTillNullByte(fp, delimiter);
+def ReadUntilNullByte(fp, delimiter=__file_format_dict__['format_delimiter'], max_read=10485760):
+ return ReadTillNullByte(fp, delimiter, max_read);
 
 def SeekToEndOfFile(fp):
  lasttell = 0;
