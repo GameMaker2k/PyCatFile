@@ -566,7 +566,7 @@ def ReadTillNullByteOld(fp, delimiter=__file_format_dict__['format_delimiter']):
 def ReadUntilNullByteOld(fp, delimiter=__file_format_dict__['format_delimiter']):
  return ReadTillNullByteOld(fp, delimiter);
 
-def ReadTillNullByte(fp, delimiter=__file_format_dict__['format_delimiter'], max_read=10485760):
+def ReadTillNullByte(fp, delimiter=__file_format_dict__['format_delimiter'], max_read=1024000):
  curfullbyte = bytearray();
  nullbyte = delimiter.encode("UTF-8");
  total_read = 0;  # Track the total number of bytes read
@@ -590,7 +590,7 @@ def ReadTillNullByte(fp, delimiter=__file_format_dict__['format_delimiter'], max
     continue;
   raise;  # Re-raise if decoding fails even after trimming
 
-def ReadUntilNullByte(fp, delimiter=__file_format_dict__['format_delimiter'], max_read=10485760):
+def ReadUntilNullByte(fp, delimiter=__file_format_dict__['format_delimiter'], max_read=1024000):
  return ReadTillNullByte(fp, delimiter, max_read);
 
 def SeekToEndOfFile(fp):
