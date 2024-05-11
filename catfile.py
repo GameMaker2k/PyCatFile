@@ -14,7 +14,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: catfile.py - Last Update: 5/8/2024 Ver. 0.10.4 RC 1 - Author: cooldude2k $
+    $FileInfo: catfile.py - Last Update: 5/5/2024 Ver. 0.10.2 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
@@ -126,6 +126,7 @@ fnamesty = __use_new_style__;
 fnamelst = __use_advanced_list__;
 fnameino = __use_alt_inode__;
 fnamelist = [fname, fnamemagic, fnamelower, fnamelen, fnamehex, getargs.delimiter, getargs.formatver, fnamesty, fnamelst, fnameino];
+fnamedict = {'format_name': fname, 'format_magic': fnamemagic, 'format_lower': fnamelower, 'format_len': fnamelen, 'format_hex': fnamehex, 'format_delimiter': getargs.delimiter, 'format_ver': getargs.formatver, 'new_style': fnamesty, 'use_advanced_list': fnamelst, 'use_alt_inode': fnameino};
 
 # Determine the primary action based on user input
 actions = ['create', 'extract', 'list', 'repack', 'validate'];
@@ -135,61 +136,61 @@ active_action = next((action for action in actions if getattr(getargs, action)),
 if active_action:
  if active_action=='create':
   if getargs.convert:
-   checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
+   checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamedict, True);
    if(checkcompressfile=="catfile"):
-    tmpout = pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.wholefile, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamelist, getargs.verbose, False);
+    tmpout = pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.wholefile, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, getargs.verbose, False);
    else:
-    tmpout = pycatfile.PackArchiveFileFromInFile(getargs.input, getargs.output, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
+    tmpout = pycatfile.PackArchiveFileFromInFile(getargs.input, getargs.output, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamedict, getargs.verbose, False);
    if(not tmpout):
     sys.exit(1);
   else:
-   pycatfile.PackArchiveFile(getargs.input, getargs.output, getargs.text, getargs.compression, getargs.wholefile, getargs.level, False, getargs.checksum, [], fnamelist, getargs.verbose, False);
+   pycatfile.PackArchiveFile(getargs.input, getargs.output, getargs.text, getargs.compression, getargs.wholefile, getargs.level, False, getargs.checksum, [], fnamedict, getargs.verbose, False);
  elif active_action=='repack':
   if getargs.convert:
-   checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
+   checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamedict, True);
    if(checkcompressfile=="catfile"):
-    pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.wholefile, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamelist, getargs.verbose, False);
+    pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.wholefile, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, getargs.verbose, False);
    else:
-    pycatfile.PackArchiveFileFromInFile(getargs.input, getargs.output, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
+    pycatfile.PackArchiveFileFromInFile(getargs.input, getargs.output, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamedict, getargs.verbose, False);
    if(not tmpout):
     sys.exit(1);
   else:
-   pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.wholefile, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamelist, getargs.verbose, False);
+   pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.wholefile, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, getargs.verbose, False);
  elif active_action=='extract':
   if getargs.convert:
-   checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
+   checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamedict, True);
    tempout = BytesIO();
    if(checkcompressfile=="catfile"):
-    tmpout = pycatfile.RePackArchiveFile(getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamelist, getargs.verbose, False);
+    tmpout = pycatfile.RePackArchiveFile(getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, getargs.verbose, False);
    else:
-    tmpout = pycatfile.PackArchiveFileFromInFile(getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
+    tmpout = pycatfile.PackArchiveFileFromInFile(getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamedict, getargs.verbose, False);
    if(not tmpout):
     sys.exit(1);
    getargs.input = tempout;
-  pycatfile.UnPackArchiveFile(getargs.input, getargs.output, False, 0, 0, getargs.skipchecksum, fnamelist, getargs.verbose, getargs.preserve, getargs.preserve, False);
+  pycatfile.UnPackArchiveFile(getargs.input, getargs.output, False, 0, 0, getargs.skipchecksum, fnamedict, getargs.verbose, getargs.preserve, getargs.preserve, False);
  elif active_action=='list':
   if getargs.convert:
-   checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
+   checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamedict, True);
    if(checkcompressfile=="catfile"):
-    tmpout = pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, getargs.skipchecksum, fnamelist, getargs.verbose, False);
+    tmpout = pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, getargs.skipchecksum, fnamedict, getargs.verbose, False);
    else:
-    tmpout = pycatfile.InFileListFiles(getargs.input, getargs.verbose, fnamelist, False);
+    tmpout = pycatfile.InFileListFiles(getargs.input, getargs.verbose, fnamedict, False);
    if(not tmpout):
     sys.exit(1);
   else:
-   pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, getargs.skipchecksum, fnamelist, getargs.verbose, False);
+   pycatfile.ArchiveFileListFiles(getargs.input, 0, 0, getargs.skipchecksum, fnamedict, getargs.verbose, False);
  elif active_action=='validate':
   if getargs.convert:
-   checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamelist, True);
+   checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamedict, True);
    tempout = BytesIO();
    if(checkcompressfile=="catfile"):
-    tmpout = pycatfile.RePackArchiveFile(getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamelist, getargs.verbose, False);
+    tmpout = pycatfile.RePackArchiveFile(getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, getargs.verbose, False);
    else:
-    tmpout = pycatfile.PackArchiveFileFromInFile(getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamelist, getargs.verbose, False);
+    tmpout = pycatfile.PackArchiveFileFromInFile(getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamedict, getargs.verbose, False);
    getargs.input = tempout;
    if(not tmpout):
     sys.exit(1);
-  fvalid = pycatfile.ArchiveFileValidate(getargs.input, fnamelist, getargs.verbose, False);
+  fvalid = pycatfile.ArchiveFileValidate(getargs.input, fnamedict, getargs.verbose, False);
   if(not getargs.verbose):
    import sys, logging;
    logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
