@@ -2506,9 +2506,15 @@ def GetDevMajorMinor(fdev):
 
 def CheckSumSupport(checkfor, guaranteed=True):
  if(guaranteed):
-  hash_list = sorted(list(hashlib.algorithms_guaranteed));
+  try:
+   hash_list = sorted(list(hashlib.algorithms_guaranteed));
+  except AttributeError:
+   hash_list = sorted(list(hashlib.algorithms));
  else:
-  hash_list = sorted(list(hashlib.algorithms_available));
+  try:
+   hash_list = sorted(list(hashlib.algorithms_available));
+  except AttributeError:
+   hash_list = sorted(list(hashlib.algorithms));
  checklistout = sorted(hash_list + ['adler32', 'crc16', 'crc16_ansi', 'crc16_ibm', 'crc16_ccitt', 'crc32', 'crc64', 'crc64_ecma', 'crc64_iso', 'none']);
  if(checkfor in checklistout):
   return True;
@@ -2517,9 +2523,15 @@ def CheckSumSupport(checkfor, guaranteed=True):
 
 def CheckSumSupportAlt(checkfor, guaranteed=True):
  if(guaranteed):
-  hash_list = sorted(list(hashlib.algorithms_guaranteed));
+  try:
+   hash_list = sorted(list(hashlib.algorithms_guaranteed));
+  except AttributeError:
+   hash_list = sorted(list(hashlib.algorithms));
  else:
-  hash_list = sorted(list(hashlib.algorithms_available));
+  try:
+   hash_list = sorted(list(hashlib.algorithms_available));
+  except AttributeError:
+   hash_list = sorted(list(hashlib.algorithms));
  checklistout = hash_list;
  if(checkfor in checklistout):
   return True;
