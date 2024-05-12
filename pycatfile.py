@@ -572,7 +572,7 @@ def ReadTillNullByteOld(fp, delimiter=__file_format_dict__['format_delimiter']):
 def ReadUntilNullByteOld(fp, delimiter=__file_format_dict__['format_delimiter']):
  return ReadTillNullByteOld(fp, delimiter);
 
-def ReadTillNullByte(fp, delimiter=__file_format_dict__['format_delimiter'], chunk_size=1024, max_read=1024000):
+def ReadTillNullByteAlt(fp, delimiter=__file_format_dict__['format_delimiter'], chunk_size=1024, max_read=1024000):
  delimiter = delimiter.encode('UTF-8')  # Ensure the delimiter is in bytes
  buffer = bytearray();
  total_read = 0;
@@ -611,10 +611,10 @@ def ReadTillNullByte(fp, delimiter=__file_format_dict__['format_delimiter'], chu
  except UnicodeDecodeError:
   return buffer.decode('UTF-8', errors='replace');
 
-def ReadUntilNullByte(fp, delimiter=__file_format_dict__['format_delimiter'], chunk_size=1024, max_read=1024000):
- return ReadTillNullByte(fp, delimiter, chunk_size, max_read);
+def ReadUntilNullByteAlt(fp, delimiter=__file_format_dict__['format_delimiter'], chunk_size=1024, max_read=1024000):
+ return ReadTillNullByteAlt(fp, delimiter, chunk_size, max_read);
 
-def ReadTillNullByteAlt(fp, delimiter=__file_format_dict__['format_delimiter'], max_read=1024000):
+def ReadTillNullByte(fp, delimiter=__file_format_dict__['format_delimiter'], max_read=1024000):
  curfullbyte = bytearray();
  nullbyte = delimiter.encode("UTF-8");
  total_read = 0;  # Track the total number of bytes read
@@ -638,8 +638,55 @@ def ReadTillNullByteAlt(fp, delimiter=__file_format_dict__['format_delimiter'], 
     continue;
   raise;  # Re-raise if decoding fails even after trimming
 
-def ReadUntilNullByteAlt(fp, delimiter=__file_format_dict__['format_delimiter'], max_read=1024000):
- return ReadTillNullByteAlt(fp, delimiter, max_read);
+def ReadUntilNullByte(fp, delimiter=__file_format_dict__['format_delimiter'], max_read=1024000):
+ return ReadTillNullByte(fp, delimiter, max_read);
+
+def ReadTillNullByteByNum(fp, delimiter=__file_format_dict__['format_delimiter'], num_delimiters=1, chunk_size=1024, max_read=1024000):
+ delimiter = delimiter.encode('UTF-8');  # Ensure the delimiter is in bytes
+ buffer = bytearray();
+ total_read = 0;
+ delimiter_length = len(delimiter);
+ results = [];
+ while len(results) < num_delimiters:
+  chunk = fp.read(chunk_size);
+  if not chunk:
+   # End of file reached; decode whatever is collected if it's the last needed part
+   if len(buffer) > 0:
+    results.append(buffer.decode('UTF-8', errors='replace'));
+   break;
+  buffer.extend(chunk)
+  total_read += len(chunk);
+  # Check if we have found the delimiter
+  while delimiter in buffer:
+   index = buffer.find(delimiter);
+   # Decode the section before the delimiter
+   results.append(buffer[:index].decode('UTF-8', errors='replace'));
+   # Remove the processed part from the buffer
+   buffer = buffer[index + delimiter_length:];
+   if len(results) == num_delimiters:
+    # If reached the required number of delimiters, adjust the file pointer and stop
+    fp.seek(-len(buffer), 1);
+    return results;
+  if total_read >= max_read:
+   # Stop reading if max limit is reached to prevent excessive memory usage
+   raise MemoryError("Maximum read limit reached without finding the delimiter.");
+  # Check for incomplete UTF-8 sequences at the end of the buffer
+  if len(buffer) > 1 and 128 <= buffer[-1] < 192:
+   # This suggests that the last byte might be the start of a multi-byte character
+   # Try to read one more byte to complete the character
+   extra_byte = fp.read(1);
+   if extra_byte:
+    buffer.extend(extra_byte);
+   else:
+    # No more data available
+    break;
+ # Process remaining buffer if less than the required number of delimiters were found
+ if len(buffer) > 0 and len(results) < num_delimiters:
+  results.append(buffer.decode('UTF-8', errors='replace'));
+ return results;
+
+def ReadUntilNullByteByNum(fp, delimiter=__file_format_dict__['format_delimiter'], num_delimiters=1, chunk_size=1024, max_read=1024000):
+ return ReadTillNullByteByNum(fp, delimiter, num_delimiters, chunk_size, max_read);
 
 def SeekToEndOfFile(fp):
  lasttell = 0;
@@ -680,7 +727,8 @@ def ReadFileHeaderDataWoSize(fp, delimiter=__file_format_dict__['format_delimite
  headernumfields = int(preheaderdata[1], 16);
  if(headersize<=0 or headernumfields<=0):
   return [];
- headerdata = ReadFileHeaderData(fp, headernumfields, delimiter);
+ headerdata = ReadTillNullByteByNum(fp, delimiter, headernumfields);
+ #headerdata = ReadFileHeaderData(fp, headernumfields, delimiter);
  HeaderOut = preheaderdata + headerdata;
  return HeaderOut;
 
