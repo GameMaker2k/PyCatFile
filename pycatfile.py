@@ -4425,7 +4425,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksu
 
 create_alias_function("", __file_format_name__, "SeekToFileName", ArchiveFileSeekToFileName);
 
-def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False, returnfp=False
+def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
  formatspecs = FormatSpecsListToDict(formatspecs);
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
@@ -6353,7 +6353,7 @@ if(not rarfile_support):
 
 if(rarfile_support):
  def RarFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
-  if(isinstance(formatspecs, (formatspecs = FormatSpecsListToDict(formatspecs);
+  formatspecs = FormatSpecsListToDict(formatspecs);
   catfp = BytesIO();
   catfp = PackArchiveFileFromRarFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
   listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
@@ -7408,7 +7408,7 @@ def PackArchiveFileFromTarFileAlt(infile, outfile, compression="auto", compressw
 create_alias_function("Pack", __file_format_name__, "FromTarFileAlt", PackArchiveFileFromTarFileAlt);
 
 def PackArchiveFileFromZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-formatspecs = FormatSpecsListToDict(formatspecs);
+ formatspecs = FormatSpecsListToDict(formatspecs);
  outarray = ZipFileToArrayAlt(infile, False, checksumtype, extradata, formatspecs, False);
  listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
  return listcatfiles;
