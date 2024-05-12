@@ -397,6 +397,15 @@ def create_alias_function_alt(prefix, base_name, suffix, target_function):
     # This line is compatible as-is with both Python 2 and 3
     globals()[function_name] = target_function
 
+def FormatSpecsListToDict(formatspecs=__file_format_list__):
+ if(isinstance(formatspecs, (list, tuple, ))):
+  return {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ elif(isinstance(formatspecs, (dict, ))):
+  return formatspecs;
+ else:
+  return __file_format_dict__;
+ return __file_format_dict__;
+
 # initial_value can be 0xFFFF or 0x0000
 def crc16_ansi(msg, initial_value=0xFFFF):
  # CRC-16-IBM / CRC-16-ANSI polynomial and initial value
@@ -487,8 +496,7 @@ def GetDataFromArrayAlt(structure, path, default=None):
  return element;
 
 def GetHeaderChecksum(inlist=[], checksumtype="crc32", encodedata=True, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if isinstance(inlist, list):
   fileheader = AppendNullBytes(inlist, formatspecs['format_delimiter']);
  else:
@@ -518,8 +526,7 @@ def GetHeaderChecksum(inlist=[], checksumtype="crc32", encodedata=True, formatsp
  return catfileheadercshex;
 
 def GetFileChecksum(instr, checksumtype="crc32", encodedata=True, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(encodedata):
   instr = instr.encode('UTF-8');
  if(checksumtype=="none" or checksumtype==""):
@@ -545,8 +552,7 @@ def GetFileChecksum(instr, checksumtype="crc32", encodedata=True, formatspecs=__
  return catinstrcshex;
 
 def ValidateHeaderChecksum(inlist=[], checksumtype="crc32", inchecksum="0", formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  catfileheadercshex = GetHeaderChecksum(inlist, checksumtype, True, formatspecs);
  inchecksum = inchecksum.lower();
  catfileheadercshex = catfileheadercshex.lower();
@@ -556,8 +562,7 @@ def ValidateHeaderChecksum(inlist=[], checksumtype="crc32", inchecksum="0", form
   return False;
 
 def ValidateFileChecksum(infile, checksumtype="crc32", inchecksum="0", formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  catinfilecshex = GetFileChecksum(infile, checksumtype, True, formatspecs);
  inchecksum = inchecksum.lower();
  catinfilecshex = catinfilecshex.lower();
@@ -741,8 +746,7 @@ def ReadFileHeaderDataWoSize(fp, delimiter=__file_format_dict__['format_delimite
  return HeaderOut;
 
 def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  delimiter = formatspecs['format_delimiter'];
  fheaderstart = fp.tell();
  HeaderOut = ReadFileHeaderDataBySize(fp, delimiter);
@@ -793,8 +797,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, skipchecksum=False, 
  return HeaderOut;
 
 def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  delimiter = formatspecs['format_delimiter'];
  fheaderstart = fp.tell();
  if(formatspecs['new_style']):
@@ -885,8 +888,7 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, skipchecksum=
  return catlist;
 
 def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  delimiter = formatspecs['format_delimiter'];
  fheaderstart = fp.tell();
  if(formatspecs['new_style']):
@@ -976,8 +978,7 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, skipchecksum=F
  return catlist;
 
 def ReadFileDataBySizeWithContent(fp, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  delimiter = formatspecs['format_delimiter'];
  curloc = fp.tell();
  if(curloc>0):
@@ -1003,8 +1004,7 @@ def ReadFileDataBySizeWithContent(fp, listonly=False, skipchecksum=False, format
  return flist;
 
 def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  delimiter = formatspecs['format_delimiter'];
  curloc = fp.tell();
  if(curloc>0):
@@ -1077,8 +1077,7 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
  return catlist;
 
 def ReadFileDataBySizeWithContentToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
@@ -1135,8 +1134,7 @@ def ReadFileDataBySizeWithContentToArrayIndex(infile, seekstart=0, seekend=0, li
  return catarray;
 
 def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  delimiter = formatspecs['format_delimiter'];
  curloc = fp.tell();
  if(curloc>0):
@@ -1212,8 +1210,7 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
  return catlist;
 
 def ReadInFileBySizeWithContentToArray(infile, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  delimiter = formatspecs['format_delimiter'];
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   fp = infile;
@@ -1271,8 +1268,7 @@ def ReadInFileBySizeWithContentToArray(infile, listonly=False, skipchecksum=Fals
  return ReadFileDataBySizeWithContentToArray(fp, listonly, skipchecksum, formatspecs);
 
 def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  delimiter = formatspecs['format_delimiter'];
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   fp = infile;
@@ -1330,8 +1326,7 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
  return ReadFileDataBySizeWithContentToList(fp, seekstart, seekend, listonly, skipchecksum, formatspecs);
 
 def ReadInFileBySizeWithContentToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
@@ -1401,8 +1396,7 @@ def AppendNullBytes(indata=[], delimiter=__file_format_dict__['format_delimiter'
  return outdata;
 
 def AppendFileHeader(fp, numfiles, checksumtype="crc32", formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  delimiter = formatspecs['format_delimiter'];
  catver = formatspecs['format_ver'];
  fileheaderver = str(int(catver.replace(".", "")));
@@ -1425,14 +1419,12 @@ def AppendFileHeader(fp, numfiles, checksumtype="crc32", formatspecs=__file_form
  return fp;
 
 def MakeEmptyFilePointer(fp, checksumtype="crc32", formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  AppendFileHeader(fp, 0, checksumtype, formatspecs);
  return fp;
 
 def MakeEmptyFile(outfile, compression="auto", compressionlevel=None, checksumtype="crc32", formatspecs=__file_format_dict__, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   if(os.path.exists(outfile)):
    try:
@@ -1480,8 +1472,7 @@ def MakeEmptyFile(outfile, compression="auto", compressionlevel=None, checksumty
   return True;
 
 def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="", checksumtype="crc32", formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  extrafields = format(len(extradata), 'x').lower();
  extrasizestr = AppendNullByte(extrafields, formatspecs['format_delimiter']);
  if(len(extradata)>0):
@@ -1520,8 +1511,7 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
  return fp;
 
 def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], extradata=[], compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  advancedlist = formatspecs['use_advanced_list'];
  altinode = formatspecs['use_alt_inode'];
  if(verbose):
@@ -1779,8 +1769,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
  return fp;
 
 def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extradata=[], compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  GetDirList = inlist;
@@ -1834,14 +1823,12 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
  return fp;
 
 def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  inlist = ReadInFileBySizeWithContentToList(infile, 0, 0, False, False, formatspecs);
  return AppendListsWithContent(inlist, fp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs, verbose);
 
 def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   if(os.path.exists(outfile)):
    try:
@@ -1889,8 +1876,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
   return True;
 
 def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   if(os.path.exists(outfile)):
    try:
@@ -1938,8 +1924,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
   return True;
 
 def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  inlist = ReadInFileBySizeWithContentToList(infile, 0, 0, False, False, formatspecs);
  return AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt, compression, compresswholefile, compressionlevel, filevalues, extradata, followlink, checksumtype, formatspecs, verbose, returnfp);
 
@@ -2036,8 +2021,7 @@ def CompressionSupport():
  return compression_list;
 
 def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
  else:
@@ -2115,8 +2099,7 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
  return filetype;
 
 def CheckCompressionTypeFromString(instring, formatspecs=__file_format_dict__, closefp=True):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  try:
   instringsfile = BytesIO(instring);
  except TypeError:
@@ -2124,8 +2107,7 @@ def CheckCompressionTypeFromString(instring, formatspecs=__file_format_dict__, c
  return CheckCompressionType(instringsfile, formatspecs, closefp);
 
 def GetCompressionMimeType(infile, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  compresscheck = CheckCompressionType(fp, formatspecs, False);
  if(compresscheck=="gzip" or compresscheck=="gz"):
   return archivefile_gzip_mimetype;
@@ -2148,8 +2130,7 @@ def GetCompressionMimeType(infile, formatspecs=__file_format_dict__):
  return False;
 
 def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(not hasattr(fp, "read") and not hasattr(fp, "write")):
   return False;
  compresscheck = CheckCompressionType(fp, formatspecs, False);
@@ -2214,8 +2195,7 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
 create_alias_function("Uncompress", __file_format_name__, "", UncompressArchiveFile);
 
 def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  compresscheck = CheckCompressionType(infile, formatspecs, False);
  if(sys.version_info[0]==2 and compresscheck):
   if(mode=="rt"):
@@ -2343,8 +2323,7 @@ def UncompressStringAlt(infile):
  return filefp;
 
 def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=True):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  compresscheck = CheckCompressionType(infile, formatspecs, False);
  if(not compresscheck):
   fextname = os.path.splitext(infile)[1];
@@ -2463,8 +2442,7 @@ def GZipCompress(data, compresslevel=9):
  return catdata;
 
 def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(not hasattr(fp, "read") and not hasattr(fp, "write")):
   return False;
  fp.seek(0, 0);
@@ -2691,8 +2669,7 @@ def CheckSumSupportAlt(checkfor, guaranteed=True):
   return False;
 
 def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  advancedlist = formatspecs['use_advanced_list'];
  altinode = formatspecs['use_alt_inode'];
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
@@ -3012,15 +2989,13 @@ if(hasattr(shutil, "register_archive_format")):
  create_alias_function("Pack", __file_format_name__, "Func", PackArchiveFileFunc);
 
 def PackArchiveFileFromDirList(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  return PackArchiveFile(infiles, outfile, dirlistfromtxt, compression, compresswholefile, compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, returnfp);
 
 create_alias_function("Pack", __file_format_name__, "FromDirList", PackArchiveFileFromDirList);
 
 def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -3249,8 +3224,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
 create_alias_function("Pack", __file_format_name__, "FromTarFile", PackArchiveFileFromTarFile);
 
 def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -3498,8 +3472,7 @@ if(not rarfile_support):
 
 if(rarfile_support):
  def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-  if(isinstance(formatspecs, (list, tuple, ))):
-   formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+  formatspecs = FormatSpecsListToDict(formatspecs);
   if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
    outfile = RemoveWindowsPath(outfile);
   checksumtype = checksumtype.lower();
@@ -3775,8 +3748,7 @@ if(not py7zr_support):
 
 if(py7zr_support):
  def PackArchiveFileFromSevenZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-  if(isinstance(formatspecs, (list, tuple, ))):
-   formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+  formatspecs = FormatSpecsListToDict(formatspecs);
   if(outfile!="-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
    outfile = RemoveWindowsPath(outfile);
   checksumtype = checksumtype.lower();
@@ -3985,8 +3957,7 @@ if(py7zr_support):
 create_alias_function("Pack", __file_format_name__, "FromSevenZipFile", PackArchiveFileFromSevenZipFile);
 
 def PackArchiveFileFromInFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
@@ -4007,8 +3978,7 @@ def PackArchiveFileFromInFile(infile, outfile, compression="auto", compresswhole
 create_alias_function("Pack", __file_format_name__, "FromInFile", PackArchiveFileFromInFile);
 
 def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
   catfp.seek(0, 0);
@@ -4227,8 +4197,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=Fals
 create_alias_function("", __file_format_name__, "SeekToFileNum", ArchiveFileSeekToFileNum);
 
 def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
   catfp.seek(0, 0);
@@ -4457,8 +4426,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksu
 create_alias_function("", __file_format_name__, "SeekToFileName", ArchiveFileSeekToFileName);
 
 def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False, returnfp=False
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(hasattr(infile, "read") or hasattr(infile, "write")):
@@ -4690,8 +4658,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
 create_alias_function("", __file_format_name__, "Validate", ArchiveFileValidate);
 
 def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = infile;
   catfp.seek(0, 0);
@@ -4974,8 +4941,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipcheck
 create_alias_function("", __file_format_name__, "ToArray", ArchiveFileToArray);
 
 def ArchiveFileStringToArray(catstr, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  catfp = BytesIO(catstr);
  listcatfiles = ArchiveFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  return listcatfiles;
@@ -4983,16 +4949,14 @@ def ArchiveFileStringToArray(catstr, seekstart=0, seekend=0, listonly=False, ski
 create_alias_function("", __file_format_name__, "StringToArray", ArchiveFileStringToArray);
 
 def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  catfp = BytesIO();
  catfp = PackArchiveFileFromTarFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
  listcatfiles = ArchiveFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  return listcatfiles;
 
 def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  catfp = BytesIO();
  catfp = PackArchiveFileFromZipFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
  listcatfiles = ArchiveFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
@@ -5004,8 +4968,7 @@ if(not rarfile_support):
 
 if(rarfile_support):
  def RarFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
-  if(isinstance(formatspecs, (list, tuple, ))):
-   formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+  formatspecs = FormatSpecsListToDict(formatspecs);
   catfp = BytesIO();
   catfp = PackArchiveFileFromSevenZipFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
   listcatfiles = ArchiveFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
@@ -5017,16 +4980,14 @@ if(not py7zr_support):
 
 if(py7zr_support):
  def SevenZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
-  if(isinstance(formatspecs, (list, tuple, ))):
-   formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+  formatspecs = FormatSpecsListToDict(formatspecs);
   catfp = BytesIO();
   catfp = PackArchiveFileFromSevenZipFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
   listcatfiles = ArchiveFileToArray(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   return listcatfiles;
 
 def InFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
  if(checkcompressfile=="tarfile"):
   return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
@@ -5043,8 +5004,7 @@ def InFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=F
  return False;
 
 def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  catver = formatspecs['format_ver'];
  fileheaderver = str(int(catver.replace(".", "")));
  fileheader = AppendNullByte(formatspecs['format_magic'] + fileheaderver, formatspecs['format_delimiter']);
@@ -5268,8 +5228,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
  return catlist;
 
 def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  curinode = 0;
  curfid = 0;
  inodelist = [];
@@ -5446,8 +5405,7 @@ def TarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[
  return catlist;
 
 def ZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  curinode = 0;
  curfid = 0;
  inodelist = [];
@@ -5647,8 +5605,7 @@ if(not rarfile_support):
 
 if(rarfile_support):
  def RarFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
-  if(isinstance(formatspecs, (list, tuple, ))):
-   formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+  formatspecs = FormatSpecsListToDict(formatspecs);
   curinode = 0;
   curfid = 0;
   inodelist = [];
@@ -5861,8 +5818,7 @@ if(not py7zr_support):
 
 if(py7zr_support):
  def SevenZipFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
-  if(isinstance(formatspecs, (list, tuple, ))):
-   formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+  formatspecs = FormatSpecsListToDict(formatspecs);
   curinode = 0;
   curfid = 0;
   inodelist = [];
@@ -6015,8 +5971,7 @@ if(py7zr_support):
   return catlist;
 
 def InFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  checkcompressfile = CheckCompressionSubType(infiles, formatspecs, True);
  if(checkcompressfile=="tarfile"):
   return TarFileToArrayAlt(infiles, listonly, checksumtype, extradata, formatspecs, verbose);
@@ -6033,16 +5988,14 @@ def InFileToArrayAlt(infiles, listonly=False, checksumtype="crc32", extradata=[]
  return False;
 
 def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  outarray = BytesIO();
  packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compresswholefile, compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, True);
  listcatfiles = ArchiveFileToArray(outarray, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  return listcatfiles;
 
 def ArchiveFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(isinstance(infile, dict)):
   listcatfiles = infile;
  else:
@@ -6103,8 +6056,7 @@ def ArchiveFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skip
 create_alias_function("", __file_format_name__, "ToArrayIndex", ArchiveFileToArrayIndex);
 
 def ListDirToArrayIndexAlt(infiles, dirlistfromtxt=False, followlink=False, seekstart=0, seekend=0, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  listcatfiles = ListDirToArrayAlt(infiles, dirlistfromtxt, followlink, listonly, checksumtype, extradata, formatspecs, verbose);
  if(not listcatfiles):
   return False;
@@ -6156,8 +6108,7 @@ def ListDirToArrayIndexAlt(infiles, dirlistfromtxt=False, followlink=False, seek
  return catarray;
 
 def TarFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  listcatfiles = TarFileToArrayAlt(infiles, listonly, checksumtype, extradata, formatspecs, verbose);
  if(not listcatfiles):
   return False;
@@ -6209,8 +6160,7 @@ def TarFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, chec
  return catarray;
 
 def ZipFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  listcatfiles = ZipFileToArrayAlt(infiles, listonly, checksumtype, extradata, formatspecs, verbose);
  if(not listcatfiles):
   return False;
@@ -6267,8 +6217,7 @@ if(not rarfile_support):
 
 if(rarfile_support):
  def RarFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
-  if(isinstance(formatspecs, (list, tuple, ))):
-   formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+  formatspecs = FormatSpecsListToDict(formatspecs);
   listcatfiles = RarFileToArrayAlt(infiles, listonly, checksumtype, extradata, formatspecs, verbose);
   if(not listcatfiles):
    return False;
@@ -6325,8 +6274,7 @@ if(not py7zr_support):
 
 if(py7zr_support):
  def SevenZipFileToArrayIndexAlt(infiles, seekstart=0, seekend=0, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
-  if(isinstance(formatspecs, (list, tuple, ))):
-   formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+  formatspecs = FormatSpecsListToDict(formatspecs);
   listcatfiles = SevenZipFileToArrayAlt(infiles, listonly, checksumtype, extradata, formatspecs, verbose);
   if(not listcatfiles):
    return False;
@@ -6378,8 +6326,7 @@ if(py7zr_support):
   return catarray;
 
 def ArchiveFileStringToArrayIndex(catstr, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  catfp = BytesIO(catstr);
  listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  return listcatfiles;
@@ -6387,16 +6334,14 @@ def ArchiveFileStringToArrayIndex(catstr, seekstart=0, seekend=0, listonly=False
 create_alias_function("", __file_format_name__, "StringToArrayIndex", ArchiveFileStringToArrayIndex);
 
 def TarFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  catfp = BytesIO();
  catfp = PackArchiveFileFromTarFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
  listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  return listcatfiles;
 
 def ZipFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  catfp = BytesIO();
  catfp = PackArchiveFileFromZipFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
  listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
@@ -6408,8 +6353,7 @@ if(not rarfile_support):
 
 if(rarfile_support):
  def RarFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
-  if(isinstance(formatspecs, (list, tuple, ))):
-   formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+  if(isinstance(formatspecs, (formatspecs = FormatSpecsListToDict(formatspecs);
   catfp = BytesIO();
   catfp = PackArchiveFileFromRarFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
   listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
@@ -6421,24 +6365,21 @@ if(not py7zr_support):
 
 if(py7zr_support):
  def SevenZipFileToArrayIndex(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
-  if(isinstance(formatspecs, (list, tuple, ))):
-   formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+  formatspecs = FormatSpecsListToDict(formatspecs);
   catfp = BytesIO();
   catfp = PackArchiveFileFromSevenZipFile(infile, catfp, "auto", None, "crc32", [], formatspecs, False, True);
   listcatfiles = ArchiveFileToArrayIndex(catfp, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   return listcatfiles;
 
 def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  outarray = BytesIO();
  packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compresswholefile, compressionlevel, followlink, checksumtype, formatspecs, verbose, True);
  listcatfiles = ArchiveFileToArrayIndex(outarray, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
  return listcatfiles;
 
 def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(isinstance(infile, dict)):
   prelistcatfiles = ArchiveFileToArrayIndex(infile, seekstart, seekend, False, skipchecksum, formatspecs, returnfp);
   listcatfiles = prelistcatfiles['list'];
@@ -6665,8 +6606,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
 create_alias_function("RePack", __file_format_name__, "", RePackArchiveFile);
 
 def RePackArchiveFileFromString(catstr, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", skipchecksum=False, extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  catfp = BytesIO(catstr);
  listcatfiles = RePackArchiveFile(catfp, compression, compresswholefile, compressionlevel, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp);
  return listcatfiles;
@@ -6674,8 +6614,7 @@ def RePackArchiveFileFromString(catstr, outfile, compression="auto", compresswho
 create_alias_function("RePack", __file_format_name__, "FromString", RePackArchiveFileFromString);
 
 def PackArchiveFileFromListDir(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  outarray = BytesIO();
  packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compresswholefile, compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, True);
  listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile, compressionlevel, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp);
@@ -6684,8 +6623,7 @@ def PackArchiveFileFromListDir(infiles, outfile, dirlistfromtxt=False, compressi
 create_alias_function("Pack", __file_format_name__, "FromListDir", PackArchiveFileFromListDir);
 
 def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_dict__, preservepermissions=True, preservetime=True, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  if(outdir is not None):
   outdir = RemoveWindowsPath(outdir);
  if(verbose):
@@ -6906,8 +6844,7 @@ if(hasattr(shutil, "register_unpack_format")):
  create_alias_function("UnPack", __file_format_name__, "Func", UnPackArchiveFileFunc);
 
 def UnPackArchiveFileString(catstr, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  catfp = BytesIO(catstr);
  listcatfiles = UnPackArchiveFile(catfp, outdir, followlink, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp);
  return listcatfiles;
@@ -6915,8 +6852,7 @@ def UnPackArchiveFileString(catstr, outdir=None, followlink=False, seekstart=0, 
 create_alias_function("UnPack", __file_format_name__, "String", UnPackArchiveFileString);
 
 def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(isinstance(infile, dict)):
   listcatfiles = infile;
@@ -6962,8 +6898,7 @@ def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, for
 create_alias_function("", __file_format_name__, "ListFiles", ArchiveFileListFiles);
 
 def ArchiveFileStringListFiles(catstr, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  catfp = BytesIO(catstr);
  listcatfiles = ArchiveFileListFiles(catstr, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp);
  return listcatfiles;
@@ -7426,8 +7361,7 @@ if(py7zr_support):
    return True;
 
 def InFileListFiles(infile, verbose=False, formatspecs=__file_format_dict__, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
  if(checkcompressfile=="tarfile"):
@@ -7445,23 +7379,20 @@ def InFileListFiles(infile, verbose=False, formatspecs=__file_format_dict__, ret
  return False;
 
 def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  outarray = BytesIO();
  packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compresswholefile, compressionlevel, followlink, checksumtype, formatspecs, False, True);
  listcatfiles = ArchiveFileListFiles(outarray, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp);
  return listcatfiles;
 
 def ListDirListFilesAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  outarray = ListDirToArrayAlt(infiles, dirlistfromtxt, followlink, listonly, checksumtype, formatspecs, verbose);
  listcatfiles = ArchiveFileListFiles(outarray, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp);
  return listcatfiles;
 
 def PackArchiveFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  outarray = ListDirToArrayAlt(infiles, dirlistfromtxt, followlink, False, checksumtype, extradata, formatspecs, False);
  listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile, compressionlevel, followlink, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp);
  return listcatfiles;
@@ -7469,8 +7400,7 @@ def PackArchiveFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, compre
 create_alias_function("Pack", __file_format_name__, "FromListDirAlt", PackArchiveFileFromListDirAlt);
 
 def PackArchiveFileFromTarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  outarray = TarFileToArrayAlt(infile, False, checksumtype, extradata, formatspecs, False);
  listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
  return listcatfiles;
@@ -7478,8 +7408,7 @@ def PackArchiveFileFromTarFileAlt(infile, outfile, compression="auto", compressw
 create_alias_function("Pack", __file_format_name__, "FromTarFileAlt", PackArchiveFileFromTarFileAlt);
 
 def PackArchiveFileFromZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+formatspecs = FormatSpecsListToDict(formatspecs);
  outarray = ZipFileToArrayAlt(infile, False, checksumtype, extradata, formatspecs, False);
  listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
  return listcatfiles;
@@ -7492,8 +7421,7 @@ if(not rarfile_support):
 
 if(rarfile_support):
  def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-  if(isinstance(formatspecs, (list, tuple, ))):
-   formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+  formatspecs = FormatSpecsListToDict(formatspecs);
   outarray = RarFileToArrayAlt(infile, False, checksumtype, extradata, formatspecs, False);
   listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
   return listcatfiles;
@@ -7506,8 +7434,7 @@ if(not py7zr_support):
 
 if(py7zr_support):
  def PackArchiveFileFromSevenZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-  if(isinstance(formatspecs, (list, tuple, ))):
-   formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+  formatspecs = FormatSpecsListToDict(formatspecs);
   outarray = SevenZipFileToArrayAlt(infile, False, checksumtype, extradata, formatspecs, False);
   listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile, compressionlevel, False, checksumtype, False, extradata, formatspecs, verbose, returnfp);
   return listcatfiles;
@@ -7915,8 +7842,7 @@ def download_file_from_internet_file(url, headers=geturls_headers_pycatfile_pyth
  return False;
 
 def download_file_from_internet_uncompress_file(url, headers=geturls_headers_pycatfile_python_alt, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  fp = download_file_from_internet_file(url);
  fp = UncompressArchiveFile(fp, formatspecs);
  fp.seek(0, 0);
@@ -7940,8 +7866,7 @@ def download_file_from_internet_string(url, headers=geturls_headers_pycatfile_py
  return False;
 
 def download_file_from_internet_uncompress_string(url, headers=geturls_headers_pycatfile_python_alt, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  fp = download_file_from_internet_string(url);
  fp = UncompressArchiveFile(fp, formatspecs);
  fp.seek(0, 0);
@@ -7965,8 +7890,7 @@ def upload_file_to_internet_file(ifp, url):
  return False;
 
 def upload_file_to_internet_compress_file(ifp, url, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  catfp = CompressArchiveFile(catfp, compression, compressionlevel, formatspecs);
  if(not catfileout):
   return False;
@@ -7990,8 +7914,7 @@ def upload_file_to_internet_string(ifp, url):
  return False;
  
 def upload_file_to_internet_compress_string(ifp, url, formatspecs=__file_format_dict__):
- if(isinstance(formatspecs, (list, tuple, ))):
-  formatspecs = {'format_name': formatspecs[0], 'format_magic': formatspecs[1], 'format_lower': formatspecs[2], 'format_len': formatspecs[3], 'format_hex': formatspecs[4], 'format_delimiter': formatspecs[5], 'format_ver': formatspecs[6], 'new_style': formatspecs[7], 'use_advanced_list': formatspecs[8], 'use_alt_inode': formatspecs[9]};
+ formatspecs = FormatSpecsListToDict(formatspecs);
  catfp = CompressArchiveFile(BytesIO(ifp), compression, compressionlevel, formatspecs);
  if(not catfileout):
   return False;
