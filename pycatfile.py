@@ -3964,13 +3964,13 @@ def PackArchiveFileFromInFile(infile, outfile, compression="auto", compresswhole
  if(checkcompressfile=="tarfile"):
   return PackArchiveFileFromTarFile(infile, outfile, compression, compresswholefile, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
  elif(checkcompressfile=="zipfile"):
-  return PackArchiveFileFromZipFile(infile, outfile, compression, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
+  return PackArchiveFileFromZipFile(infile, outfile, compression, compresswholefile, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
  elif(checkcompressfile=="catfile"):
-  return RePackArchiveFile(infile, outfile, compression, compressionlevel, False, 0, 0, checksumtype, False, extradata, formatspecs, verbose, returnfp);
+  return RePackArchiveFile(infile, outfile, compression, compresswholefile, compressionlevel, False, 0, 0, checksumtype, False, extradata, formatspecs, verbose, returnfp);
  elif(rarfile_support and checkcompressfile=="rarfile"):
-  return PackArchiveFileFromRarFile(infile, outfile, compression, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
+  return PackArchiveFileFromRarFile(infile, outfile, compression, compresswholefile, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
  elif(py7zr_support and checkcompressfile=="7zipfile"):
-  return PackArchiveFileFromSevenZipFile(infile, outfile, compression, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
+  return PackArchiveFileFromSevenZipFile(infile, outfile, compression, compresswholefile, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
  else:
   return False;
  return False;
