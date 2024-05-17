@@ -217,10 +217,51 @@ geturls_headers_pycatfile_python_alt = {'Referer': "http://google.com/", 'User-A
 geturls_headers_googlebot_google = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"};
 geturls_headers_googlebot_google_old = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google_old, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"};
 
-compressionlist = ['auto', 'gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
-compressionlistalt = ['gzip', 'bzip2', 'zstd', 'lz4', 'lzo', 'lzma', 'xz'];
-outextlist = ['gz', 'bz2', 'zst', 'lz4', 'lzo', 'lzop', 'lzma', 'xz'];
-outextlistwd = ['.gz', '.bz2', '.zst', '.lz4', '.lzo', '.lzop', '.lzma', '.xz'];
+compressionsupport = CompressionSupport();
+compressionlist = ['auto'];
+compressionlistalt = [];
+outextlist = [];
+outextlistwd = [];
+if('gzip' in compressionsupport):
+ compressionlist.append('gzip');
+ compressionlistalt.append('gzip');
+ outextlist.append('gz');
+ outextlistwd.append('.gz');
+if('bzip2' in compressionsupport):
+ compressionlist.append('bzip2');
+ compressionlistalt.append('bzip2');
+ outextlist.append('bz2');
+ outextlistwd.append('.bz2');
+if('zstd' in compressionsupport):
+ compressionlist.append('zstd');
+ compressionlistalt.append('zstd');
+ outextlist.append('zst');
+ outextlistwd.append('.zst');
+if('lz4' in compressionsupport):
+ compressionlist.append('lz4');
+ compressionlistalt.append('lz4');
+ outextlist.append('lz4');
+ outextlistwd.append('.lz4');
+if('lzo' in compressionsupport):
+ compressionlist.append('lzo');
+ compressionlistalt.append('lzo');
+ outextlist.append('lzo');
+ outextlistwd.append('.lzo');
+if('lzop' in compressionsupport):
+ compressionlist.append('lzop');
+ compressionlistalt.append('lzop');
+ outextlist.append('lzop');
+ outextlistwd.append('.lzop');
+if('lzma' in compressionsupport):
+ compressionlist.append('lzma');
+ compressionlistalt.append('lzma');
+ outextlist.append('lzma');
+ outextlistwd.append('.lzma');
+if('xz' in compressionsupport):
+ compressionlist.append('xz');
+ compressionlistalt.append('xz');
+ outextlist.append('xz');
+ outextlistwd.append('.xz');
 
 tarfile_mimetype = "application/tar";
 tarfile_tar_mimetype = tarfile_mimetype;
