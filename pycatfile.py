@@ -217,6 +217,45 @@ geturls_headers_pycatfile_python_alt = {'Referer': "http://google.com/", 'User-A
 geturls_headers_googlebot_google = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"};
 geturls_headers_googlebot_google_old = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google_old, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"};
 
+def CompressionSupport():
+ compression_list = [];
+ try:
+  import gzip;
+  compression_list.append("gz");
+  compression_list.append("gzip");
+ except ImportError:
+  '''return False;'''
+ try:
+  import bz2;
+  compression_list.append("bz2");
+  compression_list.append("bzip2");
+ except ImportError:
+  '''return False;'''
+ try:
+  import lz4;
+  compression_list.append("lz4");
+ except ImportError:
+  '''return False;'''
+ try:
+  import lzo;
+  compression_list.append("lzo");
+  compression_list.append("lzop");
+ except ImportError:
+  '''return False;'''
+ try:
+  import zstandard;
+  compression_list.append("zstd");
+  compression_list.append("zstandard");
+ except ImportError:
+  '''return False;'''
+ try:
+  import lzma;
+  compression_list.append("lzma");
+  compression_list.append("xz");
+ except ImportError:
+  '''return False;'''
+ return compression_list;
+
 compressionsupport = CompressionSupport();
 compressionlist = ['auto'];
 compressionlistalt = [];
@@ -2028,45 +2067,6 @@ def PrintPermissionStringAlt(fchmode, ftype):
  except AttributeError:
   permissionoutstr = permissionstr;
  return permissionoutstr;
-
-def CompressionSupport():
- compression_list = [];
- try:
-  import gzip;
-  compression_list.append("gz");
-  compression_list.append("gzip");
- except ImportError:
-  '''return False;'''
- try:
-  import bz2;
-  compression_list.append("bz2");
-  compression_list.append("bzip2");
- except ImportError:
-  '''return False;'''
- try:
-  import lz4;
-  compression_list.append("lz4");
- except ImportError:
-  '''return False;'''
- try:
-  import lzo;
-  compression_list.append("lzo");
-  compression_list.append("lzop");
- except ImportError:
-  '''return False;'''
- try:
-  import zstandard;
-  compression_list.append("zstd");
-  compression_list.append("zstandard");
- except ImportError:
-  '''return False;'''
- try:
-  import lzma;
-  compression_list.append("lzma");
-  compression_list.append("xz");
- except ImportError:
-  '''return False;'''
- return compression_list;
 
 def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True):
  formatspecs = FormatSpecsListToDict(formatspecs);
