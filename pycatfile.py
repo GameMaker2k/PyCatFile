@@ -18,7 +18,11 @@
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
-import io, os, re, sys, time, stat, zlib, base64, shutil, socket, hashlib, datetime, logging, binascii, tempfile, zipfile, platform;
+import io, os, re, sys, time, stat, zlib, base64, shutil, socket, hashlib, datetime, logging, binascii, zipfile, platform;
+try:
+ from backports import tempfile;
+except ImportError:
+ import tempfile;
 ftpssl = True;
 try:
  ftpssl = True;
@@ -26,11 +30,13 @@ try:
 except ImportError:
  ftpssl = False;
  from ftplib import FTP;
-if(sys.version[0]=="2"):
+
+try:
+ # Try Python 3 imports
+ from urllib.parse import urlparse, urlunparse;
+except ImportError:
+ # Fall back to Python 2 imports
  from urlparse import urlparse, urlunparse;
-elif(sys.version[0]>="3"):
- from urllib.parse import urlunparse;
- from urllib.parse import urlparse;
 
 if os.name == 'nt':  # Only modify if on Windows
  if sys.version[0] == "2":
@@ -130,38 +136,13 @@ except ImportError:
  from urllib2 import Request, build_opener, HTTPBasicAuthHandler;
  from urlparse import urlparse;
 
-if(sys.version[0]=="2"):
- try:
-  from io import StringIO, BytesIO;
- except ImportError:
-  try:
-   from cStringIO import StringIO;
-   from cStringIO import StringIO as BytesIO;
-  except ImportError:
-   from StringIO import StringIO;
-   from StringIO import StringIO as BytesIO;
-elif(sys.version[0]>="3"):
+try:
  from io import StringIO, BytesIO;
-else:
- teststringio = 0;
- if(teststringio<=0):
-  try:
-   from cStringIO import StringIO as BytesIO;
-   teststringio = 1;
-  except ImportError:
-   teststringio = 0;
- if(teststringio<=0):
-  try:
-   from StringIO import StringIO as BytesIO;
-   teststringio = 2;
-  except ImportError:
-   teststringio = 0;
- if(teststringio<=0):
-  try:
-   from io import BytesIO;
-   teststringio = 3;
-  except ImportError:
-   teststringio = 0;
+except ImportError:
+ try:
+  from cStringIO import StringIO, StringIO as BytesIO;
+ except ImportError:
+  from StringIO import StringIO, StringIO as BytesIO;
 
 __use_pysftp__ = False;
 if(not havepysftp):
@@ -250,6 +231,12 @@ def CompressionSupport():
   '''return False;'''
  try:
   import lzma;
+  compression_list.append("lzma");
+  compression_list.append("xz");
+ except ImportError:
+  '''return False;'''
+ try:
+  from backports import lzma;
   compression_list.append("lzma");
   compression_list.append("xz");
  except ImportError:
@@ -2246,7 +2233,10 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
   try:
    import lzma;
   except ImportError:
-   return False;
+   try:
+    from backports import lzma
+   except ImportError:
+    return False;
   catfp = BytesIO();
   catfp.write(lzma.decompress(fp.read()));
  if(compresscheck=="catfile" or compresscheck==formatspecs['format_lower']):
@@ -2255,7 +2245,10 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
   try:
    import lzma;
   except ImportError:
-   return False;
+   try:
+    from backports import lzma
+   except ImportError:
+    return False;
   catfp = BytesIO();
   with fp as fpcontent:
    try:
@@ -2326,7 +2319,10 @@ def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
    try:
     import lzma;
    except ImportError:
-    return False;
+    try:
+     from backports import lzma
+    except ImportError:
+     return False;
    try:
     filefp = lzma.open(infile, mode, encoding="UTF-8");
    except (ValueError, TypeError) as e:
@@ -2381,7 +2377,10 @@ def UncompressString(infile):
   try:
    import lzma;
   except ImportError:
-   return False;
+   try:
+    from backports import lzma
+   except ImportError:
+    return False;
   fileuz = lzma.decompress(infile);
  if(not compresscheck):
   fileuz = infile;
@@ -2472,7 +2471,10 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
     try:
      import lzma;
     except ImportError:
-     return False;
+     try:
+      from backports import lzma
+     except ImportError:
+      return False;
     catfp = lzma.open(infile, "rb");
   except FileNotFoundError:
    return False;
@@ -2583,7 +2585,10 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
   try:
    import lzma;
   except ImportError:
-   return False;
+   try:
+    from backports import lzma
+   except ImportError:
+    return False;
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 9;
@@ -2594,7 +2599,10 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
   try:
    import lzma;
   except ImportError:
-   return False;
+   try:
+    from backports import lzma
+   except ImportError:
+    return False;
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 9;
@@ -2660,7 +2668,10 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
    try:
     import lzma;
    except ImportError:
-    return False;
+    try:
+     from backports import lzma
+    except ImportError:
+     return False;
    try:
     outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}], encoding="UTF-8");
    except (ValueError, TypeError) as e:
@@ -2687,7 +2698,10 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
    try:
     import lzma;
    except ImportError:
-    return False;
+    try:
+     from backports import lzma
+    except ImportError:
+     return False;
    try:
     outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}], encoding="UTF-8");
    except (ValueError, TypeError) as e:
