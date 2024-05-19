@@ -487,6 +487,32 @@ def FormatSpecsListToDict(formatspecs=__file_format_list__):
   return __file_format_dict__;
  return __file_format_dict__;
 
+def TarFileCheck(infile):
+ try:
+  if tarfile.is_tarfile(infile):
+   return True;
+  else:
+   return False;
+ except TypeError:
+  try:
+   # Check if the input is a file object
+   if hasattr(infile, 'read'):
+    # Save the current file position
+    current_position = infile.tell();
+    # Attempt to open the file object as a tar file
+    tar = tarfile.open(fileobj=infile);
+    tar.close();
+    # Restore the file position
+    infile.seek(current_position);
+    return True;
+   else:
+    # Assume it's a filename
+    tar = tarfile.open(name=infile);
+    tar.close();
+    return True;
+  except tarfile.TarError:
+   return False;
+
 # initial_value can be 0xFFFF or 0x0000
 def crc16_ansi(msg, initial_value=0xFFFF):
  # CRC-16-IBM / CRC-16-ANSI polynomial and initial value
@@ -2130,10 +2156,10 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
   filetype = "tarfile";
  catfp.seek(0, 0);
  if(filetype=="gzip" or filetype=="bzip2" or filetype=="lzma" or filetype=="zstd" or filetype=="lz4"):
-  if(is_tarfile(catfp)):
+  if(TarFileCheck(catfp)):
    filetype = "tarfile";
  if(not filetype):
-  if(is_tarfile(catfp)):
+  if(TarFileCheck(catfp)):
    filetype = "tarfile";
   elif(zipfile.is_zipfile(catfp)):
    filetype = "zipfile";
@@ -2390,10 +2416,10 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
   else:
    return False;
  if(compresscheck=="gzip" or compresscheck=="bzip2" or compresscheck=="lzma" or compresscheck=="zstd" or compresscheck=="lz4"):
-  if(is_tarfile(infile)):
+  if(TarFileCheck(infile)):
    filetype = "tarfile";
  if(not compresscheck):
-  if(is_tarfile(infile)):
+  if(TarFileCheck(infile)):
    return "tarfile";
   elif(zipfile.is_zipfile(infile)):
    return "zipfile";
@@ -3102,10 +3128,10 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
   return False;
  elif(os.path.exists(infile) and os.path.isfile(infile)):
   try:
-   if(not tarfile.is_tarfile(infile)):
+   if(not tarfile.TarFileCheck(infile)):
     return False;
   except AttributeError:
-   if(not is_tarfile(infile)):
+   if(not TarFileCheck(infile)):
     return False;
  else:
   return False;
@@ -5311,10 +5337,10 @@ def TarFileToArrayAlt(infile, listonly=False, checksumtype="crc32", extradata=[]
   return False;
  elif(os.path.exists(infile) and os.path.isfile(infile)):
   try:
-   if(not tarfile.is_tarfile(infile)):
+   if(not tarfile.TarFileCheck(infile)):
     return False;
   except AttributeError:
-   if(not is_tarfile(infile)):
+   if(not TarFileCheck(infile)):
     return False;
  else:
   return False;
@@ -6998,10 +7024,10 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
   return False;
  elif(os.path.exists(infile) and os.path.isfile(infile)):
   try:
-   if(not tarfile.is_tarfile(infile)):
+   if(not tarfile.TarFileCheck(infile)):
     return False;
   except AttributeError:
-   if(not is_tarfile(infile)):
+   if(not TarFileCheck(infile)):
     return False;
  else:
   return False;
