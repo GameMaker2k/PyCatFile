@@ -458,12 +458,12 @@ def create_alias_function(prefix, base_name, suffix, target_function):
  globals()[function_name] = alias_function;
 
 def create_alias_function_alt(prefix, base_name, suffix, target_function):
-    # Create the function name by combining the prefix, base name, and the suffix
-    # Use the format method for string formatting, compatible with Python 2 and 3
-    function_name = "{}{}{}".format(prefix, base_name, suffix)
-    # Add the new function (alias of the target_function) to the global namespace
-    # This line is compatible as-is with both Python 2 and 3
-    globals()[function_name] = target_function
+ # Create the function name by combining the prefix, base name, and the suffix
+  # Use the format method for string formatting, compatible with Python 2 and 3
+ function_name = "{}{}{}".format(prefix, base_name, suffix)
+ # Add the new function (alias of the target_function) to the global namespace
+ # This line is compatible as-is with both Python 2 and 3
+ globals()[function_name] = target_function
 
 def FormatSpecsListToDict(formatspecs=__file_format_list__):
  if(isinstance(formatspecs, (list, tuple, ))):
@@ -476,7 +476,7 @@ def FormatSpecsListToDict(formatspecs=__file_format_list__):
 
 def TarFileCheck(infile):
  try:
-  if tarfile.is_tarfile(infile):
+  if is_tarfile(infile):
    return True;
   else:
    return False;
