@@ -591,79 +591,60 @@ def GetDataFromArrayAlt(structure, path, default=None):
 
 def GetHeaderChecksum(inlist=[], checksumtype="crc32", encodedata=True, formatspecs=__file_format_dict__):
  formatspecs = FormatSpecsListToDict(formatspecs);
- if isinstance(inlist, list):
-  fileheader = AppendNullBytes(inlist, formatspecs['format_delimiter']);
- else:
-  fileheader = AppendNullByte(inlist, formatspecs['format_delimiter']);
- if(encodedata):
+ fileheader = AppendNullBytes(inlist, formatspecs['format_delimiter']) if isinstance(inlist, list) else AppendNullByte(inlist, formatspecs['format_delimiter']);
+ if encodedata:
   fileheader = fileheader.encode('UTF-8');
- if(checksumtype=="none" or checksumtype==""):
-  catfileheadercshex = format(0, 'x').lower();
- elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
-  catfileheadercshex = format(crc16(fileheader) & 0xffff, '04x').lower();
- elif(checksumtype=="crc16_ccitt"):
-  catfileheadercshex = format(crc16_ccitt(fileheader) & 0xffff, '04x').lower();
- elif(checksumtype=="adler32"):
-  catfileheadercshex = format(zlib.adler32(fileheader) & 0xffffffff, '08x').lower();
- elif(checksumtype=="crc32"):
-  catfileheadercshex = format(crc32(fileheader) & 0xffffffff, '08x').lower();
- elif(checksumtype=="crc64_ecma"):
-  catfileheadercshex = format(crc64_ecma(fileheader) & 0xffffffffffffffff, '016x').lower();
- elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
-  catfileheadercshex = format(crc64_iso(fileheader) & 0xffffffffffffffff, '016x').lower();
- elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
+ checksum_methods = {
+  "crc16": lambda data: format(crc16(data) & 0xffff, '04x').lower(),
+  "crc16_ansi": lambda data: format(crc16(data) & 0xffff, '04x').lower(),
+  "crc16_ibm": lambda data: format(crc16(data) & 0xffff, '04x').lower(),
+  "crc16_ccitt": lambda data: format(crc16_ccitt(data) & 0xffff, '04x').lower(),
+  "adler32": lambda data: format(zlib.adler32(data) & 0xffffffff, '08x').lower(),
+  "crc32": lambda data: format(crc32(data) & 0xffffffff, '08x').lower(),
+  "crc64_ecma": lambda data: format(crc64_ecma(data) & 0xffffffffffffffff, '016x').lower(),
+  "crc64": lambda data: format(crc64_iso(data) & 0xffffffffffffffff, '016x').lower(),
+  "crc64_iso": lambda data: format(crc64_iso(data) & 0xffffffffffffffff, '016x').lower(),
+ };
+ if checksumtype in checksum_methods:
+  return checksum_methods[checksumtype](fileheader);
+ elif CheckSumSupportAlt(checksumtype, hashlib_guaranteed):
   checksumoutstr = hashlib.new(checksumtype);
   checksumoutstr.update(fileheader);
-  catfileheadercshex = checksumoutstr.hexdigest().lower();
- else:
-  catfileheadercshex = format(0, 'x').lower();
- return catfileheadercshex;
+  return checksumoutstr.hexdigest().lower();
+ return format(0, 'x').lower();
 
 def GetFileChecksum(instr, checksumtype="crc32", encodedata=True, formatspecs=__file_format_dict__):
  formatspecs = FormatSpecsListToDict(formatspecs);
- if(encodedata):
+ if encodedata:
   instr = instr.encode('UTF-8');
- if(checksumtype=="none" or checksumtype==""):
-  catinstrcshex = format(0, 'x').lower();
- elif(checksumtype=="crc16" or checksumtype=="crc16_ansi" or checksumtype=="crc16_ibm"):
-  catinstrcshex = format(crc16(instr) & 0xffff, '04x').lower();
- elif(checksumtype=="crc16_ccitt"):
-  catinstrcshex = format(crc16_ccitt(instr) & 0xffff, '04x').lower();
- elif(checksumtype=="adler32"):
-  catinstrcshex = format(zlib.adler32(instr) & 0xffffffff, '08x').lower();
- elif(checksumtype=="crc32"):
-  catinstrcshex = format(crc32(instr) & 0xffffffff, '08x').lower();
- elif(checksumtype=="crc64_ecma"):
-  catinstrcshex = format(crc64_ecma(instr) & 0xffffffffffffffff, '016x').lower();
- elif(checksumtype=="crc64" or checksumtype=="crc64_iso"):
-  catinstrcshex = format(crc64_iso(instr) & 0xffffffffffffffff, '016x').lower();
- elif(CheckSumSupportAlt(checksumtype, hashlib_guaranteed)):
+ checksum_methods = {
+  "crc16": lambda data: format(crc16(data) & 0xffff, '04x').lower(),
+  "crc16_ansi": lambda data: format(crc16(data) & 0xffff, '04x').lower(),
+  "crc16_ibm": lambda data: format(crc16(data) & 0xffff, '04x').lower(),
+  "crc16_ccitt": lambda data: format(crc16_ccitt(data) & 0xffff, '04x').lower(),
+  "adler32": lambda data: format(zlib.adler32(data) & 0xffffffff, '08x').lower(),
+  "crc32": lambda data: format(crc32(data) & 0xffffffff, '08x').lower(),
+  "crc64_ecma": lambda data: format(crc64_ecma(data) & 0xffffffffffffffff, '016x').lower(),
+  "crc64": lambda data: format(crc64_iso(data) & 0xffffffffffffffff, '016x').lower(),
+  "crc64_iso": lambda data: format(crc64_iso(data) & 0xffffffffffffffff, '016x').lower(),
+ };
+ if checksumtype in checksum_methods:
+  return checksum_methods[checksumtype](instr);
+ elif CheckSumSupportAlt(checksumtype, hashlib_guaranteed):
   checksumoutstr = hashlib.new(checksumtype);
   checksumoutstr.update(instr);
-  catinstrcshex = checksumoutstr.hexdigest().lower();
- else:
-  catinstrcshex = format(0, 'x').lower();
- return catinstrcshex;
+  return checksumoutstr.hexdigest().lower();
+ return format(0, 'x').lower();
 
 def ValidateHeaderChecksum(inlist=[], checksumtype="crc32", inchecksum="0", formatspecs=__file_format_dict__):
  formatspecs = FormatSpecsListToDict(formatspecs);
- catfileheadercshex = GetHeaderChecksum(inlist, checksumtype, True, formatspecs);
- inchecksum = inchecksum.lower();
- catfileheadercshex = catfileheadercshex.lower();
- if(inchecksum==catfileheadercshex):
-  return True;
- else:
-  return False;
+ catfileheadercshex = GetHeaderChecksum(inlist, checksumtype, True, formatspecs).lower();
+ return inchecksum.lower() == catfileheadercshex;
 
 def ValidateFileChecksum(infile, checksumtype="crc32", inchecksum="0", formatspecs=__file_format_dict__):
  formatspecs = FormatSpecsListToDict(formatspecs);
- catinfilecshex = GetFileChecksum(infile, checksumtype, True, formatspecs);
- inchecksum = inchecksum.lower();
- catinfilecshex = catinfilecshex.lower();
- if(inchecksum==catinfilecshex):
-  return True;
- else:
-  return False;
+ catinfilecshex = GetFileChecksum(infile, checksumtype, True, formatspecs).lower();
+ return inchecksum.lower() == catinfilecshex;
 
 def ReadTillNullByteOld(fp, delimiter=__file_format_dict__['format_delimiter']):
  curbyte = b"";
