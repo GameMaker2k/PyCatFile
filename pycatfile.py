@@ -23,69 +23,72 @@ try:
  from backports import tempfile;
 except ImportError:
  import tempfile;
+# FTP Support
 ftpssl = True;
 try:
- ftpssl = True;
  from ftplib import FTP, FTP_TLS;
 except ImportError:
  ftpssl = False;
  from ftplib import FTP;
 
+# URL Parsing
 try:
- # Try Python 3 imports
  from urllib.parse import urlparse, urlunparse;
 except ImportError:
- # Fall back to Python 2 imports
  from urlparse import urlparse, urlunparse;
 
-if os.name == 'nt':  # Only modify if on Windows
- if sys.version[0] == "2":
+# Windows-specific setup
+if os.name == 'nt':
+ if sys.version_info[0] == 2:
   import codecs;
   sys.stdout = codecs.getwriter('utf-8')(sys.stdout);
   sys.stderr = codecs.getwriter('utf-8')(sys.stderr);
  else:
-  import io;
   sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True);
   sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True);
 
 hashlib_guaranteed = False;
+# Environment setup
 os.environ["PYTHONIOENCODING"] = "UTF-8";
 os.environ["LC_CTYPE"] = "UTF-8";
-try:
- reload(sys);
- try:
-  sys.setdefaultencoding('UTF-8');
- except NameError:
-  pass;
- except AttributeError:
-  pass;
-except NameError:
- pass;
-except AttributeError:
- pass;
 
+# Reload sys to set default encoding to UTF-8 (Python 2 only)
+if sys.version_info[0] == 2:
+ try:
+  reload(sys);
+  sys.setdefaultencoding('UTF-8');
+ except (NameError, AttributeError):
+  pass;
+
+# CRC32 import
 try:
  from zlib import crc32;
 except ImportError:
  from binascii import crc32;
 
-if(sys.version_info[0]==2):
+# Define FileNotFoundError for Python 2
+try:
+ FileNotFoundError;
+except NameError:
  FileNotFoundError = IOError;
 
+# RAR file support
 rarfile_support = False;
 try:
  import rarfile;
  rarfile_support = True;
 except ImportError:
- rarfile_support = False;
+ pass;
 
+# 7z file support
 py7zr_support = False;
 try:
  import py7zr;
  py7zr_support = True;
 except ImportError:
- py7zr_support = False;
+ pass;
 
+# TAR file checking
 try:
  from xtarfile import is_tarfile;
 except ImportError:
@@ -94,6 +97,7 @@ except ImportError:
  except ImportError:
   from tarfile import is_tarfile;
 
+# TAR file module
 try:
  import xtarfile as tarfile;
 except ImportError:
@@ -102,40 +106,41 @@ except ImportError:
  except ImportError:
   import tarfile;
 
+# Paramiko support
 haveparamiko = False;
 try:
  import paramiko;
  haveparamiko = True;
 except ImportError:
- haveparamiko = False;
+ pass;
 
+# PySFTP support
 havepysftp = False;
 try:
  import pysftp;
  havepysftp = True;
 except ImportError:
- havepysftp = False;
+ pass;
 
+# Requests support
 haverequests = False;
 try:
  import requests;
  haverequests = True;
-except ImportError:
- haverequests = False;
-
-if(haverequests):
  import urllib3;
  logging.getLogger("urllib3").setLevel(logging.WARNING);
+except ImportError:
+ pass;
 
+# HTTP and URL parsing
 try:
- # Python 3 imports
  from urllib.request import Request, build_opener, HTTPBasicAuthHandler;
  from urllib.parse import urlparse;
 except ImportError:
- # Python 2 imports
  from urllib2 import Request, build_opener, HTTPBasicAuthHandler;
  from urlparse import urlparse;
 
+# StringIO and BytesIO
 try:
  from io import StringIO, BytesIO;
 except ImportError:
