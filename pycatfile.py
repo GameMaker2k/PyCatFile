@@ -140,9 +140,11 @@ try:
  from io import StringIO, BytesIO;
 except ImportError:
  try:
-  from cStringIO import StringIO, StringIO as BytesIO;
+  from cStringIO import StringIO;
+  from cStringIO import StringIO as BytesIO;
  except ImportError:
-  from StringIO import StringIO, StringIO as BytesIO;
+  from StringIO import StringIO;
+  from StringIO import StringIO as BytesIO;
 
 __use_pysftp__ = False;
 if(not havepysftp):
