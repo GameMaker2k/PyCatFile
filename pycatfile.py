@@ -6480,16 +6480,11 @@ def ListDirToArrayIndex(infiles, dirlistfromtxt=False, compression="auto", compr
 def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
  formatspecs = FormatSpecsListToDict(formatspecs);
  if(isinstance(infile, dict)):
-  prelistcatfiles = ArchiveFileToArrayIndex(infile, seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp);
-  listcatfiles = prelistcatfiles['list'];
+  listcatfiles = infile;
  else:
   if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
    infile = RemoveWindowsPath(infile);
-  if(followlink):
-   prelistcatfiles = ArchiveFileToArrayIndex(infile, seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp);
-   listcatfiles = prelistcatfiles['list'];
-  else:
-   listcatfiles = ArchiveFileToArray(infile, seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp);
+  listcatfiles = ArchiveFileToArray(infile, seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp);
  if(outfile!="-" and not hasattr(infile, "read") and not hasattr(outfile, "write")):
   outfile = RemoveWindowsPath(outfile);
  checksumtype = checksumtype.lower();
@@ -6728,16 +6723,11 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  if(isinstance(infile, dict)):
-  prelistcatfiles = ArchiveFileToArrayIndex(infile, seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp);
-  listcatfiles = prelistcatfiles['list'];
+  listcatfiles = infile;
  else:
   if(infile!="-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
    infile = RemoveWindowsPath(infile);
-  if(followlink):
-   prelistcatfiles = ArchiveFileToArrayIndex(infile, seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp);
-   listcatfiles = prelistcatfiles['list'];
-  else:
-   listcatfiles = ArchiveFileToArray(infile, seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp);
+  listcatfiles = ArchiveFileToArray(infile, seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp);
  if(not listcatfiles):
   return False;
  lenlist = len(listcatfiles['ffilelist']);
