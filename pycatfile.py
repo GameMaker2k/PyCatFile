@@ -390,7 +390,7 @@ def PrependPath(base_dir, child_path):
   return base_dir + child_path.lstrip('/');
 
 def ListDir(dirpath, followlink=False, duplicates=False):
- if isinstance(dirpath, (list, tuple)):
+ if isinstance(dirpath, (list, tuple, )):
   dirpath = list(filter(None, dirpath));
  elif isinstance(dirpath, str):
   dirpath = list(filter(None, [dirpath]));
@@ -429,7 +429,7 @@ def ListDir(dirpath, followlink=False, duplicates=False):
  return retlist;
 
 def ListDirAdvanced(dirpath, followlink=False, duplicates=False):
- if isinstance(dirpath, (list, tuple)):
+ if isinstance(dirpath, (list, tuple, )):
   dirpath = list(filter(None, dirpath));
  elif isinstance(dirpath, str):
   dirpath = list(filter(None, [dirpath]));
@@ -444,7 +444,7 @@ def ListDirAdvanced(dirpath, followlink=False, duplicates=False):
   if os.path.exists(mydirfile) and os.path.isdir(mydirfile):
    for root, dirs, filenames in os.walk(mydirfile):
     # Sort dirs and filenames alphabetically in place
-    dirs.sort(key=lambda x: x.lower())
+    dirs.sort(key=lambda x: x.lower());
     filenames.sort(key=lambda x: x.lower());
     dpath = RemoveWindowsPath(root);
     if fs_encoding != 'utf-8':
