@@ -390,34 +390,42 @@ def PrependPath(base_dir, child_path):
   return base_dir + child_path.lstrip('/');
 
 def ListDir(dirpath, followlink=False, duplicates=False):
- if(isinstance(dirpath, (list, tuple, ))):
+ if isinstance(dirpath, (list, tuple)):
   dirpath = list(filter(None, dirpath));
- elif(isinstance(dirpath, (str, ))):
+ elif isinstance(dirpath, str):
   dirpath = list(filter(None, [dirpath]));
  retlist = [];
+ fs_encoding = sys.getfilesystemencoding();
  for mydirfile in dirpath:
-  if(not os.path.exists(mydirfile)):
+  if not os.path.exists(mydirfile):
    return False;
   mydirfile = NormalizeRelativePath(mydirfile);
-  if(os.path.exists(mydirfile) and os.path.islink(mydirfile)):
+  if os.path.exists(mydirfile) and os.path.islink(mydirfile):
    mydirfile = RemoveWindowsPath(os.path.realpath(mydirfile));
-  if(os.path.exists(mydirfile) and os.path.isdir(mydirfile)):
+  if os.path.exists(mydirfile) and os.path.isdir(mydirfile):
    for root, dirs, filenames in os.walk(mydirfile):
     dpath = root;
     dpath = RemoveWindowsPath(dpath);
-    if(dpath not in retlist and not duplicates):
+    if fs_encoding != 'utf-8':
+     dpath = dpath.encode(fs_encoding).decode('utf-8');
+    if dpath not in retlist and not duplicates:
      retlist.append(dpath);
-    if(duplicates):
+    if duplicates:
      retlist.append(dpath);
     for file in filenames:
      fpath = os.path.join(root, file);
      fpath = RemoveWindowsPath(fpath);
-     if(fpath not in retlist and not duplicates):
+     if fs_encoding != 'utf-8':
+      fpath = fpath.encode(fs_encoding).decode('utf-8');
+     if fpath not in retlist and not duplicates:
       retlist.append(fpath);
-     if(duplicates):
+     if duplicates:
       retlist.append(fpath);
   else:
-   retlist.append(RemoveWindowsPath(mydirfile));
+   path = RemoveWindowsPath(mydirfile);
+   if fs_encoding != 'utf-8':
+    path = path.encode(fs_encoding).decode('utf-8');
+   retlist.append(path);
  return retlist;
 
 def ListDirAdvanced(dirpath, followlink=False, duplicates=False):
@@ -425,19 +433,22 @@ def ListDirAdvanced(dirpath, followlink=False, duplicates=False):
   dirpath = list(filter(None, dirpath));
  elif isinstance(dirpath, str):
   dirpath = list(filter(None, [dirpath]));
- retlist = []
+ retlist = [];
+ fs_encoding = sys.getfilesystemencoding();
  for mydirfile in dirpath:
   if not os.path.exists(mydirfile):
    return False;
   mydirfile = NormalizeRelativePath(mydirfile);
   if os.path.exists(mydirfile) and os.path.islink(mydirfile) and followlink:
-   mydirfile = RemoveWindowsPath(os.path.realpath(mydirfile))
+   mydirfile = RemoveWindowsPath(os.path.realpath(mydirfile));
   if os.path.exists(mydirfile) and os.path.isdir(mydirfile):
    for root, dirs, filenames in os.walk(mydirfile):
     # Sort dirs and filenames alphabetically in place
-    dirs.sort(key=lambda x: x.lower());
+    dirs.sort(key=lambda x: x.lower())
     filenames.sort(key=lambda x: x.lower());
     dpath = RemoveWindowsPath(root);
+    if fs_encoding != 'utf-8':
+     dpath = dpath.encode(fs_encoding).decode('utf-8');
     if not duplicates and dpath not in retlist:
      retlist.append(dpath);
     elif duplicates:
@@ -445,12 +456,17 @@ def ListDirAdvanced(dirpath, followlink=False, duplicates=False):
     for file in filenames:
      fpath = os.path.join(root, file);
      fpath = RemoveWindowsPath(fpath);
+     if fs_encoding != 'utf-8':
+      fpath = fpath.encode(fs_encoding).decode('utf-8');
      if not duplicates and fpath not in retlist:
       retlist.append(fpath);
      elif duplicates:
       retlist.append(fpath);
   else:
-   retlist.append(RemoveWindowsPath(mydirfile));
+   path = RemoveWindowsPath(mydirfile);
+   if fs_encoding != 'utf-8':
+    path = path.encode(fs_encoding).decode('utf-8');
+   retlist.append(path);
  return retlist;
 
 def create_alias_function(prefix, base_name, suffix, target_function):
