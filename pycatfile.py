@@ -5998,7 +5998,7 @@ def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", compresswh
 def ArchiveFileArrayToArrayIndex(inarray, seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
  formatspecs = FormatSpecsListToDict(formatspecs);
  if(isinstance(inarray, dict)):
-  listcatfiles = infile;
+  listcatfiles = inarray;
  else:
   return False;
  if(not listcatfiles):
