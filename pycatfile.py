@@ -31,6 +31,11 @@ except ImportError:
  ftpssl = False;
  from ftplib import FTP;
 
+try:
+ import simplejson as json;
+except ImportError:
+ import json;
+
 # URL Parsing
 try:
  from urllib.parse import urlparse, urlunparse;
@@ -473,10 +478,8 @@ def create_alias_function(prefix, base_name, suffix, target_function):
  # Define a new function that wraps the target function
  def alias_function(*args, **kwargs):
   return target_function(*args, **kwargs);
-
  # Create the function name by combining the prefix, base name, and the suffix
  function_name = "{}{}{}".format(prefix, base_name, suffix);
- 
  # Add the new function to the global namespace
  globals()[function_name] = alias_function;
 
@@ -1571,7 +1574,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
   elif(hasattr(stat, "S_ISPORT") and stat.S_ISPORT(fpremode)):
    ftype = 10;
   elif(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
-   ftype = 111;
+   ftype = 11;
   else:
    ftype = 0;
   flinkname = "";
@@ -2747,7 +2750,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
   elif(hasattr(stat, "S_ISPORT") and stat.S_ISPORT(fpremode)):
    ftype = 10;
   elif(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
-   ftype = 111;
+   ftype = 11;
   else:
    ftype = 0;
   flinkname = "";
