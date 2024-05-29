@@ -863,6 +863,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, ski
  fsize = int(HeaderOut[5], 16);
  fcompression = HeaderOut[12];
  fcsize = int(HeaderOut[13], 16);
+ fseeknextfile = HeaderOut[25];
  newfcs = GetHeaderChecksum(HeaderOut[:-2], HeaderOut[-3].lower(), True, formatspecs);
  if(fcs!=newfcs and not skipchecksum):
   VerbosePrintOut("File Header Checksum Error with file " + fname + " at offset " + str(fheaderstart));
@@ -893,7 +894,23 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, ski
   fcontents.seek(0, 0);
   if(uncompress):
    fcontents = UncompressArchiveFile(fcontents, formatspecs);
- fp.seek(1, 1);
+ if(re.findall("^\+([0-9]+)", fseeknextfile)):
+  fseeknextasnum = int(fseeknextfile.replace("+", ""));
+  if(abs(fseeknextasnum)==0):
+   pass;
+  fp.seek(fseeknextasnum, 1);
+ elif(re.findall("^\-([0-9]+)", fseeknextfile)):
+  fseeknextasnum = int(fseeknextfile);
+  if(abs(fseeknextasnum)==0):
+   pass;
+  fp.seek(fseeknextasnum, 1);
+ elif(re.findall("^([0-9]+)", fseeknextfile)):
+  fseeknextasnum = int(fseeknextfile);
+  if(abs(fseeknextasnum)==0):
+   pass;
+  fp.seek(fseeknextasnum, 0);
+ else
+  return False;
  fcontentend = fp.tell() - 1;
  HeaderOut.append(fcontents);
  return HeaderOut;
@@ -1181,6 +1198,7 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
    if(len(preheaderdata)==0):
     break;
    prefsize = int(preheaderdata[5], 16);
+   prefseeknextfile = preheaderdata[25];
    prenewfcs = GetHeaderChecksum(preheaderdata[:-2], preheaderdata[-3].lower(), True, formatspecs);
    prefcs = preheaderdata[-2];
    if(prefcs!=prenewfcs and not skipchecksum):
@@ -1203,7 +1221,23 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
      VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
      VerbosePrintOut("'" + str(prefccs) + "' != " + "'" + str(prenewfccs) + "'");
      return False;
-   fp.seek(1, 1);
+   if(re.findall("^\+([0-9]+)", prefseeknextfile)):
+    fseeknextasnum = int(prefseeknextfile.replace("+", ""));
+    if(abs(fseeknextasnum)==0):
+     pass;
+    fp.seek(fseeknextasnum, 1);
+   elif(re.findall("^\-([0-9]+)", prefseeknextfile)):
+    fseeknextasnum = int(prefseeknextfile);
+    if(abs(fseeknextasnum)==0):
+     pass;
+    fp.seek(fseeknextasnum, 1);
+   elif(re.findall("^([0-9]+)", prefseeknextfile)):
+    fseeknextasnum = int(prefseeknextfile);
+    if(abs(fseeknextasnum)==0):
+     pass;
+    fp.seek(fseeknextasnum, 0);
+   else
+    return False;
    il = il + 1;
  realidnum = 0;
  countnum = seekstart;
@@ -1256,6 +1290,7 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
    prefsize = int(preheaderdata[5], 16);
    prefcompression = preheaderdata[12];
    prefcsize = int(preheaderdata[13], 16);
+   prefseeknextfile = HeaderOut[25];
    prenewfcs = GetHeaderChecksum(preheaderdata[:-2], preheaderdata[-3].lower(), True, formatspecs);
    prefcs = preheaderdata[-2];
    if(prefcs!=prenewfcs and not skipchecksum):
@@ -1280,7 +1315,23 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
      VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
      VerbosePrintOut("'" + str(prefccs) + "' != " + "'" + str(prenewfccs) + "'");
      return False;
-   fp.seek(1, 1);
+   if(re.findall("^\+([0-9]+)", prefseeknextfile)):
+    fseeknextasnum = int(prefseeknextfile.replace("+", ""));
+    if(abs(fseeknextasnum)==0):
+     pass;
+    catfp.seek(fseeknextasnum, 1);
+   elif(re.findall("^\-([0-9]+)", prefseeknextfile)):
+    fseeknextasnum = int(prefseeknextfile);
+    if(abs(fseeknextasnum)==0):
+     pass;
+    catfp.seek(fseeknextasnum, 1);
+   elif(re.findall("^([0-9]+)", prefseeknextfile)):
+    fseeknextasnum = int(prefseeknextfile);
+    if(abs(fseeknextasnum)==0):
+     pass;
+    catfp.seek(fseeknextasnum, 0);
+   else
+    return False;
    il = il + 1;
  realidnum = 0;
  countnum = seekstart;
@@ -4149,10 +4200,11 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=Fals
    prefdev_major = int(preheaderdata[22], 16);
    prefrdev_minor = int(preheaderdata[23], 16);
    prefrdev_major = int(preheaderdata[24], 16);
-   prefextrasize = int(preheaderdata[25], 16);
-   prefextrafields = int(preheaderdata[26], 16);
+   prefseeknextfile = preheaderdata[25];
+   prefextrasize = int(preheaderdata[26], 16);
+   prefextrafields = int(preheaderdata[27], 16);
    extrafieldslist = [];
-   extrastart = 27;
+   extrastart = 28;
    extraend = extrastart + prefextrafields;
    extrafieldslist = [];
    if(extrastart<extraend):
@@ -4189,7 +4241,23 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=Fals
      VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
      VerbosePrintOut("'" + str(prefccs) + "' != " + "'" + str(prenewfccs) + "'");
      return False;
-   catfp.seek(1, 1);
+   if(re.findall("^\+([0-9]+)", prefseeknextfile)):
+    fseeknextasnum = int(prefseeknextfile.replace("+", ""));
+    if(abs(fseeknextasnum)==0):
+     pass;
+    catfp.seek(fseeknextasnum, 1);
+   elif(re.findall("^\-([0-9]+)", prefseeknextfile)):
+    fseeknextasnum = int(prefseeknextfile);
+    if(abs(fseeknextasnum)==0):
+     pass;
+    catfp.seek(fseeknextasnum, 1);
+   elif(re.findall("^([0-9]+)", prefseeknextfile)):
+    fseeknextasnum = int(prefseeknextfile);
+    if(abs(fseeknextasnum)==0):
+     pass;
+    catfp.seek(fseeknextasnum, 0);
+   else
+    return False;
    il = il + 1;
  catfp.seek(seekstart, 0);
  fileidnum = il;
@@ -4407,7 +4475,23 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksu
      VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
      VerbosePrintOut("'" + str(prefccs) + "' != " + "'" + str(prenewfccs) + "'");
      return False;
-   catfp.seek(1, 1);
+   if(re.findall("^\+([0-9]+)", prefseeknextfile)):
+    fseeknextasnum = int(prefseeknextfile.replace("+", ""));
+    if(abs(fseeknextasnum)==0):
+     pass;
+    catfp.seek(fseeknextasnum, 1);
+   elif(re.findall("^\-([0-9]+)", prefseeknextfile)):
+    fseeknextasnum = int(prefseeknextfile);
+    if(abs(fseeknextasnum)==0):
+     pass;
+    catfp.seek(fseeknextasnum, 1);
+   elif(re.findall("^([0-9]+)", prefseeknextfile)):
+    fseeknextasnum = int(prefseeknextfile);
+    if(abs(fseeknextasnum)==0):
+     pass;
+    catfp.seek(fseeknextasnum, 0);
+   else
+    return False;
    il = il + 1;
    filefound = False;
    prefname = preheaderdata[2];
@@ -4661,7 +4745,23 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
     invalid_archive = True;
   if(verbose):
    VerbosePrintOut("");
-  catfp.seek(1, 1);
+  if(re.findall("^\+([0-9]+)", catfseeknextfile)):
+   fseeknextasnum = int(catfseeknextfile.replace("+", ""));
+   if(abs(fseeknextasnum)==0):
+    pass;
+   catfp.seek(fseeknextasnum, 1);
+  elif(re.findall("^\-([0-9]+)", catfseeknextfile)):
+   fseeknextasnum = int(catfseeknextfile);
+   if(abs(fseeknextasnum)==0):
+    pass;
+   catfp.seek(fseeknextasnum, 1);
+  elif(re.findall("^([0-9]+)", catfseeknextfile)):
+   fseeknextasnum = int(catfseeknextfile);
+   if(abs(fseeknextasnum)==0):
+    pass;
+   catfp.seek(fseeknextasnum, 0);
+  else
+   return False;
   il = il + 1;
  if(valid_archive):
   if(returnfp):
@@ -4811,6 +4911,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
    prefsize = int(preheaderdata[5], 16);
    prefcompression = preheaderdata[12];
    prefcsize = int(preheaderdata[13], 16);
+   prefseeknextfile = preheaderdata[25];
    prefextrasize = int(preheaderdata[26], 16);
    prefextrafields = int(preheaderdata[27], 16);
    extrafieldslist = [];
@@ -4851,7 +4952,23 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
      VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
      VerbosePrintOut("'" + str(prefccs) + "' != " + "'" + str(prenewfccs) + "'");
      return False;
-   catfp.seek(1, 1);
+   if(re.findall("^\+([0-9]+)", prefseeknextfile)):
+    fseeknextasnum = int(prefseeknextfile.replace("+", ""));
+    if(abs(fseeknextasnum)==0):
+     pass;
+    catfp.seek(fseeknextasnum, 1);
+   elif(re.findall("^\-([0-9]+)", prefseeknextfile)):
+    fseeknextasnum = int(prefseeknextfile);
+    if(abs(fseeknextasnum)==0):
+     pass;
+    catfp.seek(fseeknextasnum, 1);
+   elif(re.findall("^([0-9]+)", prefseeknextfile)):
+    fseeknextasnum = int(prefseeknextfile);
+    if(abs(fseeknextasnum)==0):
+     pass;
+    catfp.seek(fseeknextasnum, 0);
+   else
+    return False;
    il = il + 1;
  fileidnum = seekstart;
  realidnum = 0;
@@ -4948,7 +5065,23 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
    else:
     catfp.seek(catfcsize, 1);
    pyhascontents = False;
-  catfp.seek(1, 1);
+  if(re.findall("^\+([0-9]+)", catfseeknextfile)):
+   fseeknextasnum = int(catfseeknextfile.replace("+", ""));
+   if(abs(fseeknextasnum)==0):
+    pass;
+   catfp.seek(fseeknextasnum, 1);
+  elif(re.findall("^\-([0-9]+)", catfseeknextfile)):
+   fseeknextasnum = int(catfseeknextfile);
+   if(abs(fseeknextasnum)==0):
+    pass;
+   catfp.seek(fseeknextasnum, 1);
+  elif(re.findall("^([0-9]+)", catfseeknextfile)):
+   fseeknextasnum = int(catfseeknextfile);
+   if(abs(fseeknextasnum)==0):
+    pass;
+   catfp.seek(fseeknextasnum, 0);
+  else
+   return False;
   catfcontentend = catfp.tell() - 1;
   catfcontents.seek(0, 0);
   catlist['ffilelist'].append({'fid': realidnum, 'fidalt': fileidnum, 'fheadersize': catfheadsize, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmode': catfchmode, 'ftypemod': catftypemod, 'fwinattributes': catfwinattributes, 'fcompression': catfcompression, 'fcsize': catfcsize, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': catfinode, 'flinkcount': catflinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fseeknextfile': catfseeknextfile, 'fchecksumtype': catfchecksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': catfextrasize, 'fextralist': extrafieldslist, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents});
