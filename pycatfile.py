@@ -853,7 +853,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, ski
  HeaderOut = ReadFileHeaderDataBySize(fp, delimiter);
  if(len(HeaderOut)==0):
   return False;
- if(re.findall("^[.|/]", HeaderOut[3])):
+ if(re.findall(r"^[.|/]", HeaderOut[3])):
   fname = HeaderOut[3];
  else:
   fname = "./"+HeaderOut[3];
@@ -894,22 +894,22 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, ski
   fcontents.seek(0, 0);
   if(uncompress):
    fcontents = UncompressArchiveFile(fcontents, formatspecs);
- if(re.findall("^\+([0-9]+)", fseeknextfile)):
+ if(re.findall(r"^\+([0-9]+)", fseeknextfile)):
   fseeknextasnum = int(fseeknextfile.replace("+", ""));
   if(abs(fseeknextasnum)==0):
    pass;
   fp.seek(fseeknextasnum, 1);
- elif(re.findall("^\-([0-9]+)", fseeknextfile)):
+ elif(re.findall(r"^\-([0-9]+)", fseeknextfile)):
   fseeknextasnum = int(fseeknextfile);
   if(abs(fseeknextasnum)==0):
    pass;
   fp.seek(fseeknextasnum, 1);
- elif(re.findall("^([0-9]+)", fseeknextfile)):
+ elif(re.findall(r"^([0-9]+)", fseeknextfile)):
   fseeknextasnum = int(fseeknextfile);
   if(abs(fseeknextasnum)==0):
    pass;
   fp.seek(fseeknextasnum, 0);
- else
+ else:
   return False;
  fcontentend = fp.tell() - 1;
  HeaderOut.append(fcontents);
@@ -928,7 +928,7 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, uncompress=Tr
  fheadsize = int(HeaderOut[0], 16);
  fnumfields = int(HeaderOut[1], 16);
  ftype = int(HeaderOut[2], 16);
- if(re.findall("^[.|/]", HeaderOut[3])):
+ if(re.findall(r"^[.|/]", HeaderOut[3])):
   fname = HeaderOut[3];
  else:
   fname = "./"+HeaderOut[3];
@@ -1039,7 +1039,7 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
  fheadsize = int(HeaderOut[0], 16);
  fnumfields = int(HeaderOut[1], 16);
  ftype = int(HeaderOut[2], 16);
- if(re.findall("^[.|/]", HeaderOut[3])):
+ if(re.findall(r"^[.|/]", HeaderOut[3])):
   fname = HeaderOut[3];
  else:
   fname = "./"+HeaderOut[3];
@@ -1221,22 +1221,22 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
      VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
      VerbosePrintOut("'" + str(prefccs) + "' != " + "'" + str(prenewfccs) + "'");
      return False;
-   if(re.findall("^\+([0-9]+)", prefseeknextfile)):
+   if(re.findall(r"^\+([0-9]+)", prefseeknextfile)):
     fseeknextasnum = int(prefseeknextfile.replace("+", ""));
     if(abs(fseeknextasnum)==0):
      pass;
     fp.seek(fseeknextasnum, 1);
-   elif(re.findall("^\-([0-9]+)", prefseeknextfile)):
+   elif(re.findall(r"^\-([0-9]+)", prefseeknextfile)):
     fseeknextasnum = int(prefseeknextfile);
     if(abs(fseeknextasnum)==0):
      pass;
     fp.seek(fseeknextasnum, 1);
-   elif(re.findall("^([0-9]+)", prefseeknextfile)):
+   elif(re.findall(r"^([0-9]+)", prefseeknextfile)):
     fseeknextasnum = int(prefseeknextfile);
     if(abs(fseeknextasnum)==0):
      pass;
     fp.seek(fseeknextasnum, 0);
-   else
+   else:
     return False;
    il = il + 1;
  realidnum = 0;
@@ -1315,22 +1315,22 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
      VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
      VerbosePrintOut("'" + str(prefccs) + "' != " + "'" + str(prenewfccs) + "'");
      return False;
-   if(re.findall("^\+([0-9]+)", prefseeknextfile)):
+   if(re.findall(r"^\+([0-9]+)", prefseeknextfile)):
     fseeknextasnum = int(prefseeknextfile.replace("+", ""));
     if(abs(fseeknextasnum)==0):
      pass;
     catfp.seek(fseeknextasnum, 1);
-   elif(re.findall("^\-([0-9]+)", prefseeknextfile)):
+   elif(re.findall(r"^\-([0-9]+)", prefseeknextfile)):
     fseeknextasnum = int(prefseeknextfile);
     if(abs(fseeknextasnum)==0):
      pass;
     catfp.seek(fseeknextasnum, 1);
-   elif(re.findall("^([0-9]+)", prefseeknextfile)):
+   elif(re.findall(r"^([0-9]+)", prefseeknextfile)):
     fseeknextasnum = int(prefseeknextfile);
     if(abs(fseeknextasnum)==0):
      pass;
     catfp.seek(fseeknextasnum, 0);
-   else
+   else:
     return False;
    il = il + 1;
  realidnum = 0;
@@ -1626,7 +1626,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
  fnumfiles = format(numfiles, 'x').lower();
  AppendFileHeader(fp, fnumfiles, checksumtype, formatspecs);
  for curfname in GetDirList:
-  if(re.findall("^[.|/]", curfname)):
+  if(re.findall(r"^[.|/]", curfname)):
    fname = curfname;
   else:
    fname = "./"+curfname;
@@ -1864,7 +1864,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
  AppendFileHeader(fp, fnumfiles, checksumtype, formatspecs);
  for curfname in GetDirList:
   ftype = format(curfname[0], 'x').lower();
-  if(re.findall("^[.|/]", curfname[1])):
+  if(re.findall(r"^[.|/]", curfname[1])):
    fname = curfname[1];
   else:
    fname = "./"+curfname[1];
@@ -2803,7 +2803,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
  numfiles = int(len(GetDirList));
  catfp = AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
  for curfname in GetDirList:
-  if(re.findall("^[.|/]", curfname)):
+  if(re.findall(r"^[.|/]", curfname)):
    fname = curfname;
   else:
    fname = "./"+curfname;
@@ -3138,7 +3138,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
  numfiles = int(len(tarfp.getmembers()));
  catfp = AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
  for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
-  if(re.findall("^[.|/]", member.name)):
+  if(re.findall(r"^[.|/]", member.name)):
    fname = member.name;
   else:
    fname = "./"+member.name;
@@ -3362,7 +3362,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
  numfiles = int(len(zipfp.infolist()));
  catfp = AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
  for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
-  if(re.findall("^[.|/]", member.filename)):
+  if(re.findall(r"^[.|/]", member.filename)):
    fname = member.filename;
   else:
    fname = "./"+member.filename;
@@ -3617,7 +3617,7 @@ if(rarfile_support):
    else:
     is_unix = False;
     is_windows = False;
-   if(re.findall("^[.|/]", member.filename)):
+   if(re.findall(r"^[.|/]", member.filename)):
     fname = member.filename;
    else:
     fname = "./"+member.filename;
@@ -3865,7 +3865,7 @@ if(py7zr_support):
   numfiles = int(len(szpfp.list()));
   AppendFileHeader(catfp, numfiles, checksumtype, formatspecs);
   for member in sorted(szpfp.list(), key=lambda x: x.filename):
-   if(re.findall("^[.|/]", member.filename)):
+   if(re.findall(r"^[.|/]", member.filename)):
     fname = member.filename;
    else:
     fname = "./"+member.filename;
@@ -4172,7 +4172,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=Fals
    prefheadsize = int(preheaderdata[0], 16);
    prefnumfields = int(preheaderdata[1], 16);
    preftype = int(preheaderdata[2], 16);
-   if(re.findall("^[.|/]", preheaderdata[3])):
+   if(re.findall(r"^[.|/]", preheaderdata[3])):
     prefname = preheaderdata[3];
    else:
     prefname = "./"+preheaderdata[3];
@@ -4241,22 +4241,22 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=Fals
      VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
      VerbosePrintOut("'" + str(prefccs) + "' != " + "'" + str(prenewfccs) + "'");
      return False;
-   if(re.findall("^\+([0-9]+)", prefseeknextfile)):
+   if(re.findall(r"^\+([0-9]+)", prefseeknextfile)):
     fseeknextasnum = int(prefseeknextfile.replace("+", ""));
     if(abs(fseeknextasnum)==0):
      pass;
     catfp.seek(fseeknextasnum, 1);
-   elif(re.findall("^\-([0-9]+)", prefseeknextfile)):
+   elif(re.findall(r"^\-([0-9]+)", prefseeknextfile)):
     fseeknextasnum = int(prefseeknextfile);
     if(abs(fseeknextasnum)==0):
      pass;
     catfp.seek(fseeknextasnum, 1);
-   elif(re.findall("^([0-9]+)", prefseeknextfile)):
+   elif(re.findall(r"^([0-9]+)", prefseeknextfile)):
     fseeknextasnum = int(prefseeknextfile);
     if(abs(fseeknextasnum)==0):
      pass;
     catfp.seek(fseeknextasnum, 0);
-   else
+   else:
     return False;
    il = il + 1;
  catfp.seek(seekstart, 0);
@@ -4264,7 +4264,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=Fals
  catfheadsize = int(preheaderdata[0], 16);
  catfnumfields = int(preheaderdata[1], 16);
  catftype = int(preheaderdata[2], 16);
- if(re.findall("^[.|/]", preheaderdata[3])):
+ if(re.findall(r"^[.|/]", preheaderdata[3])):
   catfname = preheaderdata[3];
  else:
   catfname = "./"+preheaderdata[3];
@@ -4406,7 +4406,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksu
    prefheadsize = int(preheaderdata[0], 16);
    prefnumfields = int(preheaderdata[1], 16);
    preftype = int(preheaderdata[2], 16);
-   if(re.findall("^[.|/]", preheaderdata[3])):
+   if(re.findall(r"^[.|/]", preheaderdata[3])):
     prefname = preheaderdata[3];
    else:
     prefname = "./"+preheaderdata[3];
@@ -4475,27 +4475,27 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksu
      VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
      VerbosePrintOut("'" + str(prefccs) + "' != " + "'" + str(prenewfccs) + "'");
      return False;
-   if(re.findall("^\+([0-9]+)", prefseeknextfile)):
+   if(re.findall(r"^\+([0-9]+)", prefseeknextfile)):
     fseeknextasnum = int(prefseeknextfile.replace("+", ""));
     if(abs(fseeknextasnum)==0):
      pass;
     catfp.seek(fseeknextasnum, 1);
-   elif(re.findall("^\-([0-9]+)", prefseeknextfile)):
+   elif(re.findall(r"^\-([0-9]+)", prefseeknextfile)):
     fseeknextasnum = int(prefseeknextfile);
     if(abs(fseeknextasnum)==0):
      pass;
     catfp.seek(fseeknextasnum, 1);
-   elif(re.findall("^([0-9]+)", prefseeknextfile)):
+   elif(re.findall(r"^([0-9]+)", prefseeknextfile)):
     fseeknextasnum = int(prefseeknextfile);
     if(abs(fseeknextasnum)==0):
      pass;
     catfp.seek(fseeknextasnum, 0);
-   else
+   else:
     return False;
    il = il + 1;
    filefound = False;
    prefname = preheaderdata[2];
-   if(re.findall("^[.|/]", preheaderdata[2])):
+   if(re.findall(r"^[.|/]", preheaderdata[2])):
     prefname = preheaderdata[2];
    else:
     prefname = "./"+preheaderdata[2];
@@ -4507,7 +4507,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksu
  catfheadsize = int(preheaderdata[0], 16);
  catfnumfields = int(preheaderdata[1], 16);
  catftype = int(preheaderdata[2], 16);
- if(re.findall("^[.|/]", preheaderdata[3])):
+ if(re.findall(r"^[.|/]", preheaderdata[3])):
   catfname = preheaderdata[3];
  else:
   catfname = "./"+preheaderdata[3];
@@ -4661,7 +4661,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
   catfheadsize = int(catheaderdata[0], 16);
   catfnumfields = int(catheaderdata[1], 16);
   catftype = int(catheaderdata[2], 16);
-  if(re.findall("^[.|/]", catheaderdata[3])):
+  if(re.findall(r"^[.|/]", catheaderdata[3])):
    catfname = catheaderdata[3];
   else:
    catfname = "./"+catheaderdata[3];
@@ -4745,22 +4745,22 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
     invalid_archive = True;
   if(verbose):
    VerbosePrintOut("");
-  if(re.findall("^\+([0-9]+)", catfseeknextfile)):
+  if(re.findall(r"^\+([0-9]+)", catfseeknextfile)):
    fseeknextasnum = int(catfseeknextfile.replace("+", ""));
    if(abs(fseeknextasnum)==0):
     pass;
    catfp.seek(fseeknextasnum, 1);
-  elif(re.findall("^\-([0-9]+)", catfseeknextfile)):
+  elif(re.findall(r"^\-([0-9]+)", catfseeknextfile)):
    fseeknextasnum = int(catfseeknextfile);
    if(abs(fseeknextasnum)==0):
     pass;
    catfp.seek(fseeknextasnum, 1);
-  elif(re.findall("^([0-9]+)", catfseeknextfile)):
+  elif(re.findall(r"^([0-9]+)", catfseeknextfile)):
    fseeknextasnum = int(catfseeknextfile);
    if(abs(fseeknextasnum)==0):
     pass;
    catfp.seek(fseeknextasnum, 0);
-  else
+  else:
    return False;
   il = il + 1;
  if(valid_archive):
@@ -4904,7 +4904,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
     break;
    prefheadsize = int(preheaderdata[0], 16);
    prefnumfields = int(preheaderdata[1], 16);
-   if(re.findall("^[.|/]", preheaderdata[3])):
+   if(re.findall(r"^[.|/]", preheaderdata[3])):
     prefname = preheaderdata[3];
    else:
     prefname = "./"+preheaderdata[3];
@@ -4952,22 +4952,22 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
      VerbosePrintOut("File Content Checksum Error with file " + prefname + " at offset " + str(prefcontentstart));
      VerbosePrintOut("'" + str(prefccs) + "' != " + "'" + str(prenewfccs) + "'");
      return False;
-   if(re.findall("^\+([0-9]+)", prefseeknextfile)):
+   if(re.findall(r"^\+([0-9]+)", prefseeknextfile)):
     fseeknextasnum = int(prefseeknextfile.replace("+", ""));
     if(abs(fseeknextasnum)==0):
      pass;
     catfp.seek(fseeknextasnum, 1);
-   elif(re.findall("^\-([0-9]+)", prefseeknextfile)):
+   elif(re.findall(r"^\-([0-9]+)", prefseeknextfile)):
     fseeknextasnum = int(prefseeknextfile);
     if(abs(fseeknextasnum)==0):
      pass;
     catfp.seek(fseeknextasnum, 1);
-   elif(re.findall("^([0-9]+)", prefseeknextfile)):
+   elif(re.findall(r"^([0-9]+)", prefseeknextfile)):
     fseeknextasnum = int(prefseeknextfile);
     if(abs(fseeknextasnum)==0):
      pass;
     catfp.seek(fseeknextasnum, 0);
-   else
+   else:
     return False;
    il = il + 1;
  fileidnum = seekstart;
@@ -4983,7 +4983,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
   catfheadsize = int(catheaderdata[0], 16);
   catfnumfields = int(catheaderdata[1], 16);
   catftype = int(catheaderdata[2], 16);
-  if(re.findall("^[.|/]", catheaderdata[3])):
+  if(re.findall(r"^[.|/]", catheaderdata[3])):
    catfname = catheaderdata[3];
   else:
    catfname = "./"+catheaderdata[3];
@@ -5065,22 +5065,22 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
    else:
     catfp.seek(catfcsize, 1);
    pyhascontents = False;
-  if(re.findall("^\+([0-9]+)", catfseeknextfile)):
+  if(re.findall(r"^\+([0-9]+)", catfseeknextfile)):
    fseeknextasnum = int(catfseeknextfile.replace("+", ""));
    if(abs(fseeknextasnum)==0):
     pass;
    catfp.seek(fseeknextasnum, 1);
-  elif(re.findall("^\-([0-9]+)", catfseeknextfile)):
+  elif(re.findall(r"^\-([0-9]+)", catfseeknextfile)):
    fseeknextasnum = int(catfseeknextfile);
    if(abs(fseeknextasnum)==0):
     pass;
    catfp.seek(fseeknextasnum, 1);
-  elif(re.findall("^([0-9]+)", catfseeknextfile)):
+  elif(re.findall(r"^([0-9]+)", catfseeknextfile)):
    fseeknextasnum = int(catfseeknextfile);
    if(abs(fseeknextasnum)==0):
     pass;
    catfp.seek(fseeknextasnum, 0);
-  else
+  else:
    return False;
   catfcontentend = catfp.tell() - 1;
   catfcontents.seek(0, 0);
@@ -5209,7 +5209,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
  catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': []};
  for curfname in GetDirList:
   catfhstart = fheadtell;
-  if(re.findall("^[.|/]", curfname)):
+  if(re.findall(r"^[.|/]", curfname)):
    fname = curfname;
   else:
    fname = "./"+curfname;
@@ -5443,7 +5443,7 @@ def TarFileToArrayAlt(infile, listonly=False, checksumtype="crc32", extradata=[]
  catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': []};
  for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
   catfhstart = fheadtell;
-  if(re.findall("^[.|/]", member.name)):
+  if(re.findall(r"^[.|/]", member.name)):
    fname = member.name;
   else:
    fname = "./"+member.name;
@@ -5619,7 +5619,7 @@ def ZipFileToArrayAlt(infile, listonly=False, checksumtype="crc32", extradata=[]
  catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': []};
  for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
   catfhstart = fheadtell;
-  if(re.findall("^[.|/]", member.filename)):
+  if(re.findall(r"^[.|/]", member.filename)):
    fname = member.filename;
   else:
    fname = "./"+member.filename;
@@ -5821,7 +5821,7 @@ if(rarfile_support):
    else:
     is_unix = False;
     is_windows = False;
-   if(re.findall("^[.|/]", member.filename)):
+   if(re.findall(r"^[.|/]", member.filename)):
     fname = member.filename;
    else:
     fname = "./"+member.filename;
@@ -6017,7 +6017,7 @@ if(py7zr_support):
   catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': []};
   for member in sorted(szpfp.list(), key=lambda x: x.filename):
    catfhstart = fheadtell;
-   if(re.findall("^[.|/]", member.filename)):
+   if(re.findall(r"^[.|/]", member.filename)):
     fname = member.filename;
    else:
     fname = "./"+member.filename;
@@ -6290,7 +6290,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
  filetoinode = {};
  reallcfi = 0;
  while(lcfi < lcfx):
-  if(re.findall("^[.|/]", listcatfiles['ffilelist'][reallcfi]['fname'])):
+  if(re.findall(r"^[.|/]", listcatfiles['ffilelist'][reallcfi]['fname'])):
    fname = listcatfiles['ffilelist'][reallcfi]['fname'];
   else:
    fname = "./"+listcatfiles['ffilelist'][reallcfi]['fname'];
@@ -7117,7 +7117,7 @@ if(py7zr_support):
   if(sztestalt):
    VerbosePrintOut("Bad file found!");
   for member in sorted(szpfp.list(), key=lambda x: x.filename):
-   if(re.findall("^[.|/]", member.filename)):
+   if(re.findall(r"^[.|/]", member.filename)):
     fname = member.filename;
    else:
     fname = "./"+member.filename;
