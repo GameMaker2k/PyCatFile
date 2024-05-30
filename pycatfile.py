@@ -894,6 +894,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, ski
   fcontents.seek(0, 0);
   if(uncompress):
    fcontents = UncompressArchiveFile(fcontents, formatspecs);
+ fcontentend = fp.tell();
  if(re.findall(r"^\+([0-9]+)", fseeknextfile)):
   fseeknextasnum = int(fseeknextfile.replace("+", ""));
   if(abs(fseeknextasnum)==0):
@@ -910,8 +911,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, ski
    pass;
   fp.seek(fseeknextasnum, 0);
  else:
-  return False;
- fcontentend = fp.tell() - 1;
+  return False;;
  HeaderOut.append(fcontents);
  return HeaderOut;
 
@@ -1004,6 +1004,7 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, uncompress=Tr
    fcontents = UncompressArchiveFile(fcontents, formatspecs);
    fcontents.seek(0, 0);
    fccs = GetFileChecksum(fcontents.read(), HeaderOut[-3].lower(), False, formatspecs);
+ fcontentend = fp.tell() - 1;
  if(re.findall(r"^\+([0-9]+)", fseeknextfile)):
   fseeknextasnum = int(fseeknextfile.replace("+", ""));
   if(abs(fseeknextasnum)==0):
@@ -1021,7 +1022,6 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, uncompress=Tr
   fp.seek(fseeknextasnum, 0);
  else:
   return False;
- fcontentend = fp.tell() - 1;
  fcontents.seek(0, 0);
  catlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor, 'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fseeknextfile': fseeknextfile, 'fchecksumtype': fchecksumtype, 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextralist': extrafieldslist, 'fheaderchecksum': fcs, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontents': fcontents};
  return catlist;
@@ -1114,6 +1114,7 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
   if(uncompress):
    fcontents = UncompressArchiveFile(fcontents, formatspecs);
    fcontents.seek(0, 0);
+ fcontentend = fp.tell() - 1;
  if(re.findall(r"^\+([0-9]+)", fseeknextfile)):
   fseeknextasnum = int(fseeknextfile.replace("+", ""));
   if(abs(fseeknextasnum)==0):
@@ -1131,7 +1132,6 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
   fp.seek(fseeknextasnum, 0);
  else:
   return False;
- fcontentend = fp.tell() - 1;
  catlist = [ftype, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, fseeknextfile, extrafieldslist, fchecksumtype, fcontents];
  return catlist;
 
@@ -5065,6 +5065,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
    else:
     catfp.seek(catfcsize, 1);
    pyhascontents = False;
+  fcontentend = catfp.tell() - 1;
   if(re.findall(r"^\+([0-9]+)", catfseeknextfile)):
    fseeknextasnum = int(catfseeknextfile.replace("+", ""));
    if(abs(fseeknextasnum)==0):
@@ -5082,7 +5083,6 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
    catfp.seek(fseeknextasnum, 0);
   else:
    return False;
-  catfcontentend = catfp.tell() - 1;
   catfcontents.seek(0, 0);
   catlist['ffilelist'].append({'fid': realidnum, 'fidalt': fileidnum, 'fheadersize': catfheadsize, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmode': catfchmode, 'ftypemod': catftypemod, 'fwinattributes': catfwinattributes, 'fcompression': catfcompression, 'fcsize': catfcsize, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': catfinode, 'flinkcount': catflinkcount, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fseeknextfile': catfseeknextfile, 'fchecksumtype': catfchecksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': catfextrasize, 'fextralist': extrafieldslist, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontents': catfcontents});
   fileidnum = fileidnum + 1;
