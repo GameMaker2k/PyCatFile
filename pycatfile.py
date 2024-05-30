@@ -911,7 +911,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, ski
    pass;
   fp.seek(fseeknextasnum, 0);
  else:
-  return False;;
+  return False;
  HeaderOut.append(fcontents);
  return HeaderOut;
 
