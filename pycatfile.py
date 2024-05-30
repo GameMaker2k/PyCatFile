@@ -5065,7 +5065,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
    else:
     catfp.seek(catfcsize, 1);
    pyhascontents = False;
-  fcontentend = catfp.tell() - 1;
+  catfcontentend = catfp.tell();
   if(re.findall(r"^\+([0-9]+)", catfseeknextfile)):
    fseeknextasnum = int(catfseeknextfile.replace("+", ""));
    if(abs(fseeknextasnum)==0):
