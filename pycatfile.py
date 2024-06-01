@@ -979,8 +979,8 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, uncompress=Tr
  if(extrastart<extraend):
   extrafieldslist.append(HeaderOut[extrastart]);
   extrastart = extrastart + 1;
- fcs = HeaderOut[extrastart + 2].lower();
- fccs = HeaderOut[extrastart + 3].lower();
+ fcs = HeaderOut[-2].lower();
+ fccs = HeaderOut[-1].lower();
  newfcs = GetHeaderChecksum(HeaderOut[:-2], HeaderOut[-4].lower(), True, formatspecs);
  if(fcs!=newfcs and not skipchecksum):
   VerbosePrintOut("File Header Checksum Error with file " + fname + " at offset " + str(fheaderstart));
@@ -1091,8 +1091,8 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
   extrastart = extrastart + 1;
  fheaderchecksumtype = [extrastart].lower();
  fcontentchecksumtype = [extrastart + 1].lower();
- fcs = HeaderOut[extrastart + 2].lower();
- fccs = HeaderOut[extrastart + 3].lower();
+ fcs = HeaderOut[-2].lower();
+ fccs = HeaderOut[-1].lower();
  newfcs = GetHeaderChecksum(HeaderOut[:-2], HeaderOut[-4].lower(), True, formatspecs);
  if(fcs!=newfcs and not skipchecksum):
   VerbosePrintOut("File Header Checksum Error with file " + fname + " at offset " + str(fheaderstart));
@@ -4224,8 +4224,8 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=Fals
    if(extrastart<extraend):
     extrafieldslist.append(preheaderdata[extrastart]);
     extrastart = extrastart + 1;
-   prefcs = preheaderdata[extrastart + 2].lower();
-   prefccs = preheaderdata[extrastart + 3].lower();
+   prefcs = preheaderdata[-2].lower();
+   prenewfcs = preheaderdata[-1].lower();
    prenewfcs = GetHeaderChecksum(preheaderdata[:-2], preheaderdata[-4].lower(), True, formatspecs);
    if(prefcs!=prenewfcs and not skipchecksum):
     VerbosePrintOut("File Header Checksum Error with file " + prefname + " at offset " + str(prefhstart));
@@ -4451,8 +4451,8 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksu
    if(extrastart<extraend):
     extrafieldslist.append(preheaderdata[extrastart]);
     extrastart = extrastart + 1;
-   prefcs = preheaderdata[extrastart + 2].lower();
-   prefccs = preheaderdata[extrastart + 3].lower();
+   prefcs = preheaderdata[-2].lower();
+   prenewfcs = preheaderdata[-1].lower();
    prenewfcs = GetHeaderChecksum(preheaderdata[:-2], preheaderdata[-4].lower(), True, formatspecs);
    if(prefcs!=prenewfcs and not skipchecksum):
     VerbosePrintOut("File Header Checksum Error with file " + prefname + " at offset " + str(prefhstart));
@@ -4699,8 +4699,8 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
   if(extrastart<extraend):
    extrafieldslist.append(catheaderdata[extrastart]);
    extrastart = extrastart + 1;
-  catfcs = catheaderdata[extrastart + 2].lower();
-  catfccs = catheaderdata[extrastart + 3].lower();
+  catfcs = catheaderdata[-2].lower();
+  catfccs = catheaderdata[-1].lower();
   catnewfcs = GetHeaderChecksum(catheaderdata[:-2], catheaderdata[-4].lower(), True, formatspecs);
   if(verbose):
    VerbosePrintOut(catfname);
@@ -4914,8 +4914,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
    if(extrastart<extraend):
     extrafieldslist.append(preheaderdata[extrastart]);
     extrastart = extrastart + 1;
-   prefcs = preheaderdata[extrastart + 2].lower();
-   prefccs = preheaderdata[extrastart + 3].lower();
+   prefcs = preheaderdata[-2].lower();
+   prenewfcs = preheaderdata[-1].lower();
    prenewfcs = GetHeaderChecksum(preheaderdata[:-2], preheaderdata[-4].lower(), True, formatspecs);
    if(prefcs!=prenewfcs and not skipchecksum):
     VerbosePrintOut("File Header Checksum Error with file " + prefname + " at offset " + str(prefhstart));
@@ -5007,8 +5007,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
   if(extrastart<extraend):
    extrafieldslist.append(catheaderdata[extrastart]);
    extrastart = extrastart + 1;
-  catfcs = catheaderdata[extrastart + 2].lower();
-  catfccs = catheaderdata[extrastart + 3].lower();
+  catfcs = catheaderdata[-2].lower();
+  catfccs = catheaderdata[-1].lower();
   catnewfcs = GetHeaderChecksum(catheaderdata[:-2], catheaderdata[-4].lower(), True, formatspecs);
   if(catfcs!=catnewfcs and not skipchecksum):
    VerbosePrintOut("File Header Checksum Error with file " + catfname + " at offset " + str(catfhstart));
