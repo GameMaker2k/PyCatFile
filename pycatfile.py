@@ -4049,7 +4049,7 @@ def PackArchiveFileFromInFile(infile, outfile, compression="auto", compresswhole
  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
- if(checkcompressfile=="tarfile" and is_tarfile(infile)):
+ if(checkcompressfile=="tarfile" and TarFileCheck(infile)):
   return PackArchiveFileFromTarFile(infile, outfile, compression, compresswholefile, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
  elif(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
   return PackArchiveFileFromZipFile(infile, outfile, compression, compresswholefile, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
@@ -4072,7 +4072,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=Fals
   catfp.seek(0, 0);
   catfp = UncompressArchiveFile(catfp, formatspecs);
   checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True);
-  if(checkcompressfile=="tarfile" and is_tarfile(infile)):
+  if(checkcompressfile=="tarfile" and TarFileCheck(infile)):
    return TarFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
    return ZipFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
@@ -4106,7 +4106,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=Fals
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
-  if(checkcompressfile=="tarfile" and is_tarfile(infile)):
+  if(checkcompressfile=="tarfile" and TarFileCheck(infile)):
    return TarFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
    return ZipFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
@@ -4301,7 +4301,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksu
   catfp.seek(0, 0);
   catfp = UncompressArchiveFile(catfp, formatspecs);
   checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True);
-  if(checkcompressfile=="tarfile" and is_tarfile(infile)):
+  if(checkcompressfile=="tarfile" and TarFileCheck(infile)):
    return TarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
    return ZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
@@ -4335,7 +4335,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksu
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
-  if(checkcompressfile=="tarfile" and is_tarfile(infile)):
+  if(checkcompressfile=="tarfile" and TarFileCheck(infile)):
    return TarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
    return ZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
@@ -4542,7 +4542,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
   catfp.seek(0, 0);
   catfp = UncompressArchiveFile(catfp, formatspecs);
   checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True);
-  if(checkcompressfile=="tarfile" and is_tarfile(infile)):
+  if(checkcompressfile=="tarfile" and TarFileCheck(infile)):
    return TarFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
   if(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
    return ZipFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
@@ -4576,7 +4576,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
-  if(checkcompressfile=="tarfile" and is_tarfile(infile)):
+  if(checkcompressfile=="tarfile" and TarFileCheck(infile)):
    return TarFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
   if(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
    return ZipFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
@@ -4782,7 +4782,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
   catfp.seek(0, 0);
   catfp = UncompressArchiveFile(catfp, formatspecs);
   checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True);
-  if(checkcompressfile=="tarfile" and is_tarfile(infile)):
+  if(checkcompressfile=="tarfile" and TarFileCheck(infile)):
    return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
    return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
@@ -4816,7 +4816,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
-  if(checkcompressfile=="tarfile" and is_tarfile(infile)):
+  if(checkcompressfile=="tarfile" and TarFileCheck(infile)):
    return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
    return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
@@ -5130,7 +5130,7 @@ if(py7zr_support):
 def InFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
  formatspecs = FormatSpecsListToDict(formatspecs);
  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
- if(checkcompressfile=="tarfile" and is_tarfile(infile)):
+ if(checkcompressfile=="tarfile" and TarFileCheck(infile)):
   return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  elif(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
   return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
@@ -6169,7 +6169,7 @@ if(py7zr_support):
 def InFileToArrayAlt(infile, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
  formatspecs = FormatSpecsListToDict(formatspecs);
  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
- if(checkcompressfile=="tarfile" and is_tarfile(infile)):
+ if(checkcompressfile=="tarfile" and TarFileCheck(infile)):
   return TarFileToArrayAlt(infile, listonly, checksumtype, extradata, formatspecs, verbose);
  elif(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
   return ZipFileToArrayAlt(infile, listonly, checksumtype, extradata, formatspecs, verbose);
@@ -7227,7 +7227,7 @@ def InFileListFiles(infile, verbose=False, formatspecs=__file_format_dict__, ret
  formatspecs = FormatSpecsListToDict(formatspecs);
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
- if(checkcompressfile=="tarfile" and is_tarfile(infile)):
+ if(checkcompressfile=="tarfile" and TarFileCheck(infile)):
   return TarFileListFiles(infile, verbose, returnfp);
  elif(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
   return ZipFileListFiles(infile, verbose, returnfp);
