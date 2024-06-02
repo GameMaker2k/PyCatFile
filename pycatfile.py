@@ -2437,7 +2437,7 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
   return "zipfile";
  if(rarfile_support and compresscheck=="rarfile"):
   return "rarfile";
- if(py7zr_support and compresscheck=="7zipfile"):
+ if(py7zr_support and compresscheck=="7zipfile" and py7zr.is_7zfile(infile)):
   return "7zipfile";
  if(hasattr(infile, "read") or hasattr(infile, "write")):
   catfp = UncompressArchiveFile(infile, formatspecs['format_lower']);
@@ -4049,16 +4049,16 @@ def PackArchiveFileFromInFile(infile, outfile, compression="auto", compresswhole
  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
  if(verbose):
   logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
- if(checkcompressfile=="tarfile"):
+ if(checkcompressfile=="tarfile" and is_tarfile(infile)):
   return PackArchiveFileFromTarFile(infile, outfile, compression, compresswholefile, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
- elif(checkcompressfile=="zipfile"):
+ elif(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
   return PackArchiveFileFromZipFile(infile, outfile, compression, compresswholefile, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
+ elif(rarfile_support and checkcompressfile=="rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
+  return PackArchiveFileFromRarFile(infile, outfile, compression, compresswholefile, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
+ elif(py7zr_support and checkcompressfile=="7zipfile" and py7zr.is_7zfile(infile)):
+  return PackArchiveFileFromSevenZipFile(infile, outfile, compression, compresswholefile, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
  elif(checkcompressfile=="catfile"):
   return RePackArchiveFile(infile, outfile, compression, compresswholefile, compressionlevel, False, 0, 0, checksumtype, False, extradata, formatspecs, verbose, returnfp);
- elif(rarfile_support and checkcompressfile=="rarfile"):
-  return PackArchiveFileFromRarFile(infile, outfile, compression, compresswholefile, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
- elif(py7zr_support and checkcompressfile=="7zipfile"):
-  return PackArchiveFileFromSevenZipFile(infile, outfile, compression, compresswholefile, compressionlevel, checksumtype, extradata, formatspecs, verbose, returnfp);
  else:
   return False;
  return False;
@@ -4072,13 +4072,13 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=Fals
   catfp.seek(0, 0);
   catfp = UncompressArchiveFile(catfp, formatspecs);
   checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True);
-  if(checkcompressfile=="tarfile"):
+  if(checkcompressfile=="tarfile" and is_tarfile(infile)):
    return TarFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
-  if(checkcompressfile=="zipfile"):
+  if(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
    return ZipFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
-  if(rarfile_support and checkcompressfile=="rarfile"):
+  if(rarfile_support and checkcompressfile=="rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
    return RarFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
-  if(py7zr_support and checkcompressfile=="7zipfile"):
+  if(py7zr_support and checkcompressfile=="7zipfile" and py7zr.is_7zfile(infile)):
    return SevenZipFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs['format_lower']):
    return False;
@@ -4106,13 +4106,13 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=Fals
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
-  if(checkcompressfile=="tarfile"):
+  if(checkcompressfile=="tarfile" and is_tarfile(infile)):
    return TarFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
-  if(checkcompressfile=="zipfile"):
+  if(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
    return ZipFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
-  if(rarfile_support and checkcompressfile=="rarfile"):
+  if(rarfile_support and checkcompressfile=="rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
    return RarFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
-  if(py7zr_support and checkcompressfile=="7zipfile"):
+  if(py7zr_support and checkcompressfile=="7zipfile" and py7zr.is_7zfile(infile)):
    return SevenZipFileToArray(infile, seekto, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs['format_lower']):
    return False;
@@ -4301,13 +4301,13 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksu
   catfp.seek(0, 0);
   catfp = UncompressArchiveFile(catfp, formatspecs);
   checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True);
-  if(checkcompressfile=="tarfile"):
+  if(checkcompressfile=="tarfile" and is_tarfile(infile)):
    return TarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
-  if(checkcompressfile=="zipfile"):
+  if(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
    return ZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
-  if(rarfile_support and checkcompressfile=="rarfile"):
+  if(rarfile_support and checkcompressfile=="rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
    return RarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
-  if(py7zr_support and checkcompressfile=="7zipfile"):
+  if(py7zr_support and checkcompressfile=="7zipfile" and py7zr.is_7zfile(infile)):
    return SevenZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs['format_lower']):
    return False;
@@ -4335,13 +4335,13 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksu
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
-  if(checkcompressfile=="tarfile"):
+  if(checkcompressfile=="tarfile" and is_tarfile(infile)):
    return TarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
-  if(checkcompressfile=="zipfile"):
+  if(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
    return ZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
-  if(rarfile_support and checkcompressfile=="rarfile"):
+  if(rarfile_support and checkcompressfile=="rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
    return RarFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
-  if(py7zr_support and checkcompressfile=="7zipfile"):
+  if(py7zr_support and checkcompressfile=="7zipfile" and py7zr.is_7zfile(infile)):
    return SevenZipFileToArray(infile, 0, 0, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs['format_lower']):
    return False;
@@ -4542,13 +4542,13 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
   catfp.seek(0, 0);
   catfp = UncompressArchiveFile(catfp, formatspecs);
   checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True);
-  if(checkcompressfile=="tarfile"):
+  if(checkcompressfile=="tarfile" and is_tarfile(infile)):
    return TarFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
-  if(checkcompressfile=="zipfile"):
+  if(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
    return ZipFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
-  if(rarfile_support and checkcompressfile=="rarfile"):
+  if(rarfile_support and checkcompressfile=="rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
    return RarFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
-  if(py7zr_support and checkcompressfile=="7zipfile"):
+  if(py7zr_support and checkcompressfile=="7zipfile" and py7zr.is_7zfile(infile)):
    return SevenZipFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs['format_lower']):
    return False;
@@ -4576,13 +4576,13 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
-  if(checkcompressfile=="tarfile"):
+  if(checkcompressfile=="tarfile" and is_tarfile(infile)):
    return TarFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
-  if(checkcompressfile=="zipfile"):
+  if(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
    return ZipFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
-  if(rarfile_support and checkcompressfile=="rarfile"):
+  if(rarfile_support and checkcompressfile=="rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
    return RarFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
-  if(py7zr_support and checkcompressfile=="7zipfile"):
+  if(py7zr_support and checkcompressfile=="7zipfile" and py7zr.is_7zfile(infile)):
    return SevenZipFileToArray(infile, 0, 0, False, False, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs['format_lower']):
    return False;
@@ -4782,13 +4782,13 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
   catfp.seek(0, 0);
   catfp = UncompressArchiveFile(catfp, formatspecs);
   checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True);
-  if(checkcompressfile=="tarfile"):
+  if(checkcompressfile=="tarfile" and is_tarfile(infile)):
    return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
-  if(checkcompressfile=="zipfile"):
+  if(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
    return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
-  if(rarfile_support and checkcompressfile=="rarfile"):
+  if(rarfile_support and checkcompressfile=="rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
    return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
-  if(py7zr_support and checkcompressfile=="7zipfile"):
+  if(py7zr_support and checkcompressfile=="7zipfile" and py7zr.is_7zfile(infile)):
    return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs['format_lower']):
    return False;
@@ -4816,13 +4816,13 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
  else:
   infile = RemoveWindowsPath(infile);
   checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
-  if(checkcompressfile=="tarfile"):
+  if(checkcompressfile=="tarfile" and is_tarfile(infile)):
    return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
-  if(checkcompressfile=="zipfile"):
+  if(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
    return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
-  if(rarfile_support and checkcompressfile=="rarfile"):
+  if(rarfile_support and checkcompressfile=="rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
    return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
-  if(py7zr_support and checkcompressfile=="7zipfile"):
+  if(py7zr_support and checkcompressfile=="7zipfile" and py7zr.is_7zfile(infile)):
    return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
   if(checkcompressfile!="catfile" and checkcompressfile!=formatspecs['format_lower']):
    return False;
@@ -5130,16 +5130,16 @@ if(py7zr_support):
 def InFileToArray(infile, seekstart=0, seekend=0, listonly=False, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
  formatspecs = FormatSpecsListToDict(formatspecs);
  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
- if(checkcompressfile=="tarfile"):
+ if(checkcompressfile=="tarfile" and is_tarfile(infile)):
   return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
- elif(checkcompressfile=="zipfile"):
+ elif(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
   return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+ elif(rarfile_support and checkcompressfile=="rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
+  return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
+ elif(py7zr_support and checkcompressfile=="7zipfile" and py7zr.is_7zfile(infile)):
+  return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  elif(checkcompressfile=="catfile"):
   return ArchiveFileToArray(infile, seekstart, seekend, listonly, True, skipchecksum, formatspecs, returnfp);
- elif(rarfile_support and checkcompressfile=="rarfile"):
-  return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
- elif(py7zr_support and checkcompressfile=="7zipfile"):
-  return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp);
  else:
   return False;
  return False;
@@ -6169,16 +6169,16 @@ if(py7zr_support):
 def InFileToArrayAlt(infile, listonly=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
  formatspecs = FormatSpecsListToDict(formatspecs);
  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
- if(checkcompressfile=="tarfile"):
+ if(checkcompressfile=="tarfile" and is_tarfile(infile)):
   return TarFileToArrayAlt(infile, listonly, checksumtype, extradata, formatspecs, verbose);
- elif(checkcompressfile=="zipfile"):
+ elif(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
   return ZipFileToArrayAlt(infile, listonly, checksumtype, extradata, formatspecs, verbose);
+ elif(rarfile_support and checkcompressfile=="rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
+  return RarFileToArrayAlt(infile, listonly, checksumtype, extradata, formatspecs, verbose);
+ elif(py7zr_support and checkcompressfile=="7zipfile" and py7zr.is_7zfile(infile)):
+  return SevenZipFileToArrayAlt(infile, listonly, checksumtype, extradata, formatspecs, verbose);
  elif(checkcompressfile=="catfile"):
   return ArchiveFileToArray(infile, 0, 0, listonly, True, False, formatspecs, False);
- elif(rarfile_support and checkcompressfile=="rarfile"):
-  return RarFileToArrayAlt(infile, listonly, checksumtype, extradata, formatspecs, verbose);
- elif(py7zr_support and checkcompressfile=="7zipfile"):
-  return SevenZipFileToArrayAlt(infile, listonly, checksumtype, extradata, formatspecs, verbose);
  else:
   return False;
  return False;
@@ -7227,16 +7227,16 @@ def InFileListFiles(infile, verbose=False, formatspecs=__file_format_dict__, ret
  formatspecs = FormatSpecsListToDict(formatspecs);
  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
  checkcompressfile = CheckCompressionSubType(infile, formatspecs, True);
- if(checkcompressfile=="tarfile"):
+ if(checkcompressfile=="tarfile" and is_tarfile(infile)):
   return TarFileListFiles(infile, verbose, returnfp);
- elif(checkcompressfile=="zipfile"):
+ elif(checkcompressfile=="zipfile" and zipfile.is_zipfile(infile)):
   return ZipFileListFiles(infile, verbose, returnfp);
+ elif(rarfile_support and checkcompressfile=="rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
+  return RarFileListFiles(infile, verbose, returnfp);
+ elif(py7zr_support and checkcompressfile=="7zipfile" and py7zr.is_7zfile(infile)):
+  return SevenZipFileListFiles(infile, verbose, returnfp);
  elif(checkcompressfile=="catfile"):
   return ArchiveFileListFiles(infile, 0, 0, False, formatspecs, verbose, returnfp);
- elif(rarfile_support and checkcompressfile=="rarfile"):
-  return RarFileListFiles(infile, verbose, returnfp);
- elif(py7zr_support and checkcompressfile=="7zipfile"):
-  return SevenZipFileListFiles(infile, verbose, returnfp);
  else:
   return False;
  return False;
