@@ -1578,9 +1578,16 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
  catfileoutstr = AppendNullBytes(catoutlist, formatspecs['format_delimiter']);
  if(len(extradata)>0):
   catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs['format_delimiter']);
- catfileoutstr = catfileoutstr + AppendNullBytes([checksumtype, checksumtype], formatspecs['format_delimiter']);
+ if(len(filecontent)==0):
+  checksumlist = [checksumtype, "none"];
+ else:
+  checksumlist = [checksumtype, checksumtype];
+ catfileoutstr = catfileoutstr + AppendNullBytes(checksumlist, formatspecs['format_delimiter']);
  catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
- catfilecontentcshex = GetFileChecksum(filecontent, checksumtype, False, formatspecs);
+ if(len(filecontent)==0):
+  catfilecontentcshex = GetFileChecksum(filecontent, "none", False, formatspecs);
+ else:
+  catfilecontentcshex = GetFileChecksum(filecontent, checksumtype, False, formatspecs);
  tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs['format_delimiter']);
  catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower();
  catfileoutstr = AppendNullByte(catheaersize, formatspecs['format_delimiter']) + catfileoutstr;
@@ -5336,11 +5343,18 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
   catheaderdata = catoutlist;
   if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs['format_delimiter']);
-  catfileoutstr = catfileoutstr + AppendNullBytes([checksumtype, checksumtype], formatspecs['format_delimiter']);
+  if(fsize==0):
+   checksumlist = [checksumtype, "none"];
+  else:
+   checksumlist = [checksumtype, checksumtype];
+  catfileoutstr = catfileoutstr + AppendNullBytes(checksumlist, formatspecs['format_delimiter']);
   catfnumfields = catoutlen;
   catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
   fcontents.seek(0, 0);
-  catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
+  if(fsize==0):
+   catfilecontentcshex = GetFileChecksum(fcontents.read(), "none", False, formatspecs);
+  else:
+   catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
   tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs['format_delimiter']);
   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower();
   catfileoutstr = AppendNullByte(catheaersize, formatspecs['format_delimiter']) + catfileoutstr;
@@ -5517,11 +5531,18 @@ def TarFileToArrayAlt(infile, listonly=False, checksumtype="crc32", extradata=[]
   catheaderdata = catoutlist;
   if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs['format_delimiter']);
-  catfileoutstr = catfileoutstr + AppendNullBytes([checksumtype, checksumtype], formatspecs['format_delimiter']);
+  if(fsize==0):
+   checksumlist = [checksumtype, "none"];
+  else:
+   checksumlist = [checksumtype, checksumtype];
+  catfileoutstr = catfileoutstr + AppendNullBytes(checksumlist, formatspecs['format_delimiter']);
   catfnumfields = catoutlen;
   catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
   fcontents.seek(0, 0);
-  catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
+  if(fsize==0):
+   catfilecontentcshex = GetFileChecksum(fcontents.read(), "none", False, formatspecs);
+  else:
+   catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
   tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs['format_delimiter']);
   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower();
   catfileoutstr = AppendNullByte(catheaersize, formatspecs['format_delimiter']) + catfileoutstr;
@@ -5716,11 +5737,18 @@ def ZipFileToArrayAlt(infile, listonly=False, checksumtype="crc32", extradata=[]
   catheaderdata = catoutlist;
   if(len(extradata)>0):
    catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs['format_delimiter']);
-  catfileoutstr = catfileoutstr + AppendNullBytes([checksumtype, checksumtype], formatspecs['format_delimiter']);
+  if(fsize==0):
+   checksumlist = [checksumtype, "none"];
+  else:
+   checksumlist = [checksumtype, checksumtype];
+  catfileoutstr = catfileoutstr + AppendNullBytes(checksumlist, formatspecs['format_delimiter']);
   catfnumfields = catoutlen;
   catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
   fcontents.seek(0, 0);
-  catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
+  if(fsize==0):
+   catfilecontentcshex = GetFileChecksum(fcontents.read(), "none", False, formatspecs);
+  else:
+   catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
   tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs['format_delimiter']);
   catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower();
   catfileoutstr = AppendNullByte(catheaersize, formatspecs['format_delimiter']) + catfileoutstr;
@@ -5932,11 +5960,18 @@ if(rarfile_support):
    catfileoutstr = AppendNullBytes(catoutlist, formatspecs['format_delimiter']);
    if(len(extradata)>0):
     catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs['format_delimiter']);
-   ccatfileoutstr = catfileoutstr + AppendNullBytes([checksumtype, checksumtype], formatspecs['format_delimiter']);
+   if(fsize==0):
+    checksumlist = [checksumtype, "none"];
+   else:
+    checksumlist = [checksumtype, checksumtype];
+   ccatfileoutstr = catfileoutstr + AppendNullBytes(checksumlist, formatspecs['format_delimiter']);
    catfnumfields = 24 + catfextrafields;
    catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
    fcontents.seek(0, 0);
-   catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
+   if(fsize==0):
+    catfilecontentcshex = GetFileChecksum(fcontents.read(), "none", False, formatspecs);
+   else:
+    catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
    tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs['format_delimiter']);
    catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower();
    catfileoutstr = AppendNullByte(catheaersize, formatspecs['format_delimiter']) + catfileoutstr;
@@ -6095,11 +6130,18 @@ if(py7zr_support):
    catheaderdata = catoutlist;
    if(len(extradata)>0):
     catfileoutstr = catfileoutstr + AppendNullBytes(extradata, formatspecs['format_delimiter']);
-   catfileoutstr = catfileoutstr + AppendNullBytes([checksumtype, checksumtype], formatspecs['format_delimiter']);
+   if(fsize==0):
+    checksumlist = [checksumtype, "none"];
+   else:
+    checksumlist = [checksumtype, checksumtype];
+   catfileoutstr = catfileoutstr + AppendNullBytes(checksumlist, formatspecs['format_delimiter']);
    catfnumfields = 24 + catfextrafields;
    catfileheadercshex = GetFileChecksum(catfileoutstr, checksumtype, True, formatspecs);
    fcontents.seek(0, 0);
-   catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
+   if(fsize==0):
+    catfilecontentcshex = GetFileChecksum(fcontents.read(), "none", False, formatspecs);
+   else:
+    catfilecontentcshex = GetFileChecksum(fcontents.read(), checksumtype, False, formatspecs);
    tmpfileoutstr = catfileoutstr + AppendNullBytes([catfileheadercshex, catfilecontentcshex], formatspecs['format_delimiter']);
    catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower();
    catfileoutstr = AppendNullByte(catheaersize, formatspecs['format_delimiter']) + catfileoutstr;
