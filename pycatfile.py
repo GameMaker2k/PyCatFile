@@ -1532,6 +1532,8 @@ def MakeEmptyFile(outfile, compression="auto", compressionlevel=None, checksumty
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
+  if(not compresswholefile and fextname in outextlistwd):
+   compresswholefile = True;
   catfp = CompressOpenFile(outfile, True, compressionlevel);
  catfp = AppendFileHeader(catfp, 0, checksumtype, formatspecs);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -1945,6 +1947,8 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
+  if(not compresswholefile and fextname in outextlistwd):
+   compresswholefile = True;
   catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel);
  catfp = AppendFilesWithContent(infiles, catfp, dirlistfromtxt, filevalues, extradata, compression, compresswholefile, compressionlevel, followlink, checksumtype, formatspecs, verbose);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -1993,6 +1997,8 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
+  if(not compresswholefile and fextname in outextlistwd):
+   compresswholefile = True;
   catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel);
  catfp = AppendListsWithContent(inlist, catfp, dirlistfromtxt, filevalues, extradata, compression, compresswholefile, compressionlevel, followlink, checksumtype, formatspecs, verbose);
  if(outfile=="-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -2789,6 +2795,8 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
+  if(not compresswholefile and fextname in outextlistwd):
+   compresswholefile = True;
   catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel);
  catver = formatspecs['format_ver'];
  fileheaderver = str(int(catver.replace(".", "")));
@@ -3113,6 +3121,8 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
+  if(not compresswholefile and fextname in outextlistwd):
+   compresswholefile = True;
   catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel);
  catver = formatspecs['format_ver'];
  fileheaderver = str(int(catver.replace(".", "")));
@@ -3342,6 +3352,8 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
+  if(not compresswholefile and fextname in outextlistwd):
+   compresswholefile = True;
   catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel);
  catver = formatspecs['format_ver'];
  fileheaderver = str(int(catver.replace(".", "")));
@@ -3590,6 +3602,8 @@ if(rarfile_support):
   else:
    fbasename = os.path.splitext(outfile)[0];
    fextname = os.path.splitext(outfile)[1];
+   if(not compresswholefile and fextname in outextlistwd):
+    compresswholefile = True;
    catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel);
   catver = formatspecs['format_ver'];
   fileheaderver = str(int(catver.replace(".", "")));
@@ -3866,6 +3880,8 @@ if(py7zr_support):
   else:
    fbasename = os.path.splitext(outfile)[0];
    fextname = os.path.splitext(outfile)[1];
+   if(not compresswholefile and fextname in outextlistwd):
+    compresswholefile = True;
    catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel);
   catver = formatspecs['format_ver'];
   fileheaderver = str(int(catver.replace(".", "")));
@@ -6288,6 +6304,8 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
  else:
   fbasename = os.path.splitext(outfile)[0];
   fextname = os.path.splitext(outfile)[1];
+  if(not compresswholefile and fextname in outextlistwd):
+   compresswholefile = True;
   catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel);
  catver = formatspecs['format_ver'];
  fileheaderver = str(int(catver.replace(".", "")));
