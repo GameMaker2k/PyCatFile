@@ -1089,8 +1089,8 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
  if(extrastart<extraend):
   extrafieldslist.append(HeaderOut[extrastart]);
   extrastart = extrastart + 1;
- fheaderchecksumtype = [extrastart].lower();
- fcontentchecksumtype = [extrastart + 1].lower();
+ fheaderchecksumtype = HeaderOut[extrastart].lower();
+ fcontentchecksumtype = HeaderOut[extrastart + 1].lower();
  fcs = HeaderOut[-2].lower();
  fccs = HeaderOut[-1].lower();
  newfcs = GetHeaderChecksum(HeaderOut[:-2], HeaderOut[-4].lower(), True, formatspecs);
@@ -1357,7 +1357,7 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
   realidnum = realidnum + 1;
  return catlist;
 
-def ReadInFileBySizeWithContentToArray(infile, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
  formatspecs = FormatSpecsListToDict(formatspecs);
  delimiter = formatspecs['format_delimiter'];
  if(hasattr(infile, "read") or hasattr(infile, "write")):
@@ -1413,7 +1413,7 @@ def ReadInFileBySizeWithContentToArray(infile, listonly=False, uncompress=True, 
   if(not compresscheck):
    return False;
   fp = UncompressFile(infile, formatspecs, "rb");
- return ReadFileDataBySizeWithContentToArray(fp, listonly, uncompress, skipchecksum, formatspecs);
+ return ReadFileDataBySizeWithContentToArray(fp, seekstart, seekend, listonly, uncompress, skipchecksum, formatspecs);
 
 def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
  formatspecs = FormatSpecsListToDict(formatspecs);
