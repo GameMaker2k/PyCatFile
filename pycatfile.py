@@ -224,52 +224,48 @@ geturls_headers_pycatfile_python_alt = {'Referer': "http://google.com/", 'User-A
 geturls_headers_googlebot_google = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"};
 geturls_headers_googlebot_google_old = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google_old, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"};
 
-def CompressionSupport():
- compression_list = [];
- try:
-  import gzip;
-  compression_list.append("gz");
-  compression_list.append("gzip");
- except ImportError:
-  '''return False;'''
- try:
-  import bz2;
-  compression_list.append("bz2");
-  compression_list.append("bzip2");
- except ImportError:
-  '''return False;'''
- try:
-  import lz4;
-  compression_list.append("lz4");
- except ImportError:
-  '''return False;'''
- try:
-  import lzo;
-  compression_list.append("lzo");
-  compression_list.append("lzop");
- except ImportError:
-  '''return False;'''
- try:
-  import zstandard;
-  compression_list.append("zstd");
-  compression_list.append("zstandard");
- except ImportError:
-  '''return False;'''
- try:
-  import lzma;
-  compression_list.append("lzma");
-  compression_list.append("xz");
- except ImportError:
-  '''return False;'''
+compressionsupport = [];
+try:
+ import gzip;
+ compressionsupport.append("gz");
+ compressionsupport.append("gzip");
+except ImportError:
+ pass;
+try:
+ import bz2;
+ compressionsupport.append("bz2");
+ compressionsupport.append("bzip2");
+except ImportError:
+ pass;
+try:
+ import lz4;
+ compressionsupport.append("lz4");
+except ImportError:
+ pass;
+try:
+ import lzo;
+ compressionsupport.append("lzo");
+ compressionsupport.append("lzop");
+except ImportError:
+ pass;
+try:
+ import zstandard;
+ compressionsupport.append("zstd");
+ compressionsupport.append("zstandard");
+except ImportError:
+ pass;
+try:
+ import lzma;
+ compressionsupport.append("lzma");
+ compressionsupport.append("xz");
+except ImportError:
  try:
   from backports import lzma;
-  compression_list.append("lzma");
-  compression_list.append("xz");
+  compressionsupport.append("lzma");
+  compressionsupport.append("xz");
  except ImportError:
-  '''return False;'''
- return compression_list;
+  pass;
 
-compressionsupport = CompressionSupport();
 compressionlist = ['auto'];
 compressionlistalt = [];
 outextlist = [];
@@ -2201,48 +2197,21 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
  if(not hasattr(fp, "read") and not hasattr(fp, "write")):
   return False;
  compresscheck = CheckCompressionType(fp, formatspecs, False);
- if(compresscheck=="gzip"):
-  try:
-   import gzip;
-  except ImportError:
-   return False;
+ if(compresscheck=="gzip" and compresscheck in compressionsupport):
   catfp = gzip.GzipFile(fileobj=fp, mode="rb");
- if(compresscheck=="bzip2"):
-  try:
-   import bz2;
-  except ImportError:
-   return False;
+ if(compresscheck=="bzip2" and compresscheck in compressionsupport):
   catfp = BytesIO();
   catfp.write(bz2.decompress(fp.read()));
- if(compresscheck=="zstd"):
-  try:
-   import zstandard;
-  except ImportError:
-   return False;
+ if(compresscheck=="zstd" and compresscheck in compressionsupport):
   catfp = BytesIO();
   catfp.write(zstandard.decompress(fp.read()));
- if(compresscheck=="lz4"):
-  try:
-   import lz4.frame;
-  except ImportError:
-   return False;
+ if(compresscheck=="lz4" and compresscheck in compressionsupport):
   catfp = BytesIO();
   catfp.write(lz4.frame.decompress(fp.read()));
- if(compresscheck=="lzo" or compresscheck=="lzop"):
-  try:
-   import lzo;
-  except ImportError:
-   return False;
+ if((compresscheck=="lzo" or compresscheck=="lzop") and compresscheck in compressionsupport):
   catfp = BytesIO();
   catfp.write(lzo.decompress(fp.read()));
- if(compresscheck=="lzma" or compresscheck=="xz"):
-  try:
-   import lzma;
-  except ImportError:
-   try:
-    from backports import lzma
-   except ImportError:
-    return False;
+ if((compresscheck=="lzma" or compresscheck=="xz") and compresscheck in compressionsupport):
   catfp = BytesIO();
   catfp.write(lzma.decompress(fp.read()));
  if(compresscheck=="catfile" or compresscheck==formatspecs['format_lower']):
@@ -2276,59 +2245,32 @@ def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
   if(mode=="wt"):
    mode = "w";
  try:
-  if(compresscheck=="gzip"):
-   try:
-    import gzip;
-   except ImportError:
-    return False;
+  if(compresscheck=="gzip" and compresscheck in compressionsupport):
    try:
     filefp = gzip.open(infile, mode, encoding="UTF-8");
    except (ValueError, TypeError) as e:
     filefp = gzip.open(infile, mode);
-  if(compresscheck=="bzip2"):
-   try:
-    import bz2;
-   except ImportError:
-    return False;
+  if(compresscheck=="bzip2" and compresscheck in compressionsupport):
    try:
     filefp = bz2.open(infile, mode, encoding="UTF-8");
    except (ValueError, TypeError) as e:
     filefp = bz2.open(infile, mode);
-  if(compresscheck=="zstd"):
-   try:
-    import zstandard;
-   except ImportError:
-    return False;
+  if(compresscheck=="zstd" and compresscheck in compressionsupport):
    try:
     filefp = zstandard.open(infile, mode, encoding="UTF-8");
    except (ValueError, TypeError) as e:
     filefp = zstandard.open(infile, mode);
-  if(compresscheck=="lz4"):
-   try:
-    import lz4.frame;
-   except ImportError:
-    return False;
+  if(compresscheck=="lz4" and compresscheck in compressionsupport):
    try:
     filefp = lz4.frame.open(infile, mode, encoding="UTF-8");
    except (ValueError, TypeError) as e:
     filefp = lz4.frame.open(infile, mode);
-  if(compresscheck=="lzo"):
-   try:
-    import lzo;
-   except ImportError:
-    return False;
+  if((compresscheck=="lzo" or compresscheck=="lzop") and compresscheck in compressionsupport):
    try:
     filefp = lzo.open(infile, mode, encoding="UTF-8");
    except (ValueError, TypeError) as e:
     filefp = lzo.open(infile, mode);
-  if(compresscheck=="lzma"):
-   try:
-    import lzma;
-   except ImportError:
-    try:
-     from backports import lzma
-    except ImportError:
-     return False;
+  if((compresscheck=="lzma" or compresscheck=="xz") and compresscheck in compressionsupport):
    try:
     filefp = lzma.open(infile, mode, encoding="UTF-8");
    except (ValueError, TypeError) as e:
@@ -2349,44 +2291,21 @@ def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
 
 def UncompressString(infile):
  compresscheck = CheckCompressionTypeFromString(infile, formatspecs, False);
- if(compresscheck=="gzip"):
-  try:
-   import gzip;
-  except ImportError:
-   return False;
+ if(compresscheck=="gzip" and compresscheck in compressionsupport):
   fileuz = gzip.decompress(infile);
- if(compresscheck=="bzip2"):
-  try:
-   import bz2;
-  except ImportError:
-   return False;
+ if(compresscheck=="bzip2" and compresscheck in compressionsupport):
   fileuz = bz2.decompress(infile);
- if(compresscheck=="zstd"):
+ if(compresscheck=="zstd" and compresscheck in compressionsupport):
   try:
    import zstandard;
   except ImportError:
    return False;
   fileuz = zstandard.decompress(infile);
- if(compresscheck=="lz4"):
-  try:
-   import lz4.frame;
-  except ImportError:
-   return False;
+ if(compresscheck=="lz4" and compresscheck in compressionsupport):
   fileuz = lz4.frame.decompress(infile);
- if(compresscheck=="lzo"):
-  try:
-   import lzo;
-  except ImportError:
-   return False;
+ if((compresscheck=="lzo" or compresscheck=="lzop") and compresscheck in compressionsupport):
   fileuz = lzo.decompress(infile);
- if(compresscheck=="lzma"):
-  try:
-   import lzma;
-  except ImportError:
-   try:
-    from backports import lzma
-   except ImportError:
-    return False;
+ if((compresscheck=="lzma" or compresscheck=="xz") and compresscheck in compressionsupport):
   fileuz = lzma.decompress(infile);
  if(not compresscheck):
   fileuz = infile;
@@ -2449,38 +2368,17 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
   catfp = UncompressArchiveFile(infile, formatspecs['format_lower']);
  else:
   try:
-   if(compresscheck=="gzip"):
-    try:
-     import gzip;
-    except ImportError:
-     return False;
+   if(compresscheck=="gzip" and compresscheck in compressionsupport):
     catfp = gzip.GzipFile(infile, "rb");
-   if(compresscheck=="bzip2"):
-    try:
-     import bz2;
-    except ImportError:
-     return False;
+   if(compresscheck=="bzip2" and compresscheck in compressionsupport):
     catfp = bz2.BZ2File(infile, "rb");
-   if(compresscheck=="lz4"):
-    try:
-     import lz4.frame;
-    except ImportError:
-     return False;
+   if(compresscheck=="lz4" and compresscheck in compressionsupport):
     catfp = lz4.frame.open(infile, "rb");
-   if(compresscheck=="zstd"):
-    try:
-     import zstandard;
-    except ImportError:
-     return False;
+   if(compresscheck=="zstd" and compresscheck in compressionsupport):
     catfp = zstandard.open(infile, "rb");
-   if(compresscheck=="lzma" or compresscheck=="xz"):
-    try:
-     import lzma;
-    except ImportError:
-     try:
-      from backports import lzma
-     except ImportError:
-      return False;
+   if((compresscheck=="lzo" or compresscheck=="lzop") and compresscheck in compressionsupport):
+    catfp = lzo.open(infile, "rb");
+   if((compresscheck=="lzma" or compresscheck=="xz") and compresscheck in compressionsupport):
     catfp = lzma.open(infile, "rb");
   except FileNotFoundError:
    return False;
@@ -2506,9 +2404,7 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
  return filetype;
 
 def GZipCompress(data, compresslevel=9):
- try:
-  import gzip;
- except ImportError:
+ if("gzip" not in compressionsupport):
   return False;
  tmpfp = tempfile.NamedTemporaryFile("wb", delete=False);
  tmpfp.close();
@@ -2532,83 +2428,49 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
   compression = "auto";
  if(compression not in compressionlist and compression is None):
   compression = "auto";
- if(compression=="gzip"):
-  try:
-   import gzip;
-  except ImportError:
-   return False;
+ if(compression=="gzip" and compresscheck in compressionsupport):
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
   catfp.write(gzip.compress(fp.read(), compresslevel=compressionlevel));
- if(compression=="bzip2"):
-  try:
-   import bz2;
-  except ImportError:
-   return False;
+ if(compression=="bzip2" and compresscheck in compressionsupport):
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
   catfp.write(bz2.compress(fp.read(), compresslevel=compressionlevel));
- if(compression=="lz4"):
-  try:
-   import lz4.frame;
-  except ImportError:
-   return False;
+ if(compression=="lz4" and compresscheck in compressionsupport):
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
   catfp.write(lz4.frame.compress(fp.read(), compression_level=compressionlevel));
- if(compression=="lzo" or compression=="lzop"):
-  try:
-   import lzo;
-  except ImportError:
-   return False;
+ if((compression=="lzo" or compression=="lzop") and compresscheck in compressionsupport):
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
   catfp.write(lzo.compress(fp.read(), compresslevel=compressionlevel));
- if(compression=="zstd"):
-  try:
-   import zstandard;
-  except ImportError:
-   return False;
+ if(compression=="zstd" and compresscheck in compressionsupport):
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 10;
   else:
    compressionlevel = int(compressionlevel);
   catfp.write(zstandard.compress(fp.read(), level=compressionlevel));
- if(compression=="lzma"):
-  try:
-   import lzma;
-  except ImportError:
-   try:
-    from backports import lzma
-   except ImportError:
-    return False;
+ if(compression=="lzma" and compresscheck in compressionsupport):
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
   catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}]));
- if(compression=="xz"):
-  try:
-   import lzma;
-  except ImportError:
-   try:
-    from backports import lzma
-   except ImportError:
-    return False;
+ if(compression=="xz" and compresscheck in compressionsupport):
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 9;
@@ -2643,71 +2505,37 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
     outfp = open(outfile, "wb", encoding="UTF-8");
    except (ValueError, TypeError) as e:
     outfp = open(outfile, "wb");
-  elif(fextname==".gz"):
-   try:
-    import gzip;
-   except ImportError:
-    return False;
+  elif(fextname==".gz" and "gzip" in compressionsupport):
    try:
     outfp = gzip.open(outfile, mode, compressionlevel, encoding="UTF-8");
    except (ValueError, TypeError) as e:
     outfp = gzip.open(outfile, mode, compressionlevel);
-  elif(fextname==".bz2"):
-   try:
-    import bz2;
-   except ImportError:
-    return False;
+  elif(fextname==".bz2" and "bzip2" in compressionsupport):
    try:
     outfp = bz2.open(outfile, mode, compressionlevel, encoding="UTF-8");
    except (ValueError, TypeError) as e:
     outfp = bz2.open(outfile, mode, compressionlevel);
-  elif(fextname==".zst"):
-   try:
-    import zstandard;
-   except ImportError:
-    return False;
+  elif(fextname==".zst" and "zstandard" in compressionsupport):
    try:
     outfp = zstandard.open(outfile, mode, zstandard.ZstdCompressor(level=compressionlevel), encoding="UTF-8");
    except (ValueError, TypeError) as e:
     outfp = zstandard.open(outfile, mode, zstandard.ZstdCompressor(level=compressionlevel));
-  elif(fextname==".xz"):
-   try:
-    import lzma;
-   except ImportError:
-    try:
-     from backports import lzma
-    except ImportError:
-     return False;
+  elif(fextname==".xz" and "xz" in compressionsupport):
    try:
     outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}], encoding="UTF-8");
    except (ValueError, TypeError) as e:
     outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}]);
-  elif(fextname==".lz4"):
-   try:
-    import lz4.frame;
-   except ImportError:
-    return False;
+  elif(fextname==".lz4" and "lz4" in compressionsupport):
    try:
     outfp = lz4.frame.open(outfile, mode, compression_level=compressionlevel, encoding="UTF-8");
    except (ValueError, TypeError) as e:
     outfp = lz4.frame.open(outfile, mode, compression_level=compressionlevel);
-  elif(fextname==".lzo"):
-   try:
-    import lzo;
-   except ImportError:
-    return False;
+  elif(fextname==".lzo" and "lzop" in compressionsupport):
    try:
     outfp = lzo.open(outfile, mode, compresslevel=compressionlevel, encoding="UTF-8");
    except (ValueError, TypeError) as e:
     outfp = lzo.open(outfile, mode, compresslevel=compressionlevel);
-  elif(fextname==".lzma"):
-   try:
-    import lzma;
-   except ImportError:
-    try:
-     from backports import lzma
-    except ImportError:
-     return False;
+  elif(fextname==".lzma" and "lzma" in compressionsupport):
    try:
     outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}], encoding="UTF-8");
    except (ValueError, TypeError) as e:
