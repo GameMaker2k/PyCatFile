@@ -238,7 +238,7 @@ try:
 except ImportError:
  pass;
 try:
- import lz4;
+ import lz4, lz4.frame;
  compressionsupport.append("lz4");
 except ImportError:
  pass;
