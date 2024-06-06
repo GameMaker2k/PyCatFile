@@ -2428,49 +2428,49 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
   compression = "auto";
  if(compression not in compressionlist and compression is None):
   compression = "auto";
- if(compression=="gzip" and compresscheck in compressionsupport):
+ if(compression=="gzip" and compression in compressionsupport):
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
   catfp.write(gzip.compress(fp.read(), compresslevel=compressionlevel));
- if(compression=="bzip2" and compresscheck in compressionsupport):
+ if(compression=="bzip2" and compression in compressionsupport):
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
   catfp.write(bz2.compress(fp.read(), compresslevel=compressionlevel));
- if(compression=="lz4" and compresscheck in compressionsupport):
+ if(compression=="lz4" and compression in compressionsupport):
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
   catfp.write(lz4.frame.compress(fp.read(), compression_level=compressionlevel));
- if((compression=="lzo" or compression=="lzop") and compresscheck in compressionsupport):
+ if((compression=="lzo" or compression=="lzop") and compression in compressionsupport):
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
   catfp.write(lzo.compress(fp.read(), compresslevel=compressionlevel));
- if(compression=="zstd" and compresscheck in compressionsupport):
+ if(compression=="zstd" and compression in compressionsupport):
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 10;
   else:
    compressionlevel = int(compressionlevel);
   catfp.write(zstandard.compress(fp.read(), level=compressionlevel));
- if(compression=="lzma" and compresscheck in compressionsupport):
+ if(compression=="lzma" and compression in compressionsupport):
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
   catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}]));
- if(compression=="xz" and compresscheck in compressionsupport):
+ if(compression=="xz" and compression in compressionsupport):
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 9;
