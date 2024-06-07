@@ -2985,8 +2985,6 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
   except AttributeError:
    if(not TarFileCheck(infile)):
     return False;
- else:
-  return False;
  try:
   if(hasattr(infile, "read") or hasattr(infile, "write")):
    tarfp = tarfile.open(fileobj=infile, mode="r");
@@ -3209,8 +3207,6 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
   infile.seek(0, 0);
  elif(not os.path.exists(infile) or not os.path.isfile(infile)):
   return False;
- else:
-  return False;
  if(not zipfile.is_zipfile(infile)):
   return False;
  try:
@@ -3262,17 +3258,17 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
    fwinattributes = format(int(zipinfo.external_attr), 'x').lower();
    if(not member.is_dir()):
     fmode = format(int(stat.S_IFREG + 438), 'x').lower();
-    fchmode = stat.S_IMODE(fmode);
-    ftypemod = stat.S_IFMT(fmode);
+    fchmode = stat.S_IMODE(int(stat.S_IFREG + 438));
+    ftypemod = stat.S_IFMT(int(stat.S_IFREG + 438));
    elif(member.is_dir()):
     fmode = format(int(stat.S_IFDIR + 511), 'x').lower();
-    fchmode = stat.S_IMODE(fmode);
-    ftypemod = stat.S_IFMT(fmode);
+    fchmode = stat.S_IMODE(int(stat.S_IFDIR + 511));
+    ftypemod = stat.S_IFMT(int(stat.S_IFDIR + 511));
   elif(zipinfo.create_system==3):
    fwinattributes = format(int(0), 'x').lower();
    fmode = format(int(zipinfo.external_attr), 'x').lower();
-   fchmode = stat.S_IMODE(fmode);
-   ftypemod = stat.S_IFMT(fmode);
+   fchmode = stat.S_IMODE(int(zipinfo.external_attr));
+   ftypemod = stat.S_IFMT(int(zipinfo.external_attr));
   else:
    fwinattributes = format(int(0), 'x').lower();
    if(not member.is_dir()):
@@ -5257,8 +5253,6 @@ def TarFileToArrayAlt(infile, listonly=False, checksumtype="crc32", extradata=[]
   except AttributeError:
    if(not TarFileCheck(infile)):
     return False;
- else:
-  return False;
  try:
   if(hasattr(infile, "read") or hasattr(infile, "write")):
    tarfp = tarfile.open(fileobj=infile, mode="r");
@@ -5437,8 +5431,6 @@ def ZipFileToArrayAlt(infile, listonly=False, checksumtype="crc32", extradata=[]
    return False;
   infile.seek(0, 0);
  elif(not os.path.exists(infile) or not os.path.isfile(infile)):
-  return False;
- else:
   return False;
  if(not zipfile.is_zipfile(infile)):
   return False;
@@ -6641,8 +6633,6 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
   except AttributeError:
    if(not TarFileCheck(infile)):
     return False;
- else:
-  return False;
  try:
   if(hasattr(infile, "read") or hasattr(infile, "write")):
    tarfp = tarfile.open(fileobj=infile, mode="r");
@@ -6727,14 +6717,12 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
   infile.seek(0, 0);
  elif(not os.path.exists(infile) or not os.path.isfile(infile)):
   return False;
- else:
-  return False;
  if(not zipfile.is_zipfile(infile)):
   return False;
  try:
   zipfp = zipfile.ZipFile(infile, "r", allowZip64=True);
  except FileNotFoundError:
-  return False;
+  print(6);return False;
  lcfi = 0;
  returnval = {};
  ziptest = zipfp.testzip();
@@ -6831,9 +6819,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
 
 if(not rarfile_support):
  def RarFileListFiles(infile, verbose=False, returnfp=False):
-  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
-  if(not os.path.exists(infile) or not os.path.isfile(infile)):
-   return False;
+  return False;
 
 if(rarfile_support):
  def RarFileListFiles(infile, verbose=False, returnfp=False):
@@ -6966,9 +6952,7 @@ if(rarfile_support):
 
 if(not py7zr_support):
  def SevenZipFileListFiles(infile, verbose=False, returnfp=False):
-  logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG);
-  if(not os.path.exists(infile) or not os.path.isfile(infile)):
-   return False;
+  return False;
 
 if(py7zr_support):
  def SevenZipFileListFiles(infile, verbose=False, returnfp=False):
