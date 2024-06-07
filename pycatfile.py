@@ -2370,16 +2370,18 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
   try:
    if(compresscheck=="gzip" and compresscheck in compressionsupport):
     catfp = gzip.GzipFile(infile, "rb");
-   if(compresscheck=="bzip2" and compresscheck in compressionsupport):
+   elif(compresscheck=="bzip2" and compresscheck in compressionsupport):
     catfp = bz2.BZ2File(infile, "rb");
-   if(compresscheck=="lz4" and compresscheck in compressionsupport):
+   elif(compresscheck=="lz4" and compresscheck in compressionsupport):
     catfp = lz4.frame.open(infile, "rb");
-   if(compresscheck=="zstd" and compresscheck in compressionsupport):
+   elif(compresscheck=="zstd" and compresscheck in compressionsupport):
     catfp = zstandard.open(infile, "rb");
-   if((compresscheck=="lzo" or compresscheck=="lzop") and compresscheck in compressionsupport):
+   elif((compresscheck=="lzo" or compresscheck=="lzop") and compresscheck in compressionsupport):
     catfp = lzo.open(infile, "rb");
-   if((compresscheck=="lzma" or compresscheck=="xz") and compresscheck in compressionsupport):
+   elif((compresscheck=="lzma" or compresscheck=="xz") and compresscheck in compressionsupport):
     catfp = lzma.open(infile, "rb");
+   else:
+    catfp = open(infile, "rb");
   except FileNotFoundError:
    return False;
  filetype = False;
