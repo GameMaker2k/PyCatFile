@@ -540,15 +540,15 @@ class ZlibFile:
   self._position = 0;
   self._text_mode = 't' in mode;
 
-  if 'b' not in mode:
-   self.mode += 'b';
+  # Force binary mode for internal handling
+  internal_mode = mode.replace('t', 'b');
 
   if 'w' in mode or 'a' in mode or 'x' in mode:
-   self.file = open(file_path, mode) if file_path else fileobj;
+   self.file = open(file_path, internal_mode) if file_path else fileobj;
   elif 'r' in mode:
    if file_path:
     if os.path.exists(file_path):
-     self.file = open(file_path, mode);
+     self.file = open(file_path, internal_mode);
      self._load_file();
     else:
      raise FileNotFoundError(f"No such file: '{file_path}'");
@@ -560,7 +560,7 @@ class ZlibFile:
 
  def _load_file(self):
   self.file.seek(0);
-  self._compressed_data = self.file.read();
+  self._compressed_data = self.file.read()
   if not self._compressed_data.startswith((b'\x78\x01', b'\x78\x5E', b'\x78\x9C', b'\x78\xDA')):
    raise ValueError("Invalid zlib file header");
   self._decompressed_data = zlib.decompress(self._compressed_data);
@@ -575,7 +575,154 @@ class ZlibFile:
 
  def read(self, size=-1):
   if size == -1:
-   size = len(self._decompressed_data) - self._position
+   size = len(self._decompressed_data) - self._position;
+  data = self._decompressed_data[self._position:self._position + size];
+  self._position += size;
+  return data;
+
+ def seek(self, offset, whence=0):
+  if whence == 0:  # absolute file positioning
+   self._position = offset;
+  elif whence == 1:  # seek relative to the current position
+   self._position += offset;
+  elif whence == 2:  # seek relative to the file's end
+   self._position = len(self._decompressed_data) + offset;
+  else:
+   raise ValueError("Invalid value for whence");
+
+  # Ensure the position is within bounds
+  self._position = max(0, min(self._position, len(self._decompressed_data)));
+
+ def tell(self):
+  return self._position;
+
+ def flush(self):
+  if hasattr(self.file, 'flush'):
+   self.file.flush();
+
+ def fileno(self):
+  if hasattr(self.file, 'fileno'):
+   return self.file.fileno();
+  raise OSError("The underlying file object does not support fileno()");
+
+ def isatty(self):
+  if hasattr(self.file, 'isatty'):
+   return self.file.isatty();
+  return False;
+
+ def truncate(self, size=None):
+  if hasattr(self.file, 'truncate'):
+   return self.file.truncate(size);
+  raise OSError("The underlying file object does not support truncate()");
+
+ def close(self):
+  if self.file_path:
+   self.file.close();
+
+ def __enter__(self):
+  return self;
+
+ def __exit__(self, exc_type, exc_value, traceback):
+  self.close();
+
+# Example usage for binary mode
+data = b"Hello, zlib! " * 1000
+
+# Write compressed data to file with custom compression level
+with ZlibFile(file_path='compressed_file.zlib', mode='wb', level=9) as zf:
+ zf.write(data)
+
+# Read compressed data from file and decompress
+with ZlibFile(file_path='compressed_file.zlib', mode='rb') as zf:
+ zf.seek(0, 2)  # Seek to the end
+ end_position = zf.tell()
+ print("End position:", end_position)
+
+ zf.seek(0)  # Seek to the beginning
+ decompressed_data = zf.read()
+
+# Verify the data is the same after decompression
+assert data == decompressed_data
+
+print("Original size:", len(data))
+print("Decompressed size:", len(decompressed_data))
+
+# Example usage for text mode
+text_data = "Hello, zlib! " * 1000
+
+# Write compressed text data to file with custom compression level
+with ZlibFile(file_path='compressed_text_file.zlib', mode='wt', level=9, encoding='utf-8') as zf:
+ zf.write(text_data)
+
+# Read compressed text data from file and decompress
+with ZlibFile(file_path='compressed_text_file.zlib', mode='rt', encoding='utf-8') as zf:
+ zf.seek(0, 2)  # Seek to the end
+ end_position = zf.tell()
+ print("End position:", end_position)
+
+ zf.seek(0)  # Seek to the beginning
+ decompressed_text_data = zf.read()
+
+# Verify the text data is the same after decompression
+assert text_data == decompressed_text_data
+
+print("Original size:", len(text_data))
+print("Decompressed size:", len(decompressed_text_data))
+class ZlibFile:
+ def __init__(self, file_path=None, fileobj=None, mode='rb', level=9, encoding=None, errors=None, newline=None):
+  if file_path is None and fileobj is None:
+   raise ValueError("Either file_path or fileobj must be provided");
+  if file_path is not None and fileobj is not None:
+   raise ValueError("Only one of file_path or fileobj should be provided");
+
+  self.file_path = file_path;
+  self.fileobj = fileobj;
+  self.mode = mode;
+  self.level = level;
+  self.encoding = encoding;
+  self.errors = errors;
+  self.newline = newline;
+  self._compressed_data = b'';
+  self._decompressed_data = b'';
+  self._position = 0;
+  self._text_mode = 't' in mode;
+
+  # Force binary mode for internal handling
+  internal_mode = mode.replace('t', 'b');
+
+  if 'w' in mode or 'a' in mode or 'x' in mode:
+   self.file = open(file_path, internal_mode) if file_path else fileobj;
+  elif 'r' in mode:
+   if file_path:
+    if os.path.exists(file_path):
+     self.file = open(file_path, internal_mode);
+     self._load_file();
+    else:
+     raise FileNotFoundError(f"No such file: '{file_path}'");
+   elif fileobj:
+    self.file = fileobj;
+    self._load_file();
+  else:
+   raise ValueError("Mode should be 'rb' or 'wb'");
+
+ def _load_file(self):
+  self.file.seek(0);
+  self._compressed_data = self.file.read()
+  if not self._compressed_data.startswith((b'\x78\x01', b'\x78\x5E', b'\x78\x9C', b'\x78\xDA')):
+   raise ValueError("Invalid zlib file header");
+  self._decompressed_data = zlib.decompress(self._compressed_data);
+  if self._text_mode:
+   self._decompressed_data = self._decompressed_data.decode(self.encoding or 'utf-8', self.errors or 'strict');
+
+ def write(self, data):
+  if self._text_mode:
+   data = data.encode(self.encoding or 'utf-8', self.errors or 'strict');
+  compressed_data = zlib.compress(data, level=self.level);
+  self.file.write(compressed_data);
+
+ def read(self, size=-1):
+  if size == -1:
+   size = len(self._decompressed_data) - self._position;
   data = self._decompressed_data[self._position:self._position + size];
   self._position += size;
   return data;
@@ -644,20 +791,20 @@ class GzipFile:
   self._position = 0;
   self._text_mode = 't' in mode;
 
-  if 'b' not in mode:
-   self.mode += 'b';
+  # Force binary mode for internal handling
+  internal_mode = mode.replace('t', 'b');
 
   if 'w' in mode or 'a' in mode or 'x' in mode:
-   self.file = gzip.open(file_path, mode, compresslevel=compresslevel) if file_path else gzip.GzipFile(fileobj=fileobj, mode=mode, compresslevel=compresslevel);
+   self.file = gzip.open(file_path, internal_mode, compresslevel=compresslevel) if file_path else gzip.GzipFile(fileobj=fileobj, mode=internal_mode, compresslevel=compresslevel);
   elif 'r' in mode:
    if file_path:
     if os.path.exists(file_path):
-     self.file = gzip.open(file_path, mode);
+     self.file = gzip.open(file_path, internal_mode);
      self._load_file();
     else:
      raise FileNotFoundError(f"No such file: '{file_path}'");
    elif fileobj:
-    self.file = gzip.GzipFile(fileobj=fileobj, mode=mode);
+    self.file = gzip.GzipFile(fileobj=fileobj, mode=internal_mode);
     self._load_file();
   else:
    raise ValueError("Mode should be 'rb' or 'wb'");
@@ -728,7 +875,6 @@ class GzipFile:
 
  def __exit__(self, exc_type, exc_value, traceback):
   self.close();
-
 
 def TarFileCheck(infile):
  try:
