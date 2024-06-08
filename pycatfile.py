@@ -265,14 +265,7 @@ except ImportError:
   compressionsupport.append("xz");
  except ImportError:
   pass;
-try:
- import brotli;
-except ImportError:
- pass;
-try:
- import blosc;
-except ImportError:
- pass;
+compressionsupport.append("zlib");
 
 compressionlist = ['auto'];
 compressionlistalt = [];
@@ -318,6 +311,13 @@ if('xz' in compressionsupport):
  compressionlistalt.append('xz');
  outextlist.append('xz');
  outextlistwd.append('.xz');
+if('zlib' in compressionsupport):
+ compressionlist.append('zlib');
+ compressionlistalt.append('zlib');
+ outextlist.append('zz');
+ outextlistwd.append('.zz');
+ outextlist.append('zl');
+ outextlistwd.append('.zl');
 
 tarfile_mimetype = "application/tar";
 tarfile_tar_mimetype = tarfile_mimetype;
@@ -338,7 +338,10 @@ archivefile_zstandard_mimetype = "application/x-"+__file_format_dict__['format_l
 archivefile_zstd_mimetype = archivefile_zstandard_mimetype;
 archivefile_lzma_mimetype = "application/x-"+__file_format_dict__['format_lower']+"+lzma";
 archivefile_xz_mimetype = "application/x-"+__file_format_dict__['format_lower']+"+xz";
-archivefile_extensions = [__file_format_extension__, __file_format_extension__+".gz", __file_format_extension__+".bz2", __file_format_extension__+".zst", __file_format_extension__+".lz4", __file_format_extension__+".lzo", __file_format_extension__+".lzop", __file_format_extension__+".lzma", __file_format_extension__+".xz"];
+archivefile_zlib_mimetype = "application/x-"+__file_format_dict__['format_lower']+"+zlib";
+archivefile_zz_mimetype = archivefile_zlib_mimetype;
+archivefile_zl_mimetype = archivefile_zlib_mimetype;
+archivefile_extensions = [__file_format_extension__, __file_format_extension__+".gz", __file_format_extension__+".bz2", __file_format_extension__+".zst", __file_format_extension__+".lz4", __file_format_extension__+".lzo", __file_format_extension__+".lzop", __file_format_extension__+".lzma", __file_format_extension__+".xz", __file_format_extension__+".zz", __file_format_extension__+".zl"];
 
 if __name__ == "__main__":
  import subprocess;
@@ -519,36 +522,64 @@ def FormatSpecsListToDict(formatspecs=__file_format_list__):
  return __file_format_dict__;
 
 class ZlibFile:
- def __init__(self, file_path, mode='rb', level=6):
+ def __init__(self, file_path=None, fileobj=None, mode='rb', level=9, encoding=None, errors=None, newline=None):
+  if file_path is None and fileobj is None:
+   raise ValueError("Either file_path or fileobj must be provided");
+  if file_path is not None and fileobj is not None:
+   raise ValueError("Only one of file_path or fileobj should be provided");
+
   self.file_path = file_path;
+  self.fileobj = fileobj;
   self.mode = mode;
   self.level = level;
+  self.encoding = encoding;
+  self.errors = errors;
+  self.newline = newline;
   self._compressed_data = b'';
   self._decompressed_data = b'';
   self._position = 0;
-  if 'w' in mode:
-   self.file = open(file_path, mode);
+  self._text_mode = 't' in mode;
+
+  if 'b' not in mode:
+   self.mode += 'b';
+
+  if 'w' in mode or 'a' in mode or 'x' in mode:
+   self.file = open(file_path, mode) if file_path else fileobj;
   elif 'r' in mode:
-   if os.path.exists(file_path):
-    self.file = open(file_path, mode);
+   if file_path:
+    if os.path.exists(file_path):
+     self.file = open(file_path, mode);
+     self._load_file();
+    else:
+     raise FileNotFoundError(f"No such file: '{file_path}'");
+   elif fileobj:
+    self.file = fileobj;
     self._load_file();
-   else:
-    raise FileNotFoundError(f"No such file: '{file_path}'");
   else:
    raise ValueError("Mode should be 'rb' or 'wb'");
+
  def _load_file(self):
   self.file.seek(0);
   self._compressed_data = self.file.read();
+  if not self._compressed_data.startswith((b'\x78\x01', b'\x78\x5E', b'\x78\x9C', b'\x78\xDA')):
+   raise ValueError("Invalid zlib file header");
   self._decompressed_data = zlib.decompress(self._compressed_data);
+  if self._text_mode:
+   self._decompressed_data = self._decompressed_data.decode(self.encoding or 'utf-8', self.errors or 'strict');
+
  def write(self, data):
+  if self._text_mode:
+   data = data.encode(self.encoding or 'utf-8', self.errors or 'strict');
   compressed_data = zlib.compress(data, level=self.level);
-  self.file.write(compressed_data)
+  self.file.write(compressed_data);
+
  def read(self, size=-1):
   if size == -1:
-   size = len(self._decompressed_data) - self._position;
+   size = len(self._decompressed_data) - self._position
   data = self._decompressed_data[self._position:self._position + size];
   self._position += size;
   return data;
+
  def seek(self, offset, whence=0):
   if whence == 0:  # absolute file positioning
    self._position = offset;
@@ -558,48 +589,101 @@ class ZlibFile:
    self._position = len(self._decompressed_data) + offset;
   else:
    raise ValueError("Invalid value for whence");
+
   # Ensure the position is within bounds
   self._position = max(0, min(self._position, len(self._decompressed_data)));
+
  def tell(self):
   return self._position;
+
+ def flush(self):
+  if hasattr(self.file, 'flush'):
+   self.file.flush();
+
+ def fileno(self):
+  if hasattr(self.file, 'fileno'):
+   return self.file.fileno();
+  raise OSError("The underlying file object does not support fileno()");
+
+ def isatty(self):
+  if hasattr(self.file, 'isatty'):
+   return self.file.isatty();
+  return False;
+
+ def truncate(self, size=None):
+  if hasattr(self.file, 'truncate'):
+   return self.file.truncate(size);
+  raise OSError("The underlying file object does not support truncate()");
+
  def close(self):
-  self.file.close();
+  if self.file_path:
+   self.file.close();
+
  def __enter__(self):
   return self;
+
  def __exit__(self, exc_type, exc_value, traceback):
   self.close();
 
-class BloscFile:
- def __init__(self, file_path, mode='rb', typesize=8):
+class GzipFile:
+ def __init__(self, file_path=None, fileobj=None, mode='rb', compresslevel=9, encoding=None, errors=None, newline=None):
+  if file_path is None and fileobj is None:
+   raise ValueError("Either file_path or fileobj must be provided");
+  if file_path is not None and fileobj is not None:
+   raise ValueError("Only one of file_path or fileobj should be provided");
+
   self.file_path = file_path;
+  self.fileobj = fileobj;
   self.mode = mode;
-  self.typesize = typesize;
+  self.compresslevel = compresslevel;
+  self.encoding = encoding;
+  self.errors = errors;
+  self.newline = newline;
   self._compressed_data = b'';
   self._decompressed_data = b'';
   self._position = 0;
-  if 'w' in mode:
-   self.file = open(file_path, mode);
+  self._text_mode = 't' in mode;
+
+  if 'b' not in mode:
+   self.mode += 'b';
+
+  if 'w' in mode or 'a' in mode or 'x' in mode:
+   self.file = gzip.open(file_path, mode, compresslevel=compresslevel) if file_path else gzip.GzipFile(fileobj=fileobj, mode=mode, compresslevel=compresslevel);
   elif 'r' in mode:
-   if os.path.exists(file_path):
-    self.file = open(file_path, mode);
+   if file_path:
+    if os.path.exists(file_path):
+     self.file = gzip.open(file_path, mode);
+     self._load_file();
+    else:
+     raise FileNotFoundError(f"No such file: '{file_path}'");
+   elif fileobj:
+    self.file = gzip.GzipFile(fileobj=fileobj, mode=mode);
     self._load_file();
-   else:
-    raise FileNotFoundError(f"No such file: '{file_path}'");
   else:
    raise ValueError("Mode should be 'rb' or 'wb'");
+
  def _load_file(self):
   self.file.seek(0);
   self._compressed_data = self.file.read();
-  self._decompressed_data = blosc.decompress(self._compressed_data);
+  if not self._compressed_data.startswith(b'\x1f\x8b'):
+   raise ValueError("Invalid gzip file header");
+  self._decompressed_data = gzip.decompress(self._compressed_data);
+  if self._text_mode:
+   self._decompressed_data = self._decompressed_data.decode(self.encoding or 'utf-8', self.errors or 'strict');
+
  def write(self, data):
-  compressed_data = blosc.compress(data, typesize=self.typesize);
+  if self._text_mode:
+   data = data.encode(self.encoding or 'utf-8', self.errors or 'strict');
+  compressed_data = gzip.compress(data, compresslevel=self.compresslevel);
   self.file.write(compressed_data);
+
  def read(self, size=-1):
   if size == -1:
    size = len(self._decompressed_data) - self._position;
   data = self._decompressed_data[self._position:self._position + size];
   self._position += size;
   return data;
+
  def seek(self, offset, whence=0):
   if whence == 0:  # absolute file positioning
    self._position = offset;
@@ -609,67 +693,42 @@ class BloscFile:
    self._position = len(self._decompressed_data) + offset;
   else:
    raise ValueError("Invalid value for whence");
+
   # Ensure the position is within bounds
   self._position = max(0, min(self._position, len(self._decompressed_data)));
+
  def tell(self):
   return self._position;
+
+ def flush(self):
+  if hasattr(self.file, 'flush'):
+   self.file.flush();
+
+ def fileno(self):
+  if hasattr(self.file, 'fileno'):
+   return self.file.fileno();
+  raise OSError("The underlying file object does not support fileno()");
+
+ def isatty(self):
+  if hasattr(self.file, 'isatty'):
+   return self.file.isatty();
+  return False;
+
+ def truncate(self, size=None):
+  if hasattr(self.file, 'truncate'):
+   return self.file.truncate(size);
+  raise OSError("The underlying file object does not support truncate()");
+
  def close(self):
-  self.file.close();
+  if self.file_path:
+   self.file.close();
+
  def __enter__(self):
   return self;
+
  def __exit__(self, exc_type, exc_value, traceback):
   self.close();
 
-class BrotliFile:
- def __init__(self, file_path, mode='rb', quality=11):
-  self.file_path = file_path;
-  self.mode = mode;
-  self.quality = quality;
-  self._compressed_data = b'';
-  self._decompressed_data = b'';
-  self._position = 0;
-  if 'w' in mode:
-   self.file = open(file_path, mode);
-  elif 'r' in mode:
-   if os.path.exists(file_path):
-    self.file = open(file_path, mode);
-    self._load_file();
-   else:
-    raise FileNotFoundError(f"No such file: '{file_path}'");
-  else:
-   raise ValueError("Mode should be 'rb' or 'wb'");
- def _load_file(self):
-  self.file.seek(0);
-  self._compressed_data = self.file.read();
-  self._decompressed_data = brotli.decompress(self._compressed_data);
- def write(self, data):
-  compressed_data = brotli.compress(data, quality=self.quality);
-  self.file.write(compressed_data);
- def read(self, size=-1):
-  if size == -1:
-   size = len(self._decompressed_data) - self._position;
-  data = self._decompressed_data[self._position:self._position + size];
-  self._position += size;
-  return data;
- def seek(self, offset, whence=0):
-  if whence == 0:  # absolute file positioning
-   self._position = offset;
-  elif whence == 1:  # seek relative to the current position
-   self._position += offset;
-  elif whence == 2:  # seek relative to the file's end
-   self._position = len(self._decompressed_data) + offset;
-  else:
-   raise ValueError("Invalid value for whence");
-  # Ensure the position is within bounds
-  self._position = max(0, min(self._position, len(self._decompressed_data)));
- def tell(self):
-  return self._position;
- def close(self):
-  self.file.close();
- def __enter__(self):
-  return self;
- def __exit__(self, exc_type, exc_value, traceback):
-  self.close();
 
 def TarFileCheck(infile):
  try:
@@ -1563,8 +1622,12 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
     compresscheck = "lz4";
    elif(fextname==".lzo" or fextname==".lzop"):
     compresscheck = "lzo";
-   elif(fextname==".lzma" or fextname==".xz"):
+   elif(fextname==".lzma"):
     compresscheck = "lzma";
+   elif(fextname==".xz"):
+    compresscheck = "xz";
+   elif(fextname==".zz" or fextname==".zl"):
+    compresscheck = "zlib";
    else:
     return False;
   if(not compresscheck):
@@ -1621,8 +1684,12 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
     compresscheck = "lz4";
    elif(fextname==".lzo" or fextname==".lzop"):
     compresscheck = "lzo";
-   elif(fextname==".lzma" or fextname==".xz"):
+   elif(fextname==".lzma"):
     compresscheck = "lzma";
+   elif(fextname==".xz"):
+    compresscheck = "xz";
+   elif(fextname==".zz" or fextname==".zl"):
+    compresscheck = "zlib";
    else:
     return False;
   if(not compresscheck):
@@ -2253,11 +2320,19 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
    catfp = open(infile, "rb");
   except FileNotFoundError:
    return False;
+ filetype = False;
  catfp.seek(0, 0);
  prefp = catfp.read(2);
- filetype = False;
  if(prefp==binascii.unhexlify("1f8b")):
   filetype = "gzip";
+ if(prefp==binascii.unhexlify("7801")):
+  filetype = "zlib";
+ if(prefp==binascii.unhexlify("785e")):
+  filetype = "zlib";
+ if(prefp==binascii.unhexlify("789c")):
+  filetype = "zlib";
+ if(prefp==binascii.unhexlify("78da")):
+  filetype = "zlib";
  catfp.seek(0, 0);
  prefp = catfp.read(3);
  if(prefp==binascii.unhexlify("425a68")):
@@ -2305,7 +2380,7 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
  if(prefp==binascii.unhexlify("7061785f676c6f62616c")):
   filetype = "tarfile";
  catfp.seek(0, 0);
- if(filetype=="gzip" or filetype=="bzip2" or filetype=="lzma" or filetype=="zstd" or filetype=="lz4"):
+ if(filetype=="gzip" or filetype=="bzip2" or filetype=="lzma" or filetype=="zstd" or filetype=="lz4" or filetype=="zlib"):
   if(TarFileCheck(catfp)):
    filetype = "tarfile";
  if(not filetype):
@@ -2335,6 +2410,8 @@ def GetCompressionMimeType(infile, formatspecs=__file_format_dict__):
  compresscheck = CheckCompressionType(fp, formatspecs, False);
  if(compresscheck=="gzip" or compresscheck=="gz"):
   return archivefile_gzip_mimetype;
+ if(compresscheck=="zlib" or (compresscheck=="zz" or compresscheck=="zl")):
+  return archivefile_zlib_mimetype;
  if(compresscheck=="bzip2" or compresscheck=="bz2"):
   return archivefile_bzip2_mimetype;
  if(compresscheck=="zstd" or compresscheck=="zstandard"):
@@ -2360,21 +2437,23 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
  compresscheck = CheckCompressionType(fp, formatspecs, False);
  if(compresscheck=="gzip" and compresscheck in compressionsupport):
   catfp = gzip.GzipFile(fileobj=fp, mode="rb");
- if(compresscheck=="bzip2" and compresscheck in compressionsupport):
+ elif(compresscheck=="bzip2" and compresscheck in compressionsupport):
   catfp = BytesIO();
   catfp.write(bz2.decompress(fp.read()));
- if(compresscheck=="zstd" and compresscheck in compressionsupport):
+ elif(compresscheck=="zstd" and compresscheck in compressionsupport):
   catfp = BytesIO();
   catfp.write(zstandard.decompress(fp.read()));
- if(compresscheck=="lz4" and compresscheck in compressionsupport):
+ elif(compresscheck=="lz4" and compresscheck in compressionsupport):
   catfp = BytesIO();
   catfp.write(lz4.frame.decompress(fp.read()));
- if((compresscheck=="lzo" or compresscheck=="lzop") and compresscheck in compressionsupport):
+ elif((compresscheck=="lzo" or compresscheck=="lzop") and compresscheck in compressionsupport):
   catfp = BytesIO();
-  catfp.write(lzo.decompress(fp.read()));
- if((compresscheck=="lzma" or compresscheck=="xz") and compresscheck in compressionsupport):
+ elif((compresscheck=="lzma" or compresscheck=="xz") and compresscheck in compressionsupport):
   catfp = BytesIO();
   catfp.write(lzma.decompress(fp.read()));
+ elif(compresscheck=="zlib" and compresscheck in compressionsupport):
+  catfp = ZlibFile(fileobj=fp, mode="rb");
+  catfp.write(lzo.decompress(fp.read()));
  if(compresscheck=="catfile" or compresscheck==formatspecs['format_lower']):
   catfp = fp;
  if(not compresscheck):
@@ -2436,6 +2515,8 @@ def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
     filefp = lzma.open(infile, mode, encoding="UTF-8");
    except (ValueError, TypeError) as e:
     filefp = lzma.open(infile, mode);
+  if(compresscheck=="zlib" and compresscheck in compressionsupport):
+   filefp = ZlibFile(infile, mode=mode);
   if(compresscheck=="catfile" or compresscheck==formatspecs['format_lower']):
    try:
     filefp = open(infile, mode, encoding="UTF-8");
@@ -2468,6 +2549,8 @@ def UncompressString(infile):
   fileuz = lzo.decompress(infile);
  if((compresscheck=="lzma" or compresscheck=="xz") and compresscheck in compressionsupport):
   fileuz = lzma.decompress(infile);
+ if(compresscheck=="zlib" and compresscheck in compressionsupport):
+  fileuz = zlib.decompress(infile);
  if(not compresscheck):
   fileuz = infile;
  if(hasattr(fileuz, 'decode')):
@@ -2496,11 +2579,15 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
    compresscheck = "lz4";
   elif(fextname==".lzo" or fextname==".lzop"):
    compresscheck = "lzo";
-  elif(fextname==".lzma" or fextname==".xz"):
-   compresscheck = "lzma";
+  elif(fextname==".lzma"):
+    compresscheck = "lzma";
+  elif(fextname==".xz"):
+    compresscheck = "xz";
+  elif(fextname==".zz" or fextname==".zl"):
+   compresscheck = "zlib";
   else:
    return False;
- if(compresscheck=="gzip" or compresscheck=="bzip2" or compresscheck=="lzma" or compresscheck=="zstd" or compresscheck=="lz4"):
+ if(compresscheck=="gzip" or compresscheck=="bzip2" or compresscheck=="lzma" or compresscheck=="zstd" or compresscheck=="lz4" or compresscheck=="zlib"):
   if(TarFileCheck(infile)):
    filetype = "tarfile";
  if(not compresscheck):
@@ -2541,6 +2628,8 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
     catfp = lzo.open(infile, "rb");
    elif((compresscheck=="lzma" or compresscheck=="xz") and compresscheck in compressionsupport):
     catfp = lzma.open(infile, "rb");
+   elif(compresscheck=="zlib" and compresscheck in compressionsupport):
+    catfp = ZlibFile(infile, mode="rb");
    else:
     catfp = open(infile, "rb");
   except FileNotFoundError:
@@ -2640,6 +2729,13 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
   else:
    compressionlevel = int(compressionlevel);
   catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}]));
+ if(compression=="zlib" and compression in compressionsupport):
+  catfp = BytesIO();
+  if(compressionlevel is None):
+   compressionlevel = 9;
+  else:
+   compressionlevel = int(compressionlevel);
+  catfp.write(lzma.compress(fp.read(), level=compressionlevel));
  if(compression=="auto" or compression is None):
   catfp = fp;
  catfp.seek(0, 0);
@@ -2703,6 +2799,8 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
     outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}], encoding="UTF-8");
    except (ValueError, TypeError) as e:
     outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}]);
+  elif((fextname==".zz" or fextname==".zl") and "zlib" in compressionsupport):
+   outfp = ZlibFile(outfile, mode=mode, level=compressionlevel);
  except FileNotFoundError:
   return False;
  return outfp;
@@ -4132,8 +4230,12 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=Fals
     compresscheck = "lz4";
    elif(fextname==".lzo" or fextname==".lzop"):
     compresscheck = "lzo";
-   elif(fextname==".lzma" or fextname==".xz"):
+   elif(fextname==".lzma"):
     compresscheck = "lzma";
+   elif(fextname==".xz"):
+    compresscheck = "xz";
+   elif(fextname==".zz" or fextname==".zl"):
+    compresscheck = "zlib";
    else:
     return False;
   if(not compresscheck):
@@ -4361,8 +4463,12 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksu
     compresscheck = "lz4";
    elif(fextname==".lzo" or fextname==".lzop"):
     compresscheck = "lzo";
-   elif(fextname==".lzma" or fextname==".xz"):
+   elif(fextname==".lzma"):
     compresscheck = "lzma";
+   elif(fextname==".xz"):
+    compresscheck = "xz";
+   elif(fextname==".zz" or fextname==".zl"):
+    compresscheck = "zlib";
    else:
     return False;
   if(not compresscheck):
@@ -4602,8 +4708,12 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
     compresscheck = "lz4";
    elif(fextname==".lzo" or fextname==".lzop"):
     compresscheck = "lzo";
-   elif(fextname==".lzma" or fextname==".xz"):
+   elif(fextname==".lzma"):
     compresscheck = "lzma";
+   elif(fextname==".xz"):
+    compresscheck = "xz";
+   elif(fextname==".zz" or fextname==".zl"):
+    compresscheck = "zlib";
    else:
     return False;
   if(not compresscheck):
@@ -4842,8 +4952,12 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
     compresscheck = "lz4";
    elif(fextname==".lzo" or fextname==".lzop"):
     compresscheck = "lzo";
-   elif(fextname==".lzma" or fextname==".xz"):
+   elif(fextname==".lzma"):
     compresscheck = "lzma";
+   elif(fextname==".xz"):
+    compresscheck = "xz";
+   elif(fextname==".zz" or fextname==".zl"):
+    compresscheck = "zlib";
    else:
     return False;
   if(not compresscheck):
