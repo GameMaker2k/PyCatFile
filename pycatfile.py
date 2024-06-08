@@ -560,7 +560,7 @@ class ZlibFile:
 
  def _load_file(self):
   self.file.seek(0);
-  self._compressed_data = self.file.read()
+  self._compressed_data = self.file.read();
   if not self._compressed_data.startswith((b'\x78\x01', b'\x78\x5E', b'\x78\x9C', b'\x78\xDA')):
    raise ValueError("Invalid zlib file header");
   self._decompressed_data = zlib.decompress(self._compressed_data);
