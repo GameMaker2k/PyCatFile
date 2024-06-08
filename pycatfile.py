@@ -551,7 +551,7 @@ class ZlibFile:
      self.file = open(file_path, internal_mode);
      self._load_file();
     else:
-     raise FileNotFoundError(f"No such file: '{file_path}'");
+     raise FileNotFoundError("No such file: '{}'".format(file_path))
    elif fileobj:
     self.file = fileobj;
     self._load_file();
@@ -625,49 +625,6 @@ class ZlibFile:
  def __exit__(self, exc_type, exc_value, traceback):
   self.close();
 
-# Example usage for binary mode
-data = b"Hello, zlib! " * 1000
-
-# Write compressed data to file with custom compression level
-with ZlibFile(file_path='compressed_file.zlib', mode='wb', level=9) as zf:
- zf.write(data)
-
-# Read compressed data from file and decompress
-with ZlibFile(file_path='compressed_file.zlib', mode='rb') as zf:
- zf.seek(0, 2)  # Seek to the end
- end_position = zf.tell()
- print("End position:", end_position)
-
- zf.seek(0)  # Seek to the beginning
- decompressed_data = zf.read()
-
-# Verify the data is the same after decompression
-assert data == decompressed_data
-
-print("Original size:", len(data))
-print("Decompressed size:", len(decompressed_data))
-
-# Example usage for text mode
-text_data = "Hello, zlib! " * 1000
-
-# Write compressed text data to file with custom compression level
-with ZlibFile(file_path='compressed_text_file.zlib', mode='wt', level=9, encoding='utf-8') as zf:
- zf.write(text_data)
-
-# Read compressed text data from file and decompress
-with ZlibFile(file_path='compressed_text_file.zlib', mode='rt', encoding='utf-8') as zf:
- zf.seek(0, 2)  # Seek to the end
- end_position = zf.tell()
- print("End position:", end_position)
-
- zf.seek(0)  # Seek to the beginning
- decompressed_text_data = zf.read()
-
-# Verify the text data is the same after decompression
-assert text_data == decompressed_text_data
-
-print("Original size:", len(text_data))
-print("Decompressed size:", len(decompressed_text_data))
 class ZlibFile:
  def __init__(self, file_path=None, fileobj=None, mode='rb', level=9, encoding=None, errors=None, newline=None):
   if file_path is None and fileobj is None:
@@ -698,7 +655,7 @@ class ZlibFile:
      self.file = open(file_path, internal_mode);
      self._load_file();
     else:
-     raise FileNotFoundError(f"No such file: '{file_path}'");
+     raise FileNotFoundError("No such file: '{}'".format(file_path))
    elif fileobj:
     self.file = fileobj;
     self._load_file();
@@ -802,7 +759,7 @@ class GzipFile:
      self.file = gzip.open(file_path, internal_mode);
      self._load_file();
     else:
-     raise FileNotFoundError(f"No such file: '{file_path}'");
+     raise FileNotFoundError("No such file: '{}'".format(file_path))
    elif fileobj:
     self.file = gzip.GzipFile(fileobj=fileobj, mode=internal_mode);
     self._load_file();
