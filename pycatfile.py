@@ -265,6 +265,14 @@ except ImportError:
   compressionsupport.append("xz");
  except ImportError:
   pass;
+try:
+ import brotli;
+except ImportError:
+ pass;
+try:
+ import blosc;
+except ImportError:
+ pass;
 
 compressionlist = ['auto'];
 compressionlistalt = [];
@@ -509,6 +517,159 @@ def FormatSpecsListToDict(formatspecs=__file_format_list__):
  else:
   return __file_format_dict__;
  return __file_format_dict__;
+
+class ZlibFile:
+ def __init__(self, file_path, mode='rb', level=6):
+  self.file_path = file_path;
+  self.mode = mode;
+  self.level = level;
+  self._compressed_data = b'';
+  self._decompressed_data = b'';
+  self._position = 0;
+  if 'w' in mode:
+   self.file = open(file_path, mode);
+  elif 'r' in mode:
+   if os.path.exists(file_path):
+    self.file = open(file_path, mode);
+    self._load_file();
+   else:
+    raise FileNotFoundError(f"No such file: '{file_path}'");
+  else:
+   raise ValueError("Mode should be 'rb' or 'wb'");
+ def _load_file(self):
+  self.file.seek(0);
+  self._compressed_data = self.file.read();
+  self._decompressed_data = zlib.decompress(self._compressed_data);
+ def write(self, data):
+  compressed_data = zlib.compress(data, level=self.level);
+  self.file.write(compressed_data)
+ def read(self, size=-1):
+  if size == -1:
+   size = len(self._decompressed_data) - self._position;
+  data = self._decompressed_data[self._position:self._position + size];
+  self._position += size;
+  return data;
+ def seek(self, offset, whence=0):
+  if whence == 0:  # absolute file positioning
+   self._position = offset;
+  elif whence == 1:  # seek relative to the current position
+   self._position += offset;
+  elif whence == 2:  # seek relative to the file's end
+   self._position = len(self._decompressed_data) + offset;
+  else:
+   raise ValueError("Invalid value for whence");
+  # Ensure the position is within bounds
+  self._position = max(0, min(self._position, len(self._decompressed_data)));
+ def tell(self):
+  return self._position;
+ def close(self):
+  self.file.close();
+ def __enter__(self):
+  return self;
+ def __exit__(self, exc_type, exc_value, traceback):
+  self.close();
+
+class BloscFile:
+ def __init__(self, file_path, mode='rb', typesize=8):
+  self.file_path = file_path;
+  self.mode = mode;
+  self.typesize = typesize;
+  self._compressed_data = b'';
+  self._decompressed_data = b'';
+  self._position = 0;
+  if 'w' in mode:
+   self.file = open(file_path, mode);
+  elif 'r' in mode:
+   if os.path.exists(file_path):
+    self.file = open(file_path, mode);
+    self._load_file();
+   else:
+    raise FileNotFoundError(f"No such file: '{file_path}'");
+  else:
+   raise ValueError("Mode should be 'rb' or 'wb'");
+ def _load_file(self):
+  self.file.seek(0);
+  self._compressed_data = self.file.read();
+  self._decompressed_data = blosc.decompress(self._compressed_data);
+ def write(self, data):
+  compressed_data = blosc.compress(data, typesize=self.typesize);
+  self.file.write(compressed_data);
+ def read(self, size=-1):
+  if size == -1:
+   size = len(self._decompressed_data) - self._position;
+  data = self._decompressed_data[self._position:self._position + size];
+  self._position += size;
+  return data;
+ def seek(self, offset, whence=0):
+  if whence == 0:  # absolute file positioning
+   self._position = offset;
+  elif whence == 1:  # seek relative to the current position
+   self._position += offset;
+  elif whence == 2:  # seek relative to the file's end
+   self._position = len(self._decompressed_data) + offset;
+  else:
+   raise ValueError("Invalid value for whence");
+  # Ensure the position is within bounds
+  self._position = max(0, min(self._position, len(self._decompressed_data)));
+ def tell(self):
+  return self._position;
+ def close(self):
+  self.file.close();
+ def __enter__(self):
+  return self;
+ def __exit__(self, exc_type, exc_value, traceback):
+  self.close();
+
+class BrotliFile:
+ def __init__(self, file_path, mode='rb', quality=11):
+  self.file_path = file_path;
+  self.mode = mode;
+  self.quality = quality;
+  self._compressed_data = b'';
+  self._decompressed_data = b'';
+  self._position = 0;
+  if 'w' in mode:
+   self.file = open(file_path, mode);
+  elif 'r' in mode:
+   if os.path.exists(file_path):
+    self.file = open(file_path, mode);
+    self._load_file();
+   else:
+    raise FileNotFoundError(f"No such file: '{file_path}'");
+  else:
+   raise ValueError("Mode should be 'rb' or 'wb'");
+ def _load_file(self):
+  self.file.seek(0);
+  self._compressed_data = self.file.read();
+  self._decompressed_data = brotli.decompress(self._compressed_data);
+ def write(self, data):
+  compressed_data = brotli.compress(data, quality=self.quality);
+  self.file.write(compressed_data);
+ def read(self, size=-1):
+  if size == -1:
+   size = len(self._decompressed_data) - self._position;
+  data = self._decompressed_data[self._position:self._position + size];
+  self._position += size;
+  return data;
+ def seek(self, offset, whence=0):
+  if whence == 0:  # absolute file positioning
+   self._position = offset;
+  elif whence == 1:  # seek relative to the current position
+   self._position += offset;
+  elif whence == 2:  # seek relative to the file's end
+   self._position = len(self._decompressed_data) + offset;
+  else:
+   raise ValueError("Invalid value for whence");
+  # Ensure the position is within bounds
+  self._position = max(0, min(self._position, len(self._decompressed_data)));
+ def tell(self):
+  return self._position;
+ def close(self):
+  self.file.close();
+ def __enter__(self):
+  return self;
+ def __exit__(self, exc_type, exc_value, traceback):
+  self.close();
 
 def TarFileCheck(infile):
  try:
