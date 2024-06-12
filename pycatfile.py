@@ -321,6 +321,8 @@ if('zlib' in compressionsupport):
  outextlistwd.append('.zz');
  outextlist.append('zl');
  outextlistwd.append('.zl');
+ outextlist.append('zlib');
+ outextlistwd.append('.zlib');
 
 tarfile_mimetype = "application/tar";
 tarfile_tar_mimetype = tarfile_mimetype;
@@ -344,7 +346,7 @@ archivefile_xz_mimetype = "application/x-"+__file_format_dict__['format_lower']+
 archivefile_zlib_mimetype = "application/x-"+__file_format_dict__['format_lower']+"+zlib";
 archivefile_zz_mimetype = archivefile_zlib_mimetype;
 archivefile_zl_mimetype = archivefile_zlib_mimetype;
-archivefile_extensions = [__file_format_extension__, __file_format_extension__+".gz", __file_format_extension__+".bz2", __file_format_extension__+".zst", __file_format_extension__+".lz4", __file_format_extension__+".lzo", __file_format_extension__+".lzop", __file_format_extension__+".lzma", __file_format_extension__+".xz", __file_format_extension__+".zz", __file_format_extension__+".zl"];
+archivefile_extensions = [__file_format_extension__, __file_format_extension__+".gz", __file_format_extension__+".bz2", __file_format_extension__+".zst", __file_format_extension__+".lz4", __file_format_extension__+".lzo", __file_format_extension__+".lzop", __file_format_extension__+".lzma", __file_format_extension__+".xz", __file_format_extension__+".zz", __file_format_extension__+".zl", __file_format_extension__+".zlib"];
 
 if __name__ == "__main__":
  import subprocess;
@@ -1850,7 +1852,7 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
     compresscheck = "lzma";
    elif(fextname==".xz"):
     compresscheck = "xz";
-   elif(fextname==".zz" or fextname==".zl"):
+   elif(fextname==".zz" or fextname==".zl" or fextname==".zlib"):
     compresscheck = "zlib";
    else:
     return False;
@@ -1912,7 +1914,7 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
     compresscheck = "lzma";
    elif(fextname==".xz"):
     compresscheck = "xz";
-   elif(fextname==".zz" or fextname==".zl"):
+   elif(fextname==".zz" or fextname==".zl" or fextname==".zlib"):
     compresscheck = "zlib";
    else:
     return False;
@@ -2634,7 +2636,7 @@ def GetCompressionMimeType(infile, formatspecs=__file_format_dict__):
  compresscheck = CheckCompressionType(fp, formatspecs, False);
  if(compresscheck=="gzip" or compresscheck=="gz"):
   return archivefile_gzip_mimetype;
- if(compresscheck=="zlib" or (compresscheck=="zz" or compresscheck=="zl")):
+ if(compresscheck=="zlib" or (compresscheck=="zz" or compresscheck=="zl" or compresscheck=="zlib")):
   return archivefile_zlib_mimetype;
  if(compresscheck=="bzip2" or compresscheck=="bz2"):
   return archivefile_bzip2_mimetype;
@@ -2807,7 +2809,7 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
     compresscheck = "lzma";
   elif(fextname==".xz"):
     compresscheck = "xz";
-  elif(fextname==".zz" or fextname==".zl"):
+  elif(fextname==".zz" or fextname==".zl" or fextname==".zlib"):
    compresscheck = "zlib";
   else:
    return False;
@@ -3023,7 +3025,7 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
     outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}], encoding="UTF-8");
    except (ValueError, TypeError) as e:
     outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}]);
-  elif((fextname==".zz" or fextname==".zl") and "zlib" in compressionsupport):
+  elif((fextname==".zz" or fextname==".zl" or fextname==".zlib") and "zlib" in compressionsupport):
    outfp = ZlibFile(outfile, mode=mode, level=compressionlevel);
  except FileNotFoundError:
   return False;
@@ -4458,7 +4460,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, skipchecksum=Fals
     compresscheck = "lzma";
    elif(fextname==".xz"):
     compresscheck = "xz";
-   elif(fextname==".zz" or fextname==".zl"):
+   elif(fextname==".zz" or fextname==".zl" or fextname==".zlib"):
     compresscheck = "zlib";
    else:
     return False;
@@ -4691,7 +4693,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, skipchecksu
     compresscheck = "lzma";
    elif(fextname==".xz"):
     compresscheck = "xz";
-   elif(fextname==".zz" or fextname==".zl"):
+   elif(fextname==".zz" or fextname==".zl" or fextname==".zlib"):
     compresscheck = "zlib";
    else:
     return False;
@@ -4936,7 +4938,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
     compresscheck = "lzma";
    elif(fextname==".xz"):
     compresscheck = "xz";
-   elif(fextname==".zz" or fextname==".zl"):
+   elif(fextname==".zz" or fextname==".zl" or fextname==".zlib"):
     compresscheck = "zlib";
    else:
     return False;
@@ -5180,7 +5182,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, uncompres
     compresscheck = "lzma";
    elif(fextname==".xz"):
     compresscheck = "xz";
-   elif(fextname==".zz" or fextname==".zl"):
+   elif(fextname==".zz" or fextname==".zl" or fextname==".zlib"):
     compresscheck = "zlib";
    else:
     return False;
