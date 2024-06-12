@@ -525,7 +525,7 @@ def FormatSpecsListToDict(formatspecs=__file_format_list__):
  return __file_format_dict__;
 
 class ZlibFile:
- def __init__(self, file_path=None, fileobj=None, mode='rb', level=9, encoding=None, errors=None, newline=None):
+ def __init__(self, file_path=None, fileobj=None, mode='rb', level=9, wbits=15, encoding=None, errors=None, newline=None):
   if file_path is None and fileobj is None:
    raise ValueError("Either file_path or fileobj must be provided");
   if file_path is not None and fileobj is not None:
@@ -535,6 +535,7 @@ class ZlibFile:
   self.fileobj = fileobj;
   self.mode = mode;
   self.level = level;
+  self.wbits = wbits;
   self.encoding = encoding;
   self.errors = errors;
   self.newline = newline;
@@ -548,7 +549,7 @@ class ZlibFile:
 
   if 'w' in mode or 'a' in mode or 'x' in mode:
    self.file = open(file_path, internal_mode) if file_path else fileobj;
-   self._compressor = zlib.compressobj(level);
+   self._compressor = zlib.compressobj(level, zlib.DEFLATED, wbits);
   elif 'r' in mode:
    if file_path:
     if os.path.exists(file_path):
@@ -567,7 +568,7 @@ class ZlibFile:
   self._compressed_data = self.file.read();
   if not self._compressed_data.startswith((b'\x78\x01', b'\x78\x5E', b'\x78\x9C', b'\x78\xDA')):
    raise ValueError("Invalid zlib file header");
-  self._decompressed_data = zlib.decompress(self._compressed_data);
+  self._decompressed_data = zlib.decompress(self._compressed_data, self.wbits);
   if self._text_mode:
    self._decompressed_data = self._decompressed_data.decode(self.encoding or 'utf-8', self.errors or 'strict');
 
@@ -601,8 +602,7 @@ class ZlibFile:
   return self._position;
 
  def flush(self):
-  if hasattr(self.file, 'flush'):
-   self.file.flush();
+  self.file.flush();
 
  def fileno(self):
   if hasattr(self.file, 'fileno'):
