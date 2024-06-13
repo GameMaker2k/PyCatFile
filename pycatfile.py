@@ -2961,7 +2961,7 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
-  catfp.write(lzma.compress(fp.read(), level=compressionlevel));
+  catfp.write(zlib.compress(fp.read(), level=compressionlevel));
  if(compression=="auto" or compression is None):
   catfp = fp;
  catfp.seek(0, 0);
