@@ -2751,6 +2751,10 @@ def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
     filefp = open(infile, mode);
  except FileNotFoundError:
   return False;
+ try:
+  filefp.write_through = True;
+ except AttributeError:
+  pass;
  return filefp;
 
 def UncompressString(infile):
@@ -3025,6 +3029,10 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
    outfp = ZlibFile(outfile, mode=mode, level=compressionlevel);
  except FileNotFoundError:
   return False;
+ try:
+  outfp.write_through = True;
+ except AttributeError:
+  pass;
  return outfp;
 
 def GetDevMajorMinor(fdev):
