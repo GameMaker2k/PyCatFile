@@ -161,9 +161,9 @@ if active_action:
    checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamedict, True);
    tempout = BytesIO();
    if(checkcompressfile=="catfile"):
-    tmpout = pycatfile.RePackArchiveFile(getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, getargs.verbose, False);
+    tmpout = pycatfile.RePackArchiveFile(getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, False, False);
    else:
-    tmpout = pycatfile.PackArchiveFileFromInFile(getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamedict, getargs.verbose, False);
+    tmpout = pycatfile.PackArchiveFileFromInFile(getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamedict, False, False);
    if(not tmpout):
     sys.exit(1);
    getargs.input = tempout;
@@ -184,9 +184,9 @@ if active_action:
    checkcompressfile = pycatfile.CheckCompressionSubType(getargs.input, fnamedict, True);
    tempout = BytesIO();
    if(checkcompressfile=="catfile"):
-    tmpout = pycatfile.RePackArchiveFile(getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, getargs.verbose, False);
+    tmpout = pycatfile.RePackArchiveFile(getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, False, False);
    else:
-    tmpout = pycatfile.PackArchiveFileFromInFile(getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamedict, getargs.verbose, False);
+    tmpout = pycatfile.PackArchiveFileFromInFile(getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamedict, False, False);
    getargs.input = tempout;
    if(not tmpout):
     sys.exit(1);
