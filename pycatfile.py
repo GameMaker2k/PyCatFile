@@ -36,6 +36,11 @@ try:
 except ImportError:
  import json;
 
+try:
+ basestring;
+except NameError:
+ basestring = str;
+
 # URL Parsing
 try:
  from urllib.parse import urlparse, urlunparse;
@@ -4986,7 +4991,13 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
  valid_archive = True;
  invalid_archive = False;
  if(verbose):
-  VerbosePrintOut(infile);
+  if(hasattr(infile, "read") or hasattr(infile, "write")):
+   try:
+    VerbosePrintOut(infile.name);
+   except AttributeError:
+    VerbosePrintOut(infile);
+  else:
+   VerbosePrintOut(infile);
   VerbosePrintOut("Number of Records " + str(fnumfiles));
  if(fprechecksum==catfileheadercshex):
   if(verbose):
