@@ -14,7 +14,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 6/18/2024 Ver. 0.13.4 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 6/18/2024 Ver. 0.13.6 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
@@ -175,9 +175,9 @@ __use_alt_format__ = False;
 if(not havepysftp):
  __use_pysftp__ = False;
 __use_http_lib__ = "httpx";
-if(__use_http_lib__=="httpx" haverequests and not havehttpx):
+if(__use_http_lib__=="httpx" and haverequests and not havehttpx):
  __use_http_lib__ = "requests";
-if(__use_http_lib__=="requests" havehttpx and not haverequests):
+if(__use_http_lib__=="requests" and havehttpx and not haverequests):
  __use_http_lib__ = "httpx";
 if((__use_http_lib__=="httpx" or __use_http_lib__=="requests") and not havehttpx and not haverequests):
  __use_http_lib__ = "urllib";
@@ -213,7 +213,7 @@ __file_format_list__ = [__file_format_name__, __file_format_magic__, __file_form
 __file_format_dict__ = {'format_name': __file_format_name__, 'format_magic': __file_format_magic__, 'format_lower': __file_format_lower__, 'format_len': __file_format_len__, 'format_hex': __file_format_hex__, 'format_delimiter': __file_format_delimiter__, 'format_ver': __file_format_ver__, 'new_style': __use_new_style__, 'use_advanced_list': __use_advanced_list__, 'use_alt_inode': __use_alt_inode__};
 __project__ = __program_name__;
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile";
-__version_info__ = (0, 13, 4, "RC 1", 1);
+__version_info__ = (0, 13, 6, "RC 1", 1);
 __version_date_info__ = (2024, 6, 18, "RC 1", 1);
 __version_date__ = str(__version_date_info__[0]) + "." + str(__version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2);
 __revision__ = __version_info__[3];
