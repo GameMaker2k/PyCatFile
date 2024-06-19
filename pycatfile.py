@@ -7870,18 +7870,11 @@ def upload_file_to_ftp_string(ftpstring, url):
 class RawIteratorWrapper:
  def __init__(self, iterator):
   self.iterator = iterator;
-  self.buffer = b"";
  def read(self, size=-1):
-  while size < 0 or len(self.buffer) < size:
-   try:
-    chunk = next(self.iterator);
-    self.buffer += chunk;
-   except StopIteration:
-    break;
-  if size < 0:
-   size = len(self.buffer);
-  result, self.buffer = self.buffer[:size], self.buffer[size:];
-  return result;
+  try:
+   return next(self.iterator);
+  except StopIteration:
+   return b'';
 
 def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
  if headers is None:
@@ -7919,7 +7912,7 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
     response = client.get(rebuilt_url, headers=headers, auth=(username, password));
    else:
     response = client.get(rebuilt_url, headers=headers);
-   raw_wrapper = RawIteratorWrapper(response.iter_raw());
+   raw_wrapper = RawIteratorWrapper(response.iter_bytes());
    shutil.copyfileobj(raw_wrapper, httpfile);
  else:
   # Use urllib as a fallback
