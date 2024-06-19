@@ -174,7 +174,7 @@ __use_pysftp__ = False;
 __use_alt_format__ = False;
 if(not havepysftp):
  __use_pysftp__ = False;
-__use_http_lib__ = "httpx";
+__use_http_lib__ = "requests";
 if(__use_http_lib__=="httpx" and haverequests and not havehttpx):
  __use_http_lib__ = "requests";
 if(__use_http_lib__=="requests" and havehttpx and not haverequests):
