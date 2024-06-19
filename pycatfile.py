@@ -7903,8 +7903,7 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
     response = client.get(rebuilt_url, headers=headers, auth=(username, password));
    else:
     response = client.get(rebuilt_url, headers=headers);
-   for chunk in response.iter_bytes():
-    httpfile.write(chunk);
+   shutil.copyfileobj(response.iter_raw(), httpfile);
  else:
   # Use urllib as a fallback
   # Build a Request object for urllib
@@ -7921,15 +7920,15 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
    opener = build_opener(auth_handler);
   else:
    opener = build_opener();
-  with opener.open(request) as response:
-   shutil.copyfileobj(response, httpfile);
+  response = opener.open(request);
+  shutil.copyfileobj(response, httpfile);
  # Reset file pointer to the start
  httpfile.seek(0, 0);
  # Return the temporary file object
  return httpfile;
 
-def download_file_from_http_string(url, headers=geturls_headers_pycatfile_python_alt):
- httpfile = download_file_from_http_file(url, headers);
+def download_file_from_http_string(url, headers=geturls_headers_pycatfile_python_alt, usehttp=__use_http_lib__):
+ httpfile = download_file_from_http_file(url, headers, usehttp);
  return ftpfile.read();
 
 if(haveparamiko):
