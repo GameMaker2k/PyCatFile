@@ -2726,8 +2726,10 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
    filetype = "tarfile";
   elif(zipfile.is_zipfile(catfp)):
    filetype = "zipfile";
-  elif(rarfile.is_rarfile(catfp) or rarfile.is_rarfile_sfx(catfp)):
+  elif(rarfile_support and (rarfile.is_rarfile(catfp) or rarfile.is_rarfile_sfx(catfp))):
    filetype = "rarile";
+  elif(py7zr_support and py7zr.is_7zfile(catfp)):
+   return "7zipfile";
   else:
    filetype = False;
  catfp.seek(0, 0);
@@ -2933,8 +2935,10 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
    return "tarfile";
   elif(zipfile.is_zipfile(infile)):
    return "zipfile";
-  elif(rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile)):
+  elif(rarfile_support and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
    return "rarile";
+  elif(py7zr_support and py7zr.is_7zfile(infile)):
+   return "7zipfile";
   else:
    return False;
   return False;
