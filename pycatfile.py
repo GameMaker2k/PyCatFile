@@ -7863,7 +7863,7 @@ def upload_file_to_ftp_string(ftpstring, url):
  ftpfileo.close();
  return ftpfile;
 
-def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
+def download_file_from_http_file(url, headers=None, usehttp='requests'):
  if headers is None:
   headers = {};
  # Parse the URL to extract username and password if present
@@ -7890,7 +7890,7 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
    response = requests.get(rebuilt_url, headers=headers, auth=(username, password), stream=True);
   else:
    response = requests.get(rebuilt_url, headers=headers, stream=True);
-  response.raw.decode_content = True;
+  response.raw.decode_content = True
   shutil.copyfileobj(response.raw, httpfile);
  elif usehttp == 'httpx' and havehttpx:
   # Use httpx if selected and available
@@ -7899,9 +7899,8 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
     response = client.get(rebuilt_url, headers=headers, auth=(username, password));
    else:
     response = client.get(rebuilt_url, headers=headers);
-   with response.iter_bytes() as stream:
-    for chunk in stream:
-     httpfile.write(chunk);
+   for chunk in response.iter_bytes():
+    httpfile.write(chunk);
  else:
   # Use urllib as a fallback
   # Build a Request object for urllib
