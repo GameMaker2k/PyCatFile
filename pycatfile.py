@@ -7863,7 +7863,7 @@ def upload_file_to_ftp_string(ftpstring, url):
  ftpfileo.close();
  return ftpfile;
 
-def download_file_from_http_file(url, headers=None, usehttp='requests'):
+def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
  if headers is None:
   headers = {};
  # Parse the URL to extract username and password if present
