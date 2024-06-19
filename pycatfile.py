@@ -7880,7 +7880,7 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
  elif urlparts.scheme == "ftp" or urlparts.scheme == "ftps":
   return download_file_from_ftp_file(url);
  if urlparts.port:
-  netloc += ':' + str(urlparts.port)
+  netloc += ':' + str(urlparts.port);
  rebuilt_url = urlunparse((urlparts.scheme, netloc, urlparts.path, urlparts.params, urlparts.query, urlparts.fragment));
  # Create a temporary file object
  httpfile = BytesIO();
@@ -7896,11 +7896,12 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
   # Use httpx if selected and available
   with httpx.Client() as client:
    if username and password:
-    response = client.get(rebuilt_url, headers=headers, auth=(username, password), stream=True);
+    response = client.get(rebuilt_url, headers=headers, auth=(username, password));
    else:
-    response = client.get(rebuilt_url, headers=headers, stream=True);
-   for chunk in response.iter_bytes():
-    httpfile.write(chunk);
+    response = client.get(rebuilt_url, headers=headers);
+   with response.iter_bytes() as stream:
+    for chunk in stream:
+     httpfile.write(chunk);
  else:
   # Use urllib as a fallback
   # Build a Request object for urllib
