@@ -3874,19 +3874,28 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
     ftypemod = stat.S_IFMT(int(stat.S_IFDIR + 511));
   elif(zipinfo.create_system==3):
    fwinattributes = format(int(0), 'x').lower();
-   fmode = format(int(zipinfo.external_attr), 'x').lower();
-   fchmode = stat.S_IMODE(int(zipinfo.external_attr));
-   ftypemod = stat.S_IFMT(int(zipinfo.external_attr));
+   try:
+    fmode = format(int(zipinfo.external_attr), 'x').lower();
+    prefmode = int(zipinfo.external_attr);
+    fchmode = stat.S_IMODE(prefmode);
+    ftypemod = stat.S_IFMT(prefmode);
+   except OverflowError:
+    fmode = format(int(zipinfo.external_attr >> 16), 'x').lower();
+    prefmode = int(zipinfo.external_attr >> 16);
+    fchmode = stat.S_IMODE(prefmode);
+    ftypemod = stat.S_IFMT(prefmode);
   else:
    fwinattributes = format(int(0), 'x').lower();
    if(not member.is_dir()):
     fmode = format(int(stat.S_IFREG + 438), 'x').lower();
-    fchmode = stat.S_IMODE(fmode);
-    ftypemod = stat.S_IFMT(fmode);
+    prefmode = int(stat.S_IFREG + 438);
+    fchmode = stat.S_IMODE(prefmode);
+    ftypemod = stat.S_IFMT(prefmode);
    elif(member.is_dir()):
     fmode = format(int(stat.S_IFDIR + 511), 'x').lower();
-    fchmode = stat.S_IMODE(fmode);
-    ftypemod = stat.S_IFMT(fmode);
+    prefmode = int(stat.S_IFDIR + 511);
+    fchmode = stat.S_IMODE(prefmode);
+    ftypemod = stat.S_IFMT(prefmode);
   fcompression = "";
   fcsize = format(int(0), 'x').lower();
   try:
@@ -6134,7 +6143,14 @@ def ZipFileToArrayAlt(infile, listonly=False, checksumtype="crc32", extradata=[]
     ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)));
   elif(zipinfo.create_system==3):
    fwinattributes = int(0);
-   fmode = int(zipinfo.external_attr);
+   try:
+    fmode = int(zipinfo.external_attr);
+    fchmode = stat.S_IMODE(fmode);
+    ftypemod = stat.S_IFMT(fmode);
+   except OverflowError:
+    fmode = int(zipinfo.external_attr >> 16);
+    fchmode = stat.S_IMODE(fmode);
+    ftypemod = stat.S_IFMT(fmode);
   else:
    fwinattributes = int(0);
    if(not member.is_dir()):
@@ -7371,9 +7387,14 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
     ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)));
   elif(zipinfo.create_system==3):
    fwinattributes =int(0);
-   fmode = int(zipinfo.external_attr);
-   fchmode = int(stat.S_IMODE(fmode));
-   ftypemod = int(stat.S_IFMT(fmode));
+   try:
+    fmode = int(zipinfo.external_attr);
+    fchmode = stat.S_IMODE(fmode);
+    ftypemod = stat.S_IFMT(fmode);
+   except OverflowError:
+    fmode = int(zipinfo.external_attr >> 16);
+    fchmode = stat.S_IMODE(fmode);
+    ftypemod = stat.S_IFMT(fmode);
   else:
    fwinattributes = int(0);
    if(not member.is_dir()):
