@@ -148,6 +148,7 @@ try:
  import httpx;
  havehttpx = True;
  logging.getLogger("httpx").setLevel(logging.WARNING);
+ logging.getLogger("httpcore").setLevel(logging.WARNING);
 except ImportError:
  pass;
 
@@ -7870,11 +7871,22 @@ def upload_file_to_ftp_string(ftpstring, url):
 class RawIteratorWrapper:
  def __init__(self, iterator):
   self.iterator = iterator;
+  self.buffer = b"";
+  self._iterator_exhausted = False;
  def read(self, size=-1):
-  try:
-   return next(self.iterator);
-  except StopIteration:
+  if self._iterator_exhausted:
    return b'';
+  while size < 0 or len(self.buffer) < size:
+   try:
+    chunk = next(self.iterator);
+    self.buffer += chunk;
+   except StopIteration:
+    self._iterator_exhausted = True;
+    break;
+  if size < 0:
+   size = len(self.buffer);
+  result, self.buffer = self.buffer[:size], self.buffer[size:];
+  return result;
 
 def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
  if headers is None:
@@ -7907,7 +7919,7 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
   shutil.copyfileobj(response.raw, httpfile);
  elif usehttp == 'httpx' and havehttpx:
   # Use httpx if selected and available
-  with httpx.Client() as client:
+  with httpx.Client(follow_redirects=True) as client:
    if username and password:
     response = client.get(rebuilt_url, headers=headers, auth=(username, password));
    else:
@@ -8169,10 +8181,10 @@ else:
  def upload_file_to_pysftp_string(url):
   return False;
 
-def download_file_from_internet_file(url, headers=geturls_headers_pycatfile_python_alt):
+def download_file_from_internet_file(url, headers=geturls_headers_pycatfile_python_alt, usehttp=__use_http_lib__):
  urlparts = urlparse(url);
  if(urlparts.scheme=="http" or urlparts.scheme=="https"):
-  return download_file_from_http_file(url, headers);
+  return download_file_from_http_file(url, headers, usehttp);
  elif(urlparts.scheme=="ftp" or urlparts.scheme=="ftps"):
   return download_file_from_ftp_file(url);
  elif(urlparts.scheme=="sftp"):
