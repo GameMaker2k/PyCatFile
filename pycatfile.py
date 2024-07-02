@@ -2652,19 +2652,6 @@ def PrintPermissionStringAlt(fchmode, ftype):
   permissionoutstr = permissionstr;
  return permissionoutstr;
 
-import gzip
-
-# StringIO and BytesIO compatibility for Python 2.x and 3.x
-try:
-    from io import StringIO, BytesIO
-except ImportError:
-    try:
-        from cStringIO import StringIO
-        from cStringIO import StringIO as BytesIO
-    except ImportError:
-        from StringIO import StringIO
-        from StringIO import StringIO as BytesIO
-
 def GzipCompressData(data, compresslevel=9):
  try:
   # Try using modern gzip.compress if available
