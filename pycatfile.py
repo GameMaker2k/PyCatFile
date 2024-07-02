@@ -2652,6 +2652,63 @@ def PrintPermissionStringAlt(fchmode, ftype):
   permissionoutstr = permissionstr;
  return permissionoutstr;
 
+import gzip
+
+# StringIO and BytesIO compatibility for Python 2.x and 3.x
+try:
+    from io import StringIO, BytesIO
+except ImportError:
+    try:
+        from cStringIO import StringIO
+        from cStringIO import StringIO as BytesIO
+    except ImportError:
+        from StringIO import StringIO
+        from StringIO import StringIO as BytesIO
+
+def GzipCompressData(data, compresslevel=9):
+ try:
+  # Try using modern gzip.compress if available
+  compressed_data = gzip.compress(data, compresslevel=compresslevel);
+ except AttributeError:
+  # Fallback to older method for Python 2.x and older 3.x versions
+  out = BytesIO();
+  with gzip.GzipFile(fileobj=out, mode="wb", compresslevel=compresslevel) as f:
+   f.write(data);
+  compressed_data = out.getvalue();
+ return compressed_data;
+
+def GzipDecompressData(compressed_data):
+ try:
+  # Try using modern gzip.decompress if available
+  decompressed_data = gzip.decompress(compressed_data);
+ except AttributeError:
+  # Fallback to older method for Python 2.x and older 3.x versions
+  inp = BytesIO(compressed_data);
+  with gzip.GzipFile(fileobj=inp, mode="rb") as f:
+   decompressed_data = f.read();
+ return decompressed_data;
+
+def BzipCompressData(data, compresslevel=9):
+ try:
+  # Try using modern bz2.compress if available
+  compressed_data = bz2.compress(data, compresslevel=compresslevel);
+ except AttributeError:
+  # Fallback to older method for Python 2.x and older 3.x versions
+  compressor = bz2.BZ2Compressor(compresslevel);
+  compressed_data = compressor.compress(data);
+  compressed_data += compressor.flush();
+ return compressed_data;
+
+def BzipDecompressData(compressed_data):
+ try:
+  # Try using modern bz2.decompress if available
+  decompressed_data = bz2.decompress(compressed_data);
+ except AttributeError:
+  # Fallback to older method for Python 2.x and older 3.x versions
+  decompressor = bz2.BZ2Decompressor();
+  decompressed_data = decompressor.decompress(compressed_data);
+ return decompressed_data;
+
 def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True):
  formatspecs = FormatSpecsListToDict(formatspecs);
  if(hasattr(infile, "read") or hasattr(infile, "write")):
@@ -2877,9 +2934,9 @@ def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
 def UncompressString(infile):
  compresscheck = CheckCompressionTypeFromString(infile, formatspecs, False);
  if(compresscheck=="gzip" and compresscheck in compressionsupport):
-  fileuz = gzip.decompress(infile);
+  fileuz = GzipDecompressData(infile);
  if(compresscheck=="bzip2" and compresscheck in compressionsupport):
-  fileuz = bz2.decompress(infile);
+  fileuz = BzipDecompressData(infile);
  if(compresscheck=="zstd" and compresscheck in compressionsupport):
   try:
    import zstandard;
@@ -3031,14 +3088,14 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
-  catfp.write(gzip.compress(fp.read(), compresslevel=compressionlevel));
+  catfp.write(GzipCompressData(fp.read(), compresslevel=compressionlevel));
  if(compression=="bzip2" and compression in compressionsupport):
   catfp = BytesIO();
   if(compressionlevel is None):
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
-  catfp.write(bz2.compress(fp.read(), compresslevel=compressionlevel));
+  catfp.write(BzipCompressData(fp.read(), compresslevel=compressionlevel));
  if(compression=="lz4" and compression in compressionsupport):
   catfp = BytesIO();
   if(compressionlevel is None):
@@ -3080,7 +3137,7 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
    compressionlevel = 9;
   else:
    compressionlevel = int(compressionlevel);
-  catfp.write(zlib.compress(fp.read(), level=compressionlevel));
+  catfp.write(zlib.compress(fp.read(), compressionlevel));
  if(compression=="auto" or compression is None):
   catfp = fp;
  catfp.seek(0, 0);
