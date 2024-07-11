@@ -14,7 +14,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: checksum.py - Last Update: 6/26/2024 Ver. 0.13.12 RC 1 - Author: cooldude2k $
+    $FileInfo: checksum.py - Last Update: 7/10/2024 Ver. 0.13.12 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals;
