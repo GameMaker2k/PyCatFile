@@ -179,6 +179,7 @@ except ImportError:
 __use_pysftp__ = False;
 __use_alt_format__ = False;
 __config_file__ = 'catfile.ini'
+__use_ini_file__ = True;
 if(not havepysftp):
  __use_pysftp__ = False;
 __use_http_lib__ = "httpx";
@@ -188,7 +189,7 @@ if(__use_http_lib__=="requests" and havehttpx and not haverequests):
  __use_http_lib__ = "httpx";
 if((__use_http_lib__=="httpx" or __use_http_lib__=="requests") and not havehttpx and not haverequests):
  __use_http_lib__ = "urllib";
-if os.path.exists(__config_file__):
+if os.path.exists(__config_file__) and __use_ini_file__:
  # Create a ConfigParser object
  config = configparser.ConfigParser();
  # Read the configuration file
