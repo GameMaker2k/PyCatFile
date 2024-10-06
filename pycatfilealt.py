@@ -10,6 +10,7 @@ from io import BytesIO
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class CatFilePacker:
     def __init__(self, checksum_type='crc32'):
         self.checksum_type = checksum_type
@@ -56,8 +57,10 @@ class CatFilePacker:
             checksum = b'\x00' * 4  # Placeholder for unsupported checksum types
         return checksum
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Pack files from a TAR archive into a CAT file.')
+    parser = argparse.ArgumentParser(
+        description='Pack files from a TAR archive into a CAT file.')
     parser.add_argument('tar_path', help='Path to the TAR file to pack')
     parser.add_argument('catfile_path', help='Path to the CAT file to create')
     args = parser.parse_args()

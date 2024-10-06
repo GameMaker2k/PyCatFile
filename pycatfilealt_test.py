@@ -1,6 +1,8 @@
 import unittest
-from pycatfilealt import CatFilePacker  # Assuming the script above is named pycatfilealt.py
+# Assuming the script above is named pycatfilealt.py
+from pycatfilealt import CatFilePacker
 import os
+
 
 class TestCatFilePacker(unittest.TestCase):
     def setUp(self):
@@ -19,6 +21,7 @@ class TestCatFilePacker(unittest.TestCase):
     def test_calculate_checksum(self):
         # Implement this test with known data and checksums
         pass
+
 
 if __name__ == '__main__':
     unittest.main()
