@@ -2997,6 +2997,8 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
         filetype = "7zipfile"
     catfp.seek(0, 0)
     prefp = catfp.read(7)
+    if(prefp == binascii.unhexlify("fd377a585a0000")):
+        filetype = "lzma"
     if(prefp == binascii.unhexlify("526172211a0700")):
         filetype = "rarfile"
     if(prefp == binascii.unhexlify("43617446696c65")):
