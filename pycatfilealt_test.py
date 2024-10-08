@@ -1,7 +1,8 @@
+import os
 import unittest
+
 # Assuming the script above is named pycatfilealt.py
 from pycatfilealt import CatFilePacker
-import os
 
 
 class TestCatFilePacker(unittest.TestCase):

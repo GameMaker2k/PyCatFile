@@ -17,8 +17,11 @@
     $FileInfo: neocatfile.py - Last Update: 7/10/2024 Ver. 0.13.12 RC 1 - Author: cooldude2k $
 '''
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import argparse
+
 import pycatfile
 
 # Compatibility layer for Python 2 and 3 input
@@ -33,8 +36,14 @@ rarfile_support = pycatfile.rarfile_support
 # Set up the argument parser
 argparser = argparse.ArgumentParser(
     description="Manipulates concatenated files for various operations like creation, extraction, and validation.")
-argparser.add_argument("-V", "--version", action="version", version="{0} {1}".format(
-    pycatfile.__program_name__, pycatfile.__version__), help="Displays the program's version.")
+argparser.add_argument(
+    "-V",
+    "--version",
+    action="version",
+    version="{0} {1}".format(
+        pycatfile.__program_name__,
+        pycatfile.__version__),
+    help="Displays the program's version.")
 argparser.add_argument("-i", "--input", required=True,
                        help="Specifies input file(s) for processing.")
 argparser.add_argument(
@@ -53,13 +62,20 @@ argparser.add_argument("-v", "--validate", action="store_true",
                        help="Validates a concatenated file's integrity.")
 argparser.add_argument("--checksum", default="crc32",
                        help="Specifies the checksum type (default: crc32).")
-argparser.add_argument("--compression", default="auto",
-                       help="Specifies the compression method (default: auto).")
+argparser.add_argument(
+    "--compression",
+    default="auto",
+    help="Specifies the compression method (default: auto).")
 argparser.add_argument("--level", help="Specifies the compression level.")
 argparser.add_argument("--preserve", action="store_true",
                        help="Preserves file attributes when extracting.")
-argparser.add_argument("--convert", choices=['tar', 'zip', 'rar'],
-                       help="Convert from an archive format (tar, zip, rar) to a concatenated file.")
+argparser.add_argument(
+    "--convert",
+    choices=[
+        'tar',
+        'zip',
+        'rar'],
+    help="Convert from an archive format (tar, zip, rar) to a concatenated file.")
 args = argparser.parse_args()
 
 # Determine the primary action based on user input
@@ -78,20 +94,59 @@ elif args.validate:
 # Functionality mappings
 if primary_action == 'create':
     if args.convert == 'tar':
-        pycatfile.PackArchiveFileFromTarFile(args.input, args.output, args.compression, args.level, args.checksum, [
-        ], pycatfile.__file_format_list__, args.verbose, False)
+        pycatfile.PackArchiveFileFromTarFile(
+            args.input,
+            args.output,
+            args.compression,
+            args.level,
+            args.checksum,
+            [],
+            pycatfile.__file_format_list__,
+            args.verbose,
+            False)
     elif args.convert == 'zip':
-        pycatfile.PackArchiveFileFromZipFile(args.input, args.output, args.compression, args.level, args.checksum, [
-        ], pycatfile.__file_format_list__, args.verbose, False)
+        pycatfile.PackArchiveFileFromZipFile(
+            args.input,
+            args.output,
+            args.compression,
+            args.level,
+            args.checksum,
+            [],
+            pycatfile.__file_format_list__,
+            args.verbose,
+            False)
     elif rarfile_support and args.convert == 'rar':
-        pycatfile.PackArchiveFileFromRarFile(args.input, args.output, args.compression, args.level, args.checksum, [
-        ], pycatfile.__file_format_list__, args.verbose, False)
+        pycatfile.PackArchiveFileFromRarFile(
+            args.input,
+            args.output,
+            args.compression,
+            args.level,
+            args.checksum,
+            [],
+            pycatfile.__file_format_list__,
+            args.verbose,
+            False)
     else:
-        pycatfile.PackArchiveFile(args.input, args.output, args.verbose, args.compression, args.level,
-                                  False, args.checksum, [], pycatfile.__file_format_list__, args.verbose, False)
+        pycatfile.PackArchiveFile(
+            args.input,
+            args.output,
+            args.verbose,
+            args.compression,
+            args.level,
+            False,
+            args.checksum,
+            [],
+            pycatfile.__file_format_list__,
+            args.verbose,
+            False)
 elif primary_action == 'repack':
     pycatfile.RePackArchiveFile(
-        args.input, args.output, args.compression, args.level, args.checksum, args.verbose)
+        args.input,
+        args.output,
+        args.compression,
+        args.level,
+        args.checksum,
+        args.verbose)
 elif primary_action == 'extract':
     pycatfile.UnPackArchiveFile(
         args.input, args.output, args.verbose, args.preserve)
