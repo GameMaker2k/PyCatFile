@@ -1381,7 +1381,8 @@ def crc64_ecma(msg, initial_value=0x0000000000000000):
         crc ^= b << 56  # XOR byte into the most significant byte of the CRC
         for _ in range(8):  # Process each bit
             if crc & (
-                    1 << 63):  # Check if the leftmost (most significant) bit is set
+                    # Check if the leftmost (most significant) bit is set
+                    1 << 63):
                 # Shift left and XOR with poly if the MSB is 1
                 crc = (crc << 1) ^ poly
             else:
@@ -1400,7 +1401,8 @@ def crc64_iso(msg, initial_value=0xFFFFFFFFFFFFFFFF):
         crc ^= b << 56  # XOR byte into the most significant byte of the CRC
         for _ in range(8):  # Process each bit
             if crc & (
-                    1 << 63):  # Check if the leftmost (most significant) bit is set
+                    # Check if the leftmost (most significant) bit is set
+                    1 << 63):
                 # Shift left and XOR with poly if the MSB is 1
                 crc = (crc << 1) ^ poly
             else:
@@ -9535,7 +9537,7 @@ def RePackArchiveFile(
             int(listcatfiles['ffilelist'][reallcfi]['frmajor']), 'x').lower()
         fseeknextfile = listcatfiles['ffilelist'][reallcfi]['fseeknextfile']
         if (len(listcatfiles['ffilelist'][reallcfi]['fextralist']) > listcatfiles['ffilelist']
-            [ reallcfi]['fextrafields'] and len(listcatfiles['ffilelist'][reallcfi]['fextralist']) > 0):
+                [reallcfi]['fextrafields'] and len(listcatfiles['ffilelist'][reallcfi]['fextralist']) > 0):
             listcatfiles['ffilelist'][reallcfi]['fextrafields'] = len(
                 listcatfiles['ffilelist'][reallcfi]['fextralist'])
         if (not followlink and len(extradata) < 0):
