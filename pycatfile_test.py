@@ -1,7 +1,6 @@
-import os
 import unittest
+import os
 from io import BytesIO
-
 import pycatfile  # Ensure pycatfile.py is accessible
 
 
@@ -31,11 +30,7 @@ class TestPyCatFile(unittest.TestCase):
         # Assuming a function PackCatFile exists for packing files
         with open(self.packed_file, 'wb') as out_file:
             pycatfile.PackCatFile(
-                self.test_files,
-                out_file,
-                compression="none",
-                checksum="none",
-                verbose=False)
+                self.test_files, out_file, compression="none", checksum="none", verbose=False)
 
         # Check if the packed file has been created
         self.assertTrue(os.path.exists(self.packed_file))
@@ -45,11 +40,7 @@ class TestPyCatFile(unittest.TestCase):
         # First, pack files into a single file
         with open(self.packed_file, 'wb') as out_file:
             pycatfile.PackCatFile(
-                self.test_files,
-                out_file,
-                compression="none",
-                checksum="none",
-                verbose=False)
+                self.test_files, out_file, compression="none", checksum="none", verbose=False)
 
         # Assuming a function CatFileListFiles exists for listing contents
         with open(self.packed_file, 'rb') as in_file:

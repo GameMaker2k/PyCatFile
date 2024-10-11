@@ -17,12 +17,10 @@
     $FileInfo: compression.py - Last Update: 7/10/2024 Ver. 0.13.12 RC 1 - Author: cooldude2k $
 '''
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
-import argparse
-import binascii
+from __future__ import absolute_import, division, print_function, unicode_literals
 import os
+import binascii
+import argparse
 import shutil
 from io import open as open
 
@@ -68,46 +66,46 @@ def CompressionSupport():
 
 
 def CheckCompressionType(infile, closefp=True):
-    if (hasattr(infile, "read") or hasattr(infile, "write")):
+    if(hasattr(infile, "read") or hasattr(infile, "write")):
         ckcomfp = infile
     else:
         ckcomfp = open(infile, "rb")
     ckcomfp.seek(0, 0)
     prefp = ckcomfp.read(2)
     filetype = False
-    if (prefp == binascii.unhexlify("1f8b")):
+    if(prefp == binascii.unhexlify("1f8b")):
         filetype = "gzip"
     ckcomfp.seek(0, 0)
     prefp = ckcomfp.read(3)
-    if (prefp == binascii.unhexlify("425a68")):
+    if(prefp == binascii.unhexlify("425a68")):
         filetype = "bzip2"
     ckcomfp.seek(0, 0)
     prefp = ckcomfp.read(4)
-    if (prefp == binascii.unhexlify("28b52ffd")):
+    if(prefp == binascii.unhexlify("28b52ffd")):
         filetype = "zstd"
-    if (prefp == binascii.unhexlify("04224d18")):
+    if(prefp == binascii.unhexlify("04224d18")):
         filetype = "lz4"
     ckcomfp.seek(0, 0)
     prefp = ckcomfp.read(7)
-    if (prefp == binascii.unhexlify("fd377a585a0000")):
+    if(prefp == binascii.unhexlify("fd377a585a0000")):
         filetype = "lzma"
     ckcomfp.seek(0, 0)
     prefp = ckcomfp.read(9)
-    if (prefp == binascii.unhexlify("894c5a4f000d0a1a0a")):
+    if(prefp == binascii.unhexlify("894c5a4f000d0a1a0a")):
         filetype = "lzo"
     ckcomfp.seek(0, 0)
-    if (closefp):
+    if(closefp):
         ckcomfp.close()
     return filetype
 
 
 def gzip_file(infile, outfile, level=9, keepfile=True):
     support_list = CompressionSupport()
-    if (not os.path.exists(infile) or not os.path.isfile(infile)):
+    if(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
-    if (os.path.exists(outfile)):
+    if(os.path.exists(outfile)):
         return False
-    if ("gzip" not in support_list):
+    if("gzip" not in support_list):
         return False
     import gzip
     ucfilefp = open(infile, "rb")
@@ -115,23 +113,23 @@ def gzip_file(infile, outfile, level=9, keepfile=True):
     shutil.copyfileobj(ucfilefp, cfilefp)
     cfilefp.close()
     ucfilefp.close()
-    if (CheckCompressionType(outfile) != "gzip"):
+    if(CheckCompressionType(outfile) != "gzip"):
         os.remove(outfile)
         return False
-    if (not keepfile):
+    if(not keepfile):
         os.remove(infile)
     return True
 
 
 def gunzip_file(infile, outfile, keepfile=True):
     support_list = CompressionSupport()
-    if (not os.path.exists(infile) or not os.path.isfile(infile)):
+    if(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
-    if (os.path.exists(outfile)):
+    if(os.path.exists(outfile)):
         return False
-    if ("gzip" not in support_list):
+    if("gzip" not in support_list):
         return False
-    if (CheckCompressionType(infile) != "gzip"):
+    if(CheckCompressionType(infile) != "gzip"):
         return False
     import gzip
     ucfilefp = open(outfile, "wb")
@@ -139,18 +137,18 @@ def gunzip_file(infile, outfile, keepfile=True):
     shutil.copyfileobj(cfilefp, ucfilefp)
     cfilefp.close()
     ucfilefp.close()
-    if (not keepfile):
+    if(not keepfile):
         os.remove(infile)
     return True
 
 
 def bzip2_file(infile, outfile, level=9, keepfile=True):
     support_list = CompressionSupport()
-    if (not os.path.exists(infile) or not os.path.isfile(infile)):
+    if(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
-    if (os.path.exists(outfile)):
+    if(os.path.exists(outfile)):
         return False
-    if ("bzip2" not in support_list):
+    if("bzip2" not in support_list):
         return False
     import bz2
     ucfilefp = open(infile, "rb")
@@ -158,23 +156,23 @@ def bzip2_file(infile, outfile, level=9, keepfile=True):
     shutil.copyfileobj(ucfilefp, cfilefp)
     cfilefp.close()
     ucfilefp.close()
-    if (CheckCompressionType(outfile) != "bzip2"):
+    if(CheckCompressionType(outfile) != "bzip2"):
         os.remove(outfile)
         return False
-    if (not keepfile):
+    if(not keepfile):
         os.remove(infile)
     return True
 
 
 def bunzip2_file(infile, outfile, keepfile=True):
     support_list = CompressionSupport()
-    if (not os.path.exists(infile) or not os.path.isfile(infile)):
+    if(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
-    if (os.path.exists(outfile)):
+    if(os.path.exists(outfile)):
         return False
-    if ("bzip2" not in support_list):
+    if("bzip2" not in support_list):
         return False
-    if (CheckCompressionType(infile) != "bzip2"):
+    if(CheckCompressionType(infile) != "bzip2"):
         return False
     import bz2
     ucfilefp = open(outfile, "wb")
@@ -182,18 +180,18 @@ def bunzip2_file(infile, outfile, keepfile=True):
     shutil.copyfileobj(cfilefp, ucfilefp)
     cfilefp.close()
     ucfilefp.close()
-    if (not keepfile):
+    if(not keepfile):
         os.remove(infile)
     return True
 
 
 def zstd_file(infile, outfile, level=9, keepfile=True):
     support_list = CompressionSupport()
-    if (not os.path.exists(infile) or not os.path.isfile(infile)):
+    if(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
-    if (os.path.exists(outfile)):
+    if(os.path.exists(outfile)):
         return False
-    if ("zstd" not in support_list):
+    if("zstd" not in support_list):
         return False
     import zstandard
     ucfilefp = open(infile, "rb")
@@ -202,23 +200,23 @@ def zstd_file(infile, outfile, level=9, keepfile=True):
     shutil.copyfileobj(ucfilefp, cfilefp)
     cfilefp.close()
     ucfilefp.close()
-    if (CheckCompressionType(outfile) != "zstd"):
+    if(CheckCompressionType(outfile) != "zstd"):
         os.remove(outfile)
         return False
-    if (not keepfile):
+    if(not keepfile):
         os.remove(infile)
     return True
 
 
 def unzstd_file(infile, outfile, keepfile=True):
     support_list = CompressionSupport()
-    if (not os.path.exists(infile) or not os.path.isfile(infile)):
+    if(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
-    if (os.path.exists(outfile)):
+    if(os.path.exists(outfile)):
         return False
-    if ("zstd" not in support_list):
+    if("zstd" not in support_list):
         return False
-    if (CheckCompressionType(infile) != "zstd"):
+    if(CheckCompressionType(infile) != "zstd"):
         return False
     import zstandard
     ucfilefp = open(outfile, "wb")
@@ -226,18 +224,18 @@ def unzstd_file(infile, outfile, keepfile=True):
     shutil.copyfileobj(cfilefp, ucfilefp)
     cfilefp.close()
     ucfilefp.close()
-    if (not keepfile):
+    if(not keepfile):
         os.remove(infile)
     return True
 
 
 def lz4_file(infile, outfile, level=9, keepfile=True):
     support_list = CompressionSupport()
-    if (not os.path.exists(infile) or not os.path.isfile(infile)):
+    if(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
-    if (os.path.exists(outfile)):
+    if(os.path.exists(outfile)):
         return False
-    if ("lz4" not in support_list):
+    if("lz4" not in support_list):
         return False
     import lz4
     ucfilefp = open(infile, "rb")
@@ -245,23 +243,23 @@ def lz4_file(infile, outfile, level=9, keepfile=True):
     shutil.copyfileobj(ucfilefp, cfilefp)
     cfilefp.close()
     ucfilefp.close()
-    if (CheckCompressionType(outfile) != "lz4"):
+    if(CheckCompressionType(outfile) != "lz4"):
         os.remove(outfile)
         return False
-    if (not keepfile):
+    if(not keepfile):
         os.remove(infile)
     return True
 
 
 def unlz4_file(infile, outfile, keepfile=True):
     support_list = CompressionSupport()
-    if (not os.path.exists(infile) or not os.path.isfile(infile)):
+    if(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
-    if (os.path.exists(outfile)):
+    if(os.path.exists(outfile)):
         return False
-    if ("lz4" not in support_list):
+    if("lz4" not in support_list):
         return False
-    if (CheckCompressionType(infile) != "lz4"):
+    if(CheckCompressionType(infile) != "lz4"):
         return False
     import lz4
     ucfilefp = open(outfile, "wb")
@@ -269,18 +267,18 @@ def unlz4_file(infile, outfile, keepfile=True):
     shutil.copyfileobj(cfilefp, ucfilefp)
     cfilefp.close()
     ucfilefp.close()
-    if (not keepfile):
+    if(not keepfile):
         os.remove(infile)
     return True
 
 
 def lzo_file(infile, outfile, level=9, keepfile=True):
     support_list = CompressionSupport()
-    if (not os.path.exists(infile) or not os.path.isfile(infile)):
+    if(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
-    if (os.path.exists(outfile)):
+    if(os.path.exists(outfile)):
         return False
-    if ("lzo" not in support_list):
+    if("lzo" not in support_list):
         return False
     import lzo
     ucfilefp = open(infile, "rb")
@@ -288,23 +286,23 @@ def lzo_file(infile, outfile, level=9, keepfile=True):
     cfilefp.write(lzo.compress(ucfilefp.read(), level))
     cfilefp.close()
     ucfilefp.close()
-    if (CheckCompressionType(outfile) != "lzo"):
+    if(CheckCompressionType(outfile) != "lzo"):
         os.remove(outfile)
         return False
-    if (not keepfile):
+    if(not keepfile):
         os.remove(infile)
     return True
 
 
 def unlzo_file(infile, outfile, keepfile=True):
     support_list = CompressionSupport()
-    if (not os.path.exists(infile) or not os.path.isfile(infile)):
+    if(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
-    if (os.path.exists(outfile)):
+    if(os.path.exists(outfile)):
         return False
-    if ("lzo" not in support_list):
+    if("lzo" not in support_list):
         return False
-    if (CheckCompressionType(infile) != "lzo"):
+    if(CheckCompressionType(infile) != "lzo"):
         return False
     import lzo
     ucfilefp = open(outfile, "wb")
@@ -312,18 +310,18 @@ def unlzo_file(infile, outfile, keepfile=True):
     ucfilefp.write(lzo.decompress(cfilefp.read()))
     cfilefp.close()
     ucfilefp.close()
-    if (not keepfile):
+    if(not keepfile):
         os.remove(infile)
     return True
 
 
 def lzma_file(infile, outfile, level=9, keepfile=True):
     support_list = CompressionSupport()
-    if (not os.path.exists(infile) or not os.path.isfile(infile)):
+    if(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
-    if (os.path.exists(outfile)):
+    if(os.path.exists(outfile)):
         return False
-    if ("lzma" not in support_list):
+    if("lzma" not in support_list):
         return False
     import lzma
     ucfilefp = open(infile, "rb")
@@ -331,23 +329,23 @@ def lzma_file(infile, outfile, level=9, keepfile=True):
     shutil.copyfileobj(ucfilefp, cfilefp)
     cfilefp.close()
     ucfilefp.close()
-    if (CheckCompressionType(outfile) != "lzma"):
+    if(CheckCompressionType(outfile) != "lzma"):
         os.remove(outfile)
         return False
-    if (not keepfile):
+    if(not keepfile):
         os.remove(infile)
     return True
 
 
 def unlzma_file(infile, outfile, keepfile=True):
     support_list = CompressionSupport()
-    if (not os.path.exists(infile) or not os.path.isfile(infile)):
+    if(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
-    if (os.path.exists(outfile)):
+    if(os.path.exists(outfile)):
         return False
-    if ("lzma" not in support_list):
+    if("lzma" not in support_list):
         return False
-    if (CheckCompressionType(infile) != "lzma"):
+    if(CheckCompressionType(infile) != "lzma"):
         return False
     import lzma
     ucfilefp = open(outfile, "wb")
@@ -355,18 +353,18 @@ def unlzma_file(infile, outfile, keepfile=True):
     shutil.copyfileobj(cfilefp, ucfilefp)
     cfilefp.close()
     ucfilefp.close()
-    if (not keepfile):
+    if(not keepfile):
         os.remove(infile)
     return True
 
 
 def xz_file(infile, outfile, level=9, keepfile=True):
     support_list = CompressionSupport()
-    if (not os.path.exists(infile) or not os.path.isfile(infile)):
+    if(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
-    if (os.path.exists(outfile)):
+    if(os.path.exists(outfile)):
         return False
-    if ("xz" not in support_list):
+    if("xz" not in support_list):
         return False
     import lzma
     ucfilefp = open(infile, "rb")
@@ -374,23 +372,23 @@ def xz_file(infile, outfile, level=9, keepfile=True):
     shutil.copyfileobj(ucfilefp, cfilefp)
     cfilefp.close()
     ucfilefp.close()
-    if (CheckCompressionType(outfile) != "xz"):
+    if(CheckCompressionType(outfile) != "xz"):
         os.remove(outfile)
         return False
-    if (not keepfile):
+    if(not keepfile):
         os.remove(infile)
     return True
 
 
 def unxz_file(infile, outfile, keepfile=True):
     support_list = CompressionSupport()
-    if (not os.path.exists(infile) or not os.path.isfile(infile)):
+    if(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
-    if (os.path.exists(outfile)):
+    if(os.path.exists(outfile)):
         return False
-    if ("xz" not in support_list):
+    if("xz" not in support_list):
         return False
-    if (CheckCompressionType(infile) != "xz"):
+    if(CheckCompressionType(infile) != "xz"):
         return False
     import lzma
     ucfilefp = open(outfile, "wb")
@@ -398,16 +396,14 @@ def unxz_file(infile, outfile, keepfile=True):
     shutil.copyfileobj(cfilefp, ucfilefp)
     cfilefp.close()
     ucfilefp.close()
-    if (not keepfile):
+    if(not keepfile):
         os.remove(infile)
     return True
 
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser(
-        description="Compress Files",
-        conflict_handler="resolve",
-        add_help=True)
+        description="Compress Files", conflict_handler="resolve", add_help=True)
     argparser.add_argument(
         "-V", "--version", action="version", version="PyCompress 0.0.1")
     argparser.add_argument(
@@ -417,63 +413,57 @@ if __name__ == "__main__":
     argparser.add_argument("-i", "-f", "--input",
                            help="Files to compress/decompress", required=True)
     argparser.add_argument(
-        "-o",
-        "--output",
-        help="Output file after compress/decompress",
-        required=True)
+        "-o", "--output", help="Output file after compress/decompress", required=True)
     argparser.add_argument(
         "-k", "--keep", action="store_false", help="Keep input file")
     argparser.add_argument("-l", "--level", default="1",
                            help="Compression level")
-    argparser.add_argument(
-        "-compression",
-        "--compression",
-        default="auto",
-        help="File compression to use for compress/decompress")
+    argparser.add_argument("-compression", "--compression", default="auto",
+                           help="File compression to use for compress/decompress")
     getargs = argparser.parse_args()
     chkcompression = CompressionSupport()
-    if (getargs.compression not in chkcompression):
+    if(getargs.compression not in chkcompression):
         exit()
-    if (not getargs.compress and not getargs.decompress):
+    if(not getargs.compress and not getargs.decompress):
         exit()
-    if (getargs.compress and getargs.decompress):
+    if(getargs.compress and getargs.decompress):
         exit()
-    if (getargs.compress and not getargs.decompress):
-        if (getargs.compression == "gzip" and "gzip" in chkcompression):
+    if(getargs.compress and not getargs.decompress):
+        if(getargs.compression == "gzip" and "gzip" in chkcompression):
             gzip_file(getargs.input, getargs.output,
                       int(getargs.level), getargs.keep)
-        if (getargs.compression == "bzip2" and "bzip2" in chkcompression):
+        if(getargs.compression == "bzip2" and "bzip2" in chkcompression):
             bzip2_file(getargs.input, getargs.output,
                        int(getargs.level), getargs.keep)
-        if (getargs.compression == "zstd" and "zstd" in chkcompression):
+        if(getargs.compression == "zstd" and "zstd" in chkcompression):
             zstd_file(getargs.input, getargs.output,
                       int(getargs.level), getargs.keep)
-        if (getargs.compression == "lz4" and "lz4" in chkcompression):
+        if(getargs.compression == "lz4" and "lz4" in chkcompression):
             lz4_file(getargs.input, getargs.output,
                      int(getargs.level), getargs.keep)
-        if (getargs.compression == "lzo" and "lzo" in chkcompression):
+        if(getargs.compression == "lzo" and "lzo" in chkcompression):
             lzo_file(getargs.input, getargs.output,
                      int(getargs.level), getargs.keep)
-        if (getargs.compression == "lzma" and "lzma" in chkcompression):
+        if(getargs.compression == "lzma" and "lzma" in chkcompression):
             lzma_file(getargs.input, getargs.output,
                       int(getargs.level), getargs.keep)
-        if (getargs.compression == "xz" and "xz" in chkcompression):
+        if(getargs.compression == "xz" and "xz" in chkcompression):
             xz_file(getargs.input, getargs.output,
                     int(getargs.level), getargs.keep)
         exit()
-    if (not getargs.compress and getargs.decompress):
-        if (getargs.compression == "gzip" and "gzip" in chkcompression):
+    if(not getargs.compress and getargs.decompress):
+        if(getargs.compression == "gzip" and "gzip" in chkcompression):
             gunzip_file(getargs.input, getargs.output, getargs.keep)
-        if (getargs.compression == "bzip2" and "bzip2" in chkcompression):
+        if(getargs.compression == "bzip2" and "bzip2" in chkcompression):
             bunzip2_file(getargs.input, getargs.output, getargs.keep)
-        if (getargs.compression == "zstd" and "zstd" in chkcompression):
+        if(getargs.compression == "zstd" and "zstd" in chkcompression):
             unzstd_file(getargs.input, getargs.output, getargs.keep)
-        if (getargs.compression == "lz4" and "lz4" in chkcompression):
+        if(getargs.compression == "lz4" and "lz4" in chkcompression):
             unlz4_file(getargs.input, getargs.output, getargs.keep)
-        if (getargs.compression == "lzo" and "lzo" in chkcompression):
+        if(getargs.compression == "lzo" and "lzo" in chkcompression):
             unlzo_file(getargs.input, getargs.output, getargs.keep)
-        if (getargs.compression == "lzma" and "lzma" in chkcompression):
+        if(getargs.compression == "lzma" and "lzma" in chkcompression):
             unlzma_file(getargs.input, getargs.output, getargs.keep)
-        if (getargs.compression == "xz" and "xz" in chkcompression):
+        if(getargs.compression == "xz" and "xz" in chkcompression):
             unxz_file(getargs.input, getargs.output, getargs.keep)
         exit()

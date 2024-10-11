@@ -1,9 +1,9 @@
-import argparse
-import logging
 import os
 import sys
+import logging
 import tarfile
 import zlib
+import argparse
 from io import BytesIO
 
 # Configure logging
