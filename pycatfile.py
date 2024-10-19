@@ -8806,9 +8806,9 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
     return httpfile
 
 
-def download_file_from_http_string(url, headers=geturls_headers_pycatfile_python_alt, usehttp=__use_http_lib__):
+def download_file_from_http_string(url, headers=geturls_headers_pyhockeystats_python_alt, usehttp=__use_http_lib__):
     httpfile = download_file_from_http_file(url, headers, usehttp)
-    return ftpfile.read()
+    return httpfile.read()
 
 
 if(haveparamiko):
@@ -8867,7 +8867,7 @@ if(haveparamiko):
         sftpfile = download_file_from_sftp_file(url)
         return sftpfile.read()
 else:
-    def download_file_from_ftp_string(url):
+    def download_file_from_sftp_string(url):
         return False
 
 if(haveparamiko):
@@ -8983,7 +8983,7 @@ if(havepysftp):
         sftpfile = download_file_from_pysftp_file(url)
         return sftpfile.read()
 else:
-    def download_file_from_ftp_string(url):
+    def download_file_from_pyftp_string(url):
         return False
 
 if(havepysftp):
@@ -9044,7 +9044,7 @@ else:
         return False
 
 
-def download_file_from_internet_file(url, headers=geturls_headers_pycatfile_python_alt, usehttp=__use_http_lib__):
+def download_file_from_internet_file(url, headers=geturls_headers_pyhockeystats_python_alt, usehttp=__use_http_lib__):
     urlparts = urlparse(url)
     if(urlparts.scheme == "http" or urlparts.scheme == "https"):
         return download_file_from_http_file(url, headers, usehttp)
@@ -9060,20 +9060,10 @@ def download_file_from_internet_file(url, headers=geturls_headers_pycatfile_pyth
     return False
 
 
-def download_file_from_internet_uncompress_file(url, headers=geturls_headers_pycatfile_python_alt, formatspecs=__file_format_dict__):
-    formatspecs = FormatSpecsListToDict(formatspecs)
-    fp = download_file_from_internet_file(url)
-    fp = UncompressArchiveFile(fp, formatspecs)
-    fp.seek(0, 0)
-    if(not fp):
-        return False
-    return fp
-
-
-def download_file_from_internet_string(url, headers=geturls_headers_pycatfile_python_alt):
+def download_file_from_internet_string(url, headers=geturls_headers_pyhockeystats_python_alt, usehttp=__use_http_lib__):
     urlparts = urlparse(url)
     if(urlparts.scheme == "http" or urlparts.scheme == "https"):
-        return download_file_from_http_string(url, headers)
+        return download_file_from_http_string(url, headers, usehttp)
     elif(urlparts.scheme == "ftp" or urlparts.scheme == "ftps"):
         return download_file_from_ftp_string(url)
     elif(urlparts.scheme == "sftp"):
@@ -9084,16 +9074,6 @@ def download_file_from_internet_string(url, headers=geturls_headers_pycatfile_py
     else:
         return False
     return False
-
-
-def download_file_from_internet_uncompress_string(url, headers=geturls_headers_pycatfile_python_alt, formatspecs=__file_format_dict__):
-    formatspecs = FormatSpecsListToDict(formatspecs)
-    fp = download_file_from_internet_string(url)
-    fp = UncompressArchiveFile(fp, formatspecs)
-    fp.seek(0, 0)
-    if(not fp):
-        return False
-    return fp
 
 
 def upload_file_to_internet_file(ifp, url):
@@ -9112,17 +9092,6 @@ def upload_file_to_internet_file(ifp, url):
     return False
 
 
-def upload_file_to_internet_compress_file(ifp, url, formatspecs=__file_format_dict__):
-    formatspecs = FormatSpecsListToDict(formatspecs)
-    catfp = CompressArchiveFile(
-        catfp, compression, compressionlevel, formatspecs)
-    if(not catfileout):
-        return False
-    catfp.seek(0, 0)
-    upload_file_to_internet_file(catfp, outfile)
-    return True
-
-
 def upload_file_to_internet_string(ifp, url):
     urlparts = urlparse(url)
     if(urlparts.scheme == "http" or urlparts.scheme == "https"):
@@ -9137,17 +9106,6 @@ def upload_file_to_internet_string(ifp, url):
     else:
         return False
     return False
-
-
-def upload_file_to_internet_compress_string(ifp, url, formatspecs=__file_format_dict__):
-    formatspecs = FormatSpecsListToDict(formatspecs)
-    catfp = CompressArchiveFile(
-        BytesIO(ifp), compression, compressionlevel, formatspecs)
-    if(not catfileout):
-        return False
-    catfp.seek(0, 0)
-    upload_file_to_internet_file(catfp, outfile)
-    return True
 
 
 try:
