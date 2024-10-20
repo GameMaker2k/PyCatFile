@@ -17,7 +17,7 @@
     $FileInfo: pycatfile.py - Last Update: 7/10/2024 Ver. 0.13.12 RC 1 - Author: cooldude2k $
 '''
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import absolute_import, division, print_function, unicode_literals, generators, with_statement, nested_scopes
 import io
 import os
 import re
