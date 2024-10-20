@@ -5044,15 +5044,21 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
     curloc = catfp.tell()
     if(curloc > 0):
         catfp.seek(0, 0)
-    catheader = ReadFileHeaderData(catfp, 4, formatspecs['format_delimiter'])
+    catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+    catstring = catfp.read(len(formatspecs['format_magic']+catheaderver)).decode("UTF-8")
+    catdel = catfp.read(1).decode("UTF-8")
+    if(catstring != formatspecs['format_magic']+catheaderver):
+        return False
+    if(catdel != formatspecs['format_delimiter']):
+        return False
+    catheader = ReadFileHeaderData(catfp, 3, formatspecs['format_delimiter'])
     if(curloc > 0):
         catfp.seek(curloc, 0)
-    catstring = catheader[0]
     catversion = re.findall("([\\d]+)", catstring)
-    fprenumfiles = catheader[1]
+    fprenumfiles = catheader[0]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[2]
-    fprechecksum = catheader[3]
+    fprechecksumtype = catheader[1]
+    fprechecksum = catheader[2]
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
@@ -5296,15 +5302,21 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
     curloc = catfp.tell()
     if(curloc > 0):
         catfp.seek(0, 0)
-    catheader = ReadFileHeaderData(catfp, 4, formatspecs['format_delimiter'])
+    catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+    catstring = catfp.read(len(formatspecs['format_magic']+catheaderver)).decode("UTF-8")
+    catdel = catfp.read(1).decode("UTF-8")
+    if(catstring != formatspecs['format_magic']+catheaderver):
+        return False
+    if(catdel != formatspecs['format_delimiter']):
+        return False
+    catheader = ReadFileHeaderData(catfp, 3, formatspecs['format_delimiter'])
     if(curloc > 0):
         catfp.seek(curloc, 0)
-    catstring = catheader[0]
     catversion = re.findall("([\\d]+)", catstring)
-    fprenumfiles = catheader[1]
+    fprenumfiles = catheader[0]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[2]
-    fprechecksum = catheader[3]
+    fprechecksumtype = catheader[1]
+    fprechecksum = catheader[2]
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
@@ -5561,15 +5573,21 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
     curloc = catfp.tell()
     if(curloc > 0):
         catfp.seek(0, 0)
-    catheader = ReadFileHeaderData(catfp, 4, formatspecs['format_delimiter'])
+    catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+    catstring = catfp.read(len(formatspecs['format_magic']+catheaderver)).decode("UTF-8")
+    catdel = catfp.read(1).decode("UTF-8")
+    if(catstring != formatspecs['format_magic']+catheaderver):
+        return False
+    if(catdel != formatspecs['format_delimiter']):
+        return False
+    catheader = ReadFileHeaderData(catfp, 3, formatspecs['format_delimiter'])
     if(curloc > 0):
         catfp.seek(curloc, 0)
-    catstring = catheader[0]
     catversion = re.findall("([\\d]+)", catstring)
-    fprenumfiles = catheader[1]
+    fprenumfiles = catheader[0]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[2]
-    fprechecksum = catheader[3]
+    fprechecksumtype = catheader[1]
+    fprechecksum = catheader[2]
     il = 0
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
@@ -5833,15 +5851,21 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
     curloc = catfp.tell()
     if(curloc > 0):
         catfp.seek(0, 0)
-    catheader = ReadFileHeaderData(catfp, 4, formatspecs['format_delimiter'])
+    catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+    catstring = catfp.read(len(formatspecs['format_magic']+catheaderver)).decode("UTF-8")
+    catdel = catfp.read(1).decode("UTF-8")
+    if(catstring != formatspecs['format_magic']+catheaderver):
+        return False
+    if(catdel != formatspecs['format_delimiter']):
+        return False
+    catheader = ReadFileHeaderData(catfp, 3, formatspecs['format_delimiter'])
     if(curloc > 0):
         catfp.seek(curloc, 0)
-    catstring = catheader[0]
     catversion = re.findall("([\\d]+)", catstring)
-    fprenumfiles = catheader[1]
+    fprenumfiles = catheader[0]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[2]
-    fprechecksum = catheader[3]
+    fprechecksumtype = catheader[1]
+    fprechecksum = catheader[2]
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
