@@ -215,10 +215,10 @@ if os.path.exists(__config_file__) and __use_ini_file__:
     __file_format_name__ = config['main']['name']
     __program_name__ = config['main']['proname']
     __file_format_lower__ = config['main']['lower']
-    __file_format_magic__ = config['main']['magic']
+    __file_format_magic__ = config['main']['magic'].encode("UTF-8").decode('unicode_escape')
     __file_format_len__ = int(config['main']['len'])
     __file_format_hex__ = config['main']['hex']
-    __file_format_delimiter__ = config['main']['delimiter']
+    __file_format_delimiter__ = config['main']['delimiter'].encode("UTF-8").decode('unicode_escape')
     __file_format_ver__ = config['main']['ver']
     __use_new_style__ = config.getboolean('main', 'newstyle')
     __use_advanced_list__ = config.getboolean('main', 'advancedlist')
@@ -267,7 +267,7 @@ __version_date_info__ = (2024, 7, 10, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: f2a8f0439d2bd4bc55dcea0e6f800169f17fbee0 $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
