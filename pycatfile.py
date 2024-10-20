@@ -47,19 +47,33 @@ except ImportError:
     from ftplib import FTP
 
 try:
-    import simplejson as json
+    import ujson as json
 except ImportError:
-    import json
+    try:
+        import simplejson as json
+    except ImportError:
+        import json
 
 try:
     import configparser
 except ImportError:
-    import ConfigParser as configparser
+    try:
+        import SafeConfigParser as configparser
+    except ImportError:
+        import ConfigParser as configparser
 
 try:
     basestring
 except NameError:
     basestring = str
+
+baseint = []
+try:
+    baseint.append(long)
+    baseint.insert(0, int)
+except NameError:
+    baseint.append(int)
+baseint = tuple(baseint)
 
 # URL Parsing
 try:
@@ -267,7 +281,7 @@ __version_date_info__ = (2024, 7, 10, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id: f2a8f0439d2bd4bc55dcea0e6f800169f17fbee0 $"
+__revision_id__ = "$Id$"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
