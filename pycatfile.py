@@ -9148,7 +9148,7 @@ def upload_file_to_internet_file(ifp, url):
     return False
 
 
-def upload_file_to_internet_compress_file(ifp, url, formatspecs=__file_format_dict__):
+def upload_file_to_internet_compress_file(ifp, url, compression="auto", compressionlevel=None, formatspecs=__file_format_dict__):
     formatspecs = FormatSpecsListToDict(formatspecs)
     catfp = CompressArchiveFile(
         catfp, compression, compressionlevel, formatspecs)
@@ -9175,7 +9175,7 @@ def upload_file_to_internet_string(ifp, url):
     return False
 
 
-def upload_file_to_internet_compress_string(ifp, url, formatspecs=__file_format_dict__):
+def upload_file_to_internet_compress_string(ifp, url, compression="auto", compressionlevel=None, formatspecs=__file_format_dict__):
     formatspecs = FormatSpecsListToDict(formatspecs)
     catfp = CompressArchiveFile(
         BytesIO(ifp), compression, compressionlevel, formatspecs)
