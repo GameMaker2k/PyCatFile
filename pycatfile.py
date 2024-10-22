@@ -8806,9 +8806,9 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
     return httpfile
 
 
-def download_file_from_http_string(url, headers=geturls_headers_pycatfile_python_alt, usehttp=__use_http_lib__):
+def download_file_from_http_string(url, headers=geturls_headers_pyhockeystats_python_alt, usehttp=__use_http_lib__):
     httpfile = download_file_from_http_file(url, headers, usehttp)
-    return ftpfile.read()
+    return httpfile.read()
 
 
 if(haveparamiko):
