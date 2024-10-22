@@ -17,7 +17,7 @@
     $FileInfo: pycatfile.py - Last Update: 7/10/2024 Ver. 0.13.12 RC 1 - Author: cooldude2k $
 '''
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import absolute_import, division, print_function, unicode_literals, generators, with_statement, nested_scopes
 import io
 import os
 import re
@@ -47,19 +47,33 @@ except ImportError:
     from ftplib import FTP
 
 try:
-    import simplejson as json
+    import ujson as json
 except ImportError:
-    import json
+    try:
+        import simplejson as json
+    except ImportError:
+        import json
 
 try:
     import configparser
 except ImportError:
-    import ConfigParser as configparser
+    try:
+        import SafeConfigParser as configparser
+    except ImportError:
+        import ConfigParser as configparser
 
 try:
     basestring
 except NameError:
     basestring = str
+
+baseint = []
+try:
+    baseint.append(long)
+    baseint.insert(0, int)
+except NameError:
+    baseint.append(int)
+baseint = tuple(baseint)
 
 # URL Parsing
 try:
@@ -215,10 +229,10 @@ if os.path.exists(__config_file__) and __use_ini_file__:
     __file_format_name__ = config['main']['name']
     __program_name__ = config['main']['proname']
     __file_format_lower__ = config['main']['lower']
-    __file_format_magic__ = config['main']['magic']
+    __file_format_magic__ = config['main']['magic'].encode("UTF-8").decode('unicode_escape')
     __file_format_len__ = int(config['main']['len'])
     __file_format_hex__ = config['main']['hex']
-    __file_format_delimiter__ = config['main']['delimiter']
+    __file_format_delimiter__ = config['main']['delimiter'].encode("UTF-8").decode('unicode_escape')
     __file_format_ver__ = config['main']['ver']
     __use_new_style__ = config.getboolean('main', 'newstyle')
     __use_advanced_list__ = config.getboolean('main', 'advancedlist')
@@ -1564,7 +1578,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, ski
     HeaderOut = ReadFileHeaderDataBySize(fp, delimiter)
     if(len(HeaderOut) == 0):
         return False
-    if(re.findall(r"^[.|/]", HeaderOut[3])):
+    if(re.findall("^[.|/]", HeaderOut[3])):
         fname = HeaderOut[3]
     else:
         fname = "./"+HeaderOut[3]
@@ -1609,17 +1623,17 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, ski
         if(uncompress):
             fcontents = UncompressArchiveFile(fcontents, formatspecs)
     fcontentend = fp.tell()
-    if(re.findall(r"^\+([0-9]+)", fseeknextfile)):
+    if(re.findall("^\\+([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile.replace("+", ""))
         if(abs(fseeknextasnum) == 0):
             pass
         fp.seek(fseeknextasnum, 1)
-    elif(re.findall(r"^\-([0-9]+)", fseeknextfile)):
+    elif(re.findall("^\\-([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile)
         if(abs(fseeknextasnum) == 0):
             pass
         fp.seek(fseeknextasnum, 1)
-    elif(re.findall(r"^([0-9]+)", fseeknextfile)):
+    elif(re.findall("^([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile)
         if(abs(fseeknextasnum) == 0):
             pass
@@ -1643,7 +1657,7 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, contentasfile
     fheadsize = int(HeaderOut[0], 16)
     fnumfields = int(HeaderOut[1], 16)
     ftype = int(HeaderOut[2], 16)
-    if(re.findall(r"^[.|/]", HeaderOut[3])):
+    if(re.findall("^[.|/]", HeaderOut[3])):
         fname = HeaderOut[3]
     else:
         fname = "./"+HeaderOut[3]
@@ -1724,17 +1738,17 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, contentasfile
             fccs = GetFileChecksum(
                 fcontents.read(), HeaderOut[-3].lower(), False, formatspecs)
     fcontentend = fp.tell() - 1
-    if(re.findall(r"^\+([0-9]+)", fseeknextfile)):
+    if(re.findall("^\\+([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile.replace("+", ""))
         if(abs(fseeknextasnum) == 0):
             pass
         fp.seek(fseeknextasnum, 1)
-    elif(re.findall(r"^\-([0-9]+)", fseeknextfile)):
+    elif(re.findall("^\\-([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile)
         if(abs(fseeknextasnum) == 0):
             pass
         fp.seek(fseeknextasnum, 1)
-    elif(re.findall(r"^([0-9]+)", fseeknextfile)):
+    elif(re.findall("^([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile)
         if(abs(fseeknextasnum) == 0):
             pass
@@ -1762,7 +1776,7 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
     fheadsize = int(HeaderOut[0], 16)
     fnumfields = int(HeaderOut[1], 16)
     ftype = int(HeaderOut[2], 16)
-    if(re.findall(r"^[.|/]", HeaderOut[3])):
+    if(re.findall("^[.|/]", HeaderOut[3])):
         fname = HeaderOut[3]
     else:
         fname = "./"+HeaderOut[3]
@@ -1843,17 +1857,17 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
             fcontents = UncompressArchiveFile(fcontents, formatspecs)
             fcontents.seek(0, 0)
     fcontentend = fp.tell() - 1
-    if(re.findall(r"^\+([0-9]+)", fseeknextfile)):
+    if(re.findall("^\\+([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile.replace("+", ""))
         if(abs(fseeknextasnum) == 0):
             pass
         fp.seek(fseeknextasnum, 1)
-    elif(re.findall(r"^\-([0-9]+)", fseeknextfile)):
+    elif(re.findall("^\\-([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile)
         if(abs(fseeknextasnum) == 0):
             pass
         fp.seek(fseeknextasnum, 1)
-    elif(re.findall(r"^([0-9]+)", fseeknextfile)):
+    elif(re.findall("^([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile)
         if(abs(fseeknextasnum) == 0):
             pass
@@ -1915,8 +1929,8 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
                         "'" + str(catheader[3]) + "'")
         return False
     catstring = catheader[0]
-    catversion = re.findall(r"([\d]+)", catstring)
-    catversions = re.search(r'(.*?)(\d+)', catstring).groups()
+    catversion = re.findall("([\\d]+)", catstring)
+    catversions = re.search('(.*?)(\\d+)', catstring).groups()
     fprenumfiles = catheader[1]
     fnumfiles = int(fprenumfiles, 16)
     fprechecksumtype = catheader[2]
@@ -1967,17 +1981,17 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
                     VerbosePrintOut("'" + str(prefccs) +
                                     "' != " + "'" + str(prenewfccs) + "'")
                     return False
-            if(re.findall(r"^\+([0-9]+)", prefseeknextfile)):
+            if(re.findall("^\\+([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile.replace("+", ""))
                 if(abs(fseeknextasnum) == 0):
                     pass
                 fp.seek(fseeknextasnum, 1)
-            elif(re.findall(r"^\-([0-9]+)", prefseeknextfile)):
+            elif(re.findall("^\\-([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile)
                 if(abs(fseeknextasnum) == 0):
                     pass
                 fp.seek(fseeknextasnum, 1)
-            elif(re.findall(r"^([0-9]+)", prefseeknextfile)):
+            elif(re.findall("^([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile)
                 if(abs(fseeknextasnum) == 0):
                     pass
@@ -2018,8 +2032,8 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
                         "'" + str(catheader[3]) + "'")
         return False
     catstring = catheader[0]
-    catversion = re.findall(r"([\d]+)", catstring)
-    catversions = re.search(r'(.*?)(\d+)', catstring).groups()
+    catversion = re.findall("([\\d]+)", catstring)
+    catversions = re.search('(.*?)(\\d+)', catstring).groups()
     fprenumfiles = catheader[1]
     fnumfiles = int(fprenumfiles, 16)
     fprechecksumtype = catheader[2]
@@ -2073,17 +2087,17 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
                     VerbosePrintOut("'" + str(prefccs) +
                                     "' != " + "'" + str(prenewfccs) + "'")
                     return False
-            if(re.findall(r"^\+([0-9]+)", prefseeknextfile)):
+            if(re.findall("^\\+([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile.replace("+", ""))
                 if(abs(fseeknextasnum) == 0):
                     pass
                 catfp.seek(fseeknextasnum, 1)
-            elif(re.findall(r"^\-([0-9]+)", prefseeknextfile)):
+            elif(re.findall("^\\-([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile)
                 if(abs(fseeknextasnum) == 0):
                     pass
                 catfp.seek(fseeknextasnum, 1)
-            elif(re.findall(r"^([0-9]+)", prefseeknextfile)):
+            elif(re.findall("^([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile)
                 if(abs(fseeknextasnum) == 0):
                     pass
@@ -2128,7 +2142,7 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
         if(not fp):
             return False
         fp.seek(0, 0)
-    elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         fp = download_file_from_internet_file(infile)
         fp = UncompressArchiveFile(fp, formatspecs)
         fp.seek(0, 0)
@@ -2191,7 +2205,7 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
         if(not fp):
             return False
         fp.seek(0, 0)
-    elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         fp = download_file_from_internet_file(infile)
         fp = UncompressArchiveFile(fp, formatspecs)
         fp.seek(0, 0)
@@ -2292,7 +2306,7 @@ def MakeEmptyFile(outfile, compression="auto", compressionlevel=None, checksumty
         catfpfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
-    elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = BytesIO()
     else:
         fbasename = os.path.splitext(outfile)[0]
@@ -2319,7 +2333,7 @@ def MakeEmptyFile(outfile, compression="auto", compressionlevel=None, checksumty
             shutil.copyfileobj(catfp, sys.stdout.buffer)
         else:
             shutil.copyfileobj(catfp, sys.stdout)
-    elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         catfp.seek(0, 0)
@@ -2431,7 +2445,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
     fnumfiles = format(numfiles, 'x').lower()
     AppendFileHeader(fp, fnumfiles, checksumtype, formatspecs)
     for curfname in GetDirList:
-        if(re.findall(r"^[.|/]", curfname)):
+        if(re.findall("^[.|/]", curfname)):
             fname = curfname
         else:
             fname = "./"+curfname
@@ -2680,7 +2694,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
     AppendFileHeader(fp, fnumfiles, checksumtype, formatspecs)
     for curfname in GetDirList:
         ftype = format(curfname[0], 'x').lower()
-        if(re.findall(r"^[.|/]", curfname[1])):
+        if(re.findall("^[.|/]", curfname[1])):
             fname = curfname[1]
         else:
             fname = "./"+curfname[1]
@@ -2742,7 +2756,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
         catfpfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
-    elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = BytesIO()
     else:
         fbasename = os.path.splitext(outfile)[0]
@@ -2770,7 +2784,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
             shutil.copyfileobj(catfp, sys.stdout.buffer)
         else:
             shutil.copyfileobj(catfp, sys.stdout)
-    elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         catfp.seek(0, 0)
@@ -2796,7 +2810,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
         catfpfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
-    elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = BytesIO()
     else:
         fbasename = os.path.splitext(outfile)[0]
@@ -2824,7 +2838,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
             shutil.copyfileobj(catfp, sys.stdout.buffer)
         else:
             shutil.copyfileobj(catfp, sys.stdout)
-    elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         catfp.seek(0, 0)
@@ -2997,8 +3011,6 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
         filetype = "7zipfile"
     catfp.seek(0, 0)
     prefp = catfp.read(7)
-    if(prefp == binascii.unhexlify("fd377a585a0000")):
-        filetype = "lzma"
     if(prefp == binascii.unhexlify("526172211a0700")):
         filetype = "rarfile"
     if(prefp == binascii.unhexlify("43617446696c65")):
@@ -3563,7 +3575,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
         catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
-    elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = BytesIO()
     else:
         fbasename = os.path.splitext(outfile)[0]
@@ -3605,7 +3617,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
     numfiles = int(len(GetDirList))
     catfp = AppendFileHeader(catfp, numfiles, checksumtype, formatspecs)
     for curfname in GetDirList:
-        if(re.findall(r"^[.|/]", curfname)):
+        if(re.findall("^[.|/]", curfname)):
             fname = curfname
         else:
             fname = "./"+curfname
@@ -3849,7 +3861,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
             shutil.copyfileobj(catfp, sys.stdout.buffer)
         else:
             shutil.copyfileobj(catfp, sys.stdout)
-    elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         catfp.seek(0, 0)
@@ -3907,7 +3919,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
-    elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = BytesIO()
     else:
         fbasename = os.path.splitext(outfile)[0]
@@ -3933,7 +3945,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         if(not infile):
             return False
         infile.seek(0, 0)
-    elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         infile = download_file_from_internet_file(infile)
         infile.seek(0, 0)
         if(not infile):
@@ -3958,7 +3970,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
     numfiles = int(len(tarfp.getmembers()))
     catfp = AppendFileHeader(catfp, numfiles, checksumtype, formatspecs)
     for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
-        if(re.findall(r"^[.|/]", member.name)):
+        if(re.findall("^[.|/]", member.name)):
             fname = member.name
         else:
             fname = "./"+member.name
@@ -4103,7 +4115,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
             shutil.copyfileobj(catfp, sys.stdout.buffer)
         else:
             shutil.copyfileobj(catfp, sys.stdout)
-    elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         catfp.seek(0, 0)
@@ -4147,7 +4159,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
         catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
-    elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = BytesIO()
     else:
         fbasename = os.path.splitext(outfile)[0]
@@ -4173,7 +4185,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
         if(not infile):
             return False
         infile.seek(0, 0)
-    elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         infile = download_file_from_internet_file(infile)
         infile.seek(0, 0)
         if(not infile):
@@ -4193,7 +4205,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
     numfiles = int(len(zipfp.infolist()))
     catfp = AppendFileHeader(catfp, numfiles, checksumtype, formatspecs)
     for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
-        if(re.findall(r"^[.|/]", member.filename)):
+        if(re.findall("^[.|/]", member.filename)):
             fname = member.filename
         else:
             fname = "./"+member.filename
@@ -4370,7 +4382,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
             shutil.copyfileobj(catfp, sys.stdout.buffer)
         else:
             shutil.copyfileobj(catfp, sys.stdout)
-    elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         catfp.seek(0, 0)
@@ -4418,7 +4430,7 @@ if(rarfile_support):
             catfp = BytesIO()
         elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
             catfp = outfile
-        elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+        elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
             catfp = BytesIO()
         else:
             fbasename = os.path.splitext(outfile)[0]
@@ -4474,7 +4486,7 @@ if(rarfile_support):
             else:
                 is_unix = False
                 is_windows = False
-            if(re.findall(r"^[.|/]", member.filename)):
+            if(re.findall("^[.|/]", member.filename)):
                 fname = member.filename
             else:
                 fname = "./"+member.filename
@@ -4667,7 +4679,7 @@ if(rarfile_support):
                 shutil.copyfileobj(catfp, sys.stdout.buffer)
             else:
                 shutil.copyfileobj(catfp, sys.stdout)
-        elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+        elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
             catfp = CompressArchiveFile(
                 catfp, compression, compressionlevel, formatspecs)
             catfp.seek(0, 0)
@@ -4714,7 +4726,7 @@ if(py7zr_support):
             catfp = BytesIO()
         elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
             catfp = outfile
-        elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+        elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
             catfp = BytesIO()
         else:
             fbasename = os.path.splitext(outfile)[0]
@@ -4742,7 +4754,7 @@ if(py7zr_support):
         numfiles = int(len(szpfp.list()))
         AppendFileHeader(catfp, numfiles, checksumtype, formatspecs)
         for member in sorted(szpfp.list(), key=lambda x: x.filename):
-            if(re.findall(r"^[.|/]", member.filename)):
+            if(re.findall("^[.|/]", member.filename)):
                 fname = member.filename
             else:
                 fname = "./"+member.filename
@@ -4897,7 +4909,7 @@ if(py7zr_support):
                 shutil.copyfileobj(catfp, sys.stdout.buffer)
             else:
                 shutil.copyfileobj(catfp, sys.stdout)
-        elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+        elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
             catfp = CompressArchiveFile(
                 catfp, compression, compressionlevel, formatspecs)
             catfp.seek(0, 0)
@@ -4969,7 +4981,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         if(not catfp):
             return False
         catfp.seek(0, 0)
-    elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         catfp = download_file_from_internet_file(infile)
         catfp.seek(0, 0)
         catfp = UncompressArchiveFile(catfp, formatspecs)
@@ -5032,15 +5044,21 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
     curloc = catfp.tell()
     if(curloc > 0):
         catfp.seek(0, 0)
-    catheader = ReadFileHeaderData(catfp, 4, formatspecs['format_delimiter'])
+    catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+    catstring = catfp.read(len(formatspecs['format_magic']+catheaderver)).decode("UTF-8")
+    catdel = catfp.read(1).decode("UTF-8")
+    if(catstring != formatspecs['format_magic']+catheaderver):
+        return False
+    if(catdel != formatspecs['format_delimiter']):
+        return False
+    catheader = ReadFileHeaderData(catfp, 3, formatspecs['format_delimiter'])
     if(curloc > 0):
         catfp.seek(curloc, 0)
-    catstring = catheader[0]
-    catversion = re.findall(r"([\d]+)", catstring)
-    fprenumfiles = catheader[1]
+    catversion = re.findall("([\\d]+)", catstring)
+    fprenumfiles = catheader[0]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[2]
-    fprechecksum = catheader[3]
+    fprechecksumtype = catheader[1]
+    fprechecksum = catheader[2]
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
@@ -5057,7 +5075,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         VerbosePrintOut("'" + str(fprechecksum) + "' != " +
                         "'" + str(catfileheadercshex) + "'")
         return False
-    catversions = re.search(r'(.*?)(\d+)', catstring).groups()
+    catversions = re.search('(.*?)(\\d+)', catstring).groups()
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1],
                'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}}
     if(seekto >= fnumfiles):
@@ -5079,7 +5097,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
             prefheadsize = int(preheaderdata[0], 16)
             prefnumfields = int(preheaderdata[1], 16)
             preftype = int(preheaderdata[2], 16)
-            if(re.findall(r"^[.|/]", preheaderdata[3])):
+            if(re.findall("^[.|/]", preheaderdata[3])):
                 prefname = preheaderdata[3]
             else:
                 prefname = "./"+preheaderdata[3]
@@ -5147,17 +5165,17 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
                     VerbosePrintOut("'" + str(prefccs) +
                                     "' != " + "'" + str(prenewfccs) + "'")
                     return False
-            if(re.findall(r"^\+([0-9]+)", prefseeknextfile)):
+            if(re.findall("^\\+([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile.replace("+", ""))
                 if(abs(fseeknextasnum) == 0):
                     pass
                 catfp.seek(fseeknextasnum, 1)
-            elif(re.findall(r"^\-([0-9]+)", prefseeknextfile)):
+            elif(re.findall("^\\-([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile)
                 if(abs(fseeknextasnum) == 0):
                     pass
                 catfp.seek(fseeknextasnum, 1)
-            elif(re.findall(r"^([0-9]+)", prefseeknextfile)):
+            elif(re.findall("^([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile)
                 if(abs(fseeknextasnum) == 0):
                     pass
@@ -5170,7 +5188,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
     catfheadsize = int(preheaderdata[0], 16)
     catfnumfields = int(preheaderdata[1], 16)
     catftype = int(preheaderdata[2], 16)
-    if(re.findall(r"^[.|/]", preheaderdata[3])):
+    if(re.findall("^[.|/]", preheaderdata[3])):
         catfname = preheaderdata[3]
     else:
         catfname = "./"+preheaderdata[3]
@@ -5221,7 +5239,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
         if(not catfp):
             return False
         catfp.seek(0, 0)
-    elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         catfp = download_file_from_internet_file(infile)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         catfp.seek(0, 0)
@@ -5284,15 +5302,21 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
     curloc = catfp.tell()
     if(curloc > 0):
         catfp.seek(0, 0)
-    catheader = ReadFileHeaderData(catfp, 4, formatspecs['format_delimiter'])
+    catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+    catstring = catfp.read(len(formatspecs['format_magic']+catheaderver)).decode("UTF-8")
+    catdel = catfp.read(1).decode("UTF-8")
+    if(catstring != formatspecs['format_magic']+catheaderver):
+        return False
+    if(catdel != formatspecs['format_delimiter']):
+        return False
+    catheader = ReadFileHeaderData(catfp, 3, formatspecs['format_delimiter'])
     if(curloc > 0):
         catfp.seek(curloc, 0)
-    catstring = catheader[0]
-    catversion = re.findall(r"([\d]+)", catstring)
-    fprenumfiles = catheader[1]
+    catversion = re.findall("([\\d]+)", catstring)
+    fprenumfiles = catheader[0]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[2]
-    fprechecksum = catheader[3]
+    fprechecksumtype = catheader[1]
+    fprechecksum = catheader[2]
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
@@ -5309,7 +5333,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
         VerbosePrintOut("'" + str(fprechecksum) + "' != " +
                         "'" + str(catfileheadercshex) + "'")
         return False
-    catversions = re.search(r'(.*?)(\d+)', catstring).groups()
+    catversions = re.search('(.*?)(\\d+)', catstring).groups()
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1],
                'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}}
     seekto = fnumfiles - 1
@@ -5329,7 +5353,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
             prefheadsize = int(preheaderdata[0], 16)
             prefnumfields = int(preheaderdata[1], 16)
             preftype = int(preheaderdata[2], 16)
-            if(re.findall(r"^[.|/]", preheaderdata[3])):
+            if(re.findall("^[.|/]", preheaderdata[3])):
                 prefname = preheaderdata[3]
             else:
                 prefname = "./"+preheaderdata[3]
@@ -5397,17 +5421,17 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
                     VerbosePrintOut("'" + str(prefccs) +
                                     "' != " + "'" + str(prenewfccs) + "'")
                     return False
-            if(re.findall(r"^\+([0-9]+)", prefseeknextfile)):
+            if(re.findall("^\\+([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile.replace("+", ""))
                 if(abs(fseeknextasnum) == 0):
                     pass
                 catfp.seek(fseeknextasnum, 1)
-            elif(re.findall(r"^\-([0-9]+)", prefseeknextfile)):
+            elif(re.findall("^\\-([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile)
                 if(abs(fseeknextasnum) == 0):
                     pass
                 catfp.seek(fseeknextasnum, 1)
-            elif(re.findall(r"^([0-9]+)", prefseeknextfile)):
+            elif(re.findall("^([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile)
                 if(abs(fseeknextasnum) == 0):
                     pass
@@ -5417,7 +5441,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
             il = il + 1
             filefound = False
             prefname = preheaderdata[2]
-            if(re.findall(r"^[.|/]", preheaderdata[2])):
+            if(re.findall("^[.|/]", preheaderdata[2])):
                 prefname = preheaderdata[2]
             else:
                 prefname = "./"+preheaderdata[2]
@@ -5429,7 +5453,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
     catfheadsize = int(preheaderdata[0], 16)
     catfnumfields = int(preheaderdata[1], 16)
     catftype = int(preheaderdata[2], 16)
-    if(re.findall(r"^[.|/]", preheaderdata[3])):
+    if(re.findall("^[.|/]", preheaderdata[3])):
         catfname = preheaderdata[3]
     else:
         catfname = "./"+preheaderdata[3]
@@ -5486,7 +5510,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         if(not catfp):
             return False
         catfp.seek(0, 0)
-    elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         catfp = download_file_from_internet_file(infile)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         catfp.seek(0, 0)
@@ -5549,15 +5573,21 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
     curloc = catfp.tell()
     if(curloc > 0):
         catfp.seek(0, 0)
-    catheader = ReadFileHeaderData(catfp, 4, formatspecs['format_delimiter'])
+    catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+    catstring = catfp.read(len(formatspecs['format_magic']+catheaderver)).decode("UTF-8")
+    catdel = catfp.read(1).decode("UTF-8")
+    if(catstring != formatspecs['format_magic']+catheaderver):
+        return False
+    if(catdel != formatspecs['format_delimiter']):
+        return False
+    catheader = ReadFileHeaderData(catfp, 3, formatspecs['format_delimiter'])
     if(curloc > 0):
         catfp.seek(curloc, 0)
-    catstring = catheader[0]
-    catversion = re.findall(r"([\d]+)", catstring)
-    fprenumfiles = catheader[1]
+    catversion = re.findall("([\\d]+)", catstring)
+    fprenumfiles = catheader[0]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[2]
-    fprechecksum = catheader[3]
+    fprechecksumtype = catheader[1]
+    fprechecksum = catheader[2]
     il = 0
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
@@ -5606,7 +5636,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         catfheadsize = int(catheaderdata[0], 16)
         catfnumfields = int(catheaderdata[1], 16)
         catftype = int(catheaderdata[2], 16)
-        if(re.findall(r"^[.|/]", catheaderdata[3])):
+        if(re.findall("^[.|/]", catheaderdata[3])):
             catfname = catheaderdata[3]
         else:
             catfname = "./"+catheaderdata[3]
@@ -5694,17 +5724,17 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
                 invalid_archive = True
         if(verbose):
             VerbosePrintOut("")
-        if(re.findall(r"^\+([0-9]+)", catfseeknextfile)):
+        if(re.findall("^\\+([0-9]+)", catfseeknextfile)):
             fseeknextasnum = int(catfseeknextfile.replace("+", ""))
             if(abs(fseeknextasnum) == 0):
                 pass
             catfp.seek(fseeknextasnum, 1)
-        elif(re.findall(r"^\-([0-9]+)", catfseeknextfile)):
+        elif(re.findall("^\\-([0-9]+)", catfseeknextfile)):
             fseeknextasnum = int(catfseeknextfile)
             if(abs(fseeknextasnum) == 0):
                 pass
             catfp.seek(fseeknextasnum, 1)
-        elif(re.findall(r"^([0-9]+)", catfseeknextfile)):
+        elif(re.findall("^([0-9]+)", catfseeknextfile)):
             fseeknextasnum = int(catfseeknextfile)
             if(abs(fseeknextasnum) == 0):
                 pass
@@ -5758,7 +5788,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         if(not catfp):
             return False
         catfp.seek(0, 0)
-    elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         catfp = download_file_from_internet_file(infile)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         catfp.seek(0, 0)
@@ -5821,15 +5851,21 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
     curloc = catfp.tell()
     if(curloc > 0):
         catfp.seek(0, 0)
-    catheader = ReadFileHeaderData(catfp, 4, formatspecs['format_delimiter'])
+    catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+    catstring = catfp.read(len(formatspecs['format_magic']+catheaderver)).decode("UTF-8")
+    catdel = catfp.read(1).decode("UTF-8")
+    if(catstring != formatspecs['format_magic']+catheaderver):
+        return False
+    if(catdel != formatspecs['format_delimiter']):
+        return False
+    catheader = ReadFileHeaderData(catfp, 3, formatspecs['format_delimiter'])
     if(curloc > 0):
         catfp.seek(curloc, 0)
-    catstring = catheader[0]
-    catversion = re.findall(r"([\d]+)", catstring)
-    fprenumfiles = catheader[1]
+    catversion = re.findall("([\\d]+)", catstring)
+    fprenumfiles = catheader[0]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[2]
-    fprechecksum = catheader[3]
+    fprechecksumtype = catheader[1]
+    fprechecksum = catheader[2]
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
@@ -5846,7 +5882,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         VerbosePrintOut("'" + str(fprechecksum) + "' != " +
                         "'" + str(catfileheadercshex) + "'")
         return False
-    catversions = re.search(r'(.*?)(\d+)', catstring).groups()
+    catversions = re.search('(.*?)(\\d+)', catstring).groups()
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1],
                'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': []}
     if(seekstart < 0 and seekstart > fnumfiles):
@@ -5869,7 +5905,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
                 break
             prefheadsize = int(preheaderdata[0], 16)
             prefnumfields = int(preheaderdata[1], 16)
-            if(re.findall(r"^[.|/]", preheaderdata[3])):
+            if(re.findall("^[.|/]", preheaderdata[3])):
                 prefname = preheaderdata[3]
             else:
                 prefname = "./"+preheaderdata[3]
@@ -5916,17 +5952,17 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
                     VerbosePrintOut("'" + str(prefccs) +
                                     "' != " + "'" + str(prenewfccs) + "'")
                     return False
-            if(re.findall(r"^\+([0-9]+)", prefseeknextfile)):
+            if(re.findall("^\\+([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile.replace("+", ""))
                 if(abs(fseeknextasnum) == 0):
                     pass
                 catfp.seek(fseeknextasnum, 1)
-            elif(re.findall(r"^\-([0-9]+)", prefseeknextfile)):
+            elif(re.findall("^\\-([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile)
                 if(abs(fseeknextasnum) == 0):
                     pass
                 catfp.seek(fseeknextasnum, 1)
-            elif(re.findall(r"^([0-9]+)", prefseeknextfile)):
+            elif(re.findall("^([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile)
                 if(abs(fseeknextasnum) == 0):
                     pass
@@ -5949,7 +5985,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         catfheadsize = int(catheaderdata[0], 16)
         catfnumfields = int(catheaderdata[1], 16)
         catftype = int(catheaderdata[2], 16)
-        if(re.findall(r"^[.|/]", catheaderdata[3])):
+        if(re.findall("^[.|/]", catheaderdata[3])):
             catfname = catheaderdata[3]
         else:
             catfname = "./"+catheaderdata[3]
@@ -6033,17 +6069,17 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
                 catfp.seek(catfcsize, 1)
             pyhascontents = False
         catfcontentend = catfp.tell()
-        if(re.findall(r"^\+([0-9]+)", catfseeknextfile)):
+        if(re.findall("^\\+([0-9]+)", catfseeknextfile)):
             fseeknextasnum = int(catfseeknextfile.replace("+", ""))
             if(abs(fseeknextasnum) == 0):
                 pass
             catfp.seek(fseeknextasnum, 1)
-        elif(re.findall(r"^\-([0-9]+)", catfseeknextfile)):
+        elif(re.findall("^\\-([0-9]+)", catfseeknextfile)):
             fseeknextasnum = int(catfseeknextfile)
             if(abs(fseeknextasnum) == 0):
                 pass
             catfp.seek(fseeknextasnum, 1)
-        elif(re.findall(r"^([0-9]+)", catfseeknextfile)):
+        elif(re.findall("^([0-9]+)", catfseeknextfile)):
             fseeknextasnum = int(catfseeknextfile)
             if(abs(fseeknextasnum) == 0):
                 pass
@@ -6193,8 +6229,8 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
     fileheader = fileheader + \
         AppendNullBytes([fnumfileshex, checksumtype],
                         formatspecs['format_delimiter'])
-    catversion = re.findall(r"([\d]+)", fileheader)
-    catversions = re.search(r'(.*?)(\d+)', fileheader).groups()
+    catversion = re.findall("([\\d]+)", fileheader)
+    catversions = re.search('(.*?)(\\d+)', fileheader).groups()
     catfileheadercshex = GetFileChecksum(
         fileheader, checksumtype, True, formatspecs)
     fileheader = fileheader + \
@@ -6204,7 +6240,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
                'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': []}
     for curfname in GetDirList:
         catfhstart = fheadtell
-        if(re.findall(r"^[.|/]", curfname)):
+        if(re.findall("^[.|/]", curfname)):
             fname = curfname
         else:
             fname = "./"+curfname
@@ -6426,7 +6462,7 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         if(not infile):
             return False
         infile.seek(0, 0)
-    elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         infile = download_file_from_internet_file(infile)
         infile.seek(0, 0)
         if(not infile):
@@ -6457,8 +6493,8 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
     fileheader = fileheader + \
         AppendNullBytes([fnumfileshex, checksumtype],
                         formatspecs['format_delimiter'])
-    catversion = re.findall(r"([\d]+)", fileheader)
-    catversions = re.search(r'(.*?)(\d+)', fileheader).groups()
+    catversion = re.findall("([\\d]+)", fileheader)
+    catversions = re.search('(.*?)(\\d+)', fileheader).groups()
     catfileheadercshex = GetFileChecksum(
         fileheader, checksumtype, True, formatspecs)
     fileheader = fileheader + \
@@ -6468,7 +6504,7 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
                'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': []}
     for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
         catfhstart = fheadtell
-        if(re.findall(r"^[.|/]", member.name)):
+        if(re.findall("^[.|/]", member.name)):
             fname = member.name
         else:
             fname = "./"+member.name
@@ -6637,7 +6673,7 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         if(not infile):
             return False
         infile.seek(0, 0)
-    elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         infile = download_file_from_internet_file(infile)
         infile.seek(0, 0)
         if(not infile):
@@ -6659,8 +6695,8 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
     fileheaderver = str(int(catver.replace(".", "")))
     fileheader = AppendNullByte(
         formatspecs['format_magic'] + fileheaderver, formatspecs['format_delimiter'])
-    catversion = re.findall(r"([\d]+)", fileheader)
-    catversions = re.search(r'(.*?)(\d+)', fileheader).groups()
+    catversion = re.findall("([\\d]+)", fileheader)
+    catversions = re.search('(.*?)(\\d+)', fileheader).groups()
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
         AppendNullBytes([fnumfileshex, checksumtype],
@@ -6674,7 +6710,7 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
                'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': []}
     for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
         catfhstart = fheadtell
-        if(re.findall(r"^[.|/]", member.filename)):
+        if(re.findall("^[.|/]", member.filename)):
             fname = member.filename
         else:
             fname = "./"+member.filename
@@ -6881,8 +6917,8 @@ if(rarfile_support):
         fileheaderver = str(int(catver.replace(".", "")))
         fileheader = AppendNullByte(
             formatspecs['format_magic'] + fileheaderver, formatspecs['format_delimiter'])
-        catversion = re.findall(r"([\d]+)", fileheader)
-        catversions = re.search(r'(.*?)(\d+)', fileheader).groups()
+        catversion = re.findall("([\\d]+)", fileheader)
+        catversions = re.search('(.*?)(\\d+)', fileheader).groups()
         fnumfileshex = format(int(fnumfiles), 'x').lower()
         fileheader = fileheader + \
             AppendNullBytes([fnumfileshex, checksumtype],
@@ -6915,7 +6951,7 @@ if(rarfile_support):
             else:
                 is_unix = False
                 is_windows = False
-            if(re.findall(r"^[.|/]", member.filename)):
+            if(re.findall("^[.|/]", member.filename)):
                 fname = member.filename
             else:
                 fname = "./"+member.filename
@@ -7127,8 +7163,8 @@ if(py7zr_support):
         fileheaderver = str(int(catver.replace(".", "")))
         fileheader = AppendNullByte(
             formatspecs['format_magic'] + fileheaderver, formatspecs['format_delimiter'])
-        catversion = re.findall(r"([\d]+)", fileheader)
-        catversions = re.search(r'(.*?)(\d+)', fileheader).groups()
+        catversion = re.findall("([\\d]+)", fileheader)
+        catversions = re.search('(.*?)(\\d+)', fileheader).groups()
         fnumfileshex = format(int(fnumfiles), 'x').lower()
         fileheader = fileheader + \
             AppendNullBytes([fnumfileshex, checksumtype],
@@ -7142,7 +7178,7 @@ if(py7zr_support):
                    'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': []}
         for member in sorted(szpfp.list(), key=lambda x: x.filename):
             catfhstart = fheadtell
-            if(re.findall(r"^[.|/]", member.filename)):
+            if(re.findall("^[.|/]", member.filename)):
                 fname = member.filename
             else:
                 fname = "./"+member.filename
@@ -7431,7 +7467,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
         catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
-    elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = BytesIO()
     else:
         fbasename = os.path.splitext(outfile)[0]
@@ -7461,7 +7497,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
     filetoinode = {}
     reallcfi = 0
     while(lcfi < lcfx):
-        if(re.findall(r"^[.|/]", listcatfiles['ffilelist'][reallcfi]['fname'])):
+        if(re.findall("^[.|/]", listcatfiles['ffilelist'][reallcfi]['fname'])):
             fname = listcatfiles['ffilelist'][reallcfi]['fname']
         else:
             fname = "./"+listcatfiles['ffilelist'][reallcfi]['fname']
@@ -7642,7 +7678,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
             shutil.copyfileobj(catfp, sys.stdout.buffer)
         else:
             shutil.copyfileobj(catfp, sys.stdout)
-    elif(re.findall(r"^(ftp|ftps|sftp)\:\/\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         catfp.seek(0, 0)
@@ -8043,7 +8079,7 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
         if(not infile):
             return False
         infile.seek(0, 0)
-    elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         infile = download_file_from_internet_file(infile)
         infile.seek(0, 0)
         if(not infile):
@@ -8138,7 +8174,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
         if(not infile):
             return False
         infile.seek(0, 0)
-    elif(re.findall(r"^(http|https|ftp|ftps|sftp)\:\/\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         infile = download_file_from_internet_file(infile)
         infile.seek(0, 0)
         if(not infile):
@@ -8412,7 +8448,7 @@ if(py7zr_support):
         if(sztestalt):
             VerbosePrintOut("Bad file found!")
         for member in sorted(szpfp.list(), key=lambda x: x.filename):
-            if(re.findall(r"^[.|/]", member.filename)):
+            if(re.findall("^[.|/]", member.filename)):
                 fname = member.filename
             else:
                 fname = "./"+member.filename
@@ -8867,7 +8903,7 @@ if(haveparamiko):
         sftpfile = download_file_from_sftp_file(url)
         return sftpfile.read()
 else:
-    def download_file_from_ftp_string(url):
+    def download_file_from_sftp_string(url):
         return False
 
 if(haveparamiko):
@@ -8983,7 +9019,7 @@ if(havepysftp):
         sftpfile = download_file_from_pysftp_file(url)
         return sftpfile.read()
 else:
-    def download_file_from_ftp_string(url):
+    def download_file_from_pyftp_string(url):
         return False
 
 if(havepysftp):
