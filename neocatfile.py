@@ -101,15 +101,15 @@ elif primary_action == 'extract':
         args.input, args.output, args.verbose, args.preserve)
 elif primary_action == 'list':
     if args.convert == 'tar':
-        pycatfile.TarFileListFiles(args.input, args.verbose, False)
+        pycatfile.TarFileListFiles(args.input, verbose=args.verbose)
     elif args.convert == 'zip':
-        pycatfile.ZipFileListFiles(args.input, args.verbose, False)
+        pycatfile.ZipFileListFiles(args.input, verbose=args.verbose)
     elif args.convert == '7zip':
-        pycatfile.SevenZipFileListFiles(args.input, args.verbose, False)
+        pycatfile.SevenZipFileListFiles(args.input, verbose=args.verbose)
     elif rarfile_support and args.convert == 'rar':
-        pycatfile.RarFileListFiles(args.input, args.verbose, False)
+        pycatfile.RarFileListFiles(args.input, verbose=args.verbose)
     else:
-        pycatfile.ArchiveFileListFiles(args.input, args.verbose)
+        pycatfile.ArchiveFileListFiles(args.input, verbose=args.verbose)
 elif primary_action == 'validate':
     is_valid = pycatfile.ArchiveFileValidate(args.input, args.verbose)
     result_msg = "Validation result for {0}: {1}".format(
