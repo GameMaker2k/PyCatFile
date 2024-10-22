@@ -60,7 +60,7 @@ argparser.add_argument("--level", help="Specifies the compression level.")
 argparser.add_argument("--preserve", action="store_true",
                        help="Preserves file attributes when extracting.")
 argparser.add_argument("--convert", choices=['tar', 'zip', '7zip', 'rar'],
-                       help="Convert from an archive format (tar, zip, rar) to a concatenated file.")
+                       help="Convert from an archive format (tar, zip, 7zip, rar) to a concatenated file.")
 args = argparser.parse_args()
 
 # Determine the primary action based on user input
