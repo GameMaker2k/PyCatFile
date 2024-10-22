@@ -13,7 +13,7 @@
     Copyright 2016-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2016-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: setup.py - Last Update: 7/10/2024 Ver. 0.13.12 RC 1 - Author: cooldude2k $
+    $FileInfo: setup.py - Last Update: 10/22/2024 Ver. 0.14.0 RC 1 - Author: cooldude2k $
 '''
 
 import os
@@ -22,19 +22,38 @@ import sys
 import pkg_resources
 from setuptools import setup
 
+# Open and read the version info file in a Python 2/3 compatible way
 verinfofilename = os.path.realpath("."+os.path.sep+os.path.sep+"pycatfile.py")
-verinfofile = open(verinfofilename, "r")
-verinfodata = verinfofile.read()
-verinfofile.close()
-setuppy_verinfo_esc = re.escape("__version_info__ = (")+"(.*)"+re.escape(");")
-setuppy_verinfo = re.findall(setuppy_verinfo_esc, verinfodata)[0]
-setuppy_verinfo_exp = [vergetspt.strip().replace("\"", "")
-                       for vergetspt in setuppy_verinfo.split(',')]
-setuppy_dateinfo_esc = re.escape(
-    "__version_date_info__ = (")+"(.*)"+re.escape(");")
-setuppy_dateinfo = re.findall(setuppy_dateinfo_esc, verinfodata)[0]
-setuppy_dateinfo_exp = [vergetspt.strip().replace("\"", "")
-                        for vergetspt in setuppy_dateinfo.split(',')]
+
+# Use `with` to ensure the file is properly closed after reading
+# In Python 2, open defaults to text mode; in Python 3, it’s better to specify encoding
+open_kwargs = {'encoding': 'utf-8'} if sys.version_info[0] >= 3 else {}
+with open(verinfofilename, "r", **open_kwargs) as verinfofile:
+    verinfodata = verinfofile.read()
+
+# Define the regex pattern for extracting version info
+# We ensure the pattern works correctly in both Python 2 and 3 by escaping the strings properly
+version_pattern = "__version_info__ = \(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*['\"]([\w\s]+)['\"]\s*,\s*(\d+)\s*\)"
+setuppy_verinfo = re.findall(version_pattern, verinfodata)[0]
+
+# If version info is found, process it; handle the case where no match is found
+if setuppy_verinfo:
+    setuppy_verinfo_exp = setuppy_verinfo
+else:
+    print("Version info not found.")
+    setuppy_verinfo_exp = None  # Handle missing version info gracefully
+
+# Define the regex pattern for extracting version date info
+date_pattern = "__version_date_info__ = \(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*['\"]([\w\s]+)['\"]\s*,\s*(\d+)\s*\)"
+setuppy_dateinfo = re.findall(date_pattern, verinfodata)[0]
+
+# If date info is found, process it; handle the case where no match is found
+if setuppy_dateinfo:
+    setuppy_dateinfo_exp = setuppy_dateinfo
+else:
+    print("Date info not found.")
+    setuppy_dateinfo_exp = None  # Handle missing date info gracefully
+
 pymodule = {}
 pymodule['version'] = str(setuppy_verinfo_exp[0])+"." + \
     str(setuppy_verinfo_exp[1])+"."+str(setuppy_verinfo_exp[2])
