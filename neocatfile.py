@@ -29,6 +29,7 @@ except NameError:
 
 # Determine if rar file support is enabled
 rarfile_support = pycatfile.rarfile_support
+py7zr_support = pycatfile.py7zr_support
 
 # Set up the argument parser
 argparser = argparse.ArgumentParser(
@@ -58,7 +59,7 @@ argparser.add_argument("--compression", default="auto",
 argparser.add_argument("--level", help="Specifies the compression level.")
 argparser.add_argument("--preserve", action="store_true",
                        help="Preserves file attributes when extracting.")
-argparser.add_argument("--convert", choices=['tar', 'zip', 'rar'],
+argparser.add_argument("--convert", choices=['tar', 'zip', '7zip', 'rar'],
                        help="Convert from an archive format (tar, zip, rar) to a concatenated file.")
 args = argparser.parse_args()
 
@@ -83,6 +84,9 @@ if primary_action == 'create':
     elif args.convert == 'zip':
         pycatfile.PackArchiveFileFromZipFile(args.input, args.output, args.compression, args.level, args.checksum, [
         ], pycatfile.__file_format_list__, args.verbose, False)
+    elif py7zr_support and args.convert == '7zip':
+        pycatfile.PackArchiveFileFromSevenZipFile(args.input, args.output, args.compression, args.level, args.checksum, [
+        ], pycatfile.__file_format_list__, args.verbose, False)
     elif rarfile_support and args.convert == 'rar':
         pycatfile.PackArchiveFileFromRarFile(args.input, args.output, args.compression, args.level, args.checksum, [
         ], pycatfile.__file_format_list__, args.verbose, False)
@@ -100,6 +104,8 @@ elif primary_action == 'list':
         pycatfile.TarFileListFiles(args.input, args.verbose, False)
     elif args.convert == 'zip':
         pycatfile.ZipFileListFiles(args.input, args.verbose, False)
+    elif args.convert == '7zip':
+        pycatfile.SevenZipFileListFiles(args.input, args.verbose, False)
     elif rarfile_support and args.convert == 'rar':
         pycatfile.RarFileListFiles(args.input, args.verbose, False)
     else:
