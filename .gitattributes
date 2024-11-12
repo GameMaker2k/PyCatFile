@@ -1,2 +1,3 @@
 *.py ident
 *.php ident
+* text eol=lf
