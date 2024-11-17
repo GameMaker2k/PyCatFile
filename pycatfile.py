@@ -207,6 +207,16 @@ except ImportError:
         from StringIO import StringIO
         from StringIO import StringIO as BytesIO
 
+def get_importing_script_path():
+    # Inspect the stack and get the frame of the caller
+    stack = inspect.stack()
+    for frame_info in stack:
+        # In Python 2, frame_info is a tuple; in Python 3, it's a named tuple
+        filename = frame_info[1] if isinstance(frame_info, tuple) else frame_info.filename
+        if filename != __file__:  # Ignore current module's file
+            return os.path.abspath(filename)
+    return None
+
 __use_pysftp__ = False
 __use_alt_format__ = False
 scriptconf = os.path.join(os.path.dirname(get_importing_script_path()), "catfile.ini")
