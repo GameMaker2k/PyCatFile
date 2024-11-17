@@ -209,7 +209,7 @@ except ImportError:
 
 __use_pysftp__ = False
 __use_alt_format__ = False
-__config_file__ = 'catfile.ini'
+__config_file__ = os.path.join(os.path.dirname(os.path.realpath(__file__)), "catfile.ini")
 __use_ini_file__ = True
 if(not havepysftp):
     __use_pysftp__ = False
