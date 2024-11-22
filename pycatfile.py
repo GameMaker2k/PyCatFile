@@ -220,12 +220,16 @@ def get_importing_script_path():
 
 __use_pysftp__ = False
 __use_alt_format__ = False
-scriptconf = os.path.join(os.path.dirname(get_importing_script_path()), "catfile.ini")
+__use_env_file__ = True
+__use_ini_file__ = True
+if('PYCATFILE_CONFIG_FILE' in os.environ and os.path.exists(os.environ['PYCATFILE_CONFIG_FILE']) and __use_env_file__):
+    scriptconf = os.environ['PYCATFILE_CONFIG_FILE']
+else:
+    scriptconf = os.path.join(os.path.dirname(get_importing_script_path()), "catfile.ini")
 if os.path.exists(scriptconf):
     __config_file__ = scriptconf
 else:
     __config_file__ = os.path.join(os.path.dirname(os.path.realpath(__file__)), "catfile.ini")
-__use_ini_file__ = True
 if(not havepysftp):
     __use_pysftp__ = False
 __use_http_lib__ = "httpx"
