@@ -240,23 +240,41 @@ if(__use_http_lib__ == "requests" and havehttpx and not haverequests):
 if((__use_http_lib__ == "httpx" or __use_http_lib__ == "requests") and not havehttpx and not haverequests):
     __use_http_lib__ = "urllib"
 if os.path.exists(__config_file__) and __use_ini_file__:
-    # Create a ConfigParser object
     config = configparser.ConfigParser()
-    # Read the configuration file
     config.read(__config_file__)
-    # Accessing values from the config file using .get() and .getboolean()
+    def decode_unicode_escape(value):
+        if sys.version_info[0] < 3:  # Python 2
+            return value.decode('unicode_escape')
+        else:  # Python 3
+            return bytes(value, 'utf-8').decode('unicode_escape')
     __file_format_name__ = config.get('main', 'name')
     __program_name__ = config.get('main', 'proname')
     __file_format_lower__ = config.get('main', 'lower')
-    __file_format_magic__ = config.get('main', 'magic').decode('unicode_escape')
-    __file_format_len__ = config.getint('main', 'len')  # Use getint() for integers
+    __file_format_magic__ = decode_unicode_escape(config.get('main', 'magic'))
+    __file_format_len__ = config.getint('main', 'len')
     __file_format_hex__ = config.get('main', 'hex')
-    __file_format_delimiter__ = config.get('main', 'delimiter').decode('unicode_escape')
+    __file_format_delimiter__ = decode_unicode_escape(config.get('main', 'delimiter'))
     __file_format_ver__ = config.get('main', 'ver')
     __use_new_style__ = config.getboolean('main', 'newstyle')
     __use_advanced_list__ = config.getboolean('main', 'advancedlist')
     __use_alt_inode__ = config.getboolean('main', 'altinode')
     __file_format_extension__ = config.get('main', 'extension')
+This version handles both Python 2 and 3 seamlessly.
+
+
+2/2
+
+
+
+
+
+
+
+
+
+
+
+
 
 else:
     if not __use_alt_format__:
@@ -301,7 +319,7 @@ __version_date_info__ = (2024, 23, 17, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: 25f47d79417bc8d8a55e91d17643da7e596b50ff $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
