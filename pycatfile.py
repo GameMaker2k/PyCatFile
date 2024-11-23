@@ -259,23 +259,6 @@ if os.path.exists(__config_file__) and __use_ini_file__:
     __use_advanced_list__ = config.getboolean('main', 'advancedlist')
     __use_alt_inode__ = config.getboolean('main', 'altinode')
     __file_format_extension__ = config.get('main', 'extension')
-This version handles both Python 2 and 3 seamlessly.
-
-
-2/2
-
-
-
-
-
-
-
-
-
-
-
-
-
 else:
     if not __use_alt_format__:
         # Format Info by Kazuki Przyborowski
