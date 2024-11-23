@@ -244,19 +244,20 @@ if os.path.exists(__config_file__) and __use_ini_file__:
     config = configparser.ConfigParser()
     # Read the configuration file
     config.read(__config_file__)
-    # Accessing values from the config file
-    __file_format_name__ = config['main']['name']
-    __program_name__ = config['main']['proname']
-    __file_format_lower__ = config['main']['lower']
-    __file_format_magic__ = config['main']['magic'].encode("UTF-8").decode('unicode_escape')
-    __file_format_len__ = int(config['main']['len'])
-    __file_format_hex__ = config['main']['hex']
-    __file_format_delimiter__ = config['main']['delimiter'].encode("UTF-8").decode('unicode_escape')
-    __file_format_ver__ = config['main']['ver']
+    # Accessing values from the config file using .get() and .getboolean()
+    __file_format_name__ = config.get('main', 'name')
+    __program_name__ = config.get('main', 'proname')
+    __file_format_lower__ = config.get('main', 'lower')
+    __file_format_magic__ = config.get('main', 'magic').decode('unicode_escape')
+    __file_format_len__ = config.getint('main', 'len')  # Use getint() for integers
+    __file_format_hex__ = config.get('main', 'hex')
+    __file_format_delimiter__ = config.get('main', 'delimiter').decode('unicode_escape')
+    __file_format_ver__ = config.get('main', 'ver')
     __use_new_style__ = config.getboolean('main', 'newstyle')
     __use_advanced_list__ = config.getboolean('main', 'advancedlist')
     __use_alt_inode__ = config.getboolean('main', 'altinode')
-    __file_format_extension__ = config['main']['extension']
+    __file_format_extension__ = config.get('main', 'extension')
+
 else:
     if not __use_alt_format__:
         # Format Info by Kazuki Przyborowski
@@ -300,7 +301,7 @@ __version_date_info__ = (2024, 22, 17, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: 56e05e541e9319a27611bee3b55de8c59c7923cd $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
