@@ -25,6 +25,7 @@ import sys
 import time
 import stat
 import zlib
+import codecs
 import base64
 import shutil
 import socket
@@ -64,6 +65,13 @@ except ImportError:
         import ConfigParser as configparser
 
 try:
+    file
+except NameError:
+    from io import IOBase
+    file = IOBase
+#if isinstance(outfile, file) or isinstance(outfile, IOBase):
+
+try:
     basestring
 except NameError:
     basestring = str
@@ -85,7 +93,6 @@ except ImportError:
 # Windows-specific setup
 if os.name == 'nt':
     if sys.version_info[0] == 2:
-        import codecs
         sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
         sys.stderr = codecs.getwriter('utf-8')(sys.stderr)
     else:
@@ -97,7 +104,6 @@ if os.name == 'nt':
 hashlib_guaranteed = False
 # Environment setup
 os.environ["PYTHONIOENCODING"] = "UTF-8"
-os.environ["LC_CTYPE"] = "UTF-8"
 
 # Reload sys to set default encoding to UTF-8 (Python 2 only)
 if sys.version_info[0] == 2:
@@ -574,8 +580,8 @@ def ListDir(dirpath, followlink=False, duplicates=False):
                     retlist.append(dpath)
                 if duplicates:
                     retlist.append(dpath)
-                for file in filenames:
-                    fpath = os.path.join(root, file)
+                for files in filenames:
+                    fpath = os.path.join(root, files)
                     fpath = RemoveWindowsPath(fpath)
                     if fs_encoding != 'utf-8':
                         fpath = fpath.encode(fs_encoding).decode('utf-8')
@@ -616,8 +622,8 @@ def ListDirAdvanced(dirpath, followlink=False, duplicates=False):
                     retlist.append(dpath)
                 elif duplicates:
                     retlist.append(dpath)
-                for file in filenames:
-                    fpath = os.path.join(root, file)
+                for files in filenames:
+                    fpath = os.path.join(root, files)
                     fpath = RemoveWindowsPath(fpath)
                     if fs_encoding != 'utf-8':
                         fpath = fpath.encode(fs_encoding).decode('utf-8')
@@ -1702,15 +1708,14 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, contentasfile
     fid = int(HeaderOut[18], 16)
     finode = int(HeaderOut[19], 16)
     flinkcount = int(HeaderOut[20], 16)
-    fdev_minor = int(HeaderOut[21], 16)
-    fdev_major = int(HeaderOut[22], 16)
-    frdev_minor = int(HeaderOut[23], 16)
-    frdev_major = int(HeaderOut[24], 16)
-    fseeknextfile = HeaderOut[25]
-    fextrasize = int(HeaderOut[26], 16)
-    fextrafields = int(HeaderOut[27], 16)
+    fdev = int(HeaderOut[21], 16)
+    fdev_minor = int(HeaderOut[22], 16)
+    fdev_major = int(HeaderOut[23], 16)
+    fseeknextfile = HeaderOut[24]
+    fextrasize = int(HeaderOut[25], 16)
+    fextrafields = int(HeaderOut[26], 16)
     extrafieldslist = []
-    extrastart = 28
+    extrastart = 27
     extraend = extrastart + fextrafields
     extrafieldslist = []
     if(extrastart < extraend):
@@ -1779,8 +1784,8 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, contentasfile
     fcontents.seek(0, 0)
     if(not contentasfile):
         fcontents = fcontents.read()
-    catlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor,
-               'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextralist': extrafieldslist, 'fheaderchecksum': fcs, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
+    catlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
+               'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextralist': extrafieldslist, 'fheaderchecksum': fcs, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
     return catlist
 
 
@@ -1821,15 +1826,14 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
     fid = int(HeaderOut[18], 16)
     finode = int(HeaderOut[19], 16)
     flinkcount = int(HeaderOut[20], 16)
-    fdev_minor = int(HeaderOut[21], 16)
-    fdev_major = int(HeaderOut[22], 16)
-    frdev_minor = int(HeaderOut[23], 16)
-    frdev_major = int(HeaderOut[24], 16)
-    fseeknextfile = HeaderOut[25]
-    fextrasize = int(HeaderOut[26], 16)
-    fextrafields = int(HeaderOut[27], 16)
+    fdev = int(HeaderOut[21], 16)
+    fdev_minor = int(HeaderOut[22], 16)
+    fdev_major = int(HeaderOut[23], 16)
+    fseeknextfile = HeaderOut[24]
+    fextrasize = int(HeaderOut[25], 16)
+    fextrafields = int(HeaderOut[26], 16)
     extrafieldslist = []
-    extrastart = 28
+    extrastart = 27
     extraend = extrastart + fextrafields
     extrafieldslist = []
     if(extrastart < extraend):
@@ -1896,7 +1900,7 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
     else:
         return False
     catlist = [ftype, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fid,
-               finode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, fseeknextfile, extrafieldslist, fheaderchecksumtype, fcontentchecksumtype, fcontents]
+               finode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile, extrafieldslist, fheaderchecksumtype, fcontentchecksumtype, fcontents]
     return catlist
 
 
@@ -1906,19 +1910,19 @@ def ReadFileDataBySizeWithContent(fp, listonly=False, uncompress=True, skipcheck
     curloc = fp.tell()
     if(curloc > 0):
         fp.seek(0, 0)
-    catheader = ReadFileHeaderData(fp, 4, delimiter)
+    catheader = ReadFileHeaderData(fp, 5, delimiter)
     if(curloc > 0):
         fp.seek(curloc, 0)
     headercheck = ValidateHeaderChecksum(
-        catheader[:-1], catheader[2], catheader[3], formatspecs)
-    newfcs = GetHeaderChecksum(catheader[:-2], catheader[2], True, formatspecs)
+        catheader[:-1], catheader[3], catheader[4], formatspecs)
+    newfcs = GetHeaderChecksum(catheader[:-2], catheader[3], True, formatspecs)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
         VerbosePrintOut("'" + str(newfcs) + "' != " +
-                        "'" + str(catheader[3]) + "'")
+                        "'" + str(catheader[4]) + "'")
         return False
-    fnumfiles = int(catheader[1], 16)
+    fnumfiles = int(catheader[2], 16)
     countnum = 0
     flist = []
     while(countnum < fnumfiles):
@@ -1937,25 +1941,25 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
     curloc = fp.tell()
     if(curloc > 0):
         fp.seek(0, 0)
-    catheader = ReadFileHeaderData(fp, 4, delimiter)
+    catheader = ReadFileHeaderData(fp, 5, delimiter)
     if(curloc > 0):
         fp.seek(curloc, 0)
     headercheck = ValidateHeaderChecksum(
-        catheader[:-1], catheader[2], catheader[3], formatspecs)
-    newfcs = GetHeaderChecksum(catheader[:-2], catheader[2], True, formatspecs)
+        catheader[:-1], catheader[3], catheader[4], formatspecs)
+    newfcs = GetHeaderChecksum(catheader[:-2], catheader[3], True, formatspecs)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
         VerbosePrintOut("'" + str(newfcs) + "' != " +
-                        "'" + str(catheader[3]) + "'")
+                        "'" + str(catheader[4]) + "'")
         return False
     catstring = catheader[0]
     catversion = re.findall("([\\d]+)", catstring)
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
-    fprenumfiles = catheader[1]
+    fprenumfiles = catheader[2]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[2]
-    fprechecksum = catheader[3]
+    fprechecksumtype = catheader[3]
+    fprechecksum = catheader[4]
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1],
                'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': []}
     if(seekstart < 0 and seekstart > fnumfiles):
@@ -2040,25 +2044,25 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
     curloc = fp.tell()
     if(curloc > 0):
         fp.seek(0, 0)
-    catheader = ReadFileHeaderData(fp, 4, delimiter)
+    catheader = ReadFileHeaderData(fp, 5, delimiter)
     if(curloc > 0):
         fp.seek(curloc, 0)
     headercheck = ValidateHeaderChecksum(
-        catheader[:-1], catheader[2], catheader[3], formatspecs)
-    newfcs = GetHeaderChecksum(catheader[:-2], catheader[2], True, formatspecs)
+        catheader[:-1], catheader[3], catheader[4], formatspecs)
+    newfcs = GetHeaderChecksum(catheader[:-2], catheader[3], True, formatspecs)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
         VerbosePrintOut("'" + str(newfcs) + "' != " +
-                        "'" + str(catheader[3]) + "'")
+                        "'" + str(catheader[4]) + "'")
         return False
     catstring = catheader[0]
     catversion = re.findall("([\\d]+)", catstring)
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
     fprenumfiles = catheader[1]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[2]
-    fprechecksum = catheader[3]
+    fprechecksumtype = catheader[3]
+    fprechecksum = catheader[4]
     catlist = []
     if(seekstart < 0 and seekstart > fnumfiles):
         seekstart = 0
@@ -2290,7 +2294,7 @@ def AppendFileHeader(fp, numfiles, checksumtype="crc32", formatspecs=__file_form
     fp.write(fileheader.encode('UTF-8'))
     fnumfiles = format(int(numfiles), 'x').lower()
     fnumfilesa = AppendNullBytes(
-        [fnumfiles, checksumtype], formatspecs['format_delimiter'])
+        [platform.system(), fnumfiles, checksumtype], formatspecs['format_delimiter'])
     catfileheadercshex = GetFileChecksum(
         fileheader + fnumfilesa, checksumtype, True, formatspecs)
     fnumfilesa = fnumfilesa + \
@@ -2533,14 +2537,6 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         getfdev = GetDevMajorMinor(fdev)
         fdev_minor = getfdev[0]
         fdev_major = getfdev[1]
-        frdev = fstatinfo.st_dev
-        if(hasattr(fstatinfo, "st_rdev")):
-            frdev = fstatinfo.st_rdev
-        else:
-            frdev = fstatinfo.st_dev
-        getfrdev = GetDevMajorMinor(frdev)
-        frdev_minor = getfrdev[0]
-        frdev_major = getfrdev[1]
         if(ftype == 1 or ftype == 2 or ftype == 3 or ftype == 4 or ftype == 5 or ftype == 6):
             fsize = format(int("0"), 'x').lower()
         elif(ftype == 0 or ftype == 7):
@@ -2579,10 +2575,9 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                 fgname = ""
         except ImportError:
             fgname = ""
+        fdev = format(int(fdev), 'x').lower()
         fdev_minor = format(int(fdev_minor), 'x').lower()
         fdev_major = format(int(fdev_major), 'x').lower()
-        frdev_minor = format(int(frdev_minor), 'x').lower()
-        frdev_major = format(int(frdev_major), 'x').lower()
         finode = format(int(finode), 'x').lower()
         flinkcount = format(int(flinkcount), 'x').lower()
         if(hasattr(fstatinfo, "st_file_attributes")):
@@ -2686,7 +2681,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         fcontents.seek(0, 0)
         ftypehex = format(ftype, 'x').lower()
         catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, "+1"]
+                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+1"]
         fp = AppendFileHeaderWithContent(
             fp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
     if(numfiles > 0):
@@ -2737,17 +2732,16 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
         fid = format(curfname[16], 'x').lower()
         finode = format(curfname[17], 'x').lower()
         flinkcount = format(curfname[18], 'x').lower()
-        fdev_minor = format(curfname[19], 'x').lower()
-        fdev_major = format(curfname[20], 'x').lower()
-        frdev_minor = format(curfname[21], 'x').lower()
-        frdev_major = format(curfname[22], 'x').lower()
-        fseeknextfile = curfname[23]
-        extradata = curfname[24]
-        fheaderchecksumtype = curfname[25]
-        fcontentchecksumtype = curfname[26]
-        fcontents = curfname[27]
+        fdev = format(curfname[19], 'x').lower()
+        fdev_minor = format(curfname[20], 'x').lower()
+        fdev_major = format(curfname[21], 'x').lower()
+        fseeknextfile = curfname[22]
+        extradata = curfname[23]
+        fheaderchecksumtype = curfname[24]
+        fcontentchecksumtype = curfname[25]
+        fcontents = curfname[26]
         catoutlist = [ftype, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize,
-                      fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, fseeknextfile]
+                      fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile]
         fcontents.seek(0, 0)
         fp = AppendFileHeaderWithContent(
             fp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
@@ -3131,13 +3125,6 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
     if(compresscheck == "catfile" or compresscheck == formatspecs['format_lower']):
         catfp = fp
     if(not compresscheck):
-        try:
-            import lzma
-        except ImportError:
-            try:
-                from backports import lzma
-            except ImportError:
-                return False
         catfp = BytesIO()
         with fp as fpcontent:
             try:
@@ -3705,14 +3692,6 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
         getfdev = GetDevMajorMinor(fdev)
         fdev_minor = getfdev[0]
         fdev_major = getfdev[1]
-        frdev = fstatinfo.st_dev
-        if(hasattr(fstatinfo, "st_rdev")):
-            frdev = fstatinfo.st_rdev
-        else:
-            frdev = fstatinfo.st_dev
-        getfrdev = GetDevMajorMinor(frdev)
-        frdev_minor = getfrdev[0]
-        frdev_major = getfrdev[1]
         if(ftype == 1 or ftype == 2 or ftype == 3 or ftype == 4 or ftype == 5 or ftype == 6):
             fsize = format(int("0"), 'x').lower()
         elif(ftype == 0 or ftype == 7):
@@ -3751,10 +3730,9 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
                 fgname = ""
         except ImportError:
             fgname = ""
+        fdev = format(int(fdev), 'x').lower()
         fdev_minor = format(int(fdev_minor), 'x').lower()
         fdev_major = format(int(fdev_major), 'x').lower()
-        frdev_minor = format(int(frdev_minor), 'x').lower()
-        frdev_major = format(int(frdev_major), 'x').lower()
         finode = format(int(finode), 'x').lower()
         flinkcount = format(int(flinkcount), 'x').lower()
         if(hasattr(fstatinfo, "st_file_attributes")):
@@ -3857,7 +3835,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
         fcontents.seek(0, 0)
         ftypehex = format(ftype, 'x').lower()
         catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, "+1"]
+                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+1"]
         catfp = AppendFileHeaderWithContent(
             catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
         fcontents.close()
@@ -4037,10 +4015,9 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         curfid = curfid + 1
         if(ftype == 2):
             flinkname = member.linkname
+        fdev = format(int(os.makedev(member.devmajor, member.devminor)), 'x').lower()
         fdev_minor = format(int(member.devminor), 'x').lower()
         fdev_major = format(int(member.devmajor), 'x').lower()
-        frdev_minor = format(int(member.devminor), 'x').lower()
-        frdev_major = format(int(member.devmajor), 'x').lower()
         if(ftype == 1 or ftype == 2 or ftype == 3 or ftype == 4 or ftype == 5 or ftype == 6):
             fsize = format(int("0"), 'x').lower()
         elif(ftype == 0 or ftype == 7):
@@ -4111,7 +4088,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         fcontents.seek(0, 0)
         ftypehex = format(ftype, 'x').lower()
         catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, "+1"]
+                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+1"]
         catfp = AppendFileHeaderWithContent(
             catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
         fcontents.close()
@@ -4247,10 +4224,9 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
         fcurfid = format(int(curfid), 'x').lower()
         fcurinode = format(int(curfid), 'x').lower()
         curfid = curfid + 1
+        fdev = format(int(0), 'x').lower()
         fdev_minor = format(int(0), 'x').lower()
         fdev_major = format(int(0), 'x').lower()
-        frdev_minor = format(int(0), 'x').lower()
-        frdev_major = format(int(0), 'x').lower()
         if(ftype == 5):
             fsize = format(int("0"), 'x').lower()
         elif(ftype == 0):
@@ -4378,7 +4354,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
         fcontents.seek(0, 0)
         ftypehex = format(ftype, 'x').lower()
         catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, "+1"]
+                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+1"]
         catfp = AppendFileHeaderWithContent(
             catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
         fcontents.close()
@@ -4542,10 +4518,9 @@ if(rarfile_support):
             fcurfid = format(int(curfid), 'x').lower()
             fcurinode = format(int(curfid), 'x').lower()
             curfid = curfid + 1
+            fdev = format(int(0), 'x').lower()
             fdev_minor = format(int(0), 'x').lower()
             fdev_major = format(int(0), 'x').lower()
-            frdev_minor = format(int(0), 'x').lower()
-            frdev_major = format(int(0), 'x').lower()
             if(ftype == 5):
                 fsize = format(int("0"), 'x').lower()
             elif(ftype == 0):
@@ -4675,7 +4650,7 @@ if(rarfile_support):
             fcontents.seek(0, 0)
             ftypehex = format(ftype, 'x').lower()
             catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                          fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, "+1"]
+                          fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+1"]
             catfp = AppendFileHeaderWithContent(
                 catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
             fcontents.close()
@@ -4798,10 +4773,9 @@ if(py7zr_support):
             fcurfid = format(int(curfid), 'x').lower()
             fcurinode = format(int(curfid), 'x').lower()
             curfid = curfid + 1
+            fdev = format(int(0), 'x').lower()
             fdev_minor = format(int(0), 'x').lower()
             fdev_major = format(int(0), 'x').lower()
-            frdev_minor = format(int(0), 'x').lower()
-            frdev_major = format(int(0), 'x').lower()
             if(ftype == 5):
                 fsize = format(int("0"), 'x').lower()
             fatime = format(int(member.creationtime.timestamp()), 'x').lower()
@@ -4905,7 +4879,7 @@ if(py7zr_support):
             fcontents.seek(0, 0)
             ftypehex = format(ftype, 'x').lower()
             catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                          fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, "+1"]
+                          fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+1"]
             catfp = AppendFileHeaderWithContent(
                 catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
             fcontents.close()
@@ -5072,14 +5046,15 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         return False
     if(catdel != formatspecs['format_delimiter']):
         return False
-    catheader = ReadFileHeaderData(catfp, 3, formatspecs['format_delimiter'])
+    catheader = ReadFileHeaderData(catfp, 4, formatspecs['format_delimiter'])
     if(curloc > 0):
         catfp.seek(curloc, 0)
     catversion = re.findall("([\\d]+)", catstring)
-    fprenumfiles = catheader[0]
+    fostype = catheader[0]
+    fprenumfiles = catheader[1]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[1]
-    fprechecksum = catheader[2]
+    fprechecksumtype = catheader[2]
+    fprechecksum = catheader[3]
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
@@ -5097,7 +5072,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
                         "'" + str(catfileheadercshex) + "'")
         return False
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1],
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fostype': fostype,
                'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}}
     if(seekto >= fnumfiles):
         seekto = fnumfiles - 1
@@ -5142,15 +5117,14 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
             fid = int(preheaderdata[18], 16)
             finode = int(preheaderdata[19], 16)
             flinkcount = int(preheaderdata[20], 16)
-            prefdev_minor = int(preheaderdata[21], 16)
-            prefdev_major = int(preheaderdata[22], 16)
-            prefrdev_minor = int(preheaderdata[23], 16)
-            prefrdev_major = int(preheaderdata[24], 16)
-            prefseeknextfile = preheaderdata[25]
-            prefextrasize = int(preheaderdata[26], 16)
-            prefextrafields = int(preheaderdata[27], 16)
+            prefdev = int(preheaderdata[21], 16)
+            prefdev_minor = int(preheaderdata[22], 16)
+            prefdev_major = int(preheaderdata[23], 16)
+            prefseeknextfile = preheaderdata[24]
+            prefextrasize = int(preheaderdata[25], 16)
+            prefextrafields = int(preheaderdata[26], 16)
             extrafieldslist = []
-            extrastart = 28
+            extrastart = 27
             extraend = extrastart + prefextrafields
             extrafieldslist = []
             if(extrastart < extraend):
@@ -5330,14 +5304,15 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
         return False
     if(catdel != formatspecs['format_delimiter']):
         return False
-    catheader = ReadFileHeaderData(catfp, 3, formatspecs['format_delimiter'])
+    catheader = ReadFileHeaderData(catfp, 4, formatspecs['format_delimiter'])
     if(curloc > 0):
         catfp.seek(curloc, 0)
     catversion = re.findall("([\\d]+)", catstring)
-    fprenumfiles = catheader[0]
+    fostype = catheader[0]
+    fprenumfiles = catheader[1]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[1]
-    fprechecksum = catheader[2]
+    fprechecksumtype = catheader[2]
+    fprechecksum = catheader[3]
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
@@ -5355,7 +5330,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
                         "'" + str(catfileheadercshex) + "'")
         return False
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1],
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fostype': fostype,
                'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}}
     seekto = fnumfiles - 1
     filefound = False
@@ -5398,15 +5373,14 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
             fid = int(preheaderdata[18], 16)
             finode = int(preheaderdata[19], 16)
             flinkcount = int(preheaderdata[20], 16)
-            prefdev_minor = int(preheaderdata[21], 16)
-            prefdev_major = int(preheaderdata[22], 16)
-            prefrdev_minor = int(preheaderdata[23], 16)
-            prefrdev_major = int(preheaderdata[24], 16)
-            prefseeknextfile = preheaderdata[25]
-            prefextrasize = int(preheaderdata[26], 16)
-            prefextrafields = int(preheaderdata[27], 16)
+            prefdev = int(preheaderdata[21], 16)
+            prefdev_minor = int(preheaderdata[22], 16)
+            prefdev_major = int(preheaderdata[23], 16)
+            prefseeknextfile = preheaderdata[24]
+            prefextrasize = int(preheaderdata[25], 16)
+            prefextrafields = int(preheaderdata[26], 16)
             extrafieldslist = []
-            extrastart = 28
+            extrastart = 27
             extraend = extrastart + prefextrafields
             extrafieldslist = []
             if(extrastart < extraend):
@@ -5601,19 +5575,20 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         return False
     if(catdel != formatspecs['format_delimiter']):
         return False
-    catheader = ReadFileHeaderData(catfp, 3, formatspecs['format_delimiter'])
+    catheader = ReadFileHeaderData(catfp, 4, formatspecs['format_delimiter'])
     if(curloc > 0):
         catfp.seek(curloc, 0)
     catversion = re.findall("([\\d]+)", catstring)
-    fprenumfiles = catheader[0]
+    fostype = catheader[0]
+    fprenumfiles = catheader[1]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[1]
-    fprechecksum = catheader[2]
+    fprechecksumtype = catheader[2]
+    fprechecksum = catheader[3]
     il = 0
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
-        AppendNullBytes([fnumfileshex, fprechecksumtype],
+        AppendNullBytes([fostype, fnumfileshex, fprechecksumtype],
                         formatspecs['format_delimiter'])
     catfileheadercshex = GetFileChecksum(
         fileheader, fprechecksumtype, True, formatspecs)
@@ -5681,15 +5656,14 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         fid = int(catheaderdata[18], 16)
         finode = int(catheaderdata[19], 16)
         flinkcount = int(catheaderdata[20], 16)
-        catfdev_minor = int(catheaderdata[21], 16)
-        catfdev_major = int(catheaderdata[22], 16)
-        catfrdev_minor = int(catheaderdata[23], 16)
-        catfrdev_major = int(catheaderdata[24], 16)
-        catfseeknextfile = catheaderdata[25]
-        catfextrasize = int(catheaderdata[26], 16)
-        catfextrafields = int(catheaderdata[27], 16)
+        catfdev = int(catheaderdata[21], 16)
+        catfdev_minor = int(catheaderdata[22], 16)
+        catfdev_major = int(catheaderdata[23], 16)
+        catfseeknextfile = catheaderdata[24]
+        catfextrasize = int(catheaderdata[25], 16)
+        catfextrafields = int(catheaderdata[26], 16)
         extrafieldslist = []
-        extrastart = 28
+        extrastart = 27
         extraend = extrastart + catfextrafields
         extrafieldslist = []
         if(extrastart < extraend):
@@ -5879,18 +5853,19 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         return False
     if(catdel != formatspecs['format_delimiter']):
         return False
-    catheader = ReadFileHeaderData(catfp, 3, formatspecs['format_delimiter'])
+    catheader = ReadFileHeaderData(catfp, 4, formatspecs['format_delimiter'])
     if(curloc > 0):
         catfp.seek(curloc, 0)
     catversion = re.findall("([\\d]+)", catstring)
-    fprenumfiles = catheader[0]
+    fostype = catheader[0]
+    fprenumfiles = catheader[1]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[1]
-    fprechecksum = catheader[2]
+    fprechecksumtype = catheader[2]
+    fprechecksum = catheader[3]
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
-        AppendNullBytes([fnumfileshex, fprechecksumtype],
+        AppendNullBytes([fostype, fnumfileshex, fprechecksumtype],
                         formatspecs['format_delimiter'])
     catfileheadercshex = GetFileChecksum(
         fileheader, fprechecksumtype, True, formatspecs)
@@ -6030,15 +6005,14 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         catfid = int(catheaderdata[18], 16)
         catfinode = int(catheaderdata[19], 16)
         catflinkcount = int(catheaderdata[20], 16)
-        catfdev_minor = int(catheaderdata[21], 16)
-        catfdev_major = int(catheaderdata[22], 16)
-        catfrdev_minor = int(catheaderdata[23], 16)
-        catfrdev_major = int(catheaderdata[24], 16)
-        catfseeknextfile = catheaderdata[25]
-        catfextrasize = int(catheaderdata[26], 16)
-        catfextrafields = int(catheaderdata[27], 16)
+        catfdev = int(catheaderdata[21], 16)
+        catfdev_minor = int(catheaderdata[22], 16)
+        catfdev_major = int(catheaderdata[23], 16)
+        catfseeknextfile = catheaderdata[24]
+        catfextrasize = int(catheaderdata[25], 16)
+        catfextrafields = int(catheaderdata[26], 16)
         extrafieldslist = []
-        extrastart = 28
+        extrastart = 27
         extraend = extrastart + catfextrafields
         extrafieldslist = []
         if(extrastart < extraend):
@@ -6111,7 +6085,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         if(not contentasfile):
             catfcontents = catfcontents.read()
         catlist['ffilelist'].append({'fid': realidnum, 'fidalt': fileidnum, 'fheadersize': catfheadsize, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmode': catfchmode, 'ftypemod': catftypemod, 'fwinattributes': catfwinattributes, 'fcompression': catfcompression, 'fcsize': catfcsize, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': catfinode, 'flinkcount': catflinkcount,
-                                    'fminor': catfdev_minor, 'fmajor': catfdev_major, 'frminor': catfrdev_minor, 'frmajor': catfrdev_major, 'fseeknextfile': catfseeknextfile, 'fheaderchecksumtype': catheaderdata[-4], 'fcontentchecksumtype': catheaderdata[-3], 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': catfextrasize, 'fextralist': extrafieldslist, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': catfcontents})
+                                    'fdev': catfdev, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'fseeknextfile': catfseeknextfile, 'fheaderchecksumtype': catheaderdata[-4], 'fcontentchecksumtype': catheaderdata[-3], 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': catfextrasize, 'fextralist': extrafieldslist, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': catfcontents})
         fileidnum = fileidnum + 1
         realidnum = realidnum + 1
     if(returnfp):
@@ -6328,14 +6302,6 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
         getfdev = GetDevMajorMinor(fdev)
         fdev_minor = getfdev[0]
         fdev_major = getfdev[1]
-        frdev = fstatinfo.st_dev
-        if(hasattr(fstatinfo, "st_rdev")):
-            frdev = fstatinfo.st_rdev
-        else:
-            frdev = fstatinfo.st_dev
-        getfrdev = GetDevMajorMinor(frdev)
-        frdev_minor = getfrdev[0]
-        frdev_major = getfrdev[1]
         if(ftype == 1 or ftype == 2 or ftype == 3 or ftype == 4 or ftype == 5 or ftype == 6):
             fsize = "0"
         if(ftype == 0 or ftype == 7):
@@ -6372,11 +6338,6 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
                 fgname = ""
         except ImportError:
             fgname = ""
-        fdev_minor = fdev_minor
-        fdev_major = fdev_major
-        frdev_minor = frdev_minor
-        frdev_major = frdev_major
-        flinkcount = flinkcount
         if(hasattr(fstatinfo, "st_file_attributes")):
             fwinattributes = fstatinfo.st_file_attributes
         else:
@@ -6404,7 +6365,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
         extrasizelen = len(extrasizestr)
         extrasizelenhex = format(extrasizelen, 'x').lower()
         catoutlist = [ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fwinattributes), 'x').lower(), fcompression, format(int(fcsize), 'x').lower(), format(int(fuid), 'x').lower(
-        ), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), "+1", extrasizelenhex, format(catfextrafields, 'x').lower()]
+        ), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), "+1", extrasizelenhex, format(catfextrafields, 'x').lower()]
         catoutlen = len(catoutlist) + len(extradata) + 3
         catoutlenhex = format(catoutlen, 'x').lower()
         catoutlist.insert(0, catoutlenhex)
@@ -6458,8 +6419,8 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
         fcontents.seek(0, 0)
         if(not contentasfile):
             fcontents = fcontents.read()
-        catlist['ffilelist'].append({'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor,
-                                    'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fseeknextfile': "+1", 'fheaderchecksumtype': checksumtype, 'fcontentchecksumtype': checksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
+        catlist['ffilelist'].append({'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
+                                     'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': "+1", 'fheaderchecksumtype': checksumtype, 'fcontentchecksumtype': checksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
         fileidnum = fileidnum + 1
     return catlist
 
@@ -6573,10 +6534,9 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         curfid = curfid + 1
         if(ftype == 2):
             flinkname = member.linkname
+        fdev = os.makedev(member.devmajor, member.devminor)
         fdev_minor = member.devminor
         fdev_major = member.devmajor
-        frdev_minor = member.devminor
-        frdev_major = member.devmajor
         if(ftype == 1 or ftype == 2 or ftype == 3 or ftype == 4 or ftype == 5 or ftype == 6):
             fsize = "0"
         elif(ftype == 0 or ftype == 7):
@@ -6615,7 +6575,7 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         extrasizelen = len(extrasizestr)
         extrasizelenhex = format(extrasizelen, 'x').lower()
         catoutlist = [ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fwinattributes), 'x').lower(), fcompression, format(int(fcsize), 'x').lower(), format(int(fuid), 'x').lower(
-        ), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), "+1", extrasizelenhex, format(catfextrafields, 'x').lower()]
+        ), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), "+1", extrasizelenhex, format(catfextrafields, 'x').lower()]
         catoutlen = len(catoutlist) + len(extradata) + 3
         catoutlenhex = format(catoutlen, 'x').lower()
         catoutlist.insert(0, catoutlenhex)
@@ -6669,8 +6629,8 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         fcontents.seek(0, 0)
         if(not contentasfile):
             fcontents = fcontents.read()
-        catlist['ffilelist'].append({'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor,
-                                    'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fseeknextfile': "+1", 'fheaderchecksumtype': checksumtype, 'fcontentchecksumtype': checksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
+        catlist['ffilelist'].append({'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
+                                    'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': "+1", 'fheaderchecksumtype': checksumtype, 'fcontentchecksumtype': checksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
         fileidnum = fileidnum + 1
     return catlist
 
@@ -6754,10 +6714,9 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         fcurinode = curfid
         finode = fcurinode
         curfid = curfid + 1
+        fdev = 0
         fdev_minor = 0
         fdev_major = 0
-        frdev_minor = 0
-        frdev_major = 0
         if(ftype == 5):
             fsize = "0"
         elif(ftype == 0):
@@ -6851,7 +6810,7 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         extrasizelen = len(extrasizestr)
         extrasizelenhex = format(extrasizelen, 'x').lower()
         catoutlist = [ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fwinattributes), 'x').lower(), fcompression, format(int(fcsize), 'x').lower(), format(int(fuid), 'x').lower(
-        ), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), "+1", extrasizelenhex, format(catfextrafields, 'x').lower()]
+        ), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), "+1", extrasizelenhex, format(catfextrafields, 'x').lower()]
         catoutlen = len(catoutlist) + len(extradata) + 3
         catoutlenhex = format(catoutlen, 'x').lower()
         catoutlist.insert(0, catoutlenhex)
@@ -6905,8 +6864,8 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         fcontents.seek(0, 0)
         if(not contentasfile):
             fcontents = fcontents.read()
-        catlist['ffilelist'].append({'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor,
-                                    'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fseeknextfile': "+1", 'fheaderchecksumtype': checksumtype, 'fcontentchecksumtype': checksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
+        catlist['ffilelist'].append({'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
+                                    'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': "+1", 'fheaderchecksumtype': checksumtype, 'fcontentchecksumtype': checksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
         fileidnum = fileidnum + 1
     return catlist
 
@@ -7009,10 +6968,9 @@ if(rarfile_support):
             fcurinode = curfid
             finode = fcurinode
             curfid = curfid + 1
+            fdev = 0
             fdev_minor = 0
             fdev_major = 0
-            frdev_minor = 0
-            frdev_major = 0
             if(ftype == 5):
                 fsize = "0"
             if(ftype == 0):
@@ -7100,7 +7058,7 @@ if(rarfile_support):
             extrasizelen = len(extrasizestr)
             extrasizelenhex = format(extrasizelen, 'x').lower()
             catoutlist = [ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fwinattributes), 'x').lower(), fcompression, format(int(fcsize), 'x').lower(), format(int(fuid), 'x').lower(
-            ), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), "+1", extrasizelenhex, format(catfextrafields, 'x').lower()]
+            ), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), "+1", extrasizelenhex, format(catfextrafields, 'x').lower()]
             catoutlen = len(catoutlist) + len(extradata) + 3
             catoutlenhex = format(catoutlen, 'x').lower()
             catoutlist.insert(0, catoutlenhex)
@@ -7154,8 +7112,8 @@ if(rarfile_support):
             fcontents.seek(0, 0)
             if(not contentasfile):
                 fcontents = fcontents.read()
-            catlist['ffilelist'].append({'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor,
-                                        'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fseeknextfile': "+1", 'fheaderchecksumtype': checksumtype, 'fcontentchecksumtype': checksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
+            catlist['ffilelist'].append({'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
+                                        'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': "+1", 'fheaderchecksumtype': checksumtype, 'fcontentchecksumtype': checksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
             fileidnum = fileidnum + 1
         return catlist
 
@@ -7222,10 +7180,9 @@ if(py7zr_support):
             fcurinode = curfid
             finode = fcurinode
             curfid = curfid + 1
+            fdev = 0
             fdev_minor = 0
             fdev_major = 0
-            frdev_minor = 0
-            frdev_major = 0
             if(ftype == 5):
                 fsize = "0"
             fatime = int(member.creationtime.timestamp())
@@ -7293,7 +7250,7 @@ if(py7zr_support):
             extrasizelen = len(extrasizestr)
             extrasizelenhex = format(extrasizelen, 'x').lower()
             catoutlist = [ftypehex, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fwinattributes), 'x').lower(), fcompression, format(int(fcsize), 'x').lower(), format(int(fuid), 'x').lower(
-            ), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), format(int(frdev_minor), 'x').lower(), format(int(frdev_major), 'x').lower(), "+1", extrasizelenhex, format(catfextrafields, 'x').lower()]
+            ), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), "+1", extrasizelenhex, format(catfextrafields, 'x').lower()]
             catoutlen = len(catoutlist) + len(extradata) + 3
             catoutlenhex = format(catoutlen, 'x').lower()
             catoutlist.insert(0, catoutlenhex)
@@ -7347,8 +7304,8 @@ if(py7zr_support):
             fcontents.seek(0, 0)
             if(not contentasfile):
                 fcontents = fcontents.read()
-            catlist['ffilelist'].append({'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fminor': fdev_minor,
-                                        'fmajor': fdev_major, 'frminor': frdev_minor, 'frmajor': frdev_major, 'fseeknextfile': "+1", 'fheaderchecksumtype': checksumtype, 'fcontentchecksumtype': checksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
+            catlist['ffilelist'].append({'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
+                                        'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': "+1", 'fheaderchecksumtype': checksumtype, 'fcontentchecksumtype': checksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
             fileidnum = fileidnum + 1
         return catlist
 
@@ -7556,14 +7513,12 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
         fcompression = listcatfiles['ffilelist'][reallcfi]['fcompression']
         fcsize = format(
             int(listcatfiles['ffilelist'][reallcfi]['fcsize']), 'x').lower()
+        fdev = format(
+            int(listcatfiles['ffilelist'][reallcfi]['fdev']), 'x').lower()
         fdev_minor = format(
             int(listcatfiles['ffilelist'][reallcfi]['fminor']), 'x').lower()
         fdev_major = format(
             int(listcatfiles['ffilelist'][reallcfi]['fmajor']), 'x').lower()
-        frdev_minor = format(
-            int(listcatfiles['ffilelist'][reallcfi]['frminor']), 'x').lower()
-        frdev_major = format(
-            int(listcatfiles['ffilelist'][reallcfi]['frmajor']), 'x').lower()
         fseeknextfile = listcatfiles['ffilelist'][reallcfi]['fseeknextfile']
         if(len(listcatfiles['ffilelist'][reallcfi]['fextralist']) > listcatfiles['ffilelist'][reallcfi]['fextrafields'] and len(listcatfiles['ffilelist'][reallcfi]['fextralist']) > 0):
             listcatfiles['ffilelist'][reallcfi]['fextrafields'] = len(
@@ -7640,10 +7595,9 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
                     int(flinkinfo['fwinattributes']), 'x').lower()
                 fcompression = flinkinfo['fcompression']
                 fcsize = format(int(flinkinfo['fcsize']), 'x').lower()
+                fdev = format(int(flinkinfo['fdev']), 'x').lower()
                 fdev_minor = format(int(flinkinfo['fminor']), 'x').lower()
                 fdev_major = format(int(flinkinfo['fmajor']), 'x').lower()
-                frdev_minor = format(int(flinkinfo['frminor']), 'x').lower()
-                frdev_major = format(int(flinkinfo['frmajor']), 'x').lower()
                 fseeknextfile = flinkinfo['fseeknextfile']
                 if(len(flinkinfo['fextralist']) > flinkinfo['fextrafields'] and len(flinkinfo['fextralist']) > 0):
                     flinkinfo['fextrafields'] = len(flinkinfo['fextralist'])
@@ -7672,7 +7626,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
         if(fcompression == "none"):
             fcompression = ""
         catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize,
-                      fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev_minor, fdev_major, frdev_minor, frdev_major, fseeknextfile]
+                      fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile]
         catfp = AppendFileHeaderWithContent(
             catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
         fcontents.close()
