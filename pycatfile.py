@@ -3504,6 +3504,18 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
     return outfp
 
 
+def makedevalt(major, minor):
+    """
+    Replicates os.makedev functionality to create a device number.
+    :param major: Major device number
+    :param minor: Minor device number
+    :return: Device number
+    """
+    # The device number is typically represented as:
+    # (major << 8) | minor
+    return (major << 8) | minor
+
+
 def GetDevMajorMinor(fdev):
     retdev = []
     if(hasattr(os, "minor")):
@@ -4015,7 +4027,10 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         curfid = curfid + 1
         if(ftype == 2):
             flinkname = member.linkname
-        fdev = format(int(os.makedev(member.devmajor, member.devminor)), 'x').lower()
+        try:
+            fdev = format(int(os.makedev(member.devmajor, member.devminor)), 'x').lower()
+        except AttributeError:
+            fdev = format(int(makedevalt(member.devmajor, member.devminor)), 'x').lower()
         fdev_minor = format(int(member.devminor), 'x').lower()
         fdev_major = format(int(member.devmajor), 'x').lower()
         if(ftype == 1 or ftype == 2 or ftype == 3 or ftype == 4 or ftype == 5 or ftype == 6):
@@ -6534,7 +6549,10 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         curfid = curfid + 1
         if(ftype == 2):
             flinkname = member.linkname
-        fdev = os.makedev(member.devmajor, member.devminor)
+        try:
+            fdev = os.makedev(member.devmajor, member.devminor)
+        except AttributeError:
+            fdev = makedevalt(member.devmajor, member.devminor)
         fdev_minor = member.devminor
         fdev_major = member.devmajor
         if(ftype == 1 or ftype == 2 or ftype == 3 or ftype == 4 or ftype == 5 or ftype == 6):
