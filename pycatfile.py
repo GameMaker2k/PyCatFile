@@ -14,7 +14,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 12/3/2024 Ver. 0.14.16 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 12/4/2024 Ver. 0.14.18 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals, generators, with_statement, nested_scopes
@@ -303,8 +303,8 @@ __file_format_dict__ = {'format_name': __file_format_name__, 'format_magic': __f
                         'format_delimiter': __file_format_delimiter__, 'format_ver': __file_format_ver__, 'new_style': __use_new_style__, 'use_advanced_list': __use_advanced_list__, 'use_alt_inode': __use_alt_inode__}
 __project__ = __program_name__
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile"
-__version_info__ = (0, 14, 16, "RC 1", 1)
-__version_date_info__ = (2024, 12, 3, "RC 1", 1)
+__version_info__ = (0, 14, 18, "RC 1", 1)
+__version_date_info__ = (2024, 12, 4, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
@@ -519,22 +519,28 @@ def VerbosePrintOutReturn(dbgtxt, outtype="log", dbgenable=True, dgblevel=20):
 
 
 def RemoveWindowsPath(dpath):
-    if(dpath is None):
+    """
+    Normalizes a path by converting Windows-style separators to Unix-style and stripping trailing slashes.
+    """
+    if dpath is None:
         dpath = ""
-    if(os.sep != "/"):
+    if os.sep != "/":
         dpath = dpath.replace(os.path.sep, "/")
     dpath = dpath.rstrip("/")
-    if(dpath == "." or dpath == ".."):
+    if dpath in [".", ".."]:
         dpath = dpath + "/"
     return dpath
 
 
 def NormalizeRelativePath(inpath):
+    """
+    Ensures the path is relative unless it is absolute. Prepares consistent relative paths.
+    """
     inpath = RemoveWindowsPath(inpath)
-    if(os.path.isabs(inpath)):
+    if os.path.isabs(inpath):
         outpath = inpath
     else:
-        if(inpath.startswith("./") or inpath.startswith("../")):
+        if inpath.startswith("./") or inpath.startswith("../"):
             outpath = inpath
         else:
             outpath = "./" + inpath
