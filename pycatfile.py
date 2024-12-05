@@ -557,53 +557,29 @@ def PrependPath(base_dir, child_path):
         return base_dir + child_path.lstrip('/')
 
 
-def ListDir(dirpath, followlink=False, duplicates=False):
-    if isinstance(dirpath, (list, tuple, )):
+def ListDir(dirpath, followlink=False, duplicates=False, include_regex=None, exclude_regex=None):
+    """
+    Simplified directory listing function with regex support for inclusion and exclusion.
+    Compatible with Python 2 and 3.
+
+    Parameters:
+        dirpath (str or list): A string or list of directory paths to process.
+        followlink (bool): Whether to follow symbolic links (default: False).
+        duplicates (bool): Whether to include duplicate paths (default: False).
+        include_regex (str): Regex pattern to include matching files/directories (default: None).
+        exclude_regex (str): Regex pattern to exclude matching files/directories (default: None).
+
+    Returns:
+        list: A list of files and directories matching the criteria.
+    """
+    if isinstance(dirpath, (list, tuple)):
         dirpath = list(filter(None, dirpath))
-    elif isinstance(dirpath, str):
+    elif isinstance(dirpath, basestring):
         dirpath = list(filter(None, [dirpath]))
     retlist = []
-    fs_encoding = sys.getfilesystemencoding()
-    for mydirfile in dirpath:
-        if not os.path.exists(mydirfile):
-            return False
-        mydirfile = NormalizeRelativePath(mydirfile)
-        if os.path.exists(mydirfile) and os.path.islink(mydirfile):
-            mydirfile = RemoveWindowsPath(os.path.realpath(mydirfile))
-        if os.path.exists(mydirfile) and os.path.isdir(mydirfile):
-            for root, dirs, filenames in os.walk(mydirfile):
-                dpath = root
-                dpath = RemoveWindowsPath(dpath)
-                if fs_encoding != 'utf-8':
-                    dpath = dpath.encode(fs_encoding).decode('utf-8')
-                if dpath not in retlist and not duplicates:
-                    retlist.append(dpath)
-                if duplicates:
-                    retlist.append(dpath)
-                for files in filenames:
-                    fpath = os.path.join(root, files)
-                    fpath = RemoveWindowsPath(fpath)
-                    if fs_encoding != 'utf-8':
-                        fpath = fpath.encode(fs_encoding).decode('utf-8')
-                    if fpath not in retlist and not duplicates:
-                        retlist.append(fpath)
-                    if duplicates:
-                        retlist.append(fpath)
-        else:
-            path = RemoveWindowsPath(mydirfile)
-            if fs_encoding != 'utf-8':
-                path = path.encode(fs_encoding).decode('utf-8')
-            retlist.append(path)
-    return retlist
-
-
-def ListDirAdvanced(dirpath, followlink=False, duplicates=False):
-    if isinstance(dirpath, (list, tuple, )):
-        dirpath = list(filter(None, dirpath))
-    elif isinstance(dirpath, str):
-        dirpath = list(filter(None, [dirpath]))
-    retlist = []
-    fs_encoding = sys.getfilesystemencoding()
+    fs_encoding = sys.getfilesystemencoding() or 'utf-8'
+    include_pattern = re.compile(include_regex) if include_regex else None
+    exclude_pattern = re.compile(exclude_regex) if exclude_regex else None
     for mydirfile in dirpath:
         if not os.path.exists(mydirfile):
             return False
@@ -612,30 +588,106 @@ def ListDirAdvanced(dirpath, followlink=False, duplicates=False):
             mydirfile = RemoveWindowsPath(os.path.realpath(mydirfile))
         if os.path.exists(mydirfile) and os.path.isdir(mydirfile):
             for root, dirs, filenames in os.walk(mydirfile):
-                # Sort dirs and filenames alphabetically in place
-                dirs.sort(key=lambda x: x.lower())
-                filenames.sort(key=lambda x: x.lower())
                 dpath = RemoveWindowsPath(root)
-                if fs_encoding != 'utf-8':
-                    dpath = dpath.encode(fs_encoding).decode('utf-8')
-                if not duplicates and dpath not in retlist:
-                    retlist.append(dpath)
-                elif duplicates:
-                    retlist.append(dpath)
+                if not isinstance(dpath, basestring):
+                    dpath = dpath.decode(fs_encoding)
+                # Apply regex filtering for directories
+                if ((not include_pattern or include_pattern.search(dpath)) and
+                    (not exclude_pattern or not exclude_pattern.search(dpath))):
+                    if not duplicates and dpath not in retlist:
+                        retlist.append(dpath)
+                    elif duplicates:
+                        retlist.append(dpath)
                 for files in filenames:
                     fpath = os.path.join(root, files)
                     fpath = RemoveWindowsPath(fpath)
-                    if fs_encoding != 'utf-8':
-                        fpath = fpath.encode(fs_encoding).decode('utf-8')
-                    if not duplicates and fpath not in retlist:
-                        retlist.append(fpath)
-                    elif duplicates:
-                        retlist.append(fpath)
+                    if not isinstance(fpath, basestring):
+                        fpath = fpath.decode(fs_encoding)
+                    # Apply regex filtering for files
+                    if ((not include_pattern or include_pattern.search(fpath)) and
+                        (not exclude_pattern or not exclude_pattern.search(fpath))):
+                        if not duplicates and fpath not in retlist:
+                            retlist.append(fpath)
+                        elif duplicates:
+                            retlist.append(fpath)
         else:
             path = RemoveWindowsPath(mydirfile)
-            if fs_encoding != 'utf-8':
-                path = path.encode(fs_encoding).decode('utf-8')
-            retlist.append(path)
+            if not isinstance(path, basestring):
+                path = path.decode(fs_encoding)
+
+            # Apply regex filtering for single paths
+            if ((not include_pattern or include_pattern.search(path)) and
+                (not exclude_pattern or not exclude_pattern.search(path))):
+                retlist.append(path)
+    return retlist
+
+
+def ListDirAdvanced(dirpath, followlink=False, duplicates=False, include_regex=None, exclude_regex=None):
+    """
+    Advanced directory listing function with regex support for inclusion and exclusion.
+    Compatible with Python 2 and 3.
+
+    Parameters:
+        dirpath (str or list): A string or list of directory paths to process.
+        followlink (bool): Whether to follow symbolic links (default: False).
+        duplicates (bool): Whether to include duplicate paths (default: False).
+        include_regex (str): Regex pattern to include matching files/directories (default: None).
+        exclude_regex (str): Regex pattern to exclude matching files/directories (default: None).
+
+    Returns:
+        list: A list of files and directories matching the criteria.
+    """
+    if isinstance(dirpath, (list, tuple)):
+        dirpath = list(filter(None, dirpath))
+    elif isinstance(dirpath, basestring):
+        dirpath = list(filter(None, [dirpath]))
+    retlist = []
+    fs_encoding = sys.getfilesystemencoding() or 'utf-8'
+    include_pattern = re.compile(include_regex) if include_regex else None
+    exclude_pattern = re.compile(exclude_regex) if exclude_regex else None
+    for mydirfile in dirpath:
+        if not os.path.exists(mydirfile):
+            return False
+        mydirfile = NormalizeRelativePath(mydirfile)
+        if os.path.exists(mydirfile) and os.path.islink(mydirfile) and followlink:
+            mydirfile = RemoveWindowsPath(os.path.realpath(mydirfile))
+        if os.path.exists(mydirfile) and os.path.isdir(mydirfile):
+            for root, dirs, filenames in os.walk(mydirfile):
+                # Sort directories and files
+                dirs.sort(key=lambda x: x.lower())
+                filenames.sort(key=lambda x: x.lower())
+                dpath = RemoveWindowsPath(root)
+                if not isinstance(dpath, basestring):
+                    dpath = dpath.decode(fs_encoding)
+                # Apply regex filtering for directories
+                if ((not include_pattern or include_pattern.search(dpath)) and
+                    (not exclude_pattern or not exclude_pattern.search(dpath))):
+                    if not duplicates and dpath not in retlist:
+                        retlist.append(dpath)
+                    elif duplicates:
+                        retlist.append(dpath)
+                for files in filenames:
+                    fpath = os.path.join(root, files)
+                    fpath = RemoveWindowsPath(fpath)
+                    if not isinstance(fpath, basestring):
+                        fpath = fpath.decode(fs_encoding)
+
+                    # Apply regex filtering for files
+                    if ((not include_pattern or include_pattern.search(fpath)) and
+                        (not exclude_pattern or not exclude_pattern.search(fpath))):
+                        if not duplicates and fpath not in retlist:
+                            retlist.append(fpath)
+                        elif duplicates:
+                            retlist.append(fpath)
+        else:
+            path = RemoveWindowsPath(mydirfile)
+            if not isinstance(path, basestring):
+                path = path.decode(fs_encoding)
+            # Apply regex filtering for single paths
+            if ((not include_pattern or include_pattern.search(path)) and
+                (not exclude_pattern or not exclude_pattern.search(path))):
+                retlist.append(path)
+
     return retlist
 
 
