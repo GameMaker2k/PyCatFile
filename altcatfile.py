@@ -23,7 +23,6 @@ import argparse
 import pycatfile
 import configparser
 from io import BytesIO
-
 # Initialize Configuration
 def load_config():
     if 'PYCATFILE_CONFIG_FILE' in os.environ and os.path.exists(os.environ['PYCATFILE_CONFIG_FILE']):
