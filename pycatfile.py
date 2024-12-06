@@ -693,8 +693,27 @@ def ListDirAdvanced(dirpath, followlink=False, duplicates=False, include_regex=N
             if ((not include_pattern or include_pattern.search(path)) and
                 (not exclude_pattern or not exclude_pattern.search(path))):
                 retlist.append(path)
-
     return retlist
+
+
+def GetTotalSize(file_list):
+    """
+    Calculate the total size of all files in the provided list.
+    
+    Parameters:
+        file_list (list): List of file paths.
+
+    Returns:
+        int: Total size of all files in bytes.
+    """
+    total_size = 0
+    for item in file_list:
+        if os.path.isfile(item):  # Ensure it's a file
+            try:
+                total_size += os.path.getsize(item)
+            except OSError as e:
+                sys.stderr.write("Error accessing file {}: {}\n".format(item, e))
+    return total_size
 
 
 def create_alias_function(prefix, base_name, suffix, target_function):
@@ -2516,6 +2535,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         GetDirList = ListDirAdvanced(infilelist, followlink, False)
     else:
         GetDirList = ListDir(infilelist, followlink, False)
+    FullSizeFiles = GetTotalSize(GetDirList)
     if(not GetDirList):
         return False
     curinode = 0
@@ -3684,6 +3704,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
         GetDirList = ListDirAdvanced(infilelist, followlink, False)
     else:
         GetDirList = ListDir(infilelist, followlink, False)
+    FullSizeFiles = GetTotalSize(GetDirList)
     if(not GetDirList):
         return False
     curinode = 0
@@ -6279,6 +6300,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
         GetDirList = ListDirAdvanced(infilelist, followlink, False)
     else:
         GetDirList = ListDir(infilelist, followlink, False)
+    FullSizeFiles = GetTotalSize(GetDirList)
     if(not GetDirList):
         return False
     curinode = 0
