@@ -33,9 +33,10 @@ import hashlib
 import inspect
 import datetime
 import logging
-import binascii
 import zipfile
+import binascii
 import platform
+import mimetypes
 try:
     from backports import tempfile
 except ImportError:
@@ -453,27 +454,39 @@ zipfile_zip_mimetype = zipfile_mimetype
 rarfile_mimetype = "application/rar"
 rarfile_rar_mimetype = rarfile_mimetype
 archivefile_mimetype = "application/x-"+__file_format_dict__['format_lower']+""
+mimetypes.add_type(archivefile_mimetype, __file_format_extension__, strict=True)
 archivefile_cat_mimetype = archivefile_mimetype
 archivefile_gzip_mimetype = "application/x-" + \
     __file_format_dict__['format_lower']+"+gzip"
 archivefile_gz_mimetype = archivefile_gzip_mimetype
+mimetypes.add_type(archivefile_gz_mimetype, __file_format_extension__+".gz", strict=True)
 archivefile_bzip2_mimetype = "application/x-" + \
     __file_format_dict__['format_lower']+"+bzip2"
 archivefile_bz2_mimetype = archivefile_bzip2_mimetype
+mimetypes.add_type(archivefile_bz2_mimetype, __file_format_extension__+".bz2", strict=True)
 archivefile_lz4_mimetype = "application/x-" + \
     __file_format_dict__['format_lower']+"+lz4"
+mimetypes.add_type(archivefile_lz4_mimetype, __file_format_extension__+".lz4", strict=True)
 archivefile_lzop_mimetype = "application/x-" + \
     __file_format_dict__['format_lower']+"+lzop"
+mimetypes.add_type(archivefile_lzop_mimetype, __file_format_extension__+".lzop", strict=True)
 archivefile_lzo_mimetype = archivefile_lzop_mimetype
+mimetypes.add_type(archivefile_lzo_mimetype, __file_format_extension__+".lzo", strict=True)
 archivefile_zstandard_mimetype = "application/x-" + \
     __file_format_dict__['format_lower']+"+zstandard"
 archivefile_zstd_mimetype = archivefile_zstandard_mimetype
+mimetypes.add_type(archivefile_zstd_mimetype, __file_format_extension__+".zst", strict=True)
 archivefile_lzma_mimetype = "application/x-" + \
     __file_format_dict__['format_lower']+"+lzma"
+mimetypes.add_type(archivefile_lzma_mimetype, __file_format_extension__+".lzma", strict=True)
 archivefile_xz_mimetype = "application/x-" + \
     __file_format_dict__['format_lower']+"+xz"
+mimetypes.add_type(archivefile_xz_mimetype, __file_format_extension__+".xz", strict=True)
 archivefile_zlib_mimetype = "application/x-" + \
     __file_format_dict__['format_lower']+"+zlib"
+mimetypes.add_type(archivefile_zlib_mimetype, __file_format_extension__+".zz", strict=True)
+mimetypes.add_type(archivefile_zlib_mimetype, __file_format_extension__+".zl", strict=True)
+mimetypes.add_type(archivefile_zlib_mimetype, __file_format_extension__+".zlib", strict=True)
 archivefile_zz_mimetype = archivefile_zlib_mimetype
 archivefile_zl_mimetype = archivefile_zlib_mimetype
 archivefile_extensions = [__file_format_extension__, __file_format_extension__+".gz", __file_format_extension__+".bz2", __file_format_extension__+".zst", __file_format_extension__+".lz4", __file_format_extension__ +
