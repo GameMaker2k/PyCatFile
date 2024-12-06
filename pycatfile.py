@@ -8081,8 +8081,8 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
                         try:
                             fpc.flush()
                             os.fsync(fpc.fileno())
-                           if(hasattr(os, "sync")):
-                               os.sync()
+                            if(hasattr(os, "sync")):
+                                os.sync()
                         except io.UnsupportedOperation:
                             pass
                         except AttributeError:
