@@ -2408,6 +2408,8 @@ def AppendFileHeader(fp, numfiles, checksumtype="crc32", formatspecs=__file_form
     try:
         fp.flush()
         os.fsync(fp.fileno())
+        if(hasattr(os, "sync")):
+            os.sync()
     except io.UnsupportedOperation:
         pass
     except AttributeError:
@@ -2451,6 +2453,8 @@ def MakeEmptyFile(outfile, compression="auto", compressionlevel=None, checksumty
         try:
             catfp.flush()
             os.fsync(catfp.fileno())
+            if(hasattr(os, "sync")):
+                os.sync()
         except io.UnsupportedOperation:
             pass
         except AttributeError:
@@ -2529,6 +2533,8 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
     try:
         fp.flush()
         os.fsync(fp.fileno())
+        if(hasattr(os, "sync")):
+            os.sync()
     except io.UnsupportedOperation:
         pass
     except AttributeError:
@@ -2579,6 +2585,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
     numfiles = int(len(GetDirList))
     fnumfiles = format(numfiles, 'x').lower()
     AppendFileHeader(fp, fnumfiles, checksumtype, formatspecs)
+    FullSizeFilesAlt = 0
     for curfname in GetDirList:
         if(re.findall("^[.|/]", curfname)):
             fname = curfname
@@ -2593,8 +2600,14 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         fpremode = fstatinfo.st_mode
         finode = fstatinfo.st_ino
         flinkcount = fstatinfo.st_nlink
+        try:
+            FullSizeFilesAlt += fstatinfo.st_rsize
+        except AttributeError:
+            FullSizeFilesAlt += fstatinfo.st_size
         ftype = 0
-        if(stat.S_ISREG(fpremode)):
+        if(hasattr(os.path, "isjunction") and os.path.isjunction(fname)):
+            ftype = 13
+        elif(stat.S_ISREG(fpremode)):
             ftype = 0
         elif(stat.S_ISLNK(fpremode)):
             ftype = 2
@@ -2614,36 +2627,41 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
             ftype = 10
         elif(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
             ftype = 11
+        elif(fstatinfo.st_blocks * 512 < fstatinfo.st_size):
+            ftype = 12
         else:
             ftype = 0
         flinkname = ""
         fcurfid = format(int(curfid), 'x').lower()
-        if(not followlink and finode != 0):
-            if(ftype != 1):
-                if(finode in inodelist):
+        if not followlink and finode != 0:
+            unique_id = (fstatinfo.st_dev, finode)
+            if ftype != 1:
+                if unique_id in inodelist:
+                    # Hard link detected
                     ftype = 1
-                    flinkname = inodetofile[finode]
-                    if(altinode):
-                        fcurinode = format(int(finode), 'x').lower()
+                    flinkname = inodetofile[unique_id]
+                    if altinode:
+                        fcurinode = format(int(unique_id[1]), 'x').lower()
                     else:
-                        fcurinode = format(
-                            int(inodetocatinode[finode]), 'x').lower()
-                if(finode not in inodelist):
-                    inodelist.append(finode)
-                    inodetofile.update({finode: fname})
-                    inodetocatinode.update({finode: curinode})
-                    if(altinode):
-                        fcurinode = format(int(finode), 'x').lower()
+                        fcurinode = format(int(inodetocatinode[unique_id]), 'x').lower()
+                else:
+                    # New inode
+                    inodelist.append(unique_id)
+                    inodetofile[unique_id] = fname
+                    inodetocatinode[unique_id] = curinode
+                    if altinode:
+                        fcurinode = format(int(unique_id[1]), 'x').lower()
                     else:
                         fcurinode = format(int(curinode), 'x').lower()
-                    curinode = curinode + 1
+                    curinode += 1
         else:
+            # Handle cases where inodes are not supported or symlinks are followed
             fcurinode = format(int(curinode), 'x').lower()
-            curinode = curinode + 1
+            curinode += 1
         curfid = curfid + 1
         if(ftype == 2):
             flinkname = os.readlink(fname)
-        fdev = fstatinfo.st_dev
+        fdev = fstatinfo.st_rdev
         getfdev = GetDevMajorMinor(fdev)
         fdev_minor = getfdev[0]
         fdev_major = getfdev[1]
@@ -2899,6 +2917,8 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
         try:
             catfp.flush()
             os.fsync(catfp.fileno())
+            if(hasattr(os, "sync")):
+                os.sync()
         except io.UnsupportedOperation:
             pass
         except AttributeError:
@@ -2953,6 +2973,8 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
         try:
             catfp.flush()
             os.fsync(catfp.fileno())
+            if(hasattr(os, "sync")):
+                os.sync()
         except io.UnsupportedOperation:
             pass
         except AttributeError:
@@ -3749,6 +3771,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
     inodetocatinode = {}
     numfiles = int(len(GetDirList))
     catfp = AppendFileHeader(catfp, numfiles, checksumtype, formatspecs)
+    FullSizeFilesAlt = 0
     for curfname in GetDirList:
         if(re.findall("^[.|/]", curfname)):
             fname = curfname
@@ -3763,8 +3786,14 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
         fpremode = fstatinfo.st_mode
         finode = fstatinfo.st_ino
         flinkcount = fstatinfo.st_nlink
+        try:
+            FullSizeFilesAlt += fstatinfo.st_rsize
+        except AttributeError:
+            FullSizeFilesAlt += fstatinfo.st_size
         ftype = 0
-        if(stat.S_ISREG(fpremode)):
+        if(hasattr(os.path, "isjunction") and os.path.isjunction(fname)):
+            ftype = 13
+        elif(stat.S_ISREG(fpremode)):
             ftype = 0
         elif(stat.S_ISLNK(fpremode)):
             ftype = 2
@@ -3784,36 +3813,41 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
             ftype = 10
         elif(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
             ftype = 11
+        elif(fstatinfo.st_blocks * 512 < fstatinfo.st_size):
+            ftype = 12
         else:
             ftype = 0
         flinkname = ""
         fcurfid = format(int(curfid), 'x').lower()
-        if(not followlink and finode != 0):
-            if(ftype != 1):
-                if(finode in inodelist):
+        if not followlink and finode != 0:
+            unique_id = (fstatinfo.st_dev, finode)
+            if ftype != 1:
+                if unique_id in inodelist:
+                    # Hard link detected
                     ftype = 1
-                    flinkname = inodetofile[finode]
-                    if(altinode):
-                        fcurinode = format(int(finode), 'x').lower()
+                    flinkname = inodetofile[unique_id]
+                    if altinode:
+                        fcurinode = format(int(unique_id[1]), 'x').lower()
                     else:
-                        fcurinode = format(
-                            int(inodetocatinode[finode]), 'x').lower()
-                if(finode not in inodelist):
-                    inodelist.append(finode)
-                    inodetofile.update({finode: fname})
-                    inodetocatinode.update({finode: curinode})
-                    if(altinode):
-                        fcurinode = format(int(finode), 'x').lower()
+                        fcurinode = format(int(inodetocatinode[unique_id]), 'x').lower()
+                else:
+                    # New inode
+                    inodelist.append(unique_id)
+                    inodetofile[unique_id] = fname
+                    inodetocatinode[unique_id] = curinode
+                    if altinode:
+                        fcurinode = format(int(unique_id[1]), 'x').lower()
                     else:
                         fcurinode = format(int(curinode), 'x').lower()
-                    curinode = curinode + 1
+                    curinode += 1
         else:
+            # Handle cases where inodes are not supported or symlinks are followed
             fcurinode = format(int(curinode), 'x').lower()
-            curinode = curinode + 1
+            curinode += 1
         curfid = curfid + 1
         if(ftype == 2):
             flinkname = os.readlink(fname)
-        fdev = fstatinfo.st_dev
+        fdev = fstatinfo.st_rdev
         getfdev = GetDevMajorMinor(fdev)
         fdev_minor = getfdev[0]
         fdev_major = getfdev[1]
@@ -3973,6 +4007,8 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
         try:
             catfp.flush()
             os.fsync(catfp.fileno())
+            if(hasattr(os, "sync")):
+                os.sync()
         except io.UnsupportedOperation:
             pass
         except AttributeError:
@@ -4107,9 +4143,6 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         if(member.isreg()):
             ffullmode = member.mode + stat.S_IFREG
             ftype = 0
-        elif(member.isdev()):
-            ffullmode = member.mode
-            ftype = 7
         elif(member.islnk()):
             ffullmode = member.mode + stat.S_IFREG
             ftype = 1
@@ -4128,9 +4161,12 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         elif(member.isfifo()):
             ffullmode = member.mode + stat.S_IFIFO
             ftype = 6
-        elif(member.issparse()):
+        elif(hasattr(member, "issparse") and member.issparse()):
             ffullmode = member.mode
             ftype = 12
+        elif(member.isdev()):
+            ffullmode = member.mode
+            ftype = 7
         else:
             ffullmode = member.mode
             ftype = 0
@@ -4229,6 +4265,8 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         try:
             catfp.flush()
             os.fsync(catfp.fileno())
+            if(hasattr(os, "sync")):
+                os.sync()
         except io.UnsupportedOperation:
             pass
         except AttributeError:
@@ -4495,6 +4533,8 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
         try:
             catfp.flush()
             os.fsync(catfp.fileno())
+            if(hasattr(os, "sync")):
+                os.sync()
         except io.UnsupportedOperation:
             pass
         except AttributeError:
@@ -4585,6 +4625,8 @@ if(rarfile_support):
         try:
             catfp.flush()
             os.fsync(catfp.fileno())
+            if(hasattr(os, "sync")):
+                os.sync()
         except io.UnsupportedOperation:
             pass
         except AttributeError:
@@ -4791,6 +4833,8 @@ if(rarfile_support):
             try:
                 catfp.flush()
                 os.fsync(catfp.fileno())
+                if(hasattr(os, "sync")):
+                    os.sync()
             except io.UnsupportedOperation:
                 pass
             except AttributeError:
@@ -5020,6 +5064,8 @@ if(py7zr_support):
             try:
                 catfp.flush()
                 os.fsync(catfp.fileno())
+                if(hasattr(os, "sync")):
+                    os.sync()
             except io.UnsupportedOperation:
                 pass
             except AttributeError:
@@ -6362,6 +6408,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
     fheadtell = len(fileheader)
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1],
                'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': []}
+    FullSizeFilesAlt = 0
     for curfname in GetDirList:
         catfhstart = fheadtell
         if(re.findall("^[.|/]", curfname)):
@@ -6377,8 +6424,14 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
         fpremode = fstatinfo.st_mode
         finode = fstatinfo.st_ino
         flinkcount = fstatinfo.st_nlink
+        try:
+            FullSizeFilesAlt += fstatinfo.st_rsize
+        except AttributeError:
+            FullSizeFilesAlt += fstatinfo.st_size
         ftype = 0
-        if(stat.S_ISREG(fpremode)):
+        if(hasattr(os.path, "isjunction") and os.path.isjunction(fname)):
+            ftype = 13
+        elif(stat.S_ISREG(fpremode)):
             ftype = 0
         elif(stat.S_ISLNK(fpremode)):
             ftype = 2
@@ -6398,36 +6451,42 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
             ftype = 10
         elif(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
             ftype = 11
+        elif(fstatinfo.st_blocks * 512 < fstatinfo.st_size):
+            ftype = 12
         else:
             ftype = 0
         flinkname = ""
         fbasedir = os.path.dirname(fname)
         fcurfid = curfid
-        if(not followlink and finode != 0):
-            if(ftype != 1):
-                if(finode in inodelist):
+        if not followlink and finode != 0:
+            unique_id = (fstatinfo.st_dev, finode)
+            if ftype != 1:
+                if unique_id in inodelist:
+                    # Hard link detected
                     ftype = 1
-                    flinkname = inodetofile[finode]
-                    if(altinode):
-                        fcurinode = finode
+                    flinkname = inodetofile[unique_id]
+                    if altinode:
+                        fcurinode = format(int(unique_id[1]), 'x').lower()
                     else:
-                        fcurinode = inodetocatinode[finode]
-                if(finode not in inodelist):
-                    inodelist.append(finode)
-                    inodetofile.update({finode: fname})
-                    inodetocatinode.update({finode: curinode})
-                    if(altinode):
-                        fcurinode = finode
+                        fcurinode = format(int(inodetocatinode[unique_id]), 'x').lower()
+                else:
+                    # New inode
+                    inodelist.append(unique_id)
+                    inodetofile[unique_id] = fname
+                    inodetocatinode[unique_id] = curinode
+                    if altinode:
+                        fcurinode = format(int(unique_id[1]), 'x').lower()
                     else:
-                        fcurinode = curinode
-                    curinode = curinode + 1
+                        fcurinode = format(int(curinode), 'x').lower()
+                    curinode += 1
         else:
-            fcurinode = curinode
-            curinode = curinode + 1
+            # Handle cases where inodes are not supported or symlinks are followed
+            fcurinode = format(int(curinode), 'x').lower()
+            curinode += 1
         curfid = curfid + 1
         if(ftype == 2):
             flinkname = os.readlink(fname)
-        fdev = fstatinfo.st_dev
+        fdev = fstatinfo.st_rdev
         getfdev = GetDevMajorMinor(fdev)
         fdev_minor = getfdev[0]
         fdev_major = getfdev[1]
@@ -6628,9 +6687,6 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         if(member.isreg()):
             ffullmode = member.mode + stat.S_IFREG
             ftype = 0
-        elif(member.isdev()):
-            ffullmode = member.mode
-            ftype = 7
         elif(member.islnk()):
             ffullmode = member.mode + stat.S_IFREG
             ftype = 1
@@ -6649,9 +6705,12 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         elif(member.isfifo()):
             ffullmode = member.mode + stat.S_IFIFO
             ftype = 6
-        elif(member.issparse()):
+        elif(hasattr(member, "issparse") and member.issparse()):
             ffullmode = member.mode
             ftype = 12
+        elif(member.isdev()):
+            ffullmode = member.mode
+            ftype = 7
         else:
             ffullmode = member.mode
             ftype = 0
@@ -7773,6 +7832,8 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
         try:
             catfp.flush()
             os.fsync(catfp.fileno())
+            if(hasattr(os, "sync")):
+                os.sync()
         except io.UnsupportedOperation:
             pass
         except AttributeError:
@@ -7888,6 +7949,8 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
                 try:
                     fpc.flush()
                     os.fsync(fpc.fileno())
+                    if(hasattr(os, "sync")):
+                        os.sync()
                 except io.UnsupportedOperation:
                     pass
                 except AttributeError:
@@ -7938,6 +8001,8 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
                         try:
                             fpc.flush()
                             os.fsync(fpc.fileno())
+                            if(hasattr(os, "sync")):
+                                os.sync()
                         except io.UnsupportedOperation:
                             pass
                         except AttributeError:
@@ -8016,6 +8081,8 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
                         try:
                             fpc.flush()
                             os.fsync(fpc.fileno())
+                           if(hasattr(os, "sync")):
+                               os.sync()
                         except io.UnsupportedOperation:
                             pass
                         except AttributeError:
@@ -8240,9 +8307,15 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
         elif(member.isfifo()):
             ffullmode = member.mode + stat.S_IFIFO
             ftype = 6
-        elif(member.issparse()):
+        elif(hasattr(member, "issparse") and member.issparse()):
             ffullmode = member.mode
             ftype = 12
+        elif(member.isdev()):
+            ffullmode = member.mode
+            ftype = 7
+        else:
+            ffullmode = member.mode
+            ftype = 0
         if(not verbose):
             VerbosePrintOut(member.name)
         elif(verbose):
