@@ -1487,6 +1487,8 @@ def ValidateFileChecksum(infile, checksumtype="crc32", inchecksum="0", formatspe
 
 
 def ReadTillNullByteOld(fp, delimiter=__file_format_dict__['format_delimiter']):
+    if(not hasattr(fp, "read")):
+        return False
     curbyte = b""
     curfullbyte = b""
     nullbyte = delimiter.encode("UTF-8")
@@ -1503,6 +1505,8 @@ def ReadUntilNullByteOld(fp, delimiter=__file_format_dict__['format_delimiter'])
 
 
 def ReadTillNullByteAlt(fp, delimiter=__file_format_dict__['format_delimiter'], chunk_size=1024, max_read=1024000):
+    if(not hasattr(fp, "read")):
+        return False
     delimiter = delimiter.encode('UTF-8')  # Ensure the delimiter is in bytes
     buffer = bytearray()
     total_read = 0
@@ -1548,6 +1552,8 @@ def ReadUntilNullByteAlt(fp, delimiter=__file_format_dict__['format_delimiter'],
 
 
 def ReadTillNullByte(fp, delimiter=__file_format_dict__['format_delimiter'], max_read=1024000):
+    if(not hasattr(fp, "read")):
+        return False
     curfullbyte = bytearray()
     nullbyte = delimiter.encode("UTF-8")
     total_read = 0  # Track the total number of bytes read
@@ -1578,6 +1584,8 @@ def ReadUntilNullByte(fp, delimiter=__file_format_dict__['format_delimiter'], ma
 
 
 def ReadTillNullByteByNum(fp, delimiter=__file_format_dict__['format_delimiter'], num_delimiters=1, chunk_size=1024, max_read=1024000):
+    if(not hasattr(fp, "read")):
+        return False
     delimiter = delimiter.encode('UTF-8')  # Ensure the delimiter is in bytes
     buffer = bytearray()
     total_read = 0
@@ -1638,6 +1646,8 @@ def SeekToEndOfFile(fp):
 
 
 def ReadFileHeaderData(fp, rounds=0, delimiter=__file_format_dict__['format_delimiter']):
+    if(not hasattr(fp, "read")):
+        return False
     rocount = 0
     roend = int(rounds)
     HeaderOut = []
@@ -1648,6 +1658,8 @@ def ReadFileHeaderData(fp, rounds=0, delimiter=__file_format_dict__['format_deli
 
 
 def ReadFileHeaderDataBySize(fp, delimiter=__file_format_dict__['format_delimiter']):
+    if(not hasattr(fp, "read")):
+        return False
     headerpresize = ReadTillNullByte(fp, delimiter)
     headersize = int(headerpresize, 16)
     if(headersize <= 0):
@@ -1664,6 +1676,8 @@ def ReadFileHeaderDataBySize(fp, delimiter=__file_format_dict__['format_delimite
 
 
 def ReadFileHeaderDataWoSize(fp, delimiter=__file_format_dict__['format_delimiter']):
+    if(not hasattr(fp, "read")):
+        return False
     preheaderdata = ReadFileHeaderData(fp, 2, delimiter)
     headersize = int(preheaderdata[0], 16)
     headernumfields = int(preheaderdata[1], 16)
@@ -1676,6 +1690,8 @@ def ReadFileHeaderDataWoSize(fp, delimiter=__file_format_dict__['format_delimite
 
 
 def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+    if(not hasattr(fp, "read")):
+        return False
     formatspecs = FormatSpecsListToDict(formatspecs)
     delimiter = formatspecs['format_delimiter']
     fheaderstart = fp.tell()
@@ -1749,6 +1765,8 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, ski
 
 
 def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+    if(not hasattr(fp, "read")):
+        return False
     formatspecs = FormatSpecsListToDict(formatspecs)
     delimiter = formatspecs['format_delimiter']
     fheaderstart = fp.tell()
@@ -1867,6 +1885,8 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, contentasfile
 
 
 def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+    if(not hasattr(fp, "read")):
+        return False
     formatspecs = FormatSpecsListToDict(formatspecs)
     delimiter = formatspecs['format_delimiter']
     fheaderstart = fp.tell()
@@ -1982,6 +2002,8 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
 
 
 def ReadFileDataBySizeWithContent(fp, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+    if(not hasattr(fp, "read")):
+        return False
     formatspecs = FormatSpecsListToDict(formatspecs)
     delimiter = formatspecs['format_delimiter']
     curloc = fp.tell()
@@ -2013,6 +2035,8 @@ def ReadFileDataBySizeWithContent(fp, listonly=False, uncompress=True, skipcheck
 
 
 def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+    if(not hasattr(fp, "read")):
+        return False
     formatspecs = FormatSpecsListToDict(formatspecs)
     delimiter = formatspecs['format_delimiter']
     curloc = fp.tell()
@@ -2116,6 +2140,8 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
 
 
 def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+    if(not hasattr(fp, "read")):
+        return False
     formatspecs = FormatSpecsListToDict(formatspecs)
     delimiter = formatspecs['format_delimiter']
     curloc = fp.tell()
@@ -2362,6 +2388,8 @@ def AppendNullBytes(indata=[], delimiter=__file_format_dict__['format_delimiter'
 
 
 def AppendFileHeader(fp, numfiles, checksumtype="crc32", formatspecs=__file_format_dict__):
+    if(not hasattr(fp, "write")):
+        return False
     formatspecs = FormatSpecsListToDict(formatspecs)
     delimiter = formatspecs['format_delimiter']
     catver = formatspecs['format_ver']
@@ -2449,6 +2477,8 @@ def MakeEmptyFile(outfile, compression="auto", compressionlevel=None, checksumty
 
 
 def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="", checksumtype="crc32", formatspecs=__file_format_dict__):
+    if(not hasattr(fp, "write")):
+        return False
     formatspecs = FormatSpecsListToDict(formatspecs)
     extrafields = format(len(extradata), 'x').lower()
     extrasizestr = AppendNullByte(extrafields, formatspecs['format_delimiter'])
@@ -2509,6 +2539,8 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
 
 
 def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], extradata=[], compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False):
+    if(not hasattr(fp, "write")):
+        return False
     formatspecs = FormatSpecsListToDict(formatspecs)
     advancedlist = formatspecs['use_advanced_list']
     altinode = formatspecs['use_alt_inode']
@@ -2770,6 +2802,8 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
 
 
 def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extradata=[], compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False):
+    if(not hasattr(fp, "write")):
+        return False
     formatspecs = FormatSpecsListToDict(formatspecs)
     if(verbose):
         logging.basicConfig(format="%(message)s",
@@ -3182,7 +3216,7 @@ def GetCompressionMimeType(infile, formatspecs=__file_format_dict__):
 
 def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
     formatspecs = FormatSpecsListToDict(formatspecs)
-    if(not hasattr(fp, "read") and not hasattr(fp, "write")):
+    if(not hasattr(fp, "read")):
         return False
     compresscheck = CheckCompressionType(fp, formatspecs, False)
     if(compresscheck == "gzip" and compresscheck in compressionsupport):
@@ -3426,7 +3460,7 @@ def GZipCompress(data, compresslevel=9):
 
 def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspecs=__file_format_dict__):
     formatspecs = FormatSpecsListToDict(formatspecs)
-    if(not hasattr(fp, "read") and not hasattr(fp, "write")):
+    if(not hasattr(fp, "read")):
         return False
     fp.seek(0, 0)
     if(not compression or compression == "catfile" or compression == formatspecs['format_lower']):
