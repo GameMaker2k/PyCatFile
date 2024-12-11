@@ -2570,7 +2570,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         for line in sys.stdin:
             infilelist.append(line.strip())
         infilelist = list(filter(None, infilelist))
-    elif(infiles != "-" and dirlistfromtxt and os.path.exists(infiles) and (os.path.isfile(infiles) or infiles == "/dev/null" or infiles == "NUL")):
+    elif(infiles != "-" and dirlistfromtxt and os.path.exists(infiles) and (os.path.isfile(infiles) or infiles == os.devnull)):
         if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
             return False
         with UncompressFile(infiles, formatspecs, "r") as finfile:
@@ -3760,7 +3760,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
         for line in sys.stdin:
             infilelist.append(line.strip())
         infilelist = list(filter(None, infilelist))
-    elif(infiles != "-" and dirlistfromtxt and os.path.exists(infiles) and (os.path.isfile(infiles) or infiles == "/dev/null" or infiles == "NUL")):
+    elif(infiles != "-" and dirlistfromtxt and os.path.exists(infiles) and (os.path.isfile(infiles) or infiles == os.devnull)):
         if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
             return False
         with UncompressFile(infiles, formatspecs, "r") as finfile:
@@ -6383,7 +6383,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
         for line in sys.stdin:
             infilelist.append(line.strip())
         infilelist = list(filter(None, infilelist))
-    elif(infiles != "-" and dirlistfromtxt and os.path.exists(infiles) and (os.path.isfile(infiles) or infiles == "/dev/null" or infiles == "NUL")):
+    elif(infiles != "-" and dirlistfromtxt and os.path.exists(infiles) and (os.path.isfile(infiles) or infiles == os.devnull)):
         if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
             return False
         with UncompressFile(infiles, formatspecs, "r") as finfile:
