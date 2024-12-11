@@ -6450,6 +6450,8 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
         ftype = 0
         if(hasattr(os.path, "isjunction") and os.path.isjunction(fname)):
             ftype = 13
+        elif(fstatinfo.st_blocks * 512 < fstatinfo.st_size):
+            ftype = 12
         elif(stat.S_ISREG(fpremode)):
             ftype = 0
         elif(stat.S_ISLNK(fpremode)):
@@ -6470,8 +6472,6 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
             ftype = 10
         elif(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
             ftype = 11
-        elif(fstatinfo.st_blocks * 512 < fstatinfo.st_size):
-            ftype = 12
         else:
             ftype = 0
         flinkname = ""
