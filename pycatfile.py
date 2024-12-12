@@ -724,7 +724,7 @@ def GetTotalSize(file_list):
         if os.path.isfile(item):  # Ensure it's a file
             try:
                 total_size += os.path.getsize(item)
-            except OSError as e:
+            except OSError:
                 sys.stderr.write("Error accessing file {}: {}\n".format(item, e))
     return total_size
 
@@ -2420,14 +2420,13 @@ def AppendFileHeader(fp, numfiles, checksumtype="crc32", formatspecs=__file_form
     fp.write(fnumfilesa.encode('UTF-8'))
     try:
         fp.flush()
-        os.fsync(fp.fileno())
         if(hasattr(os, "sync")):
-            os.sync()
+            os.fsync(fp.fileno())
     except io.UnsupportedOperation:
         pass
     except AttributeError:
         pass
-    except OSError as e:
+    except OSError:
         pass
     return fp
 
@@ -2444,7 +2443,7 @@ def MakeEmptyFile(outfile, compression="auto", compressionlevel=None, checksumty
         if(os.path.exists(outfile)):
             try:
                 os.unlink(outfile)
-            except OSError as e:
+            except OSError:
                 pass
     if(outfile == "-"):
         verbose = False
@@ -2465,14 +2464,13 @@ def MakeEmptyFile(outfile, compression="auto", compressionlevel=None, checksumty
             catfp, compression, compressionlevel, formatspecs)
         try:
             catfp.flush()
-            os.fsync(catfp.fileno())
             if(hasattr(os, "sync")):
-                os.sync()
+                os.fsync(catfp.fileno())
         except io.UnsupportedOperation:
             pass
         except AttributeError:
             pass
-        except OSError as e:
+        except OSError:
             pass
     if(outfile == "-"):
         catfp.seek(0, 0)
@@ -2545,14 +2543,13 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
     fp.write(catfileout)
     try:
         fp.flush()
-        os.fsync(fp.fileno())
         if(hasattr(os, "sync")):
-            os.sync()
+            os.fsync(fp.fileno())
     except io.UnsupportedOperation:
         pass
     except AttributeError:
         pass
-    except OSError as e:
+    except OSError:
         pass
     return fp
 
@@ -2910,7 +2907,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
         if(os.path.exists(outfile)):
             try:
                 os.unlink(outfile)
-            except OSError as e:
+            except OSError:
                 pass
     if(outfile == "-"):
         verbose = False
@@ -2932,14 +2929,13 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
             catfp, compression, compressionlevel, formatspecs)
         try:
             catfp.flush()
-            os.fsync(catfp.fileno())
             if(hasattr(os, "sync")):
-                os.sync()
+                os.fsync(catfp.fileno())
         except io.UnsupportedOperation:
             pass
         except AttributeError:
             pass
-        except OSError as e:
+        except OSError:
             pass
     if(outfile == "-"):
         catfp.seek(0, 0)
@@ -2966,7 +2962,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
         if(os.path.exists(outfile)):
             try:
                 os.unlink(outfile)
-            except OSError as e:
+            except OSError:
                 pass
     if(outfile == "-"):
         verbose = False
@@ -2988,14 +2984,13 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
             catfp, compression, compressionlevel, formatspecs)
         try:
             catfp.flush()
-            os.fsync(catfp.fileno())
             if(hasattr(os, "sync")):
-                os.sync()
+                os.fsync(catfp.fileno())
         except io.UnsupportedOperation:
             pass
         except AttributeError:
             pass
-        except OSError as e:
+        except OSError:
             pass
     if(outfile == "-"):
         catfp.seek(0, 0)
@@ -3479,23 +3474,6 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
     return filetype
 
 
-def GZipCompress(data, compresslevel=9):
-    if("gzip" not in compressionsupport):
-        return False
-    tmpfp = tempfile.NamedTemporaryFile("wb", delete=False)
-    tmpfp.close()
-    tmpfp = gzip.GzipFile(tmpfp.name, mode="wb", compresslevel=compresslevel)
-    tmpfp.write(data)
-    tmpfp.close()
-    try:
-        catfp = open(tmpfp.name, "rb")
-    except FileNotFoundError:
-        return False
-    catdata = catfp.read()
-    catfp.close()
-    return catdata
-
-
 def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspecs=__file_format_dict__):
     formatspecs = FormatSpecsListToDict(formatspecs)
     if(not hasattr(fp, "read")):
@@ -3738,7 +3716,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
         if(os.path.exists(outfile)):
             try:
                 os.unlink(outfile)
-            except OSError as e:
+            except OSError:
                 pass
     if(outfile == "-"):
         verbose = False
@@ -4025,14 +4003,13 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
             catfp, compression, compressionlevel, formatspecs)
         try:
             catfp.flush()
-            os.fsync(catfp.fileno())
             if(hasattr(os, "sync")):
-                os.sync()
+                os.fsync(catfp.fileno())
         except io.UnsupportedOperation:
             pass
         except AttributeError:
             pass
-        except OSError as e:
+        except OSError:
             pass
     if(outfile == "-"):
         catfp.seek(0, 0)
@@ -4091,7 +4068,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         if(os.path.exists(outfile)):
             try:
                 os.unlink(outfile)
-            except OSError as e:
+            except OSError:
                 pass
     if(outfile == "-"):
         verbose = False
@@ -4283,14 +4260,13 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
             catfp, compression, compressionlevel, formatspecs)
         try:
             catfp.flush()
-            os.fsync(catfp.fileno())
             if(hasattr(os, "sync")):
-                os.sync()
+                os.fsync(catfp.fileno())
         except io.UnsupportedOperation:
             pass
         except AttributeError:
             pass
-        except OSError as e:
+        except OSError:
             pass
     if(outfile == "-"):
         catfp.seek(0, 0)
@@ -4335,7 +4311,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
         if(os.path.exists(outfile)):
             try:
                 os.unlink(outfile)
-            except OSError as e:
+            except OSError:
                 pass
     if(outfile == "-"):
         verbose = False
@@ -4551,14 +4527,13 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
             catfp, compression, compressionlevel, formatspecs)
         try:
             catfp.flush()
-            os.fsync(catfp.fileno())
             if(hasattr(os, "sync")):
-                os.sync()
+                os.fsync(catfp.fileno())
         except io.UnsupportedOperation:
             pass
         except AttributeError:
             pass
-        except OSError as e:
+        except OSError:
             pass
     if(outfile == "-"):
         catfp.seek(0, 0)
@@ -4607,7 +4582,7 @@ if(rarfile_support):
             if(os.path.exists(outfile)):
                 try:
                     os.unlink(outfile)
-                except OSError as e:
+                except OSError:
                     pass
         if(outfile == "-"):
             verbose = False
@@ -4643,14 +4618,13 @@ if(rarfile_support):
         catfp = AppendFileHeader(catfp, numfiles, checksumtype, formatspecs)
         try:
             catfp.flush()
-            os.fsync(catfp.fileno())
             if(hasattr(os, "sync")):
-                os.sync()
+                os.fsync(catfp.fileno())
         except io.UnsupportedOperation:
             pass
         except AttributeError:
             pass
-        except OSError as e:
+        except OSError:
             pass
         for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
             is_unix = False
@@ -4851,14 +4825,13 @@ if(rarfile_support):
                 catfp, compression, compressionlevel, formatspecs)
             try:
                 catfp.flush()
-                os.fsync(catfp.fileno())
                 if(hasattr(os, "sync")):
-                    os.sync()
+                    os.fsync(catfp.fileno())
             except io.UnsupportedOperation:
                 pass
             except AttributeError:
                 pass
-            except OSError as e:
+            except OSError:
                 pass
         if(outfile == "-"):
             catfp.seek(0, 0)
@@ -4906,7 +4879,7 @@ if(py7zr_support):
             if(os.path.exists(outfile)):
                 try:
                     os.unlink(outfile)
-                except OSError as e:
+                except OSError:
                     pass
         if(outfile == "-"):
             verbose = False
@@ -5082,14 +5055,13 @@ if(py7zr_support):
                 catfp, compression, compressionlevel, formatspecs)
             try:
                 catfp.flush()
-                os.fsync(catfp.fileno())
                 if(hasattr(os, "sync")):
-                    os.sync()
+                    os.fsync(catfp.fileno())
             except io.UnsupportedOperation:
                 pass
             except AttributeError:
                 pass
-            except OSError as e:
+            except OSError:
                 pass
         if(outfile == "-"):
             catfp.seek(0, 0)
@@ -7649,7 +7621,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
         if(os.path.exists(outfile)):
             try:
                 os.unlink(outfile)
-            except OSError as e:
+            except OSError:
                 pass
     if(not listcatfiles):
         return False
@@ -7853,14 +7825,13 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
             catfp, compression, compressionlevel, formatspecs)
         try:
             catfp.flush()
-            os.fsync(catfp.fileno())
             if(hasattr(os, "sync")):
-                os.sync()
+                os.fsync(catfp.fileno())
         except io.UnsupportedOperation:
             pass
         except AttributeError:
             pass
-        except OSError as e:
+        except OSError:
             pass
     if(outfile == "-"):
         catfp.seek(0, 0)
@@ -7970,14 +7941,13 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
                     listcatfiles['ffilelist'][lcfi]['fcontents'], fpc)
                 try:
                     fpc.flush()
-                    os.fsync(fpc.fileno())
                     if(hasattr(os, "sync")):
-                        os.sync()
+                        os.fsync(fpc.fileno())
                 except io.UnsupportedOperation:
                     pass
                 except AttributeError:
                     pass
-                except OSError as e:
+                except OSError:
                     pass
             if(hasattr(os, "chown") and funame == listcatfiles['ffilelist'][lcfi]['funame'] and fgname == listcatfiles['ffilelist'][lcfi]['fgname'] and preservepermissions):
                 os.chown(PrependPath(outdir, listcatfiles['ffilelist'][lcfi]['fname']),
@@ -8022,14 +7992,13 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
                         shutil.copyfileobj(flinkinfo['fcontents'], fpc)
                         try:
                             fpc.flush()
-                            os.fsync(fpc.fileno())
                             if(hasattr(os, "sync")):
-                                os.sync()
+                                os.fsync(fpc.fileno())
                         except io.UnsupportedOperation:
                             pass
                         except AttributeError:
                             pass
-                        except OSError as e:
+                        except OSError:
                             pass
                     if(hasattr(os, "chown") and funame == flinkinfo['funame'] and fgname == flinkinfo['fgname'] and preservepermissions):
                         os.chown(PrependPath(
@@ -8102,14 +8071,13 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
                         shutil.copyfileobj(flinkinfo['fcontents'], fpc)
                         try:
                             fpc.flush()
-                            os.fsync(fpc.fileno())
                             if(hasattr(os, "sync")):
-                                os.sync()
+                                os.fsync(fpc.fileno())
                         except io.UnsupportedOperation:
                             pass
                         except AttributeError:
                             pass
-                        except OSError as e:
+                        except OSError:
                             pass
                     if(hasattr(os, "chown") and funame == flinkinfo['funame'] and fgname == flinkinfo['fgname'] and preservepermissions):
                         os.chown(PrependPath(
