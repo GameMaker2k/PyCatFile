@@ -3259,7 +3259,7 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
     elif(compresscheck == "zstd" and compresscheck in compressionsupport):
         catfp = zstd.ZstdDecompressor().stream_reader(fp)
     elif(compresscheck == "lz4" and compresscheck in compressionsupport):
-        catfp = lz4.frame.open_fp(fp, mode='rb')
+        catfp = lz4.frame.LZ4FrameFile(fp, mode='rb')
     elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
         catfp = BytesIO()
         catfp.write(lzo.decompress(fp.read()))
