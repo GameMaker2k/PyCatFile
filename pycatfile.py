@@ -5202,15 +5202,15 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
             return False
         catfp = UncompressFile(infile, formatspecs, "rb")
     '''
- try:
-  catfp.seek(0, 2);
- except OSError:
-  SeekToEndOfFile(catfp);
- except ValueError:
-  SeekToEndOfFile(catfp);
- CatSize = catfp.tell();
- CatSizeEnd = CatSize;
- '''
+    try:
+        catfp.seek(0, 2);
+    except OSError:
+        SeekToEndOfFile(catfp);
+    except ValueError:
+        SeekToEndOfFile(catfp);
+    CatSize = catfp.tell();
+    CatSizeEnd = CatSize;
+    '''
     try:
         catfp.seek(0, 0)
     except OSError:
@@ -5222,7 +5222,8 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         catfp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
     catstring = catfp.read(len(formatspecs['format_magic']+catheaderver)).decode("UTF-8")
-    catdel = catfp.read(1).decode("UTF-8")
+    catdelszie = len(formatspecs['format_delimiter'])
+    catdel = catfp.read(catdelszie).decode("UTF-8")
     if(catstring != formatspecs['format_magic']+catheaderver):
         return False
     if(catdel != formatspecs['format_delimiter']):
@@ -5460,15 +5461,15 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
             return False
         catfp = UncompressFile(infile, formatspecs, "rb")
     '''
- try:
-  catfp.seek(0, 2);
- except OSError:
-  SeekToEndOfFile(catfp);
- except ValueError:
-  SeekToEndOfFile(catfp);
- CatSize = catfp.tell();
- CatSizeEnd = CatSize;
- '''
+    try:
+        catfp.seek(0, 2);
+    except OSError:
+        SeekToEndOfFile(catfp);
+    except ValueError:
+        SeekToEndOfFile(catfp);
+    CatSize = catfp.tell();
+    CatSizeEnd = CatSize;
+    '''
     try:
         catfp.seek(0, 0)
     except OSError:
@@ -5480,7 +5481,8 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
         catfp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
     catstring = catfp.read(len(formatspecs['format_magic']+catheaderver)).decode("UTF-8")
-    catdel = catfp.read(1).decode("UTF-8")
+    catdelszie = len(formatspecs['format_delimiter'])
+    catdel = catfp.read(catdelszie).decode("UTF-8")
     if(catstring != formatspecs['format_magic']+catheaderver):
         return False
     if(catdel != formatspecs['format_delimiter']):
@@ -5731,15 +5733,15 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
             return False
         catfp = UncompressFile(infile, formatspecs, "rb")
     '''
- try:
-  catfp.seek(0, 2);
- except OSError:
-  SeekToEndOfFile(catfp);
- except ValueError:
-  SeekToEndOfFile(catfp);
- CatSize = catfp.tell();
- CatSizeEnd = CatSize;
- '''
+    try:
+        catfp.seek(0, 2);
+    except OSError:
+        SeekToEndOfFile(catfp);
+    except ValueError:
+        SeekToEndOfFile(catfp);
+    CatSize = catfp.tell();
+    CatSizeEnd = CatSize;
+    '''
     try:
         catfp.seek(0, 0)
     except OSError:
@@ -5751,7 +5753,8 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         catfp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
     catstring = catfp.read(len(formatspecs['format_magic']+catheaderver)).decode("UTF-8")
-    catdel = catfp.read(1).decode("UTF-8")
+    catdelszie = len(formatspecs['format_delimiter'])
+    catdel = catfp.read(catdelszie).decode("UTF-8")
     if(catstring != formatspecs['format_magic']+catheaderver):
         return False
     if(catdel != formatspecs['format_delimiter']):
@@ -6009,15 +6012,15 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
             return False
         catfp = UncompressFile(infile, formatspecs, "rb")
     '''
- try:
-  catfp.seek(0, 2);
- except OSError:
-  SeekToEndOfFile(catfp);
- except ValueError:
-  SeekToEndOfFile(catfp);
- CatSize = catfp.tell();
- CatSizeEnd = CatSize;
- '''
+    try:
+        catfp.seek(0, 2);
+    except OSError:
+        SeekToEndOfFile(catfp);
+    except ValueError:
+        SeekToEndOfFile(catfp);
+    CatSize = catfp.tell();
+    CatSizeEnd = CatSize;
+    '''
     try:
         catfp.seek(0, 0)
     except OSError:
@@ -6029,7 +6032,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         catfp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
     catstring = catfp.read(len(formatspecs['format_magic']+catheaderver)).decode("UTF-8")
-    catdel = catfp.read(1).decode("UTF-8")
+    catdelszie = len(formatspecs['format_delimiter'])
+    catdel = catfp.read(catdelszie).decode("UTF-8")
     if(catstring != formatspecs['format_magic']+catheaderver):
         return False
     if(catdel != formatspecs['format_delimiter']):
