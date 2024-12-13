@@ -2593,7 +2593,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
     else:
         if(isinstance(infiles, (list, tuple, ))):
             infilelist = list(filter(None, infiles))
-        elif(isinstance(infiles, (str, ))):
+        elif(isinstance(infiles, (basestring, ))):
             infilelist = list(filter(None, [infiles]))
     if(advancedlist):
         GetDirList = ListDirAdvanced(infilelist, followlink, False)
@@ -3764,7 +3764,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
     else:
         if(isinstance(infiles, (list, tuple, ))):
             infilelist = list(filter(None, infiles))
-        elif(isinstance(infiles, (str, ))):
+        elif(isinstance(infiles, (basestring, ))):
             infilelist = list(filter(None, [infiles]))
     if(advancedlist):
         GetDirList = ListDirAdvanced(infilelist, followlink, False)
@@ -6385,7 +6385,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
     else:
         if(isinstance(infiles, (list, tuple, ))):
             infilelist = list(filter(None, infiles))
-        elif(isinstance(infiles, (str, ))):
+        elif(isinstance(infiles, (basestring, ))):
             infilelist = list(filter(None, [infiles]))
     if(advancedlist):
         GetDirList = ListDirAdvanced(infilelist, followlink, False)
