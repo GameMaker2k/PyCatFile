@@ -1412,6 +1412,22 @@ def crc64_iso(msg, initial_value=0xFFFFFFFFFFFFFFFF):
             crc &= 0xFFFFFFFFFFFFFFFF  # Ensure CRC remains 64-bit
     return crc
 
+def MajorMinorToDev(major, minor):
+    """
+    Converts major and minor numbers to a device number.
+    Compatible with Python 2 and 3.
+    """
+    return (major << 8) | minor
+
+def DevToMajorMinor(dev):
+    """
+    Extracts major and minor numbers from a device number.
+    Compatible with Python 2 and 3.
+    """
+    major = (dev >> 8) & 0xFF
+    minor = dev & 0xFF
+    return major, minor
+
 
 def GetDataFromArray(data, path, default=None):
     element = data
