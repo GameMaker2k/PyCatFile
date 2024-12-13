@@ -57,6 +57,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Combined utility for CatFile operations with dynamic and static modes."
     )
+    parser.add_argument("-V", "--version", action="version", version=__program_name__ + " " + __version__, help="Displays the program's version.")
     parser.add_argument("-i", "--input", required=True, help="Input file(s) for processing.")
     parser.add_argument("-o", "--output", help="Output file name.")
     parser.add_argument("-m", "--mode", choices=["dynamic", "static"], default="static",

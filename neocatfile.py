@@ -34,8 +34,7 @@ py7zr_support = pycatfile.py7zr_support
 # Set up the argument parser
 argparser = argparse.ArgumentParser(
     description="Manipulates concatenated files for various operations like creation, extraction, and validation.")
-argparser.add_argument("-V", "--version", action="version", version="{0} {1}".format(
-    pycatfile.__program_name__, pycatfile.__version__), help="Displays the program's version.")
+argparser.add_argument("-V", "--version", action="version", version=__program_name__ + " " + __version__, help="Displays the program's version.")
 argparser.add_argument("-i", "--input", required=True,
                        help="Specifies input file(s) for processing.")
 argparser.add_argument(
