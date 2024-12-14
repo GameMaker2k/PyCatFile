@@ -12,7 +12,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: phpcatfile.php - Last Update: 12/13/2024 Ver. 0.15.6 RC 1 - Author: cooldude2k $
+    $FileInfo: phpcatfile.php - Last Update: 12/13/2024 Ver. 0.15.8 RC 1 - Author: cooldude2k $
 */
 
 date_default_timezone_set('UTC');
