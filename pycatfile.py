@@ -3648,7 +3648,7 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
     return outfp
 
 
-def makedevalt(major, minor):
+def MakeDevAlt(major, minor):
     """
     Replicates os.makedev functionality to create a device number.
     :param major: Major device number
@@ -4178,7 +4178,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
             ftype = 12
         elif(member.isdev()):
             ffullmode = member.mode
-            ftype = 7
+            ftype = 14
         else:
             ffullmode = member.mode
             ftype = 0
@@ -4191,7 +4191,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         try:
             fdev = format(int(os.makedev(member.devmajor, member.devminor)), 'x').lower()
         except AttributeError:
-            fdev = format(int(makedevalt(member.devmajor, member.devminor)), 'x').lower()
+            fdev = format(int(MakeDevAlt(member.devmajor, member.devminor)), 'x').lower()
         fdev_minor = format(int(member.devminor), 'x').lower()
         fdev_major = format(int(member.devmajor), 'x').lower()
         if(ftype == 1 or ftype == 2 or ftype == 3 or ftype == 4 or ftype == 5 or ftype == 6):
@@ -6724,7 +6724,7 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
             ftype = 12
         elif(member.isdev()):
             ffullmode = member.mode
-            ftype = 7
+            ftype = 14
         else:
             ffullmode = member.mode
             ftype = 0
@@ -6739,7 +6739,7 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         try:
             fdev = os.makedev(member.devmajor, member.devminor)
         except AttributeError:
-            fdev = makedevalt(member.devmajor, member.devminor)
+            fdev = MakeDevAlt(member.devmajor, member.devminor)
         fdev_minor = member.devminor
         fdev_major = member.devmajor
         if(ftype == 1 or ftype == 2 or ftype == 3 or ftype == 4 or ftype == 5 or ftype == 6):
@@ -8296,9 +8296,6 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
         if(member.isreg()):
             ffullmode = member.mode + stat.S_IFREG
             ftype = 0
-        elif(member.isdev()):
-            ffullmode = member.mode
-            ftype = 7
         elif(member.islnk()):
             ffullmode = member.mode + stat.S_IFREG
             ftype = 1
@@ -8322,7 +8319,7 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
             ftype = 12
         elif(member.isdev()):
             ffullmode = member.mode
-            ftype = 7
+            ftype = 14
         else:
             ffullmode = member.mode
             ftype = 0
