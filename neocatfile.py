@@ -14,12 +14,31 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: neocatfile.py - Last Update: 12/14/2024 Ver. 0.15.8 RC 1 - Author: cooldude2k $
+    $FileInfo: neocatfile.py - Last Update: 12/11/2024 Ver. 0.15.4 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals, generators, with_statement, nested_scopes
 import argparse
 import pycatfile
+
+__project__ = pycatfile.__project__
+__program_name__ = pycatfile.__program_name__
+__file_format_name__ = pycatfile.__file_format_name__
+__file_format_lower__ = pycatfile.__file_format_lower__
+__file_format_magic__ = pycatfile.__file_format_magic__
+__file_format_len__ = pycatfile.__file_format_len__
+__file_format_hex__ = pycatfile.__file_format_hex__
+__file_format_delimiter__ = pycatfile.__file_format_delimiter__
+__file_format_list__ = pycatfile.__file_format_list__
+__use_new_style__ = pycatfile.__use_new_style__
+__use_advanced_list__ = pycatfile.__use_advanced_list__
+__use_alt_inode__ = pycatfile.__use_alt_inode__
+__project_url__ = pycatfile.__project_url__
+__version_info__ = pycatfile.__version_info__
+__version_date_info__ = pycatfile.__version_date_info__
+__version_date__ = pycatfile.__version_date__
+__version_date_plusrc__ = pycatfile.__version_date_plusrc__
+__version__ = pycatfile.__version__
 
 # Compatibility layer for Python 2 and 3 input
 try:
@@ -34,7 +53,8 @@ py7zr_support = pycatfile.py7zr_support
 # Set up the argument parser
 argparser = argparse.ArgumentParser(
     description="Manipulates concatenated files for various operations like creation, extraction, and validation.")
-argparser.add_argument("-V", "--version", action="version", version=__program_name__ + " " + __version__, help="Displays the program's version.")
+argparser.add_argument("-V", "--version", action="version", version="{0} {1}".format(
+    __program_name__, __version__), help="Displays the program's version.")
 argparser.add_argument("-i", "--input", required=True,
                        help="Specifies input file(s) for processing.")
 argparser.add_argument(

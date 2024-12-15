@@ -14,7 +14,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: altcatfile.py - Last Update: 12/14/2024 Ver. 0.15.8 RC 1 - Author: cooldude2k $
+    $FileInfo: altcatfile.py - Last Update: 12/11/2024 Ver. 0.15.4 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals, generators, with_statement, nested_scopes
@@ -23,6 +23,25 @@ import argparse
 import pycatfile
 import configparser
 from io import BytesIO
+
+__project__ = pycatfile.__project__
+__program_name__ = pycatfile.__program_name__
+__file_format_name__ = pycatfile.__file_format_name__
+__file_format_lower__ = pycatfile.__file_format_lower__
+__file_format_magic__ = pycatfile.__file_format_magic__
+__file_format_len__ = pycatfile.__file_format_len__
+__file_format_hex__ = pycatfile.__file_format_hex__
+__file_format_delimiter__ = pycatfile.__file_format_delimiter__
+__file_format_list__ = pycatfile.__file_format_list__
+__use_new_style__ = pycatfile.__use_new_style__
+__use_advanced_list__ = pycatfile.__use_advanced_list__
+__use_alt_inode__ = pycatfile.__use_alt_inode__
+__project_url__ = pycatfile.__project_url__
+__version_info__ = pycatfile.__version_info__
+__version_date_info__ = pycatfile.__version_date_info__
+__version_date__ = pycatfile.__version_date__
+__version_date_plusrc__ = pycatfile.__version_date_plusrc__
+__version__ = pycatfile.__version__
 
 # Initialize Configuration
 def load_config():
@@ -57,7 +76,6 @@ def main():
     parser = argparse.ArgumentParser(
         description="Combined utility for CatFile operations with dynamic and static modes."
     )
-    parser.add_argument("-V", "--version", action="version", version=__program_name__ + " " + __version__, help="Displays the program's version.")
     parser.add_argument("-i", "--input", required=True, help="Input file(s) for processing.")
     parser.add_argument("-o", "--output", help="Output file name.")
     parser.add_argument("-m", "--mode", choices=["dynamic", "static"], default="static",
