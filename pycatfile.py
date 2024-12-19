@@ -1516,16 +1516,21 @@ def ValidateFileChecksum(infile, checksumtype="crc32", inchecksum="0", formatspe
 
 
 def ReadTillNullByteOld(fp, delimiter=__file_format_dict__['format_delimiter']):
-    if(not hasattr(fp, "read")):
+    if not hasattr(fp, "read"):
         return False
-    curbyte = b""
-    curfullbyte = b""
+    curfullbyte = bytearray()
     nullbyte = delimiter.encode("UTF-8")
-    while(True):
+    dellen = len(nullbyte)
+    while True:
         curbyte = fp.read(1)
-        if(curbyte == nullbyte or not curbyte):
+        if not curbyte:  # End of file or no more data
             break
-        curfullbyte = curfullbyte + curbyte
+        curfullbyte.extend(curbyte)
+        # Check if the end of the buffer matches our delimiter
+        if len(curfullbyte) >= dellen and curfullbyte[-dellen:] == nullbyte:
+            # Remove the delimiter from the returned bytes
+            curfullbyte = curfullbyte[:-dellen]
+            break
     return curfullbyte.decode('UTF-8')
 
 
@@ -1581,25 +1586,31 @@ def ReadUntilNullByteAlt(fp, delimiter=__file_format_dict__['format_delimiter'],
 
 
 def ReadTillNullByte(fp, delimiter=__file_format_dict__['format_delimiter'], max_read=1024000):
-    if(not hasattr(fp, "read")):
+    if not hasattr(fp, "read"):
         return False
     curfullbyte = bytearray()
     nullbyte = delimiter.encode("UTF-8")
+    dellen = len(nullbyte)
     total_read = 0  # Track the total number of bytes read
     while True:
         curbyte = fp.read(1)
-        if curbyte == nullbyte or not curbyte:
+        if not curbyte:  # End of file or no more data
             break
         curfullbyte.extend(curbyte)
         total_read += 1
+        # Check if the end of the buffer matches the delimiter
+        if len(curfullbyte) >= dellen and curfullbyte[-dellen:] == nullbyte:
+            # Remove the delimiter from the returned bytes
+            curfullbyte = curfullbyte[:-dellen]
+            break
+        # Check if we have exceeded the max read limit
         if total_read >= max_read:
-            raise MemoryError(
-                "Maximum read limit reached without finding the delimiter.")
+            raise MemoryError("Maximum read limit reached without finding the delimiter.")
     # Decode the full byte array to string once out of the loop
     try:
         return curfullbyte.decode('UTF-8')
     except UnicodeDecodeError:
-        # Handle potential partial UTF-8 characters
+        # Handle potential partial UTF-8 characters at the end
         for i in range(1, 4):
             try:
                 return curfullbyte[:-i].decode('UTF-8')
