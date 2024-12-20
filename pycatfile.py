@@ -2644,8 +2644,8 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         ftype = 0
         if(hasattr(os.path, "isjunction") and os.path.isjunction(fname)):
             ftype = 13
-        #elif(fstatinfo.st_blocks * 512 < fstatinfo.st_size):
-        #    ftype = 12
+        elif(fstatinfo.st_blocks * 512 < fstatinfo.st_size):
+            ftype = 12
         elif(stat.S_ISREG(fpremode)):
             ftype = 0
         elif(stat.S_ISLNK(fpremode)):
@@ -2705,9 +2705,13 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         getfdev = GetDevMajorMinor(fdev)
         fdev_minor = getfdev[0]
         fdev_major = getfdev[1]
-        if(ftype == 1 or ftype == 2 or ftype == 3 or ftype == 4 or ftype == 5 or ftype == 6):
+        # Types that should be considered zero-length in the archive context:
+        zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
+        # Types that have actual data to read:
+        data_types = {0, 7, 12}
+        if ftype in zero_length_types:
             fsize = format(int("0"), 'x').lower()
-        elif(ftype == 0 or ftype == 7):
+        elif ftype in data_types:
             fsize = format(int(fstatinfo.st_size), 'x').lower()
         else:
             fsize = format(int(fstatinfo.st_size)).lower()
@@ -2757,7 +2761,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         fcsize = format(int(0), 'x').lower()
         fcontents = BytesIO()
         chunk_size = 1024
-        if(ftype == 0 or ftype == 7):
+        if ftype in data_types:
             with open(fname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
                 if(not compresswholefile):
@@ -3875,9 +3879,13 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
         getfdev = GetDevMajorMinor(fdev)
         fdev_minor = getfdev[0]
         fdev_major = getfdev[1]
-        if(ftype == 1 or ftype == 2 or ftype == 3 or ftype == 4 or ftype == 5 or ftype == 6):
+        # Types that should be considered zero-length in the archive context:
+        zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
+        # Types that have actual data to read:
+        data_types = {0, 7, 12}
+        if ftype in zero_length_types:
             fsize = format(int("0"), 'x').lower()
-        elif(ftype == 0 or ftype == 7):
+        elif ftype in data_types:
             fsize = format(int(fstatinfo.st_size), 'x').lower()
         else:
             fsize = format(int(fstatinfo.st_size)).lower()
@@ -3926,7 +3934,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
         fcompression = ""
         fcsize = format(int(0), 'x').lower()
         fcontents = BytesIO()
-        if(ftype == 0 or ftype == 7):
+        if ftype in data_types:
             with open(fname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
                 if(not compresswholefile):
@@ -4205,9 +4213,13 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
             fdev = format(int(MakeDevAlt(member.devmajor, member.devminor)), 'x').lower()
         fdev_minor = format(int(member.devminor), 'x').lower()
         fdev_major = format(int(member.devmajor), 'x').lower()
-        if(ftype == 1 or ftype == 2 or ftype == 3 or ftype == 4 or ftype == 5 or ftype == 6):
+        # Types that should be considered zero-length in the archive context:
+        zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
+        # Types that have actual data to read:
+        data_types = {0, 7, 12}
+        if ftype in zero_length_types:
             fsize = format(int("0"), 'x').lower()
-        elif(ftype == 0 or ftype == 7):
+        elif ftype in data_types:
             fsize = format(int(member.size), 'x').lower()
         else:
             fsize = format(int(member.size), 'x').lower()
@@ -4227,7 +4239,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         fcompression = ""
         fcsize = format(int(0), 'x').lower()
         fcontents = BytesIO()
-        if(ftype == 0 or ftype == 7):
+        if ftype in data_types:
             with tarfp.extractfile(member) as fpc:
                 shutil.copyfileobj(fpc, fcontents)
                 if(not compresswholefile):
@@ -6515,9 +6527,15 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
         getfdev = GetDevMajorMinor(fdev)
         fdev_minor = getfdev[0]
         fdev_major = getfdev[1]
-        if(ftype == 1 or ftype == 2 or ftype == 3 or ftype == 4 or ftype == 5 or ftype == 6):
+        # Types that should be considered zero-length in the archive context:
+        zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
+        # Types that have actual data to read:
+        data_types = {0, 7, 12}
+        if ftype in zero_length_types:
             fsize = "0"
-        if(ftype == 0 or ftype == 7):
+        elif ftype in data_types:
+            fsize = fstatinfo.st_size
+        else:
             fsize = fstatinfo.st_size
         fatime = fstatinfo.st_atime
         fmtime = fstatinfo.st_mtime
@@ -6558,7 +6576,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
         fcompression = ""
         fcsize = 0
         fcontents = BytesIO()
-        if(ftype == 0 or ftype == 7):
+        if ftype in data_types:
             with open(fname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
         if(followlink and (ftype == 1 or ftype == 2)):
@@ -6753,9 +6771,13 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
             fdev = MakeDevAlt(member.devmajor, member.devminor)
         fdev_minor = member.devminor
         fdev_major = member.devmajor
-        if(ftype == 1 or ftype == 2 or ftype == 3 or ftype == 4 or ftype == 5 or ftype == 6):
+        # Types that should be considered zero-length in the archive context:
+        zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
+        # Types that have actual data to read:
+        data_types = {0, 7, 12}
+        if ftype in zero_length_types:
             fsize = "0"
-        elif(ftype == 0 or ftype == 7):
+        elif ftype in data_types:
             fsize = member.size
         else:
             fsize = member.size
@@ -6775,7 +6797,7 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         fcompression = ""
         fcsize = 0
         fcontents = BytesIO()
-        if(ftype == 0 or ftype == 7):
+        if ftype in data_types:
             with tarfp.extractfile(member) as fpc:
                 shutil.copyfileobj(fpc, fcontents)
         fcontents.seek(0, 0)
