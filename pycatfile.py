@@ -2466,15 +2466,15 @@ def MakeEmptyFilePointer(fp, checksumtype="crc32", formatspecs=__file_format_dic
 
 def MakeEmptyFile(outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", formatspecs=__file_format_dict__, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
-    if(outfile != "-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+    if(outfile != "-" and outfile != None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         if(os.path.exists(outfile)):
             try:
                 os.unlink(outfile)
             except OSError:
                 pass
-    if(outfile == "-"):
+    if(outfile == "-" or outfile == None):
         verbose = False
-        catfpfp = BytesIO()
+        catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
     elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
@@ -2486,7 +2486,7 @@ def MakeEmptyFile(outfile, compression="auto", compresswholefile=True, compressi
             compresswholefile = True
         catfp = CompressOpenFile(outfile, True, compressionlevel)
     catfp = AppendFileHeader(catfp, 0, checksumtype, formatspecs)
-    if(outfile == "-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+    if(outfile == "-" or outfile == None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         try:
@@ -2505,6 +2505,11 @@ def MakeEmptyFile(outfile, compression="auto", compresswholefile=True, compressi
             shutil.copyfileobj(catfp, sys.stdout.buffer)
         else:
             shutil.copyfileobj(catfp, sys.stdout)
+    elif(outfile == None):
+        catfp.seek(0, 0)
+        outvar = catfp.read()
+        catfp.close()
+        return outvar
     elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
@@ -2934,15 +2939,15 @@ def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, filevalues=[], ext
 
 def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
-    if(outfile != "-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+    if(outfile != "-" and outfile != None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         if(os.path.exists(outfile)):
             try:
                 os.unlink(outfile)
             except OSError:
                 pass
-    if(outfile == "-"):
+    if(outfile == "-" or outfile == None):
         verbose = False
-        catfpfp = BytesIO()
+        catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
     elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
@@ -2955,7 +2960,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
         catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
     catfp = AppendFilesWithContent(infiles, catfp, dirlistfromtxt, filevalues, extradata, compression,
                                    compresswholefile, compressionlevel, followlink, checksumtype, formatspecs, verbose)
-    if(outfile == "-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+    if(outfile == "-" or outfile == None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         try:
@@ -2974,6 +2979,11 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
             shutil.copyfileobj(catfp, sys.stdout.buffer)
         else:
             shutil.copyfileobj(catfp, sys.stdout)
+    elif(outfile == None):
+        catfp.seek(0, 0)
+        outvar = catfp.read()
+        catfp.close()
+        return outvar
     elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
@@ -2989,15 +2999,15 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
 
 def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
-    if(outfile != "-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+    if(outfile != "-" and outfile != None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         if(os.path.exists(outfile)):
             try:
                 os.unlink(outfile)
             except OSError:
                 pass
-    if(outfile == "-"):
+    if(outfile == "-" or outfile == None):
         verbose = False
-        catfpfp = BytesIO()
+        catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
     elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
@@ -3010,7 +3020,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
         catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
     catfp = AppendListsWithContent(inlist, catfp, dirlistfromtxt, filevalues, extradata, compression,
                                    compresswholefile, compressionlevel, followlink, checksumtype, formatspecs, verbose)
-    if(outfile == "-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+    if(outfile == "-" or outfile == None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         try:
@@ -3029,6 +3039,11 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
             shutil.copyfileobj(catfp, sys.stdout.buffer)
         else:
             shutil.copyfileobj(catfp, sys.stdout)
+    elif(outfile == None):
+        catfp.seek(0, 0)
+        outvar = catfp.read()
+        catfp.close()
+        return outvar
     elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
@@ -3729,7 +3744,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
     formatspecs = FormatSpecsListToDict(formatspecs)
     advancedlist = formatspecs['use_advanced_list']
     altinode = formatspecs['use_alt_inode']
-    if(outfile != "-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+    if(outfile != "-" and outfile != None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
     checksumtype = checksumtype.lower()
     if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
@@ -3743,13 +3758,13 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
     if(verbose):
         logging.basicConfig(format="%(message)s",
                             stream=sys.stdout, level=logging.DEBUG)
-    if(outfile != "-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+    if(outfile != "-" and outfile != None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         if(os.path.exists(outfile)):
             try:
                 os.unlink(outfile)
             except OSError:
                 pass
-    if(outfile == "-"):
+    if(outfile == "-" or outfile == None):
         verbose = False
         catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -4033,7 +4048,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
     if(numfiles > 0):
         catfp.write(AppendNullBytes(
             [0, 0], formatspecs['format_delimiter']).encode("UTF-8"))
-    if(outfile == "-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+    if(outfile == "-" or outfile == None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         try:
@@ -4052,6 +4067,11 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
             shutil.copyfileobj(catfp, sys.stdout.buffer)
         else:
             shutil.copyfileobj(catfp, sys.stdout)
+    elif(outfile == None):
+        catfp.seek(0, 0)
+        outvar = catfp.read()
+        catfp.close()
+        return outvar
     elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
@@ -4085,7 +4105,7 @@ create_alias_function("Pack", __file_format_name__,
 
 def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
-    if(outfile != "-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+    if(outfile != "-" and outfile != None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
     checksumtype = checksumtype.lower()
     if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
@@ -4099,13 +4119,13 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
     if(verbose):
         logging.basicConfig(format="%(message)s",
                             stream=sys.stdout, level=logging.DEBUG)
-    if(outfile != "-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+    if(outfile != "-" and outfile != None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         if(os.path.exists(outfile)):
             try:
                 os.unlink(outfile)
             except OSError:
                 pass
-    if(outfile == "-"):
+    if(outfile == "-" or outfile == None):
         verbose = False
         catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -4294,7 +4314,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
     if(numfiles > 0):
         catfp.write(AppendNullBytes(
             [0, 0], formatspecs['format_delimiter']).encode("UTF-8"))
-    if(outfile == "-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+    if(outfile == "-" or outfile == None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         try:
@@ -4313,6 +4333,11 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
             shutil.copyfileobj(catfp, sys.stdout.buffer)
         else:
             shutil.copyfileobj(catfp, sys.stdout)
+    elif(outfile == None):
+        catfp.seek(0, 0)
+        outvar = catfp.read()
+        catfp.close()
+        return outvar
     elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
@@ -4332,7 +4357,7 @@ create_alias_function("Pack", __file_format_name__,
 
 def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
-    if(outfile != "-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+    if(outfile != "-" and outfile != None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
     checksumtype = checksumtype.lower()
     if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
@@ -4346,13 +4371,13 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
     if(verbose):
         logging.basicConfig(format="%(message)s",
                             stream=sys.stdout, level=logging.DEBUG)
-    if(outfile != "-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+    if(outfile != "-" and outfile != None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         if(os.path.exists(outfile)):
             try:
                 os.unlink(outfile)
             except OSError:
                 pass
-    if(outfile == "-"):
+    if(outfile == "-" or outfile == None):
         verbose = False
         catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -4561,7 +4586,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
     if(numfiles > 0):
         catfp.write(AppendNullBytes(
             [0, 0], formatspecs['format_delimiter']).encode("UTF-8"))
-    if(outfile == "-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+    if(outfile == "-" or outfile == None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         try:
@@ -4580,6 +4605,11 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
             shutil.copyfileobj(catfp, sys.stdout.buffer)
         else:
             shutil.copyfileobj(catfp, sys.stdout)
+    elif(outfile == None):
+        catfp.seek(0, 0)
+        outvar = catfp.read()
+        catfp.close()
+        return outvar
     elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
@@ -4603,7 +4633,7 @@ if(not rarfile_support):
 if(rarfile_support):
     def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         formatspecs = FormatSpecsListToDict(formatspecs)
-        if(outfile != "-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+        if(outfile != "-" and outfile != None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
             outfile = RemoveWindowsPath(outfile)
         checksumtype = checksumtype.lower()
         if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
@@ -4617,13 +4647,13 @@ if(rarfile_support):
         if(verbose):
             logging.basicConfig(format="%(message)s",
                                 stream=sys.stdout, level=logging.DEBUG)
-        if(outfile != "-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+        if(outfile != "-" and outfile != None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
             if(os.path.exists(outfile)):
                 try:
                     os.unlink(outfile)
                 except OSError:
                     pass
-        if(outfile == "-"):
+        if(outfile == "-" or outfile == None):
             verbose = False
             catfp = BytesIO()
         elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -4859,7 +4889,7 @@ if(rarfile_support):
         if(numfiles > 0):
             catfp.write(AppendNullBytes(
                 [0, 0], formatspecs['format_delimiter']).encode("UTF-8"))
-        if(outfile == "-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+        if(outfile == "-" or outfile == None or hasattr(outfile, "read") or hasattr(outfile, "write")):
             catfp = CompressArchiveFile(
                 catfp, compression, compressionlevel, formatspecs)
             try:
@@ -4878,6 +4908,11 @@ if(rarfile_support):
                 shutil.copyfileobj(catfp, sys.stdout.buffer)
             else:
                 shutil.copyfileobj(catfp, sys.stdout)
+        elif(outfile == None):
+            catfp.seek(0, 0)
+            outvar = catfp.read()
+            catfp.close()
+            return outvar
         elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
             catfp = CompressArchiveFile(
                 catfp, compression, compressionlevel, formatspecs)
@@ -4900,7 +4935,7 @@ if(not py7zr_support):
 if(py7zr_support):
     def PackArchiveFileFromSevenZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         formatspecs = FormatSpecsListToDict(formatspecs)
-        if(outfile != "-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+        if(outfile != "-" and outfile != None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
             outfile = RemoveWindowsPath(outfile)
         checksumtype = checksumtype.lower()
         if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
@@ -4914,13 +4949,13 @@ if(py7zr_support):
         if(verbose):
             logging.basicConfig(format="%(message)s",
                                 stream=sys.stdout, level=logging.DEBUG)
-        if(outfile != "-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+        if(outfile != "-" and outfile != None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
             if(os.path.exists(outfile)):
                 try:
                     os.unlink(outfile)
                 except OSError:
                     pass
-        if(outfile == "-"):
+        if(outfile == "-" or outfile == None):
             verbose = False
             catfp = BytesIO()
         elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -5089,7 +5124,7 @@ if(py7zr_support):
         if(numfiles > 0):
             catfp.write(AppendNullBytes(
                 [0, 0], formatspecs['format_delimiter']).encode("UTF-8"))
-        if(outfile == "-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+        if(outfile == "-" or outfile == None or hasattr(outfile, "read") or hasattr(outfile, "write")):
             catfp = CompressArchiveFile(
                 catfp, compression, compressionlevel, formatspecs)
             try:
@@ -5108,6 +5143,11 @@ if(py7zr_support):
                 shutil.copyfileobj(catfp, sys.stdout.buffer)
             else:
                 shutil.copyfileobj(catfp, sys.stdout)
+        elif(outfile == None):
+            catfp.seek(0, 0)
+            outvar = catfp.read()
+            catfp.close()
+            return outvar
         elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
             catfp = CompressArchiveFile(
                 catfp, compression, compressionlevel, formatspecs)
@@ -5175,6 +5215,14 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
             shutil.copyfileobj(sys.stdin.buffer, catfp)
         else:
             shutil.copyfileobj(sys.stdin, catfp)
+        catfp.seek(0, 0)
+        catfp = UncompressArchiveFile(catfp, formatspecs)
+        if(not catfp):
+            return False
+        catfp.seek(0, 0)
+    elif(isinstance(infile, bytes)):
+        catfp = BytesIO()
+        catfp.write(infile)
         catfp.seek(0, 0)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         if(not catfp):
@@ -5434,6 +5482,14 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
             shutil.copyfileobj(sys.stdin.buffer, catfp)
         else:
             shutil.copyfileobj(sys.stdin, catfp)
+        catfp.seek(0, 0)
+        catfp = UncompressArchiveFile(catfp, formatspecs)
+        if(not catfp):
+            return False
+        catfp.seek(0, 0)
+    elif(isinstance(infile, bytes)):
+        catfp = BytesIO()
+        catfp.write(infile)
         catfp.seek(0, 0)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         if(not catfp):
@@ -5706,6 +5762,14 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
             shutil.copyfileobj(sys.stdin.buffer, catfp)
         else:
             shutil.copyfileobj(sys.stdin, catfp)
+        catfp.seek(0, 0)
+        catfp = UncompressArchiveFile(catfp, formatspecs)
+        if(not catfp):
+            return False
+        catfp.seek(0, 0)
+    elif(isinstance(infile, bytes)):
+        catfp = BytesIO()
+        catfp.write(infile)
         catfp.seek(0, 0)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         if(not catfp):
@@ -5985,6 +6049,14 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
             shutil.copyfileobj(sys.stdin.buffer, catfp)
         else:
             shutil.copyfileobj(sys.stdin, catfp)
+        catfp.seek(0, 0)
+        catfp = UncompressArchiveFile(catfp, formatspecs)
+        if(not catfp):
+            return False
+        catfp.seek(0, 0)
+    elif(isinstance(infile, bytes)):
+        catfp = BytesIO()
+        catfp.write(infile)
         catfp.seek(0, 0)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         if(not catfp):
@@ -7652,11 +7724,11 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
     if(isinstance(infile, dict)):
         listcatfiles = infile
     else:
-        if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
+        if(infile != "-" and not isinstance(infile, bytes) and not hasattr(infile, "read") and not hasattr(infile, "write")):
             infile = RemoveWindowsPath(infile)
         listcatfiles = ArchiveFileToArray(
             infile, seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp)
-    if(outfile != "-" and not hasattr(infile, "read") and not hasattr(outfile, "write")):
+    if(outfile != "-" and not isinstance(infile, bytes) and not hasattr(infile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
     checksumtype = checksumtype.lower()
     if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
@@ -7670,7 +7742,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
     if(verbose):
         logging.basicConfig(format="%(message)s",
                             stream=sys.stdout, level=logging.DEBUG)
-    if(outfile != "-" and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+    if(outfile != "-" and outfile != None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         if(os.path.exists(outfile)):
             try:
                 os.unlink(outfile)
@@ -7678,7 +7750,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
                 pass
     if(not listcatfiles):
         return False
-    if(outfile == "-"):
+    if(outfile == "-" or outfile == None):
         verbose = False
         catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -7873,7 +7945,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
     if(lcfx > 0):
         catfp.write(AppendNullBytes(
             [0, 0], formatspecs['format_delimiter']).encode("UTF-8"))
-    if(outfile == "-" or hasattr(outfile, "read") or hasattr(outfile, "write")):
+    if(outfile == "-" or outfile == None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         try:
@@ -7892,6 +7964,11 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
             shutil.copyfileobj(catfp, sys.stdout.buffer)
         else:
             shutil.copyfileobj(catfp, sys.stdout)
+    elif(outfile == None):
+        catfp.seek(0, 0)
+        outvar = catfp.read()
+        catfp.close()
+        return outvar
     elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
