@@ -729,7 +729,7 @@ def GetTotalSize(file_list):
     return total_size
 
 
-def create_alias_function(prefix, base_name, suffix, target_function):
+def create_alias_function_alt(prefix, base_name, suffix, target_function):
     # Define a new function that wraps the target function
     def alias_function(*args, **kwargs):
         return target_function(*args, **kwargs)
@@ -739,7 +739,7 @@ def create_alias_function(prefix, base_name, suffix, target_function):
     globals()[function_name] = alias_function
 
 
-def create_alias_function_alt(prefix, base_name, suffix, target_function):
+def create_alias_function(prefix, base_name, suffix, target_function):
     # Create the function name by combining the prefix, base name, and the suffix
     # Use the format method for string formatting, compatible with Python 2 and 3
     function_name = "{}{}{}".format(prefix, base_name, suffix)
