@@ -591,6 +591,8 @@ def ListDir(dirpath, followlink=False, duplicates=False, include_regex=None, exc
     Returns:
         list: A list of files and directories matching the criteria.
     """
+    if os.stat not in os.supports_follow_symlinks and followlink:
+        followlink = False
     if isinstance(dirpath, (list, tuple)):
         dirpath = list(filter(None, dirpath))
     elif isinstance(dirpath, basestring):
@@ -656,6 +658,8 @@ def ListDirAdvanced(dirpath, followlink=False, duplicates=False, include_regex=N
     Returns:
         list: A list of files and directories matching the criteria.
     """
+    if os.stat not in os.supports_follow_symlinks and followlink:
+        followlink = False
     if isinstance(dirpath, (list, tuple)):
         dirpath = list(filter(None, dirpath))
     elif isinstance(dirpath, basestring):
@@ -2611,6 +2615,8 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
             infilelist = list(filter(None, infiles))
         elif(isinstance(infiles, (basestring, ))):
             infilelist = list(filter(None, [infiles]))
+    if os.stat not in os.supports_follow_symlinks and followlink:
+        followlink = False
     if(advancedlist):
         GetDirList = ListDirAdvanced(infilelist, followlink, False)
     else:
@@ -3796,6 +3802,8 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
             infilelist = list(filter(None, infiles))
         elif(isinstance(infiles, (basestring, ))):
             infilelist = list(filter(None, [infiles]))
+    if os.stat not in os.supports_follow_symlinks and followlink:
+        followlink = False
     if(advancedlist):
         GetDirList = ListDirAdvanced(infilelist, followlink, False)
     else:
@@ -6482,6 +6490,8 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
             infilelist = list(filter(None, infiles))
         elif(isinstance(infiles, (basestring, ))):
             infilelist = list(filter(None, [infiles]))
+    if os.stat not in os.supports_follow_symlinks and followlink:
+        followlink = False
     if(advancedlist):
         GetDirList = ListDirAdvanced(infilelist, followlink, False)
     else:
