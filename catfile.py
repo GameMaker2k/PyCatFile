@@ -174,11 +174,11 @@ if active_action:
                                                      getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, getargs.verbose, False)
             else:
                 tmpout = pycatfile.PackArchiveFileFromInFile(
-                    getargs.input, getargs.output, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamedict, getargs.verbose, False)
+                    input_file, getargs.output, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamedict, getargs.verbose, False)
             if(not tmpout):
                 sys.exit(1)
         else:
-            pycatfile.PackArchiveFile(input_file, getargs.output, getargs.text, getargs.compression,
+            pycatfile.PackArchiveFile(getargs.input, getargs.output, getargs.text, getargs.compression,
                                       getargs.wholefile, getargs.level, False, getargs.checksum, [], fnamedict, getargs.verbose, False)
     elif active_action == 'repack':
         if getargs.convert:
