@@ -55,7 +55,7 @@ argparser = argparse.ArgumentParser(
     description="Manipulates concatenated files for various operations like creation, extraction, and validation.")
 argparser.add_argument("-V", "--version", action="version", version="{0} {1}".format(
     __program_name__, __version__), help="Displays the program's version.")
-argparser.add_argument("-i", "--input", required=True,
+argparser.add_argument("-i", "--input", nargs="+", required=True,
                        help="Specifies input file(s) for processing.")
 argparser.add_argument(
     "-o", "--output", help="Specifies the output file name.")
@@ -94,43 +94,43 @@ elif args.list:
     primary_action = 'list'
 elif args.validate:
     primary_action = 'validate'
-
+input_file = args.input[0]
 # Functionality mappings
 if primary_action == 'create':
     if args.convert == 'tar':
-        pycatfile.PackArchiveFileFromTarFile(args.input, args.output, args.compression, args.level, args.checksum, [
+        pycatfile.PackArchiveFileFromTarFile(input_file, args.output, args.compression, args.level, args.checksum, [
         ], pycatfile.__file_format_list__, args.verbose, False)
     elif args.convert == 'zip':
-        pycatfile.PackArchiveFileFromZipFile(args.input, args.output, args.compression, args.level, args.checksum, [
+        pycatfile.PackArchiveFileFromZipFile(input_file, args.output, args.compression, args.level, args.checksum, [
         ], pycatfile.__file_format_list__, args.verbose, False)
     elif py7zr_support and args.convert == '7zip':
-        pycatfile.PackArchiveFileFromSevenZipFile(args.input, args.output, args.compression, args.level, args.checksum, [
+        pycatfile.PackArchiveFileFromSevenZipFile(input_file, args.output, args.compression, args.level, args.checksum, [
         ], pycatfile.__file_format_list__, args.verbose, False)
     elif rarfile_support and args.convert == 'rar':
-        pycatfile.PackArchiveFileFromRarFile(args.input, args.output, args.compression, args.level, args.checksum, [
+        pycatfile.PackArchiveFileFromRarFile(input_file, args.output, args.compression, args.level, args.checksum, [
         ], pycatfile.__file_format_list__, args.verbose, False)
     else:
         pycatfile.PackArchiveFile(args.input, args.output, args.verbose, args.compression, args.level,
                                   False, args.checksum, [], pycatfile.__file_format_list__, args.verbose, False)
 elif primary_action == 'repack':
     pycatfile.RePackArchiveFile(
-        args.input, args.output, args.compression, args.level, args.checksum, args.verbose)
+        input_file, args.output, args.compression, args.level, args.checksum, args.verbose)
 elif primary_action == 'extract':
     pycatfile.UnPackArchiveFile(
-        args.input, args.output, args.verbose, args.preserve)
+        input_file, args.output, args.verbose, args.preserve)
 elif primary_action == 'list':
     if args.convert == 'tar':
-        pycatfile.TarFileListFiles(args.input, verbose=args.verbose)
+        pycatfile.TarFileListFiles(input_file, verbose=args.verbose)
     elif args.convert == 'zip':
-        pycatfile.ZipFileListFiles(args.input, verbose=args.verbose)
+        pycatfile.ZipFileListFiles(input_file, verbose=args.verbose)
     elif args.convert == '7zip':
-        pycatfile.SevenZipFileListFiles(args.input, verbose=args.verbose)
+        pycatfile.SevenZipFileListFiles(input_file, verbose=args.verbose)
     elif rarfile_support and args.convert == 'rar':
-        pycatfile.RarFileListFiles(args.input, verbose=args.verbose)
+        pycatfile.RarFileListFiles(input_file, verbose=args.verbose)
     else:
-        pycatfile.ArchiveFileListFiles(args.input, verbose=args.verbose)
+        pycatfile.ArchiveFileListFiles(input_file, verbose=args.verbose)
 elif primary_action == 'validate':
-    is_valid = pycatfile.ArchiveFileValidate(args.input, args.verbose)
+    is_valid = pycatfile.ArchiveFileValidate(input_file, args.verbose)
     result_msg = "Validation result for {0}: {1}".format(
-        args.input, 'Valid' if is_valid else 'Invalid')
+        input_file, 'Valid' if is_valid else 'Invalid')
     print(result_msg)

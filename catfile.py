@@ -98,7 +98,7 @@ argparser.add_argument("-V", "--version", action="version",
                        version=__program_name__ + " " + __version__)
 # Input and output specifications
 argparser.add_argument(
-    "-i", "--input", help="Specify the file(s) to concatenate or the concatenated file to extract.", required=True)
+    "-i", "--input", nargs="+", help="Specify the file(s) to concatenate or the concatenated file to extract.", required=True)
 argparser.add_argument("-o", "--output", default=None,
                        help="Specify the name for the extracted or output concatenated files.")
 # Operations
@@ -161,15 +161,16 @@ fnamedict = {'format_name': fname, 'format_magic': fnamemagic, 'format_lower': f
 actions = ['create', 'extract', 'list', 'repack', 'validate']
 active_action = next(
     (action for action in actions if getattr(getargs, action)), None)
+input_file = getargs.input[0]
 
 # Execute the appropriate functions based on determined actions and arguments
 if active_action:
     if active_action == 'create':
         if getargs.convert:
             checkcompressfile = pycatfile.CheckCompressionSubType(
-                getargs.input, fnamedict, True)
+                input_file, fnamedict, True)
             if(checkcompressfile == "catfile"):
-                tmpout = pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.wholefile,
+                tmpout = pycatfile.RePackArchiveFile(input_file, getargs.output, getargs.compression, getargs.wholefile,
                                                      getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, getargs.verbose, False)
             else:
                 tmpout = pycatfile.PackArchiveFileFromInFile(
@@ -177,77 +178,77 @@ if active_action:
             if(not tmpout):
                 sys.exit(1)
         else:
-            pycatfile.PackArchiveFile(getargs.input, getargs.output, getargs.text, getargs.compression,
+            pycatfile.PackArchiveFile(input_file, getargs.output, getargs.text, getargs.compression,
                                       getargs.wholefile, getargs.level, False, getargs.checksum, [], fnamedict, getargs.verbose, False)
     elif active_action == 'repack':
         if getargs.convert:
             checkcompressfile = pycatfile.CheckCompressionSubType(
-                getargs.input, fnamedict, True)
+                input_file, fnamedict, True)
             if(checkcompressfile == "catfile"):
-                pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.wholefile, getargs.level,
+                pycatfile.RePackArchiveFile(input_file, getargs.output, getargs.compression, getargs.wholefile, getargs.level,
                                             False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, getargs.verbose, False)
             else:
-                pycatfile.PackArchiveFileFromInFile(getargs.input, getargs.output, getargs.compression,
+                pycatfile.PackArchiveFileFromInFile(input_file, getargs.output, getargs.compression,
                                                     getargs.wholefile, getargs.level, getargs.checksum, [], fnamedict, getargs.verbose, False)
             if(not tmpout):
                 sys.exit(1)
         else:
-            pycatfile.RePackArchiveFile(getargs.input, getargs.output, getargs.compression, getargs.wholefile, getargs.level,
+            pycatfile.RePackArchiveFile(input_file, getargs.output, getargs.compression, getargs.wholefile, getargs.level,
                                         False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, getargs.verbose, False)
     elif active_action == 'extract':
         if getargs.convert:
             checkcompressfile = pycatfile.CheckCompressionSubType(
-                getargs.input, fnamedict, True)
+                input_file, fnamedict, True)
             tempout = BytesIO()
             if(checkcompressfile == "catfile"):
-                tmpout = pycatfile.RePackArchiveFile(getargs.input, tempout, getargs.compression, getargs.wholefile,
+                tmpout = pycatfile.RePackArchiveFile(input_file, tempout, getargs.compression, getargs.wholefile,
                                                      getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, False, False)
             else:
                 tmpout = pycatfile.PackArchiveFileFromInFile(
-                    getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamedict, False, False)
+                    input_file, tempout, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamedict, False, False)
             if(not tmpout):
                 sys.exit(1)
-            getargs.input = tempout
-        pycatfile.UnPackArchiveFile(getargs.input, getargs.output, False, 0, 0, getargs.skipchecksum,
+            input_file = tempout
+        pycatfile.UnPackArchiveFile(input_file, getargs.output, False, 0, 0, getargs.skipchecksum,
                                     fnamedict, getargs.verbose, getargs.preserve, getargs.preserve, False)
     elif active_action == 'list':
         if getargs.convert:
             checkcompressfile = pycatfile.CheckCompressionSubType(
-                getargs.input, fnamedict, True)
+                input_file, fnamedict, True)
             if(checkcompressfile == "catfile"):
                 tmpout = pycatfile.ArchiveFileListFiles(
-                    getargs.input, 0, 0, getargs.skipchecksum, fnamedict, getargs.verbose, False)
+                    input_file, 0, 0, getargs.skipchecksum, fnamedict, getargs.verbose, False)
             else:
                 tmpout = pycatfile.InFileListFiles(
-                    getargs.input, getargs.verbose, fnamedict, False)
+                    input_file, getargs.verbose, fnamedict, False)
             if(not tmpout):
                 sys.exit(1)
         else:
             pycatfile.ArchiveFileListFiles(
-                getargs.input, 0, 0, getargs.skipchecksum, fnamedict, getargs.verbose, False)
+                input_file, 0, 0, getargs.skipchecksum, fnamedict, getargs.verbose, False)
     elif active_action == 'validate':
         if getargs.convert:
             checkcompressfile = pycatfile.CheckCompressionSubType(
-                getargs.input, fnamedict, True)
+                input_file, fnamedict, True)
             tempout = BytesIO()
             if(checkcompressfile == "catfile"):
-                tmpout = pycatfile.RePackArchiveFile(getargs.input, tempout, getargs.compression, getargs.wholefile,
+                tmpout = pycatfile.RePackArchiveFile(input_file, tempout, getargs.compression, getargs.wholefile,
                                                      getargs.level, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, False, False)
             else:
                 tmpout = pycatfile.PackArchiveFileFromInFile(
-                    getargs.input, tempout, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamedict, False, False)
-            getargs.input = tempout
+                    input_file, tempout, getargs.compression, getargs.wholefile, getargs.level, getargs.checksum, [], fnamedict, False, False)
+            input_file = tempout
             if(not tmpout):
                 sys.exit(1)
         fvalid = pycatfile.ArchiveFileValidate(
-            getargs.input, fnamedict, getargs.verbose, False)
+            input_file, fnamedict, getargs.verbose, False)
         if(not getargs.verbose):
             import sys
             import logging
             logging.basicConfig(format="%(message)s",
                                 stream=sys.stdout, level=logging.DEBUG)
         if(fvalid):
-            pycatfile.VerbosePrintOut("File is valid: \n" + str(getargs.input))
+            pycatfile.VerbosePrintOut("File is valid: \n" + str(input_file))
         else:
             pycatfile.VerbosePrintOut(
-                "File is invalid: \n" + str(getargs.input))
+                "File is invalid: \n" + str(input_file))

@@ -76,7 +76,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Combined utility for CatFile operations with dynamic and static modes."
     )
-    parser.add_argument("-i", "--input", required=True, help="Input file(s) for processing.")
+    parser.add_argument("-i", "--input", nargs="+", required=True, help="Input file(s) for processing.")
     parser.add_argument("-o", "--output", help="Output file name.")
     parser.add_argument("-m", "--mode", choices=["dynamic", "static"], default="static",
                         help="Choose mode: 'dynamic' (runtime arguments) or 'static' (config-based). Default: static.")
@@ -117,21 +117,23 @@ def main():
         'format_ver': format_version
     }
 
+    input_file = args.input[0]
+
     # Determine operation
     if args.create:
         pycatfile.PackArchiveFile(args.input, args.output, args.verbose, args.compression,
                                   args.level, False, args.checksum, [], format_dict, args.verbose, False)
     elif args.repack:
         pycatfile.RePackArchiveFile(
-            args.input, args.output, args.compression, args.level, args.checksum, args.verbose)
+            input_file, args.output, args.compression, args.level, args.checksum, args.verbose)
     elif args.extract:
         pycatfile.UnPackArchiveFile(
-            args.input, args.output, args.verbose, args.preserve)
+            input_file, args.output, args.verbose, args.preserve)
     elif args.list:
-        pycatfile.ArchiveFileListFiles(args.input, verbose=args.verbose)
+        pycatfile.ArchiveFileListFiles(input_file, verbose=args.verbose)
     elif args.validate:
-        is_valid = pycatfile.ArchiveFileValidate(args.input, args.verbose)
-        result_msg = f"Validation result for {args.input}: {'Valid' if is_valid else 'Invalid'}"
+        is_valid = pycatfile.ArchiveFileValidate(input_file, args.verbose)
+        result_msg = "Validation result for {}: {}".format(input_file, 'Valid' if is_valid else 'Invalid')
         print(result_msg)
     else:
         print("No action specified. Use --create, --extract, --list, --repack, or --validate.")
