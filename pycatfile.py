@@ -8502,6 +8502,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
     if(ziptest):
         VerbosePrintOut("Bad file found!")
     for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
+        zipinfo = zipfp.getinfo(member.filename)
         if(zipinfo.create_system == 0 or zipinfo.create_system == 10):
             fwinattributes = int(zipinfo.external_attr)
             if(not member.is_dir()):
