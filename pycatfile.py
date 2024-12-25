@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# -*- coding: UTF-8 -*-
 
 '''
     This program is free software; you can redistribute it and/or modify
@@ -94,13 +94,13 @@ except ImportError:
 # Windows-specific setup
 if os.name == 'nt':
     if sys.version_info[0] == 2:
-        sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
-        sys.stderr = codecs.getwriter('utf-8')(sys.stderr)
+        sys.stdout = codecs.getwriter('UTF-8')(sys.stdout)
+        sys.stderr = codecs.getwriter('UTF-8')(sys.stderr)
     else:
         sys.stdout = io.TextIOWrapper(
-            sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+            sys.stdout.buffer, encoding='UTF-8', errors='replace', line_buffering=True)
         sys.stderr = io.TextIOWrapper(
-            sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+            sys.stderr.buffer, encoding='UTF-8', errors='replace', line_buffering=True)
 
 hashlib_guaranteed = False
 # Environment setup
@@ -253,7 +253,7 @@ if os.path.exists(__config_file__) and __use_ini_file__:
         if sys.version_info[0] < 3:  # Python 2
             return value.decode('unicode_escape')
         else:  # Python 3
-            return bytes(value, 'utf-8').decode('unicode_escape')
+            return bytes(value, 'UTF-8').decode('unicode_escape')
     __file_format_name__ = config.get('main', 'name')
     __program_name__ = config.get('main', 'proname')
     __file_format_lower__ = config.get('main', 'lower')
@@ -340,14 +340,14 @@ geturls_ua_pycatfile_python_alt = "Mozilla/5.0 ({osver}; {archtype}; +{prourl}) 
 )+" "+platform.release(), archtype=platform.machine(), prourl=__project_url__, pyimp=py_implementation, pyver=platform.python_version(), proname=__project__, prover=__version__)
 geturls_ua_googlebot_google = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
 geturls_ua_googlebot_google_old = "Googlebot/2.1 (+http://www.google.com/bot.html)"
-geturls_headers_pycatfile_python = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pycatfile_python, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
+geturls_headers_pycatfile_python = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pycatfile_python, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,UTF-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
                                     'SEC-CH-UA': "\""+__project__+"\";v=\""+str(__version__)+"\", \"Not;A=Brand\";v=\"8\", \""+py_implementation+"\";v=\""+str(platform.release())+"\"", 'SEC-CH-UA-FULL-VERSION': str(__version__), 'SEC-CH-UA-PLATFORM': ""+py_implementation+"", 'SEC-CH-UA-ARCH': ""+platform.machine()+"", 'SEC-CH-UA-PLATFORM': str(__version__), 'SEC-CH-UA-BITNESS': str(PyBitness)}
-geturls_headers_pycatfile_python_alt = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pycatfile_python_alt, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
+geturls_headers_pycatfile_python_alt = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pycatfile_python_alt, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,UTF-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
                                         'SEC-CH-UA': "\""+__project__+"\";v=\""+str(__version__)+"\", \"Not;A=Brand\";v=\"8\", \""+py_implementation+"\";v=\""+str(platform.release())+"\"", 'SEC-CH-UA-FULL-VERSION': str(__version__), 'SEC-CH-UA-PLATFORM': ""+py_implementation+"", 'SEC-CH-UA-ARCH': ""+platform.machine()+"", 'SEC-CH-UA-PLATFORM': str(__version__), 'SEC-CH-UA-BITNESS': str(PyBitness)}
 geturls_headers_googlebot_google = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6",
-                                    'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"}
+                                    'Accept-Charset': "ISO-8859-1,ISO-8859-15,UTF-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"}
 geturls_headers_googlebot_google_old = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google_old, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6",
-                                        'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"}
+                                        'Accept-Charset': "ISO-8859-1,ISO-8859-15,UTF-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"}
 
 compressionsupport = []
 try:
@@ -598,7 +598,7 @@ def ListDir(dirpath, followlink=False, duplicates=False, include_regex=None, exc
     elif isinstance(dirpath, basestring):
         dirpath = list(filter(None, [dirpath]))
     retlist = []
-    fs_encoding = sys.getfilesystemencoding() or 'utf-8'
+    fs_encoding = sys.getfilesystemencoding() or 'UTF-8'
     include_pattern = re.compile(include_regex) if include_regex else None
     exclude_pattern = re.compile(exclude_regex) if exclude_regex else None
     for mydirfile in dirpath:
@@ -665,7 +665,7 @@ def ListDirAdvanced(dirpath, followlink=False, duplicates=False, include_regex=N
     elif isinstance(dirpath, basestring):
         dirpath = list(filter(None, [dirpath]))
     retlist = []
-    fs_encoding = sys.getfilesystemencoding() or 'utf-8'
+    fs_encoding = sys.getfilesystemencoding() or 'UTF-8'
     include_pattern = re.compile(include_regex) if include_regex else None
     exclude_pattern = re.compile(exclude_regex) if exclude_regex else None
     for mydirfile in dirpath:
@@ -813,11 +813,11 @@ class ZlibFile:
             self._compressed_data, self.wbits)
         if self._text_mode:
             self._decompressed_data = self._decompressed_data.decode(
-                self.encoding or 'utf-8', self.errors or 'strict')
+                self.encoding or 'UTF-8', self.errors or 'strict')
 
     def write(self, data):
         if self._text_mode:
-            data = data.encode(self.encoding or 'utf-8',
+            data = data.encode(self.encoding or 'UTF-8',
                                self.errors or 'strict')
         compressed_data = self._compressor.compress(
             data) + self._compressor.flush(zlib.Z_SYNC_FLUSH)
@@ -928,11 +928,11 @@ class GzipFile:
         self._decompressed_data = gzip.decompress(self._compressed_data)
         if self._text_mode:
             self._decompressed_data = self._decompressed_data.decode(
-                self.encoding or 'utf-8', self.errors or 'strict')
+                self.encoding or 'UTF-8', self.errors or 'strict')
 
     def write(self, data):
         if self._text_mode:
-            data = data.encode(self.encoding or 'utf-8',
+            data = data.encode(self.encoding or 'UTF-8',
                                self.errors or 'strict')
         compressed_data = self._compressor.compress(data)
         self.file.write(compressed_data)
@@ -1039,11 +1039,11 @@ class BloscFile:
    raise ValueError("Invalid blosc file header");
   self._decompressed_data = blosc.decompress(self._compressed_data);
   if self._text_mode:
-   self._decompressed_data = self._decompressed_data.decode(self.encoding or 'utf-8', self.errors or 'strict');
+   self._decompressed_data = self._decompressed_data.decode(self.encoding or 'UTF-8', self.errors or 'strict');
 
  def write(self, data):
   if self._text_mode:
-   data = data.encode(self.encoding or 'utf-8', self.errors or 'strict');
+   data = data.encode(self.encoding or 'UTF-8', self.errors or 'strict');
   compressed_data = blosc.compress(data, cname='blosclz', clevel=self.level);
   self.file.write(compressed_data);
   self.file.flush();
@@ -1146,11 +1146,11 @@ class BrotliFile:
    raise ValueError("Invalid brotli file header");
   self._decompressed_data = brotli.decompress(self._compressed_data);
   if self._text_mode:
-   self._decompressed_data = self._decompressed_data.decode(self.encoding or 'utf-8', self.errors or 'strict');
+   self._decompressed_data = self._decompressed_data.decode(self.encoding or 'UTF-8', self.errors or 'strict');
 
  def write(self, data):
   if self._text_mode:
-   data = data.encode(self.encoding or 'utf-8', self.errors or 'strict');
+   data = data.encode(self.encoding or 'UTF-8', self.errors or 'strict');
   compressed_data = self._compressor.process(data);
   self.file.write(compressed_data);
   self.file.flush();
@@ -3579,16 +3579,20 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
             compressionlevel = 9
         else:
             compressionlevel = int(compressionlevel)
-        catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE, filters=[
-                    {"id": lzma.FILTER_LZMA1, "preset": compressionlevel}]))
+        try:
+            catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}]))
+        except NotImplemented:
+            catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE))
     if(compression == "xz" and compression in compressionsupport):
         catfp = BytesIO()
         if(compressionlevel is None):
             compressionlevel = 9
         else:
             compressionlevel = int(compressionlevel)
-        catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ, filters=[
-                    {"id": lzma.FILTER_LZMA2, "preset": compressionlevel}]))
+        try:
+            catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}]))
+        except NotImplemented:
+            catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ))
     if(compression == "zlib" and compression in compressionsupport):
         catfp = BytesIO()
         if(compressionlevel is None):
@@ -3623,56 +3627,29 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
         mode = "wb"
     try:
         if(fextname not in outextlistwd or not compressionenable):
-            try:
-                outfp = open(outfile, "wb", encoding="UTF-8")
-            except (ValueError, TypeError) as e:
-                outfp = open(outfile, "wb")
+            outfp = open(outfile, "wb")
         elif(fextname == ".gz" and "gzip" in compressionsupport):
-            try:
-                outfp = gzip.open(
-                    outfile, mode, compressionlevel, encoding="UTF-8")
-            except (ValueError, TypeError) as e:
-                outfp = gzip.open(outfile, mode, compressionlevel)
+            outfp = gzip.open(outfile, mode, compressionlevel)
         elif(fextname == ".bz2" and "bzip2" in compressionsupport):
-            try:
-                outfp = bz2.open(
-                    outfile, mode, compressionlevel, encoding="UTF-8")
-            except (ValueError, TypeError) as e:
-                outfp = bz2.open(outfile, mode, compressionlevel)
+            outfp = bz2.open(outfile, mode, compressionlevel)
         elif(fextname == ".zst" and "zstandard" in compressionsupport):
-            try:
-                outfp = zstandard.open(outfile, mode, zstandard.ZstdCompressor(
-                    level=compressionlevel), encoding="UTF-8")
-            except (ValueError, TypeError) as e:
-                outfp = zstandard.open(
+            outfp = zstandard.open(
                     outfile, mode, zstandard.ZstdCompressor(level=compressionlevel))
         elif(fextname == ".xz" and "xz" in compressionsupport):
             try:
-                outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[
-                                  {"id": lzma.FILTER_LZMA2, "preset": compressionlevel}], encoding="UTF-8")
-            except (ValueError, TypeError) as e:
-                outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[
-                                  {"id": lzma.FILTER_LZMA2, "preset": compressionlevel}])
+                outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}])
+            except NotImplemented:
+                outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ)
         elif(fextname == ".lz4" and "lz4" in compressionsupport):
-            try:
-                outfp = lz4.frame.open(
-                    outfile, mode, compression_level=compressionlevel, encoding="UTF-8")
-            except (ValueError, TypeError) as e:
-                outfp = lz4.frame.open(
+            outfp = lz4.frame.open(
                     outfile, mode, compression_level=compressionlevel)
         elif(fextname == ".lzo" and "lzop" in compressionsupport):
-            try:
-                outfp = lzo.open(
-                    outfile, mode, compresslevel=compressionlevel, encoding="UTF-8")
-            except (ValueError, TypeError) as e:
-                outfp = lzo.open(outfile, mode, compresslevel=compressionlevel)
+            outfp = lzo.open(outfile, mode, compresslevel=compressionlevel)
         elif(fextname == ".lzma" and "lzma" in compressionsupport):
             try:
-                outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[
-                                  {"id": lzma.FILTER_LZMA1, "preset": compressionlevel}], encoding="UTF-8")
-            except (ValueError, TypeError) as e:
-                outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[
-                                  {"id": lzma.FILTER_LZMA1, "preset": compressionlevel}])
+                outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}])
+            except NotImplemented:
+                outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE)
         elif((fextname == ".zz" or fextname == ".zl" or fextname == ".zlib") and "zlib" in compressionsupport):
             outfp = ZlibFile(outfile, mode=mode, level=compressionlevel)
     except FileNotFoundError:
