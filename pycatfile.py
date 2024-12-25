@@ -309,7 +309,7 @@ __version_date_info__ = (2024, 12, 21, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: 595e4e74c4d8fee00f8346ac493e1dc9fea652a2 $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -4268,48 +4268,48 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         fcsize = format(int(0), 'x').lower()
         fcontents = BytesIO()
         if ftype in data_types:
-            with tarfp.extractfile(member) as fpc:
-                shutil.copyfileobj(fpc, fcontents)
-                if(not compresswholefile):
-                    fcontents.seek(0, 2)
-                    ucfsize = fcontents.tell()
-                    fcontents.seek(0, 0)
-                    if(compression == "auto"):
-                        ilsize = len(compressionlistalt)
-                        ilmin = 0
-                        ilcsize = []
-                        while(ilmin < ilsize):
-                            cfcontents = BytesIO()
-                            shutil.copyfileobj(fcontents, cfcontents)
-                            fcontents.seek(0, 0)
-                            cfcontents.seek(0, 0)
-                            cfcontents = CompressArchiveFile(
-                                cfcontents, compressionlistalt[ilmin], compressionlevel, formatspecs)
-                            if(cfcontents):
-                                cfcontents.seek(0, 2)
-                                ilcsize.append(cfcontents.tell())
-                                cfcontents.close()
-                            else:
-                                try:
-                                    ilcsize.append(sys.maxint)
-                                except AttributeError:
-                                    ilcsize.append(sys.maxsize)
-                            ilmin = ilmin + 1
-                        ilcmin = ilcsize.index(min(ilcsize))
-                        compression = compressionlistalt[ilcmin]
-                    fcontents.seek(0, 0)
-                    cfcontents = BytesIO()
-                    shutil.copyfileobj(fcontents, cfcontents)
-                    cfcontents.seek(0, 0)
-                    cfcontents = CompressArchiveFile(
-                        cfcontents, compression, compressionlevel, formatspecs)
-                    cfcontents.seek(0, 2)
-                    cfsize = cfcontents.tell()
-                    if(ucfsize > cfsize):
-                        fcsize = format(int(cfsize), 'x').lower()
-                        fcompression = compression
-                        fcontents.close()
-                        fcontents = cfcontents
+            fpc = tarfp.extractfile(member)
+            shutil.copyfileobj(fpc, fcontents)
+            if(not compresswholefile):
+                fcontents.seek(0, 2)
+                ucfsize = fcontents.tell()
+                fcontents.seek(0, 0)
+                if(compression == "auto"):
+                    ilsize = len(compressionlistalt)
+                    ilmin = 0
+                    ilcsize = []
+                    while(ilmin < ilsize):
+                        cfcontents = BytesIO()
+                        shutil.copyfileobj(fcontents, cfcontents)
+                        fcontents.seek(0, 0)
+                        cfcontents.seek(0, 0)
+                        cfcontents = CompressArchiveFile(
+                            cfcontents, compressionlistalt[ilmin], compressionlevel, formatspecs)
+                        if(cfcontents):
+                            cfcontents.seek(0, 2)
+                            ilcsize.append(cfcontents.tell())
+                            cfcontents.close()
+                        else:
+                            try:
+                                ilcsize.append(sys.maxint)
+                            except AttributeError:
+                                ilcsize.append(sys.maxsize)
+                        ilmin = ilmin + 1
+                    ilcmin = ilcsize.index(min(ilcsize))
+                    compression = compressionlistalt[ilcmin]
+                fcontents.seek(0, 0)
+                cfcontents = BytesIO()
+                shutil.copyfileobj(fcontents, cfcontents)
+                cfcontents.seek(0, 0)
+                cfcontents = CompressArchiveFile(
+                    cfcontents, compression, compressionlevel, formatspecs)
+                cfcontents.seek(0, 2)
+                cfsize = cfcontents.tell()
+                if(ucfsize > cfsize):
+                    fcsize = format(int(cfsize), 'x').lower()
+                    fcompression = compression
+                    fcontents.close()
+                    fcontents = cfcontents
         if(fcompression == "none"):
             fcompression = ""
         fcontents.seek(0, 0)
@@ -6880,8 +6880,8 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         fcsize = 0
         fcontents = BytesIO()
         if ftype in data_types:
-            with tarfp.extractfile(member) as fpc:
-                shutil.copyfileobj(fpc, fcontents)
+            fpc = tarfp.extractfile(member)
+            shutil.copyfileobj(fpc, fcontents)
         fcontents.seek(0, 0)
         ftypehex = format(ftype, 'x').lower()
         extrafields = len(extradata)
