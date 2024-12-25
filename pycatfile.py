@@ -3581,7 +3581,7 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
             compressionlevel = int(compressionlevel)
         try:
             catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}]))
-        except NotImplemented:
+        except (NotImplementedError, lzma.LZMAError):
             catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE))
     if(compression == "xz" and compression in compressionsupport):
         catfp = BytesIO()
@@ -3591,7 +3591,7 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
             compressionlevel = int(compressionlevel)
         try:
             catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}]))
-        except NotImplemented:
+        except (NotImplementedError, lzma.LZMAError):
             catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ))
     if(compression == "zlib" and compression in compressionsupport):
         catfp = BytesIO()
@@ -3638,7 +3638,7 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
         elif(fextname == ".xz" and "xz" in compressionsupport):
             try:
                 outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}])
-            except NotImplemented:
+            except (NotImplementedError, lzma.LZMAError):
                 outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ)
         elif(fextname == ".lz4" and "lz4" in compressionsupport):
             outfp = lz4.frame.open(
@@ -3648,7 +3648,7 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
         elif(fextname == ".lzma" and "lzma" in compressionsupport):
             try:
                 outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}])
-            except NotImplemented:
+            except (NotImplementedError, lzma.LZMAError):
                 outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE)
         elif((fextname == ".zz" or fextname == ".zl" or fextname == ".zlib") and "zlib" in compressionsupport):
             outfp = ZlibFile(outfile, mode=mode, level=compressionlevel)
