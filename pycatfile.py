@@ -225,6 +225,16 @@ def get_importing_script_path():
             return os.path.abspath(filename)
     return None
 
+def get_default_threads():
+    """Returns the number of CPU threads available, or 1 if unavailable."""
+    try:
+        cpu_threads = os.cpu_count()
+        return cpu_threads if cpu_threads is not None else 1
+    except AttributeError:
+        # os.cpu_count() might not be available in some environments
+        return 1
+
+
 __use_pysftp__ = False
 __use_alt_format__ = False
 __use_env_file__ = True
@@ -3349,47 +3359,24 @@ def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
             mode = "w"
     try:
         if(compresscheck == "gzip" and compresscheck in compressionsupport):
-            try:
-                filefp = gzip.open(infile, mode, encoding="UTF-8")
-            except (ValueError, TypeError) as e:
-                filefp = gzip.open(infile, mode)
+            filefp = gzip.open(infile, mode)
         if(compresscheck == "bzip2" and compresscheck in compressionsupport):
-            try:
-                filefp = bz2.open(infile, mode, encoding="UTF-8")
-            except (ValueError, TypeError) as e:
-                filefp = bz2.open(infile, mode)
+            filefp = bz2.open(infile, mode)
         if(compresscheck == "zstd" and compresscheck in compressionsupport):
-            try:
-                filefp = zstandard.open(infile, mode, encoding="UTF-8")
-            except (ValueError, TypeError) as e:
-                filefp = zstandard.open(infile, mode)
+            decompressor = zstandard.ZstdDecompressor(threads=get_default_threads())
+            filefp = decompressor.open(infile, mode)
         if(compresscheck == "lz4" and compresscheck in compressionsupport):
-            try:
-                filefp = lz4.frame.open(infile, mode, encoding="UTF-8")
-            except (ValueError, TypeError) as e:
-                filefp = lz4.frame.open(infile, mode)
+            filefp = lz4.frame.open(infile, mode)
         if((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
-            try:
-                filefp = lzo.open(infile, mode, encoding="UTF-8")
-            except (ValueError, TypeError) as e:
-                filefp = lzo.open(infile, mode)
+            filefp = lzo.open(infile, mode)
         if((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
-            try:
-                filefp = lzma.open(infile, mode, encoding="UTF-8")
-            except (ValueError, TypeError) as e:
-                filefp = lzma.open(infile, mode)
+            filefp = lzma.open(infile, mode)
         if(compresscheck == "zlib" and compresscheck in compressionsupport):
             filefp = ZlibFile(infile, mode=mode)
         if(compresscheck == "catfile" or compresscheck == formatspecs['format_lower']):
-            try:
-                filefp = open(infile, mode, encoding="UTF-8")
-            except (ValueError, TypeError) as e:
-                filefp = open(infile, mode)
+            filefp = open(infile, mode)
         if(not compresscheck):
-            try:
-                filefp = open(infile, mode, encoding="UTF-8")
-            except (ValueError, TypeError) as e:
-                filefp = open(infile, mode)
+            filefp = open(infile, mode)
     except FileNotFoundError:
         return False
     try:
@@ -3406,11 +3393,8 @@ def UncompressString(infile):
     if(compresscheck == "bzip2" and compresscheck in compressionsupport):
         fileuz = BzipDecompressData(infile)
     if(compresscheck == "zstd" and compresscheck in compressionsupport):
-        try:
-            import zstandard
-        except ImportError:
-            return False
-        fileuz = zstandard.decompress(infile)
+        decompressor = zstandard.ZstdDecompressor(threads=get_default_threads())
+        fileuz = decompressor.decompress(infile)
     if(compresscheck == "lz4" and compresscheck in compressionsupport):
         fileuz = lz4.frame.decompress(infile)
     if((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
@@ -3571,10 +3555,11 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
     if(compression == "zstd" and compression in compressionsupport):
         catfp = BytesIO()
         if(compressionlevel is None):
-            compressionlevel = 10
+            compressionlevel = 9
         else:
             compressionlevel = int(compressionlevel)
-        catfp.write(zstandard.compress(fp.read(), level=compressionlevel))
+        compressor = zstandard.ZstdCompressor(compressionlevel, threads=get_default_threads())
+        catfp.write(compressor.compress(fp.read()))
     if(compression == "lzma" and compression in compressionsupport):
         catfp = BytesIO()
         if(compressionlevel is None):
@@ -3617,10 +3602,8 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
         return False
     fbasename = os.path.splitext(outfile)[0]
     fextname = os.path.splitext(outfile)[1]
-    if(compressionlevel is None and fextname != ".zst"):
+    if(compressionlevel is None):
         compressionlevel = 9
-    elif(compressionlevel is None and fextname == ".zst"):
-        compressionlevel = 10
     else:
         compressionlevel = int(compressionlevel)
     if(sys.version_info[0] == 2):
@@ -3636,7 +3619,7 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
             outfp = bz2.open(outfile, mode, compressionlevel)
         elif(fextname == ".zst" and "zstandard" in compressionsupport):
             outfp = zstandard.open(
-                    outfile, mode, zstandard.ZstdCompressor(level=compressionlevel))
+                    outfile, mode, zstandard.ZstdCompressor(level=compressionlevel, threads=get_default_threads()))
         elif(fextname == ".xz" and "xz" in compressionsupport):
             try:
                 outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}])
@@ -8480,7 +8463,6 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
     try:
         zipfp = zipfile.ZipFile(infile, "r", allowZip64=True)
     except FileNotFoundError:
-        print(6)
         return False
     lcfi = 0
     returnval = {}
