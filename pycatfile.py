@@ -2785,6 +2785,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                         ilcsize = []
                         while(ilmin < ilsize):
                             cfcontents = BytesIO()
+                            fcontents.seek(0, 0)
                             shutil.copyfileobj(fcontents, cfcontents)
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
@@ -2801,18 +2802,18 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                                     ilcsize.append(sys.maxsize)
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
-                        compression = compressionlistalt[ilcmin]
+                        curcompression = compressionlistalt[ilcmin]
                     fcontents.seek(0, 0)
                     cfcontents = BytesIO()
                     shutil.copyfileobj(fcontents, cfcontents)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressArchiveFile(
-                        cfcontents, compression, compressionlevel, formatspecs)
+                        cfcontents, curcompression, compressionlevel, formatspecs)
                     cfcontents.seek(0, 2)
                     cfsize = cfcontents.tell()
                     if(ucfsize > cfsize):
                         fcsize = format(int(cfsize), 'x').lower()
-                        fcompression = compression
+                        fcompression = curcompression
                         fcontents.close()
                         fcontents = cfcontents
         if(followlink and (ftype == 1 or ftype == 2)):
@@ -2829,6 +2830,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                         ilcsize = []
                         while(ilmin < ilsize):
                             cfcontents = BytesIO()
+                            fcontents.seek(0, 0)
                             shutil.copyfileobj(fcontents, cfcontents)
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
@@ -2845,18 +2847,18 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                                     ilcsize.append(sys.maxsize)
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
-                        compression = compressionlistalt[ilcmin]
+                        curcompression = compressionlistalt[ilcmin]
                     fcontents.seek(0, 0)
                     cfcontents = BytesIO()
                     shutil.copyfileobj(fcontents, cfcontents)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressArchiveFile(
-                        cfcontents, compression, compressionlevel, formatspecs)
+                        cfcontents, curcompression, compressionlevel, formatspecs)
                     cfcontents.seek(0, 2)
                     cfsize = cfcontents.tell()
                     if(ucfsize > cfsize):
                         fcsize = format(int(cfsize), 'x').lower()
-                        fcompression = compression
+                        fcompression = curcompression
                         fcontents.close()
                         fcontents = cfcontents
         if(fcompression == "none"):
@@ -3947,6 +3949,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
                         ilcsize = []
                         while(ilmin < ilsize):
                             cfcontents = BytesIO()
+                            fcontents.seek(0, 0)
                             shutil.copyfileobj(fcontents, cfcontents)
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
@@ -3963,18 +3966,18 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
                                     ilcsize.append(sys.maxsize)
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
-                        compression = compressionlistalt[ilcmin]
+                        curcompression = compressionlistalt[ilcmin]
                     fcontents.seek(0, 0)
                     cfcontents = BytesIO()
                     shutil.copyfileobj(fcontents, cfcontents)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressArchiveFile(
-                        cfcontents, compression, compressionlevel, formatspecs)
+                        cfcontents, curcompression, compressionlevel, formatspecs)
                     cfcontents.seek(0, 2)
                     cfsize = cfcontents.tell()
                     if(ucfsize > cfsize):
                         fcsize = format(int(cfsize), 'x').lower()
-                        fcompression = compression
+                        fcompression = curcompression
                         fcontents.close()
                         fcontents = cfcontents
         if(fcompression == "none"):
@@ -3993,6 +3996,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
                         ilcsize = []
                         while(ilmin < ilsize):
                             cfcontents = BytesIO()
+                            fcontents.seek(0, 0)
                             shutil.copyfileobj(fcontents, cfcontents)
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
@@ -4009,18 +4013,18 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
                                     ilcsize.append(sys.maxsize)
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
-                        compression = compressionlistalt[ilcmin]
+                        curcompression = compressionlistalt[ilcmin]
                     fcontents.seek(0, 0)
                     cfcontents = BytesIO()
                     shutil.copyfileobj(fcontents, cfcontents)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressArchiveFile(
-                        cfcontents, compression, compressionlevel, formatspecs)
+                        cfcontents, curcompression, compressionlevel, formatspecs)
                     cfcontents.seek(0, 2)
                     cfsize = cfcontents.tell()
                     if(ucfsize > cfsize):
                         fcsize = format(int(cfsize), 'x').lower()
-                        fcompression = compression
+                        fcompression = curcompression
                         fcontents.close()
                         fcontents = cfcontents
         fcontents.seek(0, 0)
@@ -4257,6 +4261,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
                     ilcsize = []
                     while(ilmin < ilsize):
                         cfcontents = BytesIO()
+                        fcontents.seek(0, 0)
                         shutil.copyfileobj(fcontents, cfcontents)
                         fcontents.seek(0, 0)
                         cfcontents.seek(0, 0)
@@ -4273,18 +4278,18 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
                                 ilcsize.append(sys.maxsize)
                         ilmin = ilmin + 1
                     ilcmin = ilcsize.index(min(ilcsize))
-                    compression = compressionlistalt[ilcmin]
+                    curcompression = compressionlistalt[ilcmin]
                 fcontents.seek(0, 0)
                 cfcontents = BytesIO()
                 shutil.copyfileobj(fcontents, cfcontents)
                 cfcontents.seek(0, 0)
                 cfcontents = CompressArchiveFile(
-                    cfcontents, compression, compressionlevel, formatspecs)
+                    cfcontents, curcompression, compressionlevel, formatspecs)
                 cfcontents.seek(0, 2)
                 cfsize = cfcontents.tell()
                 if(ucfsize > cfsize):
                     fcsize = format(int(cfsize), 'x').lower()
-                    fcompression = compression
+                    fcompression = curcompression
                     fcontents.close()
                     fcontents = cfcontents
         if(fcompression == "none"):
@@ -4535,6 +4540,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
                     ilcsize = []
                     while(ilmin < ilsize):
                         cfcontents = BytesIO()
+                        fcontents.seek(0, 0)
                         shutil.copyfileobj(fcontents, cfcontents)
                         fcontents.seek(0, 0)
                         cfcontents.seek(0, 0)
@@ -4545,18 +4551,18 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
                         cfcontents.close()
                         ilmin = ilmin + 1
                     ilcmin = ilcsize.index(min(ilcsize))
-                    compression = compressionlistalt[ilcmin]
+                    curcompression = compressionlistalt[ilcmin]
                 fcontents.seek(0, 0)
                 cfcontents = BytesIO()
                 shutil.copyfileobj(fcontents, cfcontents)
                 cfcontents.seek(0, 0)
                 cfcontents = CompressArchiveFile(
-                    cfcontents, compression, compressionlevel, formatspecs)
+                    cfcontents, curcompression, compressionlevel, formatspecs)
                 cfcontents.seek(0, 2)
                 cfsize = cfcontents.tell()
                 if(ucfsize > cfsize):
                     fcsize = format(int(cfsize), 'x').lower()
-                    fcompression = compression
+                    fcompression = curcompression
                     fcontents.close()
                     fcontents = cfcontents
         if(fcompression == "none"):
@@ -4832,6 +4838,7 @@ if(rarfile_support):
                         ilcsize = []
                         while(ilmin < ilsize):
                             cfcontents = BytesIO()
+                            fcontents.seek(0, 0)
                             shutil.copyfileobj(fcontents, cfcontents)
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
@@ -4848,13 +4855,13 @@ if(rarfile_support):
                                     ilcsize.append(sys.maxsize)
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
-                        compression = compressionlistalt[ilcmin]
+                        curcompression = compressionlistalt[ilcmin]
                     fcontents.seek(0, 0)
                     cfcontents = BytesIO()
                     shutil.copyfileobj(fcontents, cfcontents)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressArchiveFile(
-                        cfcontents, compression, compressionlevel, formatspecs)
+                        cfcontents, curcompression, compressionlevel, formatspecs)
                     cfcontents.seek(0, 2)
                     cfsize = cfcontents.tell()
                     if(ucfsize > cfsize):
@@ -5067,6 +5074,7 @@ if(py7zr_support):
                         ilcsize = []
                         while(ilmin < ilsize):
                             cfcontents = BytesIO()
+                            fcontents.seek(0, 0)
                             shutil.copyfileobj(fcontents, cfcontents)
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
@@ -5083,18 +5091,18 @@ if(py7zr_support):
                                     ilcsize.append(sys.maxsize)
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
-                        compression = compressionlistalt[ilcmin]
+                        curcompression = compressionlistalt[ilcmin]
                     fcontents.seek(0, 0)
                     cfcontents = BytesIO()
                     shutil.copyfileobj(fcontents, cfcontents)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressArchiveFile(
-                        cfcontents, compression, compressionlevel, formatspecs)
+                        cfcontents, curcompression, compressionlevel, formatspecs)
                     cfcontents.seek(0, 2)
                     cfsize = cfcontents.tell()
                     if(ucfsize > cfsize):
                         fcsize = format(int(cfsize), 'x').lower()
-                        fcompression = compression
+                        fcompression = curcompression
                         fcontents.close()
                         fcontents = cfcontents
             if(fcompression == "none"):
@@ -7837,6 +7845,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
                 ilcsize = []
                 while(ilmin < ilsize):
                     cfcontents = BytesIO()
+                    fcontents.seek(0, 0)
                     shutil.copyfileobj(fcontents, cfcontents)
                     fcontents.seek(0, 0)
                     cfcontents.seek(0, 0)
@@ -7853,18 +7862,18 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
                             ilcsize.append(sys.maxsize)
                     ilmin = ilmin + 1
                 ilcmin = ilcsize.index(min(ilcsize))
-                compression = compressionlistalt[ilcmin]
+                curcompression = compressionlistalt[ilcmin]
             fcontents.seek(0, 0)
             cfcontents = BytesIO()
             shutil.copyfileobj(fcontents, cfcontents)
             cfcontents.seek(0, 0)
             cfcontents = CompressArchiveFile(
-                cfcontents, compression, compressionlevel, formatspecs)
+                cfcontents, curcompression, compressionlevel, formatspecs)
             cfcontents.seek(0, 2)
             cfsize = cfcontents.tell()
             if(ucfsize > cfsize):
                 fcsize = format(int(cfsize), 'x').lower()
-                fcompression = compression
+                fcompression = curcompression
                 fcontents.close()
                 fcontents = cfcontents
         if(followlink):
