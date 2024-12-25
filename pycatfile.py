@@ -4443,16 +4443,16 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
         zipinfo = zipfp.getinfo(member.filename)
         if(verbose):
             VerbosePrintOut(fname)
-        if(not member.is_dir()):
-            fpremode = int(stat.S_IFREG + 438)
-        elif(member.is_dir()):
+        if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
             fpremode = int(stat.S_IFDIR + 511)
+        else:
+            fpremode = int(stat.S_IFREG + 438)
         flinkcount = 0
         ftype = 0
-        if(not member.is_dir()):
-            ftype = 0
-        elif(member.is_dir()):
+        if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
             ftype = 5
+        else:
+            ftype = 0
         flinkname = ""
         fcurfid = format(int(curfid), 'x').lower()
         fcurinode = format(int(curfid), 'x').lower()
@@ -4476,14 +4476,14 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
             int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower()
         if(zipinfo.create_system == 0 or zipinfo.create_system == 10):
             fwinattributes = format(int(zipinfo.external_attr), 'x').lower()
-            if(not member.is_dir()):
-                fmode = format(int(stat.S_IFREG + 438), 'x').lower()
-                fchmode = stat.S_IMODE(int(stat.S_IFREG + 438))
-                ftypemod = stat.S_IFMT(int(stat.S_IFREG + 438))
-            elif(member.is_dir()):
+            if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
                 fmode = format(int(stat.S_IFDIR + 511), 'x').lower()
                 fchmode = stat.S_IMODE(int(stat.S_IFDIR + 511))
                 ftypemod = stat.S_IFMT(int(stat.S_IFDIR + 511))
+            else:
+                fmode = format(int(stat.S_IFREG + 438), 'x').lower()
+                fchmode = stat.S_IMODE(int(stat.S_IFREG + 438))
+                ftypemod = stat.S_IFMT(int(stat.S_IFREG + 438))
         elif(zipinfo.create_system == 3):
             fwinattributes = format(int(0), 'x').lower()
             try:
@@ -4498,14 +4498,14 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
                 ftypemod = stat.S_IFMT(prefmode)
         else:
             fwinattributes = format(int(0), 'x').lower()
-            if(not member.is_dir()):
-                fmode = format(int(stat.S_IFREG + 438), 'x').lower()
-                prefmode = int(stat.S_IFREG + 438)
-                fchmode = stat.S_IMODE(prefmode)
-                ftypemod = stat.S_IFMT(prefmode)
-            elif(member.is_dir()):
+            if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
                 fmode = format(int(stat.S_IFDIR + 511), 'x').lower()
                 prefmode = int(stat.S_IFDIR + 511)
+                fchmode = stat.S_IMODE(prefmode)
+                ftypemod = stat.S_IFMT(prefmode)
+            else:
+                fmode = format(int(stat.S_IFREG + 438), 'x').lower()
+                prefmode = int(stat.S_IFREG + 438)
                 fchmode = stat.S_IMODE(prefmode)
                 ftypemod = stat.S_IFMT(prefmode)
         fcompression = ""
@@ -7018,16 +7018,16 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         zipinfo = zipfp.getinfo(member.filename)
         if(verbose):
             VerbosePrintOut(fname)
-        if(not member.is_dir()):
-            fpremode = stat.S_IFREG + 438
-        elif(member.is_dir()):
+        if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
             fpremode = stat.S_IFDIR + 511
+        else:
+            fpremode = stat.S_IFREG + 438
         flinkcount = 0
         ftype = 0
-        if(not member.is_dir()):
-            ftype = 0
-        elif(member.is_dir()):
+        if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
             ftype = 5
+        else:
+            ftype = 0
         flinkname = ""
         fbasedir = os.path.dirname(fname)
         fcurfid = curfid
@@ -7049,14 +7049,14 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         fbtime = time.mktime(member.date_time + (0, 0, -1))
         if(zipinfo.create_system == 0 or zipinfo.create_system == 10):
             fwinattributes = int(zipinfo.external_attr)
-            if(not member.is_dir()):
-                fmode = int(stat.S_IFREG + 438)
-                fchmode = int(stat.S_IMODE(int(stat.S_IFREG + 438)))
-                ftypemod = int(stat.S_IFMT(int(stat.S_IFREG + 438)))
-            elif(member.is_dir()):
+            if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
                 fmode = int(stat.S_IFDIR + 511)
                 fchmode = int(stat.S_IMODE(int(stat.S_IFDIR + 511)))
                 ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)))
+            else:
+                fmode = int(stat.S_IFREG + 438)
+                fchmode = int(stat.S_IMODE(int(stat.S_IFREG + 438)))
+                ftypemod = int(stat.S_IFMT(int(stat.S_IFREG + 438)))
         elif(zipinfo.create_system == 3):
             fwinattributes = int(0)
             try:
@@ -7069,14 +7069,14 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
                 ftypemod = stat.S_IFMT(fmode)
         else:
             fwinattributes = int(0)
-            if(not member.is_dir()):
-                fmode = int(stat.S_IFREG + 438)
-                fchmode = int(stat.S_IMODE(int(stat.S_IFREG + 438)))
-                ftypemod = int(stat.S_IFMT(int(stat.S_IFREG + 438)))
-            elif(member.is_dir()):
+            if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
                 fmode = int(stat.S_IFDIR + 511)
                 fchmode = int(stat.S_IMODE(int(stat.S_IFDIR + 511)))
                 ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)))
+            else:
+                fmode = int(stat.S_IFREG + 438)
+                fchmode = int(stat.S_IMODE(int(stat.S_IFREG + 438)))
+                ftypemod = int(stat.S_IFMT(int(stat.S_IFREG + 438)))
         fcompression = ""
         fcsize = 0
         try:
@@ -8505,14 +8505,14 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
         zipinfo = zipfp.getinfo(member.filename)
         if(zipinfo.create_system == 0 or zipinfo.create_system == 10):
             fwinattributes = int(zipinfo.external_attr)
-            if(not member.is_dir()):
-                fmode = int(stat.S_IFREG + 438)
-                fchmode = int(stat.S_IMODE(fmode))
-                ftypemod = int(stat.S_IFMT(fmode))
-            elif(member.is_dir()):
+            if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
                 fmode = int(stat.S_IFDIR + 511)
                 fchmode = int(stat.S_IMODE(int(stat.S_IFDIR + 511)))
                 ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)))
+            else:
+                fmode = int(stat.S_IFREG + 438)
+                fchmode = int(stat.S_IMODE(fmode))
+                ftypemod = int(stat.S_IFMT(fmode))
         elif(zipinfo.create_system == 3):
             fwinattributes = int(0)
             try:
@@ -8525,14 +8525,14 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
                 ftypemod = stat.S_IFMT(fmode)
         else:
             fwinattributes = int(0)
-            if(not member.is_dir()):
-                fmode = int(stat.S_IFREG + 438)
-                fchmode = int(stat.S_IMODE(fmode))
-                ftypemod = int(stat.S_IFMT(fmode))
-            elif(member.is_dir()):
+            if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
                 fmode = int(stat.S_IFDIR + 511)
                 fchmode = int(stat.S_IMODE(int(stat.S_IFDIR + 511)))
                 ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)))
+            else:
+                fmode = int(stat.S_IFREG + 438)
+                fchmode = int(stat.S_IMODE(fmode))
+                ftypemod = int(stat.S_IFMT(fmode))
         returnval.update({lcfi: member.filename})
         if(not verbose):
             VerbosePrintOut(member.filename)
@@ -8543,12 +8543,12 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
             for fmodval in str(oct(fmode))[-3:]:
                 permissionstr = permissionstr + \
                     permissions['access'].get(fmodval, '---')
-            if(not member.is_dir()):
-                ftype = 0
-                permissionstr = "-" + permissionstr
-            elif(member.is_dir()):
+            if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
                 ftype = 5
                 permissionstr = "d" + permissionstr
+            else:
+                ftype = 0
+                permissionstr = "-" + permissionstr
             printfname = member.filename
             try:
                 fuid = int(os.getuid())
