@@ -3201,27 +3201,27 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
     prefp = catfp.read(2)
     if(prefp == binascii.unhexlify("1f8b")):
         filetype = "gzip"
-    if(prefp == binascii.unhexlify("7801")):
+    elif(prefp == binascii.unhexlify("7801")):
         filetype = "zlib"
-    if(prefp == binascii.unhexlify("785e")):
+    elif(prefp == binascii.unhexlify("785e")):
         filetype = "zlib"
-    if(prefp == binascii.unhexlify("789c")):
+    elif(prefp == binascii.unhexlify("789c")):
         filetype = "zlib"
-    if(prefp == binascii.unhexlify("78da")):
+    elif(prefp == binascii.unhexlify("78da")):
         filetype = "zlib"
     catfp.seek(0, 0)
     prefp = catfp.read(3)
     if(prefp == binascii.unhexlify("425a68")):
         filetype = "bzip2"
-    if(prefp == binascii.unhexlify("5d0000")):
+    elif(prefp == binascii.unhexlify("5d0000")):
         filetype = "lzma"
     catfp.seek(0, 0)
     prefp = catfp.read(4)
     if(prefp == binascii.unhexlify("28b52ffd")):
         filetype = "zstd"
-    if(prefp == binascii.unhexlify("04224d18")):
+    elif(prefp == binascii.unhexlify("04224d18")):
         filetype = "lz4"
-    if(prefp == binascii.unhexlify("504B0304")):
+    elif(prefp == binascii.unhexlify("504B0304")):
         filetype = "zipfile"
     catfp.seek(0, 0)
     prefp = catfp.read(5)
@@ -3231,13 +3231,13 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
     prefp = catfp.read(6)
     if(prefp == binascii.unhexlify("fd377a585a00")):
         filetype = "lzma"
-    if(prefp == binascii.unhexlify("377abcaf271c")):
+    elif(prefp == binascii.unhexlify("377abcaf271c")):
         filetype = "7zipfile"
     catfp.seek(0, 0)
     prefp = catfp.read(7)
     if(prefp == binascii.unhexlify("526172211a0700")):
         filetype = "rarfile"
-    if(prefp == binascii.unhexlify("43617446696c65")):
+    elif(prefp == binascii.unhexlify("43617446696c65")):
         filetype = "catfile"
     catfp.seek(0, 0)
     prefp = catfp.read(8)
@@ -3259,7 +3259,7 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
     if(filetype == "gzip" or filetype == "bzip2" or filetype == "lzma" or filetype == "zstd" or filetype == "lz4" or filetype == "zlib"):
         if(TarFileCheck(catfp)):
             filetype = "tarfile"
-    if(not filetype):
+    elif(not filetype):
         if(TarFileCheck(catfp)):
             filetype = "tarfile"
         elif(zipfile.is_zipfile(catfp)):
@@ -3300,22 +3300,24 @@ def GetCompressionMimeType(infile, formatspecs=__file_format_dict__):
     compresscheck = CheckCompressionType(fp, formatspecs, False)
     if(compresscheck == "gzip" or compresscheck == "gz"):
         return archivefile_gzip_mimetype
-    if(compresscheck == "zlib" or (compresscheck == "zz" or compresscheck == "zl" or compresscheck == "zlib")):
+    elif(compresscheck == "zlib" or (compresscheck == "zz" or compresscheck == "zl" or compresscheck == "zlib")):
         return archivefile_zlib_mimetype
-    if(compresscheck == "bzip2" or compresscheck == "bz2"):
+    elif(compresscheck == "bzip2" or compresscheck == "bz2"):
         return archivefile_bzip2_mimetype
-    if(compresscheck == "zstd" or compresscheck == "zstandard"):
+    elif(compresscheck == "zstd" or compresscheck == "zstandard"):
         return archivefile_zstandard_mimetype
-    if(compresscheck == "lz4"):
+    elif(compresscheck == "lz4"):
         return archivefile_lz4_mimetype
-    if(compresscheck == "lzo" or compresscheck == "lzop"):
+    elif(compresscheck == "lzo" or compresscheck == "lzop"):
         return archivefile_lzop_mimetype
-    if(compresscheck == "lzma"):
+    elif(compresscheck == "lzma"):
         return archivefile_lzma_mimetype
-    if(compresscheck == "xz"):
+    elif(compresscheck == "xz"):
         return archivefile_xz_mimetype
-    if(compresscheck == "catfile" or compresscheck == "cat" or compresscheck == formatspecs['format_lower']):
+    elif(compresscheck == "catfile" or compresscheck == "cat" or compresscheck == formatspecs['format_lower']):
         return archivefile_cat_mimetype
+    else
+        return False
     if(not compresscheck):
         return False
     return False
@@ -3365,27 +3367,29 @@ def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
     if(sys.version_info[0] == 2 and compresscheck):
         if(mode == "rt"):
             mode = "r"
-        if(mode == "wt"):
+        elif(mode == "wt"):
             mode = "w"
     try:
         if(compresscheck == "gzip" and compresscheck in compressionsupport):
             filefp = gzip.open(infile, mode)
-        if(compresscheck == "bzip2" and compresscheck in compressionsupport):
+        elif(compresscheck == "bzip2" and compresscheck in compressionsupport):
             filefp = bz2.open(infile, mode)
-        if(compresscheck == "zstd" and compresscheck in compressionsupport):
+        elif(compresscheck == "zstd" and compresscheck in compressionsupport):
             decompressor = zstandard.ZstdDecompressor()
             filefp = decompressor.open(infile, mode)
-        if(compresscheck == "lz4" and compresscheck in compressionsupport):
+        elif(compresscheck == "lz4" and compresscheck in compressionsupport):
             filefp = lz4.frame.open(infile, mode)
-        if((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
+        elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
             filefp = lzo.open(infile, mode)
-        if((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
+        elif((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
             filefp = lzma.open(infile, mode)
-        if(compresscheck == "zlib" and compresscheck in compressionsupport):
+        elif(compresscheck == "zlib" and compresscheck in compressionsupport):
             filefp = ZlibFile(infile, mode=mode)
-        if(compresscheck == "catfile" or compresscheck == formatspecs['format_lower']):
+        elif(compresscheck == "catfile" or compresscheck == formatspecs['format_lower']):
             filefp = open(infile, mode)
-        if(not compresscheck):
+        elif(not compresscheck):
+            filefp = open(infile, mode)
+        else:
             filefp = open(infile, mode)
     except FileNotFoundError:
         return False
@@ -3400,20 +3404,22 @@ def UncompressString(infile, formatspecs=__file_format_dict__):
     compresscheck = CheckCompressionTypeFromString(infile, formatspecs, False)
     if(compresscheck == "gzip" and compresscheck in compressionsupport):
         fileuz = GzipDecompressData(infile)
-    if(compresscheck == "bzip2" and compresscheck in compressionsupport):
+    elif(compresscheck == "bzip2" and compresscheck in compressionsupport):
         fileuz = BzipDecompressData(infile)
-    if(compresscheck == "zstd" and compresscheck in compressionsupport):
+    elif(compresscheck == "zstd" and compresscheck in compressionsupport):
         decompressor = zstandard.ZstdDecompressor()
         fileuz = decompressor.decompress(infile)
-    if(compresscheck == "lz4" and compresscheck in compressionsupport):
+    elif(compresscheck == "lz4" and compresscheck in compressionsupport):
         fileuz = lz4.frame.decompress(infile)
-    if((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
+    elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
         fileuz = lzo.decompress(infile)
-    if((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
+    elif((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
         fileuz = lzma.decompress(infile)
-    if(compresscheck == "zlib" and compresscheck in compressionsupport):
+    elif(compresscheck == "zlib" and compresscheck in compressionsupport):
         fileuz = zlib.decompress(infile)
-    if(not compresscheck):
+    elif(not compresscheck):
+        fileuz = infile
+    else:
         fileuz = infile
     if(hasattr(fileuz, 'decode')):
         fileuz = fileuz.decode("UTF-8")
@@ -3446,20 +3452,22 @@ def UncompressBytes(infile, formatspecs=__file_format_dict__):
     compresscheck = CheckCompressionTypeFromBytes(infile, formatspecs, False)
     if(compresscheck == "gzip" and compresscheck in compressionsupport):
         fileuz = GzipDecompressData(infile)
-    if(compresscheck == "bzip2" and compresscheck in compressionsupport):
+    elif(compresscheck == "bzip2" and compresscheck in compressionsupport):
         fileuz = BzipDecompressData(infile)
-    if(compresscheck == "zstd" and compresscheck in compressionsupport):
+    elif(compresscheck == "zstd" and compresscheck in compressionsupport):
         decompressor = zstandard.ZstdDecompressor()
         fileuz = decompressor.decompress(infile)
-    if(compresscheck == "lz4" and compresscheck in compressionsupport):
+    elif(compresscheck == "lz4" and compresscheck in compressionsupport):
         fileuz = lz4.frame.decompress(infile)
-    if((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
+    elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
         fileuz = lzo.decompress(infile)
-    if((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
+    elif((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
         fileuz = lzma.decompress(infile)
-    if(compresscheck == "zlib" and compresscheck in compressionsupport):
+    elif(compresscheck == "zlib" and compresscheck in compressionsupport):
         fileuz = zlib.decompress(infile)
-    if(not compresscheck):
+    elif(not compresscheck):
+        fileuz = infile
+    else:
         fileuz = infile
     return fileuz
 
@@ -3598,7 +3606,7 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
             compressionlevel = int(compressionlevel)
         catfp.write(GzipCompressData(
             fp.read(), compresslevel=compressionlevel))
-    if(compression == "bzip2" and compression in compressionsupport):
+    elif(compression == "bzip2" and compression in compressionsupport):
         catfp = BytesIO()
         if(compressionlevel is None):
             compressionlevel = 9
@@ -3606,7 +3614,7 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
             compressionlevel = int(compressionlevel)
         catfp.write(BzipCompressData(
             fp.read(), compresslevel=compressionlevel))
-    if(compression == "lz4" and compression in compressionsupport):
+    elif(compression == "lz4" and compression in compressionsupport):
         catfp = BytesIO()
         if(compressionlevel is None):
             compressionlevel = 9
@@ -3614,14 +3622,14 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
             compressionlevel = int(compressionlevel)
         catfp.write(lz4.frame.compress(
             fp.read(), compression_level=compressionlevel))
-    if((compression == "lzo" or compression == "lzop") and compression in compressionsupport):
+    elif((compression == "lzo" or compression == "lzop") and compression in compressionsupport):
         catfp = BytesIO()
         if(compressionlevel is None):
             compressionlevel = 9
         else:
             compressionlevel = int(compressionlevel)
         catfp.write(lzo.compress(fp.read(), compresslevel=compressionlevel))
-    if(compression == "zstd" and compression in compressionsupport):
+    elif(compression == "zstd" and compression in compressionsupport):
         catfp = BytesIO()
         if(compressionlevel is None):
             compressionlevel = 9
@@ -3629,7 +3637,7 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
             compressionlevel = int(compressionlevel)
         compressor = zstandard.ZstdCompressor(compressionlevel, threads=get_default_threads())
         catfp.write(compressor.compress(fp.read()))
-    if(compression == "lzma" and compression in compressionsupport):
+    elif(compression == "lzma" and compression in compressionsupport):
         catfp = BytesIO()
         if(compressionlevel is None):
             compressionlevel = 9
@@ -3639,7 +3647,7 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
             catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}]))
         except (NotImplementedError, lzma.LZMAError):
             catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE))
-    if(compression == "xz" and compression in compressionsupport):
+    elif(compression == "xz" and compression in compressionsupport):
         catfp = BytesIO()
         if(compressionlevel is None):
             compressionlevel = 9
@@ -3649,14 +3657,16 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
             catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}]))
         except (NotImplementedError, lzma.LZMAError):
             catfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ))
-    if(compression == "zlib" and compression in compressionsupport):
+    elif(compression == "zlib" and compression in compressionsupport):
         catfp = BytesIO()
         if(compressionlevel is None):
             compressionlevel = 9
         else:
             compressionlevel = int(compressionlevel)
         catfp.write(zlib.compress(fp.read(), compressionlevel))
-    if(compression == "auto" or compression is None):
+    elif(compression == "auto" or compression is None):
+        catfp = fp
+    else:
         catfp = fp
     catfp.seek(0, 0)
     return catfp
