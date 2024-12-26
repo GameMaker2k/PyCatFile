@@ -1795,7 +1795,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, ski
     else:
         fcontents.seek(0, 0)
         if(uncompress):
-            fcontents = UncompressArchiveFile(fcontents, formatspecs)
+            fcontents = UncompressBytesAltFPFP(fcontents, formatspecs)
     fcontentend = fp.tell()
     if(re.findall("^\\+([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile.replace("+", ""))
@@ -1908,7 +1908,7 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, contentasfile
     else:
         fcontents.seek(0, 0)
         if(uncompress):
-            fcontents = UncompressArchiveFile(fcontents, formatspecs)
+            fcontents = UncompressBytesAltFP(fcontents, formatspecs)
             fcontents.seek(0, 0)
             fccs = GetFileChecksum(
                 fcontents.read(), HeaderOut[-3].lower(), False, formatspecs)
@@ -2030,7 +2030,7 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
     else:
         fcontents.seek(0, 0)
         if(uncompress):
-            fcontents = UncompressArchiveFile(fcontents, formatspecs)
+            fcontents = UncompressBytesAltFP(fcontents, formatspecs)
             fcontents.seek(0, 0)
     fcontentend = fp.tell() - 1
     if(re.findall("^\\+([0-9]+)", fseeknextfile)):
@@ -2306,7 +2306,7 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
-        fp = UncompressArchiveFile(fp, formatspecs)
+        fp = UncompressBytesAltFP(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(checkcompressfile != "catfile" and checkcompressfile != formatspecs['format_lower']):
             return False
@@ -2320,13 +2320,13 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
         else:
             shutil.copyfileobj(sys.stdin, fp)
         fp.seek(0, 0)
-        fp = UncompressArchiveFile(fp, formatspecs)
+        fp = UncompressBytesAltFP(fp, formatspecs)
         if(not fp):
             return False
         fp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         fp = download_file_from_internet_file(infile)
-        fp = UncompressArchiveFile(fp, formatspecs)
+        fp = UncompressBytesAltFP(fp, formatspecs)
         fp.seek(0, 0)
         if(not fp):
             return False
@@ -2369,7 +2369,7 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
-        fp = UncompressArchiveFile(fp, formatspecs)
+        fp = UncompressBytesAltFP(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(checkcompressfile != "catfile" and checkcompressfile != formatspecs['format_lower']):
             return False
@@ -2383,13 +2383,13 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
         else:
             shutil.copyfileobj(sys.stdin, fp)
         fp.seek(0, 0)
-        fp = UncompressArchiveFile(fp, formatspecs)
+        fp = UncompressBytesAltFP(fp, formatspecs)
         if(not fp):
             return False
         fp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         fp = download_file_from_internet_file(infile)
-        fp = UncompressArchiveFile(fp, formatspecs)
+        fp = UncompressBytesAltFP(fp, formatspecs)
         fp.seek(0, 0)
         if(not fp):
             return False
@@ -3285,6 +3285,16 @@ def CheckCompressionTypeFromString(instring, formatspecs=__file_format_dict__, c
     return CheckCompressionType(instringsfile, formatspecs, closefp)
 
 
+def CheckCompressionTypeFromBytes(instring, formatspecs=__file_format_dict__, closefp=True):
+    formatspecs = FormatSpecsListToDict(formatspecs)
+    try:
+        instringsfile = BytesIO(instring)
+    except TypeError:
+        instringsfile = BytesIO(instring.decode("UTF-8"))
+    return CheckCompressionType(instringsfile, formatspecs, closefp)
+
+
+
 def GetCompressionMimeType(infile, formatspecs=__file_format_dict__):
     formatspecs = FormatSpecsListToDict(formatspecs)
     compresscheck = CheckCompressionType(fp, formatspecs, False)
@@ -3363,7 +3373,7 @@ def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
         if(compresscheck == "bzip2" and compresscheck in compressionsupport):
             filefp = bz2.open(infile, mode)
         if(compresscheck == "zstd" and compresscheck in compressionsupport):
-            decompressor = zstandard.ZstdDecompressor(threads=get_default_threads())
+            decompressor = zstandard.ZstdDecompressor()
             filefp = decompressor.open(infile, mode)
         if(compresscheck == "lz4" and compresscheck in compressionsupport):
             filefp = lz4.frame.open(infile, mode)
@@ -3386,14 +3396,14 @@ def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
     return filefp
 
 
-def UncompressString(infile):
+def UncompressString(infile, formatspecs=__file_format_dict__):
     compresscheck = CheckCompressionTypeFromString(infile, formatspecs, False)
     if(compresscheck == "gzip" and compresscheck in compressionsupport):
         fileuz = GzipDecompressData(infile)
     if(compresscheck == "bzip2" and compresscheck in compressionsupport):
         fileuz = BzipDecompressData(infile)
     if(compresscheck == "zstd" and compresscheck in compressionsupport):
-        decompressor = zstandard.ZstdDecompressor(threads=get_default_threads())
+        decompressor = zstandard.ZstdDecompressor()
         fileuz = decompressor.decompress(infile)
     if(compresscheck == "lz4" and compresscheck in compressionsupport):
         fileuz = lz4.frame.decompress(infile)
@@ -3410,9 +3420,60 @@ def UncompressString(infile):
     return fileuz
 
 
-def UncompressStringAlt(infile):
+def UncompressStringAlt(instring, formatspecs=__file_format_dict__):
     filefp = StringIO()
-    outstring = UncompressString(infile)
+    outstring = UncompressString(instring, formatspecs)
+    filefp.write(outstring)
+    filefp.seek(0, 0)
+    return filefp
+
+def UncompressStringAltFP(fp, formatspecs=__file_format_dict__):
+    if(not hasattr(fp, "read")):
+        return False
+    filefp = StringIO()
+    fp.seek(0, 0)
+    outstring = UncompressString(fp.read(), formatspecs)
+    filefp.write(outstring)
+    filefp.seek(0, 0)
+    return filefp
+
+
+def UncompressBytes(infile, formatspecs=__file_format_dict__):
+    compresscheck = CheckCompressionTypeFromBytes(infile, formatspecs, False)
+    if(compresscheck == "gzip" and compresscheck in compressionsupport):
+        fileuz = GzipDecompressData(infile)
+    if(compresscheck == "bzip2" and compresscheck in compressionsupport):
+        fileuz = BzipDecompressData(infile)
+    if(compresscheck == "zstd" and compresscheck in compressionsupport):
+        decompressor = zstandard.ZstdDecompressor()
+        fileuz = decompressor.decompress(infile)
+    if(compresscheck == "lz4" and compresscheck in compressionsupport):
+        fileuz = lz4.frame.decompress(infile)
+    if((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
+        fileuz = lzo.decompress(infile)
+    if((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
+        fileuz = lzma.decompress(infile)
+    if(compresscheck == "zlib" and compresscheck in compressionsupport):
+        fileuz = zlib.decompress(infile)
+    if(not compresscheck):
+        fileuz = infile
+    return fileuz
+
+
+def UncompressBytesAlt(inbytes, formatspecs=__file_format_dict__):
+    filefp = BytesIO()
+    outstring = UncompressBytes(inbytes, formatspecs)
+    filefp.write(outstring)
+    filefp.seek(0, 0)
+    return filefp
+
+
+def UncompressBytesAltFP(fp, formatspecs=__file_format_dict__):
+    if(not hasattr(fp, "read")):
+        return False
+    filefp = BytesIO()
+    fp.seek(0, 0)
+    outstring = UncompressBytes(fp.read(), formatspecs)
     filefp.write(outstring)
     filefp.seek(0, 0)
     return filefp
@@ -3469,7 +3530,7 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
     if(py7zr_support and compresscheck == "7zipfile" and py7zr.is_7zfile(infile)):
         return "7zipfile"
     if(hasattr(infile, "read") or hasattr(infile, "write")):
-        catfp = UncompressArchiveFile(infile, formatspecs['format_lower'])
+        catfp = UncompressBytesAltFP(infile, formatspecs['format_lower'])
     else:
         try:
             if(compresscheck == "gzip" and compresscheck in compressionsupport):
@@ -5170,7 +5231,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         catfp = infile
         catfp.seek(0, 0)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        catfp = UncompressBytesAltFP(catfp, formatspecs)
         checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True)
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
             return TarFileToArray(infile, seekto, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
@@ -5192,7 +5253,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         else:
             shutil.copyfileobj(sys.stdin, catfp)
         catfp.seek(0, 0)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        catfp = UncompressBytesAltFP(catfp, formatspecs)
         if(not catfp):
             return False
         catfp.seek(0, 0)
@@ -5200,14 +5261,14 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         catfp = BytesIO()
         catfp.write(infile)
         catfp.seek(0, 0)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        catfp = UncompressBytesAltFP(catfp, formatspecs)
         if(not catfp):
             return False
         catfp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         catfp = download_file_from_internet_file(infile)
         catfp.seek(0, 0)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        catfp = UncompressBytesAltFP(catfp, formatspecs)
         if(not catfp):
             return False
         catfp.seek(0, 0)
@@ -5437,7 +5498,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         catfp = infile
         catfp.seek(0, 0)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        catfp = UncompressBytesAltFP(catfp, formatspecs)
         checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True)
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
             return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
@@ -5459,7 +5520,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
         else:
             shutil.copyfileobj(sys.stdin, catfp)
         catfp.seek(0, 0)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        catfp = UncompressBytesAltFP(catfp, formatspecs)
         if(not catfp):
             return False
         catfp.seek(0, 0)
@@ -5467,13 +5528,13 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
         catfp = BytesIO()
         catfp.write(infile)
         catfp.seek(0, 0)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        catfp = UncompressBytesAltFP(catfp, formatspecs)
         if(not catfp):
             return False
         catfp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         catfp = download_file_from_internet_file(infile)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        catfp = UncompressBytesAltFP(catfp, formatspecs)
         catfp.seek(0, 0)
         if(not catfp):
             return False
@@ -5717,7 +5778,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         catfp = infile
         catfp.seek(0, 0)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        catfp = UncompressBytesAltFP(catfp, formatspecs)
         checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True)
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
             return TarFileToArray(infile, 0, 0, False, True, False, formatspecs, returnfp)
@@ -5739,7 +5800,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         else:
             shutil.copyfileobj(sys.stdin, catfp)
         catfp.seek(0, 0)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        catfp = UncompressBytesAltFP(catfp, formatspecs)
         if(not catfp):
             return False
         catfp.seek(0, 0)
@@ -5747,13 +5808,13 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         catfp = BytesIO()
         catfp.write(infile)
         catfp.seek(0, 0)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        catfp = UncompressBytesAltFP(catfp, formatspecs)
         if(not catfp):
             return False
         catfp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         catfp = download_file_from_internet_file(infile)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        catfp = UncompressBytesAltFP(catfp, formatspecs)
         catfp.seek(0, 0)
         if(not catfp):
             return False
@@ -6004,7 +6065,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         catfp = infile
         catfp.seek(0, 0)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        catfp = UncompressBytesAltFP(catfp, formatspecs)
         checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True)
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
             return TarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
@@ -6026,7 +6087,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         else:
             shutil.copyfileobj(sys.stdin, catfp)
         catfp.seek(0, 0)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        catfp = UncompressBytesAltFP(catfp, formatspecs)
         if(not catfp):
             return False
         catfp.seek(0, 0)
@@ -6034,13 +6095,13 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         catfp = BytesIO()
         catfp.write(infile)
         catfp.seek(0, 0)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        catfp = UncompressBytesAltFP(catfp, formatspecs)
         if(not catfp):
             return False
         catfp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         catfp = download_file_from_internet_file(infile)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        catfp = UncompressBytesAltFP(catfp, formatspecs)
         catfp.seek(0, 0)
         if(not catfp):
             return False
@@ -6308,7 +6369,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
             else:
                 catfcontents.seek(0, 0)
                 if(uncompress):
-                    catfcontents = UncompressArchiveFile(
+                    catfcontents = UncompressBytesAltFP(
                         catfcontents, formatspecs)
                     catfcontents.seek(0, 0)
                     catfccs = GetFileChecksum(
@@ -9375,7 +9436,7 @@ def download_file_from_internet_file(url, headers=geturls_headers_pycatfile_pyth
 def download_file_from_internet_uncompress_file(url, headers=geturls_headers_pycatfile_python_alt, formatspecs=__file_format_dict__):
     formatspecs = FormatSpecsListToDict(formatspecs)
     fp = download_file_from_internet_file(url)
-    fp = UncompressArchiveFile(fp, formatspecs)
+    fp = UncompressBytesAltFP(fp, formatspecs)
     fp.seek(0, 0)
     if(not fp):
         return False
@@ -9401,7 +9462,7 @@ def download_file_from_internet_string(url, headers=geturls_headers_pycatfile_py
 def download_file_from_internet_uncompress_string(url, headers=geturls_headers_pycatfile_python_alt, formatspecs=__file_format_dict__):
     formatspecs = FormatSpecsListToDict(formatspecs)
     fp = download_file_from_internet_string(url)
-    fp = UncompressArchiveFile(fp, formatspecs)
+    fp = UncompressBytesAltFP(fp, formatspecs)
     fp.seek(0, 0)
     if(not fp):
         return False
