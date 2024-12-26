@@ -3321,7 +3321,7 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
     elif(compresscheck == "bzip2" and compresscheck in compressionsupport):
         catfp = bz2.BZ2File(fp)
     elif(compresscheck == "zstd" and compresscheck in compressionsupport):
-        catfp = zstd.ZstdDecompressor().stream_reader(fp)
+        catfp = zstandard.ZstdDecompressor().stream_reader(fp)
     elif(compresscheck == "lz4" and compresscheck in compressionsupport):
         catfp = lz4.frame.LZ4FrameFile(fp, mode='rb')
     elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
