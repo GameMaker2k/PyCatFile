@@ -3316,7 +3316,7 @@ def GetCompressionMimeType(infile, formatspecs=__file_format_dict__):
         return archivefile_xz_mimetype
     elif(compresscheck == "catfile" or compresscheck == "cat" or compresscheck == formatspecs['format_lower']):
         return archivefile_cat_mimetype
-    else
+    else:
         return False
     if(not compresscheck):
         return False
