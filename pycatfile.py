@@ -384,6 +384,10 @@ try:
     compressionsupport.append("lzop")
 except ImportError:
     pass
+"""
+   Disabling zstandard as it is pretty much
+   useless here as it does not support back
+   seeking or seeking to 0
 try:
     import zstandard
     compressionsupport.append("zst")
@@ -391,6 +395,7 @@ try:
     compressionsupport.append("zstandard")
 except ImportError:
     pass
+"""
 try:
     import lzma
     compressionsupport.append("lzma")
