@@ -386,6 +386,7 @@ except ImportError:
     pass
 try:
     import zstandard
+    compressionsupport.append("zst")
     compressionsupport.append("zstd")
     compressionsupport.append("zstandard")
 except ImportError:
@@ -402,6 +403,8 @@ except ImportError:
     except ImportError:
         pass
 compressionsupport.append("zlib")
+compressionsupport.append("zl")
+compressionsupport.append("zz")
 
 compressionlist = ['auto']
 compressionlistalt = []
