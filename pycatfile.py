@@ -3430,6 +3430,10 @@ def UncompressStringAlt(instring, formatspecs=__file_format_dict__):
 def UncompressStringAltFP(fp, formatspecs=__file_format_dict__):
     if(not hasattr(fp, "read")):
         return False
+    prechck = CheckCompressionType(fp, formatspecs, False)
+    fp.seek(0, 0)
+    if(prechck!="zstd"):
+        return UncompressArchiveFile(fp, formatspecs)
     filefp = StringIO()
     fp.seek(0, 0)
     outstring = UncompressString(fp.read(), formatspecs)
@@ -3471,6 +3475,10 @@ def UncompressBytesAlt(inbytes, formatspecs=__file_format_dict__):
 def UncompressBytesAltFP(fp, formatspecs=__file_format_dict__):
     if(not hasattr(fp, "read")):
         return False
+    prechck = CheckCompressionType(fp, formatspecs, False)
+    fp.seek(0, 0)
+    if(prechck!="zstd"):
+        return UncompressArchiveFile(fp, formatspecs)
     filefp = BytesIO()
     fp.seek(0, 0)
     outstring = UncompressBytes(fp.read(), formatspecs)
