@@ -390,7 +390,13 @@ try:
     compressionsupport.append("zstd")
     compressionsupport.append("zstandard")
 except ImportError:
-    pass
+    try:
+        import pyzstd.zstdfile
+        compressionsupport.append("zst")
+        compressionsupport.append("zstd")
+        compressionsupport.append("zstandard")
+    except ImportError:
+        pass
 try:
     import lzma
     compressionsupport.append("lzma")
@@ -3523,7 +3529,12 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
     elif(compresscheck == "bzip2" and compresscheck in compressionsupport):
         catfp = bz2.BZ2File(fp)
     elif(compresscheck == "zstd" and compresscheck in compressionsupport):
-        catfp = ZstdFile(fileobj=fp, mode="rb")
+        if 'zstandard' in sys.modules:
+            catfp = ZstdFile(fileobj=fp, mode="rb")
+        elif 'pyzstd' in sys.modules:
+            catfp = pyzstd.zstdfile.ZstdFile(fileobj=fp, mode="rb")
+        else:
+            return Flase
     elif(compresscheck == "lz4" and compresscheck in compressionsupport):
         catfp = lz4.frame.LZ4FrameFile(fp, mode='rb')
     elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
@@ -3565,7 +3576,12 @@ def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
         elif(compresscheck == "bzip2" and compresscheck in compressionsupport):
             filefp = bz2.open(infile, mode)
         elif(compresscheck == "zstd" and compresscheck in compressionsupport):
-            filefp = ZstdFile(infile, mode=mode)
+            if 'zstandard' in sys.modules:
+                filefp = ZstdFile(infile, mode=mode)
+            elif 'pyzstd' in sys.modules:
+                filefp = pyzstd.zstdfile.ZstdFile(infile, mode=mode)
+            else:
+                return Flase
         elif(compresscheck == "lz4" and compresscheck in compressionsupport):
             filefp = lz4.frame.open(infile, mode)
         elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
@@ -3745,7 +3761,12 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
             elif(compresscheck == "lz4" and compresscheck in compressionsupport):
                 catfp = lz4.frame.open(infile, "rb")
             elif(compresscheck == "zstd" and compresscheck in compressionsupport):
-                catfp = ZstdFile(infile, mode="rb")
+                if 'zstandard' in sys.modules:
+                    catfp = ZstdFile(infile, mode="rb")
+                elif 'pyzstd' in sys.modules:
+                    catfp = pyzstd.zstdfile.ZstdFile(infile, mode="rb")
+                else:
+                    return Flase
             elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
                 catfp = lzo.open(infile, "rb")
             elif((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
@@ -3886,7 +3907,12 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
         elif(fextname == ".bz2" and "bzip2" in compressionsupport):
             outfp = bz2.open(outfile, mode, compressionlevel)
         elif(fextname == ".zst" and "zstandard" in compressionsupport):
-            outfp = ZstdFile(outfile, mode=mode, level=compressionlevel)
+            if 'zstandard' in sys.modules:
+                outfp = ZstdFile(outfile, mode=mode, level=compressionlevel)
+            elif 'pyzstd' in sys.modules:
+                outfp = pyzstd.zstdfile.ZstdFile(outfile, mode=mode, level=compressionlevel)
+            else:
+                return Flase
         elif(fextname == ".xz" and "xz" in compressionsupport):
             try:
                 outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}])
