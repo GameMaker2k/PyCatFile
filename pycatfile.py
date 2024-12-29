@@ -1991,7 +1991,12 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, ski
     else:
         fcontents.seek(0, 0)
         if(uncompress):
-            fcontents = UncompressArchiveFile(fcontents, formatspecs)
+            cfcontents = UncompressArchiveFile(fcontents, formatspecs)
+            cfcontents.seek(0, 0)
+            cfcontents.seek(0, 0)
+            shutil.copyfileobj(cfcontents, fcontents)
+            cfcontents.close()
+            fcontents.seek(0, 0)
     fcontentend = fp.tell()
     if(re.findall("^\\+([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile.replace("+", ""))
@@ -2104,7 +2109,11 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, contentasfile
     else:
         fcontents.seek(0, 0)
         if(uncompress):
-            fcontents = UncompressArchiveFile(fcontents, formatspecs)
+            cfcontents = UncompressArchiveFile(fcontents, formatspecs)
+            cfcontents.seek(0, 0)
+            cfcontents.seek(0, 0)
+            shutil.copyfileobj(cfcontents, fcontents)
+            cfcontents.close()
             fcontents.seek(0, 0)
             fccs = GetFileChecksum(
                 fcontents.read(), HeaderOut[-3].lower(), False, formatspecs)
@@ -2226,7 +2235,11 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
     else:
         fcontents.seek(0, 0)
         if(uncompress):
-            fcontents = UncompressArchiveFile(fcontents, formatspecs)
+            cfcontents = UncompressArchiveFile(fcontents, formatspecs)
+            cfcontents.seek(0, 0)
+            cfcontents.seek(0, 0)
+            shutil.copyfileobj(cfcontents, fcontents)
+            cfcontents.close()
             fcontents.seek(0, 0)
     fcontentend = fp.tell() - 1
     if(re.findall("^\\+([0-9]+)", fseeknextfile)):
@@ -3529,7 +3542,7 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
     elif(compresscheck == "bzip2" and compresscheck in compressionsupport):
         catfp = bz2.BZ2File(fp)
     elif(compresscheck == "zstd" and compresscheck in compressionsupport):
-        if 'zstandard' in sys.modules and 'pyzstd' not in sys.modules:
+        if 'zstandard' in sys.modules:
             catfp = ZstdFile(fileobj=fp, mode="rb")
         elif 'pyzstd' in sys.modules:
             catfp = pyzstd.zstdfile.ZstdFile(fileobj=fp, mode="rb")
@@ -3576,7 +3589,7 @@ def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
         elif(compresscheck == "bzip2" and compresscheck in compressionsupport):
             filefp = bz2.open(infile, mode)
         elif(compresscheck == "zstd" and compresscheck in compressionsupport):
-            if 'zstandard' in sys.modules and 'pyzstd' not in sys.modules:
+            if 'zstandard' in sys.modules:
                 filefp = ZstdFile(infile, mode=mode)
             elif 'pyzstd' in sys.modules:
                 filefp = pyzstd.zstdfile.ZstdFile(infile, mode=mode)
@@ -3761,7 +3774,7 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
             elif(compresscheck == "lz4" and compresscheck in compressionsupport):
                 catfp = lz4.frame.open(infile, "rb")
             elif(compresscheck == "zstd" and compresscheck in compressionsupport):
-                if 'zstandard' in sys.modules and 'pyzstd' not in sys.modules:
+                if 'zstandard' in sys.modules:
                     catfp = ZstdFile(infile, mode="rb")
                 elif 'pyzstd' in sys.modules:
                     catfp = pyzstd.zstdfile.ZstdFile(infile, mode="rb")
@@ -3907,7 +3920,7 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
         elif(fextname == ".bz2" and "bzip2" in compressionsupport):
             outfp = bz2.open(outfile, mode, compressionlevel)
         elif(fextname == ".zst" and "zstandard" in compressionsupport):
-            if 'zstandard' in sys.modules and 'pyzstd' not in sys.modules:
+            if 'zstandard' in sys.modules:
                 outfp = ZstdFile(outfile, mode=mode, level=compressionlevel)
             elif 'pyzstd' in sys.modules:
                 outfp = pyzstd.zstdfile.ZstdFile(outfile, mode=mode, level=compressionlevel)
@@ -6601,8 +6614,12 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
             else:
                 catfcontents.seek(0, 0)
                 if(uncompress):
-                    catfcontents = UncompressArchiveFile(
+                    catcfcontents = UncompressArchiveFile(
                         catfcontents, formatspecs)
+                    catcfcontents.seek(0, 0)
+                    catfcontents = BytesIO()
+                    shutil.copyfileobj(catcfcontents, catfcontents)
+                    catcfcontents.close()
                     catfcontents.seek(0, 0)
                     catfccs = GetFileChecksum(
                         catfcontents.read(), catheaderdata[-3].lower(), False, formatspecs)
