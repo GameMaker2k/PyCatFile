@@ -319,7 +319,7 @@ __version_date_info__ = (2024, 12, 26, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: 24f3920ef48349d0cd7357b648d3f12dc9944c12 $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -2272,19 +2272,27 @@ def ReadFileDataBySizeWithContent(fp, listonly=False, uncompress=True, skipcheck
     curloc = fp.tell()
     if(curloc > 0):
         fp.seek(0, 0)
-    catheader = ReadFileHeaderData(fp, 5, delimiter)
+    catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+    catstring = catfp.read(len(formatspecs['format_magic']+catheaderver)).decode("UTF-8")
+    catdelszie = len(formatspecs['format_delimiter'])
+    catdel = catfp.read(catdelszie).decode("UTF-8")
+    if(catstring != formatspecs['format_magic']+catheaderver):
+        return False
+    if(catdel != formatspecs['format_delimiter']):
+        return False
+    catheader = ReadFileHeaderData(fp, 4, delimiter)
     if(curloc > 0):
         fp.seek(curloc, 0)
     headercheck = ValidateHeaderChecksum(
-        catheader[:-1], catheader[3], catheader[4], formatspecs)
-    newfcs = GetHeaderChecksum(catheader[:-2], catheader[3], True, formatspecs)
+        catheader[:-1], catheader[2], catheader[3], formatspecs)
+    newfcs = GetHeaderChecksum(catheader[:-2], catheader[2], True, formatspecs)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
         VerbosePrintOut("'" + str(newfcs) + "' != " +
-                        "'" + str(catheader[4]) + "'")
+                        "'" + str(catheader[3]) + "'")
         return False
-    fnumfiles = int(catheader[2], 16)
+    fnumfiles = int(catheader[1], 16)
     countnum = 0
     flist = []
     while(countnum < fnumfiles):
@@ -2305,25 +2313,25 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
     curloc = fp.tell()
     if(curloc > 0):
         fp.seek(0, 0)
-    catheader = ReadFileHeaderData(fp, 5, delimiter)
+
+    catheader = ReadFileHeaderData(fp, 4, delimiter)
     if(curloc > 0):
         fp.seek(curloc, 0)
     headercheck = ValidateHeaderChecksum(
-        catheader[:-1], catheader[3], catheader[4], formatspecs)
-    newfcs = GetHeaderChecksum(catheader[:-2], catheader[3], True, formatspecs)
+        catheader[:-1], catheader[2], catheader[3], formatspecs)
+    newfcs = GetHeaderChecksum(catheader[:-2], catheader[2], True, formatspecs)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
         VerbosePrintOut("'" + str(newfcs) + "' != " +
-                        "'" + str(catheader[4]) + "'")
+                        "'" + str(catheader[3]) + "'")
         return False
-    catstring = catheader[0]
     catversion = re.findall("([\\d]+)", catstring)
-    catversions = re.search('(.*?)(\\d+)', catstring).groups()
-    fprenumfiles = catheader[2]
+    fostype = catheader[0]
+    fprenumfiles = catheader[1]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[3]
-    fprechecksum = catheader[4]
+    fprechecksumtype = catheader[2]
+    fprechecksum = catheader[3]
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1],
                'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': []}
     if(seekstart < 0 and seekstart > fnumfiles):
@@ -2410,25 +2418,32 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
     curloc = fp.tell()
     if(curloc > 0):
         fp.seek(0, 0)
-    catheader = ReadFileHeaderData(fp, 5, delimiter)
+    catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+    catstring = catfp.read(len(formatspecs['format_magic']+catheaderver)).decode("UTF-8")
+    catdelszie = len(formatspecs['format_delimiter'])
+    catdel = catfp.read(catdelszie).decode("UTF-8")
+    if(catstring != formatspecs['format_magic']+catheaderver):
+        return False
+    if(catdel != formatspecs['format_delimiter']):
+        return False
+    catheader = ReadFileHeaderData(fp, 4, delimiter)
     if(curloc > 0):
         fp.seek(curloc, 0)
     headercheck = ValidateHeaderChecksum(
-        catheader[:-1], catheader[3], catheader[4], formatspecs)
-    newfcs = GetHeaderChecksum(catheader[:-2], catheader[3], True, formatspecs)
+        catheader[:-1], catheader[2], catheader[3], formatspecs)
+    newfcs = GetHeaderChecksum(catheader[:-2], catheader[2], True, formatspecs)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
         VerbosePrintOut("'" + str(newfcs) + "' != " +
-                        "'" + str(catheader[4]) + "'")
+                        "'" + str(catheader[3]) + "'")
         return False
-    catstring = catheader[0]
     catversion = re.findall("([\\d]+)", catstring)
-    catversions = re.search('(.*?)(\\d+)', catstring).groups()
+    fostype = catheader[0]
     fprenumfiles = catheader[1]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[3]
-    fprechecksum = catheader[4]
+    fprechecksumtype = catheader[2]
+    fprechecksum = catheader[3]
     catlist = []
     if(seekstart < 0 and seekstart > fnumfiles):
         seekstart = 0
