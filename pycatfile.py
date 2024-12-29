@@ -3557,9 +3557,9 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
         catfp = lzma.LZMAFile(fp)
     elif(compresscheck == "zlib" and compresscheck in compressionsupport):
         catfp = ZlibFile(fileobj=fp, mode="rb")
-    if(compresscheck == "catfile" or compresscheck == formatspecs['format_lower']):
+    elif(compresscheck == "catfile" or compresscheck == formatspecs['format_lower']):
         catfp = fp
-    if(not compresscheck):
+    elif(not compresscheck):
         catfp = BytesIO()
         with fp as fpcontent:
             try:
