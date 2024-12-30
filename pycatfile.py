@@ -319,7 +319,7 @@ __version_date_info__ = (2024, 12, 26, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id: 24f3920ef48349d0cd7357b648d3f12dc9944c12 $"
+__revision_id__ = "$Id$"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -2332,8 +2332,8 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
     fnumfiles = int(fprenumfiles, 16)
     fprechecksumtype = catheader[2]
     fprechecksum = catheader[3]
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1],
-               'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': []}
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fostype': fostype,
+               'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'ffilelist': []}
     if(seekstart < 0 and seekstart > fnumfiles):
         seekstart = 0
     if(seekend == 0 or seekend > fnumfiles and seekend < seekstart):
@@ -5623,7 +5623,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         return False
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fostype': fostype,
-               'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}}
+               'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'ffilelist': {}}
     if(seekto >= fnumfiles):
         seekto = fnumfiles - 1
     if(seekto < 0):
@@ -5890,7 +5890,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
         return False
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fostype': fostype,
-               'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': {}}
+               'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'ffilelist': {}}
     seekto = fnumfiles - 1
     filefound = False
     if(seekto >= 0):
@@ -6456,8 +6456,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
                         "'" + str(catfileheadercshex) + "'")
         return False
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1],
-               'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'ffilelist': []}
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fostype': fostype,
+               'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'ffilelist': []}
     if(seekstart < 0 and seekstart > fnumfiles):
         seekstart = 0
     if(seekend == 0 or seekend > fnumfiles and seekend < seekstart):
@@ -6805,8 +6805,9 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
     fileheader = AppendNullByte(
         formatspecs['format_magic'] + fileheaderver, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
+    fostype = platform.system()
     fileheader = fileheader + \
-        AppendNullBytes([fnumfileshex, checksumtype],
+        AppendNullBytes([fostype, fnumfileshex, checksumtype],
                         formatspecs['format_delimiter'])
     catversion = re.findall("([\\d]+)", fileheader)
     catversions = re.search('(.*?)(\\d+)', fileheader).groups()
@@ -6815,8 +6816,9 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
     fileheader = fileheader + \
         AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
     fheadtell = len(fileheader)
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1],
-               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': []}
+    catheader = [fostype, fnumfileshex, checksumtype, catfileheadercshex]
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fostype': fostype,
+               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'frawheader': [formatspecs['format_magic'] + fileheaderver] + catheader, 'ffilelist': []}
     FullSizeFilesAlt = 0
     for curfname in GetDirList:
         catfhstart = fheadtell
@@ -7078,8 +7080,9 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
     fileheader = AppendNullByte(
         formatspecs['format_magic'] + fileheaderver, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
+    fostype = platform.system()
     fileheader = fileheader + \
-        AppendNullBytes([fnumfileshex, checksumtype],
+        AppendNullBytes([fostype, fnumfileshex, checksumtype],
                         formatspecs['format_delimiter'])
     catversion = re.findall("([\\d]+)", fileheader)
     catversions = re.search('(.*?)(\\d+)', fileheader).groups()
@@ -7088,8 +7091,9 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
     fileheader = fileheader + \
         AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
     fheadtell = len(fileheader)
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1],
-               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': []}
+    catheader = [fostype, fnumfileshex, checksumtype, catfileheadercshex]
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fostype': fostype,
+               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'frawheader': [formatspecs['format_magic'] + fileheaderver] + catheader, 'ffilelist': []}
     for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
         catfhstart = fheadtell
         if(re.findall("^[.|/]", member.name)):
@@ -7292,16 +7296,18 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
     catversion = re.findall("([\\d]+)", fileheader)
     catversions = re.search('(.*?)(\\d+)', fileheader).groups()
     fnumfileshex = format(int(fnumfiles), 'x').lower()
+    fostype = platform.system()
     fileheader = fileheader + \
-        AppendNullBytes([fnumfileshex, checksumtype],
+        AppendNullBytes([fostype, fnumfileshex, checksumtype],
                         formatspecs['format_delimiter'])
     catfileheadercshex = GetFileChecksum(
         fileheader, checksumtype, True, formatspecs)
     fileheader = fileheader + \
         AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
     fheadtell = len(fileheader)
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1],
-               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': []}
+    catheader = [fostype, fnumfileshex, checksumtype, catfileheadercshex]
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fostype': fostype,
+               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'frawheader': [formatspecs['format_magic'] + fileheaderver] + catheader, 'ffilelist': []}
     for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
         catfhstart = fheadtell
         if(re.findall("^[.|/]", member.filename)):
@@ -7513,16 +7519,18 @@ if(rarfile_support):
         catversion = re.findall("([\\d]+)", fileheader)
         catversions = re.search('(.*?)(\\d+)', fileheader).groups()
         fnumfileshex = format(int(fnumfiles), 'x').lower()
+        fostype = platform.system
         fileheader = fileheader + \
-            AppendNullBytes([fnumfileshex, checksumtype],
+            AppendNullBytes([fostype, fnumfileshex, checksumtype],
                             formatspecs['format_delimiter'])
         catfileheadercshex = GetFileChecksum(
             fileheader, checksumtype, True, formatspecs)
         fileheader = fileheader + \
             AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
         fheadtell = len(fileheader)
-        catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1],
-                   'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': []}
+        catheader = [fostype, fnumfileshex, checksumtype, catfileheadercshex]
+        catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fostype': fostype,
+                   'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'frawheader': [formatspecs['format_magic'] + fileheaderver] + catheader, 'ffilelist': []}
         for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
             catfhstart = fheadtell
             is_unix = False
@@ -7758,16 +7766,18 @@ if(py7zr_support):
         catversion = re.findall("([\\d]+)", fileheader)
         catversions = re.search('(.*?)(\\d+)', fileheader).groups()
         fnumfileshex = format(int(fnumfiles), 'x').lower()
+        fostype = platform.system
         fileheader = fileheader + \
-            AppendNullBytes([fnumfileshex, checksumtype],
+            AppendNullBytes([fostype, fnumfileshex, checksumtype],
                             formatspecs['format_delimiter'])
         catfileheadercshex = GetFileChecksum(
             fileheader, checksumtype, True, formatspecs)
         fileheader = fileheader + \
             AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
         fheadtell = len(fileheader)
-        catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1],
-                   'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'ffilelist': []}
+        catheader = [fostype, fnumfileshex, checksumtype, catfileheadercshex]
+        catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fversion': catversions[1], 'fostype': fostype,
+                   'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'frawheader': [formatspecs['format_magic'] + fileheaderver] + catheader, 'ffilelist': []}
         for member in sorted(szpfp.list(), key=lambda x: x.filename):
             catfhstart = fheadtell
             if(re.findall("^[.|/]", member.filename)):
