@@ -25,7 +25,6 @@ import sys
 import time
 import stat
 import zlib
-import codecs
 import base64
 import shutil
 import socket
@@ -94,6 +93,7 @@ except ImportError:
 # Windows-specific setup
 if os.name == 'nt':
     if sys.version_info[0] == 2:
+        import codecs
         sys.stdout = codecs.getwriter('UTF-8')(sys.stdout)
         sys.stderr = codecs.getwriter('UTF-8')(sys.stderr)
     else:
