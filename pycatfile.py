@@ -2824,7 +2824,7 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
     return fp
 
 
-def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], extradata=[], compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False):
+def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], extradata=[], compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False):
     if(not hasattr(fp, "write")):
         return False
     formatspecs = FormatSpecsListToDict(formatspecs)
@@ -3014,7 +3014,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                     ucfsize = fcontents.tell()
                     fcontents.seek(0, 0)
                     if(compression == "auto"):
-                        ilsize = len(compressionenable)
+                        ilsize = len(compressionuselist)
                         ilmin = 0
                         ilcsize = []
                         while(ilmin < ilsize):
@@ -3024,7 +3024,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
                             cfcontents = CompressArchiveFile(
-                                cfcontents, compressionenable[ilmin], compressionlevel, formatspecs)
+                                cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
                             if(cfcontents):
                                 cfcontents.seek(0, 2)
                                 ilcsize.append(cfcontents.tell())
@@ -3036,7 +3036,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                                     ilcsize.append(sys.maxsize)
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
-                        curcompression = compressionenable[ilcmin]
+                        curcompression = compressionuselist[ilcmin]
                     fcontents.seek(0, 0)
                     cfcontents = BytesIO()
                     shutil.copyfileobj(fcontents, cfcontents)
@@ -3059,7 +3059,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                     ucfsize = fcontents.tell()
                     fcontents.seek(0, 0)
                     if(compression == "auto"):
-                        ilsize = len(compressionenable)
+                        ilsize = len(compressionuselist)
                         ilmin = 0
                         ilcsize = []
                         while(ilmin < ilsize):
@@ -3069,7 +3069,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
                             cfcontents = CompressArchiveFile(
-                                cfcontents, compressionenable[ilmin], compressionlevel, formatspecs)
+                                cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
                             if(cfcontents):
                                 cfcontents.seek(0, 2)
                                 ilcsize.append(cfcontents.tell())
@@ -3081,7 +3081,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                                     ilcsize.append(sys.maxsize)
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
-                        curcompression = compressionenable[ilcmin]
+                        curcompression = compressionuselist[ilcmin]
                     fcontents.seek(0, 0)
                     cfcontents = BytesIO()
                     shutil.copyfileobj(fcontents, cfcontents)
@@ -3179,7 +3179,7 @@ def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, filevalues=[], ext
     return AppendListsWithContent(inlist, fp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs, verbose)
 
 
-def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         if(os.path.exists(outfile)):
@@ -3201,7 +3201,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
             compresswholefile = True
         catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
     catfp = AppendFilesWithContent(infiles, catfp, dirlistfromtxt, filevalues, extradata, compression,
-                                   compresswholefile, compressionlevel, compressionenable, followlink, checksumtype, formatspecs, verbose)
+                                   compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, formatspecs, verbose)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
@@ -4029,7 +4029,7 @@ def CheckSumSupportAlt(checkfor, guaranteed=True):
         return False
 
 
-def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     advancedlist = formatspecs['use_advanced_list']
     altinode = formatspecs['use_alt_inode']
@@ -4248,7 +4248,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
                     ucfsize = fcontents.tell()
                     fcontents.seek(0, 0)
                     if(compression == "auto"):
-                        ilsize = len(compressionenable)
+                        ilsize = len(compressionuselist)
                         ilmin = 0
                         ilcsize = []
                         while(ilmin < ilsize):
@@ -4258,7 +4258,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
                             cfcontents = CompressArchiveFile(
-                                cfcontents, compressionenable[ilmin], compressionlevel, formatspecs)
+                                cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
                             if(cfcontents):
                                 cfcontents.seek(0, 2)
                                 ilcsize.append(cfcontents.tell())
@@ -4270,7 +4270,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
                                     ilcsize.append(sys.maxsize)
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
-                        curcompression = compressionenable[ilcmin]
+                        curcompression = compressionuselist[ilcmin]
                     fcontents.seek(0, 0)
                     cfcontents = BytesIO()
                     shutil.copyfileobj(fcontents, cfcontents)
@@ -4295,7 +4295,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
                     ucfsize = fcontents.tell()
                     fcontents.seek(0, 0)
                     if(compression == "auto"):
-                        ilsize = len(compressionenable)
+                        ilsize = len(compressionuselist)
                         ilmin = 0
                         ilcsize = []
                         while(ilmin < ilsize):
@@ -4305,7 +4305,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
                             cfcontents = CompressArchiveFile(
-                                cfcontents, compressionenable[ilmin], compressionlevel, formatspecs)
+                                cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
                             if(cfcontents):
                                 cfcontents.seek(0, 2)
                                 ilcsize.append(cfcontents.tell())
@@ -4317,7 +4317,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
                                     ilcsize.append(sys.maxsize)
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
-                        curcompression = compressionenable[ilcmin]
+                        curcompression = compressionuselist[ilcmin]
                     fcontents.seek(0, 0)
                     cfcontents = BytesIO()
                     shutil.copyfileobj(fcontents, cfcontents)
@@ -4388,16 +4388,16 @@ if(hasattr(shutil, "register_archive_format")):
                           "Func", PackArchiveFileFunc)
 
 
-def PackArchiveFileFromDirList(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromDirList(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
-    return PackArchiveFile(infiles, outfile, dirlistfromtxt, compression, compresswholefile, compressionlevel, compressionenable, followlink, checksumtype, extradata, formatspecs, verbose, returnfp)
+    return PackArchiveFile(infiles, outfile, dirlistfromtxt, compression, compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, extradata, formatspecs, verbose, returnfp)
 
 
 create_alias_function("Pack", __file_format_name__,
                       "FromDirList", PackArchiveFileFromDirList)
 
 
-def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
@@ -4561,7 +4561,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
                 ucfsize = fcontents.tell()
                 fcontents.seek(0, 0)
                 if(compression == "auto"):
-                    ilsize = len(compressionenable)
+                    ilsize = len(compressionuselist)
                     ilmin = 0
                     ilcsize = []
                     while(ilmin < ilsize):
@@ -4571,7 +4571,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
                         fcontents.seek(0, 0)
                         cfcontents.seek(0, 0)
                         cfcontents = CompressArchiveFile(
-                            cfcontents, compressionenable[ilmin], compressionlevel, formatspecs)
+                            cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
                         if(cfcontents):
                             cfcontents.seek(0, 2)
                             ilcsize.append(cfcontents.tell())
@@ -4583,7 +4583,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
                                 ilcsize.append(sys.maxsize)
                         ilmin = ilmin + 1
                     ilcmin = ilcsize.index(min(ilcsize))
-                    curcompression = compressionenable[ilcmin]
+                    curcompression = compressionuselist[ilcmin]
                 fcontents.seek(0, 0)
                 cfcontents = BytesIO()
                 shutil.copyfileobj(fcontents, cfcontents)
@@ -4650,7 +4650,7 @@ create_alias_function("Pack", __file_format_name__,
                       "FromTarFile", PackArchiveFileFromTarFile)
 
 
-def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
@@ -4840,7 +4840,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
                 ucfsize = fcontents.tell()
                 fcontents.seek(0, 0)
                 if(compression == "auto"):
-                    ilsize = len(compressionenable)
+                    ilsize = len(compressionuselist)
                     ilmin = 0
                     ilcsize = []
                     while(ilmin < ilsize):
@@ -4850,13 +4850,13 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
                         fcontents.seek(0, 0)
                         cfcontents.seek(0, 0)
                         cfcontents = CompressArchiveFile(
-                            cfcontents, compressionenable[ilmin], compressionlevel, formatspecs)
+                            cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
                         cfcontents.seek(0, 2)
                         ilcsize.append(cfcontents.tell())
                         cfcontents.close()
                         ilmin = ilmin + 1
                     ilcmin = ilcsize.index(min(ilcsize))
-                    curcompression = compressionenable[ilcmin]
+                    curcompression = compressionuselist[ilcmin]
                 fcontents.seek(0, 0)
                 cfcontents = BytesIO()
                 shutil.copyfileobj(fcontents, cfcontents)
@@ -4923,11 +4923,11 @@ create_alias_function("Pack", __file_format_name__,
                       "FromZipFile", PackArchiveFileFromZipFile)
 
 if(not rarfile_support):
-    def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         return False
 
 if(rarfile_support):
-    def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         formatspecs = FormatSpecsListToDict(formatspecs)
         if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
             outfile = RemoveWindowsPath(outfile)
@@ -5138,7 +5138,7 @@ if(rarfile_support):
                     ucfsize = fcontents.tell()
                     fcontents.seek(0, 0)
                     if(compression == "auto"):
-                        ilsize = len(compressionenable)
+                        ilsize = len(compressionuselist)
                         ilmin = 0
                         ilcsize = []
                         while(ilmin < ilsize):
@@ -5148,7 +5148,7 @@ if(rarfile_support):
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
                             cfcontents = CompressArchiveFile(
-                                cfcontents, compressionenable[ilmin], compressionlevel, formatspecs)
+                                cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
                             if(cfcontents):
                                 cfcontents.seek(0, 2)
                                 ilcsize.append(cfcontents.tell())
@@ -5160,7 +5160,7 @@ if(rarfile_support):
                                     ilcsize.append(sys.maxsize)
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
-                        curcompression = compressionenable[ilcmin]
+                        curcompression = compressionuselist[ilcmin]
                     fcontents.seek(0, 0)
                     cfcontents = BytesIO()
                     shutil.copyfileobj(fcontents, cfcontents)
@@ -5226,11 +5226,11 @@ create_alias_function("Pack", __file_format_name__,
                       "FromRarFile", PackArchiveFileFromRarFile)
 
 if(not py7zr_support):
-    def PackArchiveFileFromSevenZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromSevenZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         return False
 
 if(py7zr_support):
-    def PackArchiveFileFromSevenZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromSevenZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         formatspecs = FormatSpecsListToDict(formatspecs)
         if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
             outfile = RemoveWindowsPath(outfile)
@@ -5374,7 +5374,7 @@ if(py7zr_support):
                     ucfsize = fcontents.tell()
                     fcontents.seek(0, 0)
                     if(compression == "auto"):
-                        ilsize = len(compressionenable)
+                        ilsize = len(compressionuselist)
                         ilmin = 0
                         ilcsize = []
                         while(ilmin < ilsize):
@@ -5384,7 +5384,7 @@ if(py7zr_support):
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
                             cfcontents = CompressArchiveFile(
-                                cfcontents, compressionenable[ilmin], compressionlevel, formatspecs)
+                                cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
                             if(cfcontents):
                                 cfcontents.seek(0, 2)
                                 ilcsize.append(cfcontents.tell())
@@ -5396,7 +5396,7 @@ if(py7zr_support):
                                     ilcsize.append(sys.maxsize)
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
-                        curcompression = compressionenable[ilcmin]
+                        curcompression = compressionuselist[ilcmin]
                     fcontents.seek(0, 0)
                     cfcontents = BytesIO()
                     shutil.copyfileobj(fcontents, cfcontents)
@@ -5462,20 +5462,20 @@ create_alias_function("Pack", __file_format_name__,
                       "FromSevenZipFile", PackArchiveFileFromSevenZipFile)
 
 
-def PackArchiveFileFromInFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromInFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
     if(verbose):
         logging.basicConfig(format="%(message)s",
                             stream=sys.stdout, level=logging.DEBUG)
     if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-        return PackArchiveFileFromTarFile(infile, outfile, compression, compresswholefile, compressionlevel, compressionenable, checksumtype, extradata, formatspecs, verbose, returnfp)
+        return PackArchiveFileFromTarFile(infile, outfile, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, formatspecs, verbose, returnfp)
     elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-        return PackArchiveFileFromZipFile(infile, outfile, compression, compresswholefile, compressionlevel, compressionenable, checksumtype, extradata, formatspecs, verbose, returnfp)
+        return PackArchiveFileFromZipFile(infile, outfile, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, formatspecs, verbose, returnfp)
     elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-        return PackArchiveFileFromRarFile(infile, outfile, compression, compresswholefile, compressionlevel, compressionenable, checksumtype, extradata, formatspecs, verbose, returnfp)
+        return PackArchiveFileFromRarFile(infile, outfile, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, formatspecs, verbose, returnfp)
     elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-        return PackArchiveFileFromSevenZipFile(infile, outfile, compression, compresswholefile, compressionlevel, compressionenable, checksumtype, extradata, formatspecs, verbose, returnfp)
+        return PackArchiveFileFromSevenZipFile(infile, outfile, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, formatspecs, verbose, returnfp)
     elif(checkcompressfile == "catfile"):
         return RePackArchiveFile(infile, outfile, compression, compresswholefile, compressionlevel, False, 0, 0, checksumtype, False, extradata, formatspecs, verbose, returnfp)
     else:
@@ -8033,7 +8033,7 @@ create_alias_function("", __file_format_name__,
                       "ArrayToArrayIndex", ArchiveFileArrayToArrayIndex)
 
 
-def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, followlink=False, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     if(isinstance(infile, dict)):
         listcatfiles = infile
@@ -8159,7 +8159,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
             ucfsize = fcontents.tell()
             fcontents.seek(0, 0)
             if(compression == "auto"):
-                ilsize = len(compressionenable)
+                ilsize = len(compressionuselist)
                 ilmin = 0
                 ilcsize = []
                 while(ilmin < ilsize):
@@ -8169,7 +8169,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
                     fcontents.seek(0, 0)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressArchiveFile(
-                        cfcontents, compressionenable[ilmin], compressionlevel, formatspecs)
+                        cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
                     if(cfcontents):
                         cfcontents.seek(0, 2)
                         ilcsize.append(cfcontents.tell())
@@ -8181,7 +8181,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
                             ilcsize.append(sys.maxsize)
                     ilmin = ilmin + 1
                 ilcmin = ilcsize.index(min(ilcsize))
-                curcompression = compressionenable[ilcmin]
+                curcompression = compressionuselist[ilcmin]
             fcontents.seek(0, 0)
             cfcontents = BytesIO()
             shutil.copyfileobj(fcontents, cfcontents)
@@ -8300,10 +8300,10 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
 create_alias_function("RePack", __file_format_name__, "", RePackArchiveFile)
 
 
-def RePackArchiveFileFromString(catstr, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, checksumtype="crc32", skipchecksum=False, extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def RePackArchiveFileFromString(catstr, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", skipchecksum=False, extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     catfp = BytesIO(catstr)
-    listcatfiles = RePackArchiveFile(catfp, compression, compresswholefile, compressionlevel, compressionenable,
+    listcatfiles = RePackArchiveFile(catfp, compression, compresswholefile, compressionlevel, compressionuselist,
                                      checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp)
     return listcatfiles
 
@@ -8312,11 +8312,11 @@ create_alias_function("RePack", __file_format_name__,
                       "FromString", RePackArchiveFileFromString)
 
 
-def PackArchiveFileFromListDir(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, followlink=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromListDir(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     outarray = BytesIO()
     packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compresswholefile,
-                              compressionlevel, compressionenable, followlink, checksumtype, extradata, formatspecs, verbose, True)
+                              compressionlevel, compressionuselist, followlink, checksumtype, extradata, formatspecs, verbose, True)
     listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile,
                                      compressionlevel, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp)
     return listcatfiles
@@ -9188,11 +9188,11 @@ def ListDirListFilesAlt(infiles, dirlistfromtxt=False, followlink=False, listonl
     return listcatfiles
 
 
-def PackArchiveFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, followlink=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     outarray = ListDirToArrayAlt(infiles, dirlistfromtxt, followlink,
                                  False, True, checksumtype, extradata, formatspecs, False)
-    listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile, compressionlevel, compressionenable,
+    listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile, compressionlevel, compressionuselist,
                                      followlink, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp)
     return listcatfiles
 
@@ -9201,12 +9201,12 @@ create_alias_function("Pack", __file_format_name__,
                       "FromListDirAlt", PackArchiveFileFromListDirAlt)
 
 
-def PackArchiveFileFromTarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromTarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     outarray = TarFileToArrayAlt(
         infile, False, True, checksumtype, extradata, formatspecs, False)
     listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile,
-                                     compressionlevel, compressionenable, False, checksumtype, False, extradata, formatspecs, verbose, returnfp)
+                                     compressionlevel, compressionuselist, False, checksumtype, False, extradata, formatspecs, verbose, returnfp)
     return listcatfiles
 
 
@@ -9214,12 +9214,12 @@ create_alias_function("Pack", __file_format_name__,
                       "FromTarFileAlt", PackArchiveFileFromTarFileAlt)
 
 
-def PackArchiveFileFromZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     outarray = ZipFileToArrayAlt(
         infile, False, True, checksumtype, extradata, formatspecs, False)
     listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile,
-                                     compressionlevel, compressionenable, False, checksumtype, False, extradata, formatspecs, verbose, returnfp)
+                                     compressionlevel, compressionuselist, False, checksumtype, False, extradata, formatspecs, verbose, returnfp)
     return listcatfiles
 
 
@@ -9227,32 +9227,32 @@ create_alias_function("Pack", __file_format_name__,
                       "FromZipFileAlt", PackArchiveFileFromZipFileAlt)
 
 if(not rarfile_support):
-    def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         return False
 
 if(rarfile_support):
-    def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         formatspecs = FormatSpecsListToDict(formatspecs)
         outarray = RarFileToArrayAlt(
             infile, False, True, checksumtype, extradata, formatspecs, False)
         listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile,
-                                         compressionlevel, compressionenable, False, checksumtype, False, extradata, formatspecs, verbose, returnfp)
+                                         compressionlevel, compressionuselist, False, checksumtype, False, extradata, formatspecs, verbose, returnfp)
         return listcatfiles
 
 create_alias_function("Pack", __file_format_name__,
                       "FromRarFileAlt", PackArchiveFileFromRarFileAlt)
 
 if(not py7zr_support):
-    def PackArchiveFileFromSevenZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromSevenZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         return False
 
 if(py7zr_support):
-    def PackArchiveFileFromSevenZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionenable=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromSevenZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         formatspecs = FormatSpecsListToDict(formatspecs)
         outarray = SevenZipFileToArrayAlt(
             infile, False, True, checksumtype, extradata, formatspecs, False)
         listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile,
-                                         compressionlevel, compressionenable, False, checksumtype, False, extradata, formatspecs, verbose, returnfp)
+                                         compressionlevel, compressionuselist, False, checksumtype, False, extradata, formatspecs, verbose, returnfp)
         return listcatfiles
 
 create_alias_function("Pack", __file_format_name__,
