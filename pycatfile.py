@@ -3754,7 +3754,7 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
     if(compresscheck == "gzip" or compresscheck == "bzip2" or compresscheck == "lzma" or compresscheck == "zstd" or compresscheck == "lz4" or compresscheck == "zlib"):
         if(TarFileCheck(infile)):
             filetype = "tarfile"
-    if(not compresscheck):
+    elif(not compresscheck):
         if(TarFileCheck(infile)):
             return "tarfile"
         elif(zipfile.is_zipfile(infile)):
@@ -3768,15 +3768,15 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
         return False
     if(compresscheck == "catfile"):
         return "catfile"
-    if(compresscheck == formatspecs['format_lower']):
+    elif(compresscheck == formatspecs['format_lower']):
         return formatspecs['format_lower']
-    if(compresscheck == "tarfile"):
+    elif(compresscheck == "tarfile"):
         return "tarfile"
-    if(compresscheck == "zipfile"):
+    elif(compresscheck == "zipfile"):
         return "zipfile"
-    if(rarfile_support and compresscheck == "rarfile"):
+    elif(rarfile_support and compresscheck == "rarfile"):
         return "rarfile"
-    if(py7zr_support and compresscheck == "7zipfile" and py7zr.is_7zfile(infile)):
+    elif(py7zr_support and compresscheck == "7zipfile" and py7zr.is_7zfile(infile)):
         return "7zipfile"
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         catfp = UncompressArchiveFile(infile, formatspecs['format_lower'])
