@@ -1425,7 +1425,7 @@ def TarFileCheck(infile):
     except TypeError:
         try:
             # Check if the input is a file object
-            if hasattr(infile, 'read'):
+            if hasattr(infile, "read"):
                 # Save the current file position
                 current_position = infile.tell()
                 # Attempt to open the file object as a tar file
@@ -1451,7 +1451,7 @@ def TarFileCheckAlt(infile):
         pass
     try:
         # Check if the input is a file-like object
-        if hasattr(infile, 'read'):
+        if hasattr(infile, "read"):
             # Save the current file position
             current_position = infile.tell()
             # Attempt to open the file object as a tar file
@@ -1476,7 +1476,7 @@ def ZipFileCheck(infile):
         pass
     try:
         # Check if the input is a file-like object
-        if hasattr(infile, 'read'):
+        if hasattr(infile, "read"):
             # Save the current file position
             current_position = infile.tell()
             # Attempt to open the file object as a zip file
@@ -1501,7 +1501,7 @@ def RarFileCheck(infile):
         pass
     try:
         # Check if the input is a file-like object
-        if hasattr(infile, 'read'):
+        if hasattr(infile, "read"):
             # Save the current file position
             current_position = infile.tell()
             # Attempt to open the file object as a rar file
@@ -1521,7 +1521,7 @@ def RarFileCheck(infile):
 def SevenZipFileCheck(infile):
     try:
         # Check if the input is a file-like object
-        if hasattr(infile, 'read'):
+        if hasattr(infile, "read"):
             # Save the current file position
             current_position = infile.tell()
             # Attempt to open the file object as a 7z file
