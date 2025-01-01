@@ -3454,7 +3454,7 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
     catfp.seek(0, 0)
     prefp = catfp.read(6)
     if(prefp == binascii.unhexlify("fd377a585a00")):
-        filetype = "lzma"
+        filetype = "xz"
     elif(prefp == binascii.unhexlify("377abcaf271c")):
         filetype = "7zipfile"
     catfp.seek(0, 0)
