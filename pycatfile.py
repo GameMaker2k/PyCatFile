@@ -319,7 +319,7 @@ __version_date_info__ = (2024, 12, 26, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: eb01b2409a1f3679f46ba8893b53eb954440b706 $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -2530,6 +2530,8 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
+        compresscheck = CheckCompressionType(fp, formatspecs, False)
+        fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(checkcompressfile != formatspecs['format_lower']):
@@ -2544,14 +2546,36 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
         else:
             shutil.copyfileobj(sys.stdin, fp)
         fp.seek(0, 0)
+        compresscheck = CheckCompressionType(fp, formatspecs, False)
+        fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
         if(not fp):
             return False
         fp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         fp = download_file_from_internet_file(infile)
+        compresscheck = CheckCompressionType(fp, formatspecs, False)
+        if(not compresscheck):
+            fextname = os.path.splitext(infile)[1]
+            if(fextname == ".gz"):
+                compresscheck = "gzip"
+            elif(fextname == ".bz2"):
+                compresscheck = "bzip2"
+            elif(fextname == ".zst"):
+                compresscheck = "zstd"
+            elif(fextname == ".lz4" or fextname == ".clz4"):
+                compresscheck = "lz4"
+            elif(fextname == ".lzo" or fextname == ".lzop"):
+                compresscheck = "lzo"
+            elif(fextname == ".lzma"):
+                compresscheck = "lzma"
+            elif(fextname == ".xz"):
+                compresscheck = "xz"
+            elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
+                compresscheck = "zlib"
+            else:
+                return False
         fp = UncompressArchiveFile(fp, formatspecs)
-        fp.seek(0, 0)
         if(not fp):
             return False
         fp.seek(0, 0)
@@ -2593,6 +2617,8 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
+        compresscheck = CheckCompressionType(fp, formatspecs, False)
+        fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(checkcompressfile != formatspecs['format_lower']):
@@ -2607,14 +2633,37 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
         else:
             shutil.copyfileobj(sys.stdin, fp)
         fp.seek(0, 0)
+        compresscheck = CheckCompressionType(fp, formatspecs, False)
+        fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
         if(not fp):
             return False
         fp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         fp = download_file_from_internet_file(infile)
-        fp = UncompressArchiveFile(fp, formatspecs)
+        compresscheck = CheckCompressionType(fp, formatspecs, False)
+        if(not compresscheck):
+            fextname = os.path.splitext(infile)[1]
+            if(fextname == ".gz"):
+                compresscheck = "gzip"
+            elif(fextname == ".bz2"):
+                compresscheck = "bzip2"
+            elif(fextname == ".zst"):
+                compresscheck = "zstd"
+            elif(fextname == ".lz4" or fextname == ".clz4"):
+                compresscheck = "lz4"
+            elif(fextname == ".lzo" or fextname == ".lzop"):
+                compresscheck = "lzo"
+            elif(fextname == ".lzma"):
+                compresscheck = "lzma"
+            elif(fextname == ".xz"):
+                compresscheck = "xz"
+            elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
+                compresscheck = "zlib"
+            else:
+                return False
         fp.seek(0, 0)
+        fp = UncompressArchiveFile(fp, formatspecs)
         if(not fp):
             return False
         fp.seek(0, 0)
@@ -5484,8 +5533,9 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         catfp = infile
         catfp.seek(0, 0)
+        compresscheck = CheckCompressionType(catfp, formatspecs, False)
         catfp = UncompressArchiveFile(catfp, formatspecs)
-        checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True)
+        checkcompressfile = CheckCompressionSubType(catfp, formatspecs, False)
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
             return TarFileToArray(infile, seekto, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
@@ -5506,6 +5556,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         else:
             shutil.copyfileobj(sys.stdin, catfp)
         catfp.seek(0, 0)
+        compresscheck = CheckCompressionType(catfp, formatspecs, False)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         if(not catfp):
             return False
@@ -5514,6 +5565,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         catfp = BytesIO()
         catfp.write(infile)
         catfp.seek(0, 0)
+        compresscheck = CheckCompressionType(catfp, formatspecs, False)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         if(not catfp):
             return False
@@ -5521,6 +5573,27 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         catfp = download_file_from_internet_file(infile)
         catfp.seek(0, 0)
+        compresscheck = CheckCompressionType(catfp, formatspecs, False)
+        if(not compresscheck):
+            fextname = os.path.splitext(infile)[1]
+            if(fextname == ".gz"):
+                compresscheck = "gzip"
+            elif(fextname == ".bz2"):
+                compresscheck = "bzip2"
+            elif(fextname == ".zst"):
+                compresscheck = "zstd"
+            elif(fextname == ".lz4" or fextname == ".clz4"):
+                compresscheck = "lz4"
+            elif(fextname == ".lzo" or fextname == ".lzop"):
+                compresscheck = "lzo"
+            elif(fextname == ".lzma"):
+                compresscheck = "lzma"
+            elif(fextname == ".xz"):
+                compresscheck = "xz"
+            elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
+                compresscheck = "zlib"
+            else:
+                return False
         catfp = UncompressArchiveFile(catfp, formatspecs)
         if(not catfp):
             return False
@@ -6037,6 +6110,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         catfp = infile
         catfp.seek(0, 0)
+        compresscheck = CheckCompressionType(catfp, formatspecs, False)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True)
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
@@ -6059,6 +6133,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         else:
             shutil.copyfileobj(sys.stdin, catfp)
         catfp.seek(0, 0)
+        compresscheck = CheckCompressionType(catfp, formatspecs, False)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         if(not catfp):
             return False
@@ -6067,12 +6142,15 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         catfp = BytesIO()
         catfp.write(infile)
         catfp.seek(0, 0)
+        compresscheck = CheckCompressionType(catfp, formatspecs, False)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         if(not catfp):
             return False
         catfp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         catfp = download_file_from_internet_file(infile)
+        catfp.seek(0, 0)
+        compresscheck = CheckCompressionType(catfp, formatspecs, False)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         catfp.seek(0, 0)
         if(not catfp):
@@ -6324,6 +6402,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         catfp = infile
         catfp.seek(0, 0)
+        compresscheck = CheckCompressionType(catfp, formatspecs, False)
+        catfp.seek(0, 0)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         checkcompressfile = CheckCompressionSubType(catfp, formatspecs, True)
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
@@ -6346,6 +6426,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         else:
             shutil.copyfileobj(sys.stdin, catfp)
         catfp.seek(0, 0)
+        compresscheck = CheckCompressionType(catfp, formatspecs, False)
+        catfp.seek(0, 0)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         if(not catfp):
             return False
@@ -6354,14 +6436,37 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         catfp = BytesIO()
         catfp.write(infile)
         catfp.seek(0, 0)
+        compresscheck = CheckCompressionType(catfp, formatspecs, False)
+        catfp.seek(0, 0)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         if(not catfp):
             return False
         catfp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
         catfp = download_file_from_internet_file(infile)
-        catfp = UncompressArchiveFile(catfp, formatspecs)
+        compresscheck = CheckCompressionType(catfp, formatspecs, False)
+        if(not compresscheck):
+            fextname = os.path.splitext(infile)[1]
+            if(fextname == ".gz"):
+                compresscheck = "gzip"
+            elif(fextname == ".bz2"):
+                compresscheck = "bzip2"
+            elif(fextname == ".zst"):
+                compresscheck = "zstd"
+            elif(fextname == ".lz4" or fextname == ".clz4"):
+                compresscheck = "lz4"
+            elif(fextname == ".lzo" or fextname == ".lzop"):
+                compresscheck = "lzo"
+            elif(fextname == ".lzma"):
+                compresscheck = "lzma"
+            elif(fextname == ".xz"):
+                compresscheck = "xz"
+            elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
+                compresscheck = "zlib"
+            else:
+                return False
         catfp.seek(0, 0)
+        catfp = UncompressArchiveFile(catfp, formatspecs)
         if(not catfp):
             return False
         catfp.seek(0, 0)
