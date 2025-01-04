@@ -2538,6 +2538,26 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
             return False
         if(not fp):
             return False
+        if(not compresscheck and hasattr(catfp, "name")):
+            fextname = os.path.splitext(catfp.name)[1]
+            if(fextname == ".gz"):
+                compresscheck = "gzip"
+            elif(fextname == ".bz2"):
+                compresscheck = "bzip2"
+            elif(fextname == ".zst"):
+                compresscheck = "zstd"
+            elif(fextname == ".lz4" or fextname == ".clz4"):
+                compresscheck = "lz4"
+            elif(fextname == ".lzo" or fextname == ".lzop"):
+                compresscheck = "lzo"
+            elif(fextname == ".lzma"):
+                compresscheck = "lzma"
+            elif(fextname == ".xz"):
+                compresscheck = "xz"
+            elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
+                compresscheck = "zlib"
+            else:
+                return False
         fp.seek(0, 0)
     elif(infile == "-"):
         fp = BytesIO()
@@ -2625,6 +2645,26 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
             return False
         if(not fp):
             return False
+        if(not compresscheck and hasattr(catfp, "name")):
+            fextname = os.path.splitext(catfp.name)[1]
+            if(fextname == ".gz"):
+                compresscheck = "gzip"
+            elif(fextname == ".bz2"):
+                compresscheck = "bzip2"
+            elif(fextname == ".zst"):
+                compresscheck = "zstd"
+            elif(fextname == ".lz4" or fextname == ".clz4"):
+                compresscheck = "lz4"
+            elif(fextname == ".lzo" or fextname == ".lzop"):
+                compresscheck = "lzo"
+            elif(fextname == ".lzma"):
+                compresscheck = "lzma"
+            elif(fextname == ".xz"):
+                compresscheck = "xz"
+            elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
+                compresscheck = "zlib"
+            else:
+                return False
         fp.seek(0, 0)
     elif(infile == "-"):
         fp = BytesIO()
@@ -5548,6 +5588,26 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
             return False
         if(not catfp):
             return False
+        if(not compresscheck and hasattr(catfp, "name")):
+            fextname = os.path.splitext(catfp.name)[1]
+            if(fextname == ".gz"):
+                compresscheck = "gzip"
+            elif(fextname == ".bz2"):
+                compresscheck = "bzip2"
+            elif(fextname == ".zst"):
+                compresscheck = "zstd"
+            elif(fextname == ".lz4" or fextname == ".clz4"):
+                compresscheck = "lz4"
+            elif(fextname == ".lzo" or fextname == ".lzop"):
+                compresscheck = "lzo"
+            elif(fextname == ".lzma"):
+                compresscheck = "lzma"
+            elif(fextname == ".xz"):
+                compresscheck = "xz"
+            elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
+                compresscheck = "zlib"
+            else:
+                return False
         catfp.seek(0, 0)
     elif(infile == "-"):
         catfp = BytesIO()
@@ -6125,6 +6185,26 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
             return False
         if(not catfp):
             return False
+        if(not compresscheck and hasattr(catfp, "name")):
+            fextname = os.path.splitext(catfp.name)[1]
+            if(fextname == ".gz"):
+                compresscheck = "gzip"
+            elif(fextname == ".bz2"):
+                compresscheck = "bzip2"
+            elif(fextname == ".zst"):
+                compresscheck = "zstd"
+            elif(fextname == ".lz4" or fextname == ".clz4"):
+                compresscheck = "lz4"
+            elif(fextname == ".lzo" or fextname == ".lzop"):
+                compresscheck = "lzo"
+            elif(fextname == ".lzma"):
+                compresscheck = "lzma"
+            elif(fextname == ".xz"):
+                compresscheck = "xz"
+            elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
+                compresscheck = "zlib"
+            else:
+                return False
         catfp.seek(0, 0)
     elif(infile == "-"):
         catfp = BytesIO()
@@ -6418,6 +6498,26 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
             return False
         if(not catfp):
             return False
+        if(not compresscheck and hasattr(catfp, "name")):
+            fextname = os.path.splitext(catfp.name)[1]
+            if(fextname == ".gz"):
+                compresscheck = "gzip"
+            elif(fextname == ".bz2"):
+                compresscheck = "bzip2"
+            elif(fextname == ".zst"):
+                compresscheck = "zstd"
+            elif(fextname == ".lz4" or fextname == ".clz4"):
+                compresscheck = "lz4"
+            elif(fextname == ".lzo" or fextname == ".lzop"):
+                compresscheck = "lzo"
+            elif(fextname == ".lzma"):
+                compresscheck = "lzma"
+            elif(fextname == ".xz"):
+                compresscheck = "xz"
+            elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
+                compresscheck = "zlib"
+            else:
+                return False
         catfp.seek(0, 0)
     elif(infile == "-"):
         catfp = BytesIO()
