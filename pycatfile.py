@@ -4535,7 +4535,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         infile = download_file_from_internet_file(infile)
         infile.seek(0, 0)
         if(not infile):
-            print("1"); return False
+            return False
         infile.seek(0, 0)
     elif(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
