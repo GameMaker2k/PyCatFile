@@ -4535,7 +4535,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         infile = download_file_from_internet_file(infile)
         infile.seek(0, 0)
         if(not infile):
-            return False
+            print("1"); return False
         infile.seek(0, 0)
     elif(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
@@ -4548,9 +4548,25 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
                 return False
     try:
         if(hasattr(infile, "read") or hasattr(infile, "write")):
-            tarfp = tarfile.open(fileobj=infile, mode="r")
+            compresscheck = CheckCompressionType(infile, formatspecs, False)
+            if(compresscheck=="zstd"):
+                if 'zstandard' in sys.modules:
+                    infile = ZstdFile(fileobj=infile, mode="rb")
+                elif 'pyzstd' in sys.modules:
+                    catfp = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
+                tarfp = tarfile.open(fileobj=infile, mode="r")
+            else:
+                tarfp = tarfile.open(fileobj=infile, mode="r")
         else:
-            tarfp = tarfile.open(infile, "r")
+            compresscheck = CheckCompressionType(infile, formatspecs, True)
+            if(compresscheck=="zstd"):
+                if 'zstandard' in sys.modules:
+                    infile = ZstdFile(fileobj=infile, mode="rb")
+                elif 'pyzstd' in sys.modules:
+                    catfp = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
+                tarfp = tarfile.open(fileobj=infile, mode="r")
+            else:
+                tarfp = tarfile.open(infile, "r")
     except FileNotFoundError:
         return False
     numfiles = int(len(tarfp.getmembers()))
@@ -7276,9 +7292,25 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
                 return False
     try:
         if(hasattr(infile, "read") or hasattr(infile, "write")):
-            tarfp = tarfile.open(fileobj=infile, mode="r")
+            compresscheck = CheckCompressionType(infile, formatspecs, False)
+            if(compresscheck=="zstd"):
+                if 'zstandard' in sys.modules:
+                    infile = ZstdFile(fileobj=infile, mode="rb")
+                elif 'pyzstd' in sys.modules:
+                    catfp = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
+                tarfp = tarfile.open(fileobj=infile, mode="r")
+            else:
+                tarfp = tarfile.open(fileobj=infile, mode="r")
         else:
-            tarfp = tarfile.open(infile, "r")
+            compresscheck = CheckCompressionType(infile, formatspecs, True)
+            if(compresscheck=="zstd"):
+                if 'zstandard' in sys.modules:
+                    infile = ZstdFile(fileobj=infile, mode="rb")
+                elif 'pyzstd' in sys.modules:
+                    catfp = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
+                tarfp = tarfile.open(fileobj=infile, mode="r")
+            else:
+                tarfp = tarfile.open(infile, "r")
     except FileNotFoundError:
         return False
     fnumfiles = int(len(tarfp.getmembers()))
@@ -8911,9 +8943,25 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
                 return False
     try:
         if(hasattr(infile, "read") or hasattr(infile, "write")):
-            tarfp = tarfile.open(fileobj=infile, mode="r")
+            compresscheck = CheckCompressionType(infile, formatspecs, False)
+            if(compresscheck=="zstd"):
+                if 'zstandard' in sys.modules:
+                    infile = ZstdFile(fileobj=infile, mode="rb")
+                elif 'pyzstd' in sys.modules:
+                    catfp = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
+                tarfp = tarfile.open(fileobj=infile, mode="r")
+            else:
+                tarfp = tarfile.open(fileobj=infile, mode="r")
         else:
-            tarfp = tarfile.open(infile, "r")
+            compresscheck = CheckCompressionType(infile, formatspecs, True)
+            if(compresscheck=="zstd"):
+                if 'zstandard' in sys.modules:
+                    infile = ZstdFile(fileobj=infile, mode="rb")
+                elif 'pyzstd' in sys.modules:
+                    catfp = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
+                tarfp = tarfile.open(fileobj=infile, mode="r")
+            else:
+                tarfp = tarfile.open(infile, "r")
     except FileNotFoundError:
         return False
     lcfi = 0
