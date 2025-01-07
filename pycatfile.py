@@ -331,7 +331,7 @@ __version_date_info__ = (2024, 12, 26, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: 20b12dc043f27f33e7faf4f73e4655433875d2ce $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -5658,7 +5658,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         if(not catfp):
             return False
         catfp.seek(0, 0)
-    elif(isinstance(infile, bytes)):
+    elif(isinstance(infile, bytes) and sys.version_info[0] >= 3):
         catfp = BytesIO()
         catfp.write(infile)
         catfp.seek(0, 0)
@@ -5950,7 +5950,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
         if(not catfp):
             return False
         catfp.seek(0, 0)
-    elif(isinstance(infile, bytes)):
+    elif(isinstance(infile, bytes) and sys.version_info[0] >= 3):
         catfp = BytesIO()
         catfp.write(infile)
         catfp.seek(0, 0)
@@ -6255,7 +6255,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         if(not catfp):
             return False
         catfp.seek(0, 0)
-    elif(isinstance(infile, bytes)):
+    elif(isinstance(infile, bytes) and sys.version_info[0] >= 3):
         catfp = BytesIO()
         catfp.write(infile)
         catfp.seek(0, 0)
@@ -6569,7 +6569,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         if(not catfp):
             return False
         catfp.seek(0, 0)
-    elif(isinstance(infile, bytes)):
+    elif(isinstance(infile, bytes) and sys.version_info[0] >= 3):
         catfp = BytesIO()
         catfp.write(infile)
         catfp.seek(0, 0)
