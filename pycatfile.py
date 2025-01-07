@@ -250,9 +250,10 @@ __use_ini_file__ = True
 if('PYCATFILE_CONFIG_FILE' in os.environ and os.path.exists(os.environ['PYCATFILE_CONFIG_FILE']) and __use_env_file__):
     scriptconf = os.environ['PYCATFILE_CONFIG_FILE']
 else:
-    try:
-        scriptconf = os.path.join(os.path.dirname(get_importing_script_path()), "catfile.ini")
-    except TypeError:
+    prescriptpath = get_importing_script_path()
+    if(prescriptpath is not None):
+        scriptconf = os.path.join(os.path.dirname(prescriptpath), "catfile.ini")
+    else:
         scriptconf = None
 if os.path.exists(scriptconf):
     __config_file__ = scriptconf
