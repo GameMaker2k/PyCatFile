@@ -331,7 +331,7 @@ __version_date_info__ = (2024, 12, 26, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id: 20b12dc043f27f33e7faf4f73e4655433875d2ce $"
+__revision_id__ = "$Id$"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -1200,6 +1200,203 @@ class ZstdFile(object):
             final_chunk = self._compressor.flush()
             if final_chunk:
                 self.file.write(final_chunk)
+
+        if self.file_path:
+            self.file.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+
+class LzopFile(object):
+    # LZOP magic bytes: b'\x89LZO\x0D\x0A\x1A\n'
+    # If your files use a different LZO wrapper, you can adjust the magic or remove it entirely.
+    LZOP_MAGIC = b'\x89LZO\x0D\x0A\x1A\n'
+
+    def __init__(self, file_path=None, fileobj=None, mode='rb',
+                 encoding=None, errors=None, newline=None):
+        """
+        A file-like wrapper around LZO (via python-lzo).
+        - For reading: reads entire file, verifies LZOP magic, then decompresses.
+        - For writing: buffers all data in memory until close(), then writes the LZOP magic + compressed data.
+        """
+        if file_path is None and fileobj is None:
+            raise ValueError("Either file_path or fileobj must be provided")
+        if file_path is not None and fileobj is not None:
+            raise ValueError("Only one of file_path or fileobj should be provided")
+
+        self.file_path = file_path
+        self.fileobj = fileobj
+        self.mode = mode
+        self.encoding = encoding
+        self.errors = errors
+        self.newline = newline
+        self._decompressed_data = b''
+        self._position = 0
+
+        # For writing, we'll store uncompressed data in memory until close()
+        self._write_buffer = b''
+
+        # Track whether we're doing text mode
+        self._text_mode = 't' in mode
+
+        # Force binary mode internally for file I/O
+        internal_mode = mode.replace('t', 'b')
+
+        if 'w' in mode or 'a' in mode or 'x' in mode:
+            # Open the file if a path was specified; otherwise, use fileobj
+            if file_path:
+                self.file = open(file_path, internal_mode)
+            else:
+                self.file = fileobj
+
+        elif 'r' in mode:
+            # Reading
+            if file_path:
+                if os.path.exists(file_path):
+                    self.file = open(file_path, internal_mode)
+                    self._load_file()
+                else:
+                    raise FileNotFoundError("No such file: '{}'".format(file_path))
+            else:
+                # fileobj provided
+                self.file = fileobj
+                self._load_file()
+
+        else:
+            raise ValueError("Mode should be 'rb'/'rt' or 'wb'/'wt'")
+
+    def _load_file(self):
+        """
+        Reads the entire compressed file into memory. Expects an LZOP-style header
+        (with magic bytes). Decompresses the remainder into _decompressed_data.
+        """
+        self.file.seek(0)
+        compressed_data = self.file.read()
+
+        # Check for the LZOP magic
+        if not compressed_data.startswith(self.LZOP_MAGIC):
+            raise ValueError("Invalid LZOP file header (magic bytes missing)")
+
+        # Strip the magic from the front; the rest is actual LZO-compressed data
+        # In a real lzop file, there may be more fields in the header, but
+        # this simplistic approach just strips the magic bytes.
+        compressed_data = compressed_data[len(self.LZOP_MAGIC):]
+
+        # Decompress the remainder
+        try:
+            self._decompressed_data = lzo.decompress(compressed_data)
+        except lzo.error as e:
+            raise ValueError("LZO decompression failed: {}".format(str(e)))
+
+        # If we're in text mode, decode from bytes to str
+        if self._text_mode:
+            enc = self.encoding or 'UTF-8'
+            err = self.errors or 'strict'
+            self._decompressed_data = self._decompressed_data.decode(enc, err)
+
+    def write(self, data):
+        """
+        Write data to our internal buffer. The actual compression + file writing
+        happens on close().
+        """
+        if 'r' in self.mode:
+            raise IOError("File not open for writing")
+
+        if self._text_mode:
+            # Encode data from str (Py3) or unicode (Py2) to bytes
+            data = data.encode(self.encoding or 'UTF-8', self.errors or 'strict')
+
+        # Accumulate in memory
+        self._write_buffer += data
+
+    def read(self, size=-1):
+        """
+        Read from the decompressed data buffer.
+        """
+        if 'r' not in self.mode:
+            raise IOError("File not open for reading")
+
+        if size < 0:
+            size = len(self._decompressed_data) - self._position
+        data = self._decompressed_data[self._position:self._position + size]
+        self._position += size
+        return data
+
+    def seek(self, offset, whence=0):
+        """
+        Adjust the current read position in the decompressed buffer.
+        """
+        if 'r' not in self.mode:
+            raise IOError("File not open for reading")
+
+        if whence == 0:  # absolute
+            new_pos = offset
+        elif whence == 1:  # relative
+            new_pos = self._position + offset
+        elif whence == 2:  # relative to end
+            new_pos = len(self._decompressed_data) + offset
+        else:
+            raise ValueError("Invalid value for whence")
+
+        self._position = max(0, min(new_pos, len(self._decompressed_data)))
+
+    def tell(self):
+        """
+        Returns the current read position in the decompressed buffer.
+        """
+        return self._position
+
+    def flush(self):
+        """
+        Flush the underlying file, if any. (No partial flush for LZO 
+        because we only compress on close.)
+        """
+        if hasattr(self.file, 'flush'):
+            self.file.flush()
+
+    def fileno(self):
+        """
+        Return the file descriptor if available.
+        """
+        if hasattr(self.file, 'fileno'):
+            return self.file.fileno()
+        raise OSError("The underlying file object does not support fileno()")
+
+    def isatty(self):
+        """
+        Return whether the underlying file is a TTY.
+        """
+        if hasattr(self.file, 'isatty'):
+            return self.file.isatty()
+        return False
+
+    def truncate(self, size=None):
+        """
+        Truncate the underlying file if possible.
+        """
+        if hasattr(self.file, 'truncate'):
+            return self.file.truncate(size)
+        raise OSError("The underlying file object does not support truncate()")
+
+    def close(self):
+        """
+        If in write mode, compress the entire accumulated buffer using LZO
+        and write it (with the LZOP magic header) to the file. Then close
+        if we opened it ourselves.
+        """
+        if any(x in self.mode for x in ('w', 'a', 'x')):
+            # Write the LZOP magic
+            self.file.write(self.LZOP_MAGIC)
+            # Compress the entire buffer
+            try:
+                compressed = lzo.compress(self._write_buffer)
+            except lzo.error as e:
+                raise ValueError("LZO compression failed: {}".format(str(e)))
+            self.file.write(compressed)
 
         if self.file_path:
             self.file.close()
@@ -3712,7 +3909,7 @@ def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
         elif(compresscheck == "lz4" and compresscheck in compressionsupport):
             filefp = lz4.frame.open(infile, mode)
         elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
-            filefp = lzo.open(infile, mode)
+            filefp = LzopFile(infile, mode=mode)
         elif((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
             filefp = lzma.open(infile, mode)
         elif(compresscheck == "zlib" and compresscheck in compressionsupport):
@@ -3893,7 +4090,7 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
                 else:
                     return Flase
             elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
-                catfp = lzo.open(infile, "rb")
+                catfp = LzopFile(infile, mode="rb")
             elif((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
                 catfp = lzma.open(infile, "rb")
             elif(compresscheck == "zlib" and compresscheck in compressionsupport):
@@ -4043,7 +4240,7 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
             outfp = lz4.frame.open(
                     outfile, mode, compression_level=compressionlevel)
         elif(fextname == ".lzo" and "lzop" in compressionsupport):
-            outfp = lzo.open(outfile, mode, compresslevel=compressionlevel)
+            outfp = LzopFile(outfile, mode=mode, level=compressionlevel)
         elif(fextname == ".lzma" and "lzma" in compressionsupport):
             try:
                 outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}])
