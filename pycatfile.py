@@ -4169,7 +4169,7 @@ def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspe
             compressionlevel = 9
         else:
             compressionlevel = int(compressionlevel)
-        catfp.write(lzo.compress(fp.read(), compresslevel=compressionlevel))
+        catfp.write(lzo.compress(fp.read(), compressionlevel))
     elif(compression == "zstd" and compression in compressionsupport):
         catfp = BytesIO()
         if(compressionlevel is None):
