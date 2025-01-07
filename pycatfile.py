@@ -3773,6 +3773,10 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
     if(prefp == binascii.unhexlify("526172211a0700")):
         filetype = "rarfile"
     catfp.seek(0, 0)
+    prefp = catfp.read(7)
+    if(prefp == binascii.unhexlify("894c5a4f0d0a1a")):
+        filetype = "lzo"
+    catfp.seek(0, 0)
     prefp = catfp.read(8)
     if(prefp == binascii.unhexlify("526172211a070100")):
         filetype = "rarfile"
