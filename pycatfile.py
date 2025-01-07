@@ -254,7 +254,7 @@ else:
     if(prescriptpath is not None):
         scriptconf = os.path.join(os.path.dirname(prescriptpath), "catfile.ini")
     else:
-        scriptconf = None
+        scriptconf = ""
 if os.path.exists(scriptconf):
     __config_file__ = scriptconf
 else:
