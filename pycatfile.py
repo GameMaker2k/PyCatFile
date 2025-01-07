@@ -4545,11 +4545,18 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         if(not infile):
             return False
         infile.seek(0, 0)
+    elif(hasattr(infile, "read") or hasattr(infile, "write")):
+        try:
+            if(not tarfile.is_tarfile(infile)):
+                return False
+        except AttributeError:
+            if(not TarFileCheck(infile)):
+                return False
     elif(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
     elif(os.path.exists(infile) and os.path.isfile(infile)):
         try:
-            if(not tarfile.TarFileCheck(infile)):
+            if(not tarfile.is_tarfile(infile)):
                 return False
         except AttributeError:
             if(not TarFileCheck(infile)):
@@ -4814,6 +4821,8 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
         if(not infile):
             return False
         infile.seek(0, 0)
+    elif(hasattr(infile, "read") or hasattr(infile, "write")):
+        pass
     elif(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
     if(not zipfile.is_zipfile(infile)):
@@ -7289,11 +7298,18 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         if(not infile):
             return False
         infile.seek(0, 0)
+    elif(hasattr(infile, "read") or hasattr(infile, "write")):
+        try:
+            if(not tarfile.is_tarfile(infile)):
+                return False
+        except AttributeError:
+            if(not TarFileCheck(infile)):
+                return False
     elif(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
     elif(os.path.exists(infile) and os.path.isfile(infile)):
         try:
-            if(not tarfile.TarFileCheck(infile)):
+            if(not tarfile.is_tarfile(infile)):
                 return False
         except AttributeError:
             if(not TarFileCheck(infile)):
@@ -7524,6 +7540,8 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         if(not infile):
             return False
         infile.seek(0, 0)
+    elif(hasattr(infile, "read") or hasattr(infile, "write")):
+        pass
     elif(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
     if(not zipfile.is_zipfile(infile)):
@@ -8940,11 +8958,18 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
         if(not infile):
             return False
         infile.seek(0, 0)
+    elif(hasattr(infile, "read") or hasattr(infile, "write")):
+        try:
+            if(not tarfile.is_tarfile(infile)):
+                return False
+        except AttributeError:
+            if(not TarFileCheck(infile)):
+                return False
     elif(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
     elif(os.path.exists(infile) and os.path.isfile(infile)):
         try:
-            if(not tarfile.TarFileCheck(infile)):
+            if(not tarfile.is_tarfile(infile)):
                 return False
         except AttributeError:
             if(not TarFileCheck(infile)):
@@ -9054,6 +9079,8 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
         if(not infile):
             return False
         infile.seek(0, 0)
+    elif(hasattr(infile, "read") or hasattr(infile, "write")):
+        pass
     elif(not os.path.exists(infile) or not os.path.isfile(infile)):
         return False
     if(not zipfile.is_zipfile(infile)):
