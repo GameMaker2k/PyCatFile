@@ -1212,16 +1212,29 @@ class ZstdFile(object):
 
 
 class LzopFile(object):
+    """
+    A file-like wrapper around LZO compression/decompression using python-lzo.
+
+    - In read mode (r): Reads the entire file, checks for LZOP magic bytes,
+      then decompresses into memory.
+    - In write mode (w/a/x): Buffers all data in memory. On close, writes
+      the LZOP magic bytes + compressed data.
+    - Supports a 'level' parameter (default=9). python-lzo commonly accepts only
+      level=1 or level=9 for LZO1X_1 or LZO1X_999.
+    """
     # LZOP magic bytes: b'\x89LZO\x0D\x0A\x1A\n'
-    # If your files use a different LZO wrapper, you can adjust the magic or remove it entirely.
     LZOP_MAGIC = b'\x89LZO\x0D\x0A\x1A\n'
 
     def __init__(self, file_path=None, fileobj=None, mode='rb',
-                 encoding=None, errors=None, newline=None):
+                 level=9, encoding=None, errors=None, newline=None):
         """
-        A file-like wrapper around LZO (via python-lzo).
-        - For reading: reads entire file, verifies LZOP magic, then decompresses.
-        - For writing: buffers all data in memory until close(), then writes the LZOP magic + compressed data.
+        :param file_path: Path to the file (if any)
+        :param fileobj: An existing file object (if any)
+        :param mode: File mode, e.g., 'rb', 'wb', 'rt', 'wt', etc.
+        :param level: Compression level (int). python-lzo typically supports 1 or 9.
+        :param encoding: Text encoding (for text mode)
+        :param errors: Error handling for encoding/decoding (e.g., 'strict')
+        :param newline: Placeholder to mimic built-in open() signature
         """
         if file_path is None and fileobj is None:
             raise ValueError("Either file_path or fileobj must be provided")
@@ -1231,13 +1244,14 @@ class LzopFile(object):
         self.file_path = file_path
         self.fileobj = fileobj
         self.mode = mode
+        self.level = level
         self.encoding = encoding
         self.errors = errors
         self.newline = newline
         self._decompressed_data = b''
         self._position = 0
 
-        # For writing, we'll store uncompressed data in memory until close()
+        # For writing, store uncompressed data in memory until close()
         self._write_buffer = b''
 
         # Track whether we're doing text mode
@@ -1271,8 +1285,8 @@ class LzopFile(object):
 
     def _load_file(self):
         """
-        Reads the entire compressed file into memory. Expects an LZOP-style header
-        (with magic bytes). Decompresses the remainder into _decompressed_data.
+        Read the entire compressed file into memory. Expects LZOP magic bytes
+        at the start. Decompress the remainder into _decompressed_data.
         """
         self.file.seek(0)
         compressed_data = self.file.read()
@@ -1281,9 +1295,7 @@ class LzopFile(object):
         if not compressed_data.startswith(self.LZOP_MAGIC):
             raise ValueError("Invalid LZOP file header (magic bytes missing)")
 
-        # Strip the magic from the front; the rest is actual LZO-compressed data
-        # In a real lzop file, there may be more fields in the header, but
-        # this simplistic approach just strips the magic bytes.
+        # Strip the magic; everything after is LZO-compressed data.
         compressed_data = compressed_data[len(self.LZOP_MAGIC):]
 
         # Decompress the remainder
@@ -1300,7 +1312,7 @@ class LzopFile(object):
 
     def write(self, data):
         """
-        Write data to our internal buffer. The actual compression + file writing
+        Write data into an internal buffer. The actual compression + file write
         happens on close().
         """
         if 'r' in self.mode:
@@ -1346,14 +1358,13 @@ class LzopFile(object):
 
     def tell(self):
         """
-        Returns the current read position in the decompressed buffer.
+        Return the current read position in the decompressed buffer.
         """
         return self._position
 
     def flush(self):
         """
-        Flush the underlying file, if any. (No partial flush for LZO 
-        because we only compress on close.)
+        Flush the underlying file if supported. (No partial compression flush for LZO.)
         """
         if hasattr(self.file, 'flush'):
             self.file.flush()
@@ -1385,17 +1396,19 @@ class LzopFile(object):
     def close(self):
         """
         If in write mode, compress the entire accumulated buffer using LZO
-        and write it (with the LZOP magic header) to the file. Then close
-        if we opened it ourselves.
+        (with the specified level) and write it (with the LZOP magic) to the file.
         """
         if any(x in self.mode for x in ('w', 'a', 'x')):
             # Write the LZOP magic
             self.file.write(self.LZOP_MAGIC)
+
             # Compress the entire buffer
             try:
-                compressed = lzo.compress(self._write_buffer)
+                # python-lzo supports level=1 or level=9 for LZO1X
+                compressed = lzo.compress(self._write_buffer, self.level)
             except lzo.error as e:
                 raise ValueError("LZO compression failed: {}".format(str(e)))
+
             self.file.write(compressed)
 
         if self.file_path:
