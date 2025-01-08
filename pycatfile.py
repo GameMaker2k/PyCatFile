@@ -3879,8 +3879,7 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
     elif(compresscheck == "lz4" and compresscheck in compressionsupport):
         catfp = lz4.frame.LZ4FrameFile(fp, mode='rb')
     elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
-        catfp = BytesIO()
-        catfp.write(lzo.decompress(fp.read()))
+        catfp = LzopFile(fileobj=fp, mode="rb")
     elif((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
         catfp = lzma.LZMAFile(fp)
     elif(compresscheck == "zlib" and compresscheck in compressionsupport):
@@ -3888,12 +3887,10 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
     elif(compresscheck == formatspecs['format_lower']):
         catfp = fp
     elif(not compresscheck):
-        catfp = BytesIO()
-        with fp as fpcontent:
-            try:
-                catfp.write(lzma.decompress(fp.read()))
-            except lzma.LZMAError:
-                return False
+        try:
+            catfp = lz4.frame.LZ4FrameFile(fp, mode='rb')
+        except lzma.LZMAError:
+            return False
         if(compresscheck != formatspecs['format_lower']):
             fp.close()
     return catfp
