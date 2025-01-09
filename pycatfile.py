@@ -2949,7 +2949,7 @@ def AppendNullBytes(indata=[], delimiter=__file_format_dict__['format_delimiter'
     return outdata
 
 
-def AppendFileHeader(fp, numfiles, checksumtype="crc32", formatspecs=__file_format_dict__):
+def AppendFileHeader(fp, numfiles, extradata=[], checksumtype="crc32", formatspecs=__file_format_dict__):
     if(not hasattr(fp, "write")):
         return False
     formatspecs = FormatSpecsListToDict(formatspecs)
@@ -2959,9 +2959,25 @@ def AppendFileHeader(fp, numfiles, checksumtype="crc32", formatspecs=__file_form
     fileheader = AppendNullByte(
         formatspecs['format_magic'] + fileheaderver, formatspecs['format_delimiter'])
     fp.write(fileheader.encode('UTF-8'))
+    extrafields = format(len(extradata), 'x').lower()
+    extrasizestr = AppendNullByte(extrafields, formatspecs['format_delimiter'])
+    if(len(extradata) > 0):
+        extrasizestr = extrasizestr + \
+            AppendNullBytes(extradata, formatspecs['format_delimiter'])
+    extrasizelen = format(len(extrasizestr), 'x').lower()
+    catoutlist = []
+    catoutlist.append(extrasizelen)
+    catoutlist.append(extrafields)
     fnumfiles = format(int(numfiles), 'x').lower()
     fnumfilesa = AppendNullBytes(
-        [platform.system(), fnumfiles, checksumtype], formatspecs['format_delimiter'])
+        [platform.system(), fnumfiles], formatspecs['format_delimiter'])
+    fnumfilesa = fnumfilesa + AppendNullBytes(
+        catoutlist, formatspecs['format_delimiter'])
+    if(len(extradata) > 0):
+        fnumfilesa = fnumfilesa + AppendNullBytes(
+            extradata, formatspecs['format_delimiter'])
+    fnumfilesa = fnumfilesa + \
+        AppendNullByte(checksumtype, formatspecs['format_delimiter'])
     catfileheadercshex = GetFileChecksum(
         fileheader + fnumfilesa, checksumtype, True, formatspecs)
     fnumfilesa = fnumfilesa + \
@@ -2982,7 +2998,7 @@ def AppendFileHeader(fp, numfiles, checksumtype="crc32", formatspecs=__file_form
 
 def MakeEmptyFilePointer(fp, checksumtype="crc32", formatspecs=__file_format_dict__):
     formatspecs = FormatSpecsListToDict(formatspecs)
-    AppendFileHeader(fp, 0, checksumtype, formatspecs)
+    AppendFileHeader(fp, 0, [], checksumtype, formatspecs)
     return fp
 
 
@@ -3007,7 +3023,7 @@ def MakeEmptyFile(outfile, compression="auto", compresswholefile=True, compressi
         if(not compresswholefile and fextname in outextlistwd):
             compresswholefile = True
         catfp = CompressOpenFile(outfile, True, compressionlevel)
-    catfp = AppendFileHeader(catfp, 0, checksumtype, formatspecs)
+    AppendFileHeader(catfp, 0, [], checksumtype, formatspecs)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
@@ -3141,7 +3157,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         GetDirList = infilelist
     else:
         GetDirList = ListDir(infilelist, followlink, False)
-    if(not isinstance(infiles, (list, tuple, ))):
+    if(not isinstance(GetDirList, (list, tuple, ))):
         return False
     FullSizeFiles = GetTotalSize(GetDirList)
     if(not GetDirList):
@@ -3154,7 +3170,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
     inodetocatinode = {}
     numfiles = int(len(GetDirList))
     fnumfiles = format(numfiles, 'x').lower()
-    AppendFileHeader(fp, fnumfiles, checksumtype, formatspecs)
+    AppendFileHeader(fp, fnumfiles, [], checksumtype, formatspecs)
     FullSizeFilesAlt = 0
     for curfname in GetDirList:
         if(re.findall("^[.|/]", curfname)):
@@ -3389,7 +3405,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         ftypehex = format(ftype, 'x').lower()
         catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
-        fp = AppendFileHeaderWithContent(
+        AppendFileHeaderWithContent(
             fp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
     if(numfiles > 0):
         catfp.write(AppendNullBytes(
@@ -3416,7 +3432,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
     inodetocatinode = {}
     numfiles = int(len(GetDirList))
     fnumfiles = format(numfiles, 'x').lower()
-    AppendFileHeader(fp, fnumfiles, checksumtype, formatspecs)
+    AppendFileHeader(fp, fnumfiles, [], checksumtype, formatspecs)
     for curfname in GetDirList:
         ftype = format(curfname[0], 'x').lower()
         if(re.findall("^[.|/]", curfname[1])):
@@ -3452,7 +3468,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
         catoutlist = [ftype, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize,
                       fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile]
         fcontents.seek(0, 0)
-        fp = AppendFileHeaderWithContent(
+        AppendFileHeaderWithContent(
             fp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
     if(numfiles > 0):
         fp.write(AppendNullBytes(
@@ -3488,7 +3504,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
         if(not compresswholefile and fextname in outextlistwd):
             compresswholefile = True
         catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
-    catfp = AppendFilesWithContent(infiles, catfp, dirlistfromtxt, filevalues, extradata, compression,
+    AppendFilesWithContent(infiles, catfp, dirlistfromtxt, filevalues, extradata, compression,
                                    compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, formatspecs, verbose)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = CompressArchiveFile(
@@ -3548,7 +3564,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
         if(not compresswholefile and fextname in outextlistwd):
             compresswholefile = True
         catfp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
-    catfp = AppendListsWithContent(inlist, catfp, dirlistfromtxt, filevalues, extradata, compression,
+    AppendListsWithContent(inlist, catfp, dirlistfromtxt, filevalues, extradata, compression,
                                    compresswholefile, compressionlevel, followlink, checksumtype, formatspecs, verbose)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = CompressArchiveFile(
@@ -4366,7 +4382,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
         GetDirList = infilelist
     else:
         GetDirList = ListDir(infilelist, followlink, False)
-    if(not isinstance(infiles, (list, tuple, ))):
+    if(not isinstance(GetDirList, (list, tuple, ))):
         return False
     FullSizeFiles = GetTotalSize(GetDirList)
     if(not GetDirList):
@@ -4378,7 +4394,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
     filetoinode = {}
     inodetocatinode = {}
     numfiles = int(len(GetDirList))
-    catfp = AppendFileHeader(catfp, numfiles, checksumtype, formatspecs)
+    AppendFileHeader(catfp, numfiles, [], checksumtype, formatspecs)
     FullSizeFilesAlt = 0
     for curfname in GetDirList:
         if(re.findall("^[.|/]", curfname)):
@@ -4612,7 +4628,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
         ftypehex = format(ftype, 'x').lower()
         catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
-        catfp = AppendFileHeaderWithContent(
+        AppendFileHeaderWithContent(
             catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
         fcontents.close()
     if(numfiles > 0):
@@ -4764,7 +4780,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
     except FileNotFoundError:
         return False
     numfiles = int(len(tarfp.getmembers()))
-    catfp = AppendFileHeader(catfp, numfiles, checksumtype, formatspecs)
+    AppendFileHeader(catfp, numfiles, [], checksumtype, formatspecs)
     for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
         if(re.findall("^[.|/]", member.name)):
             fname = member.name
@@ -4894,7 +4910,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         ftypehex = format(ftype, 'x').lower()
         catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
-        catfp = AppendFileHeaderWithContent(
+        AppendFileHeaderWithContent(
             catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
         fcontents.close()
     if(numfiles > 0):
@@ -5010,7 +5026,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
     if(ziptest):
         VerbosePrintOut("Bad file found!")
     numfiles = int(len(zipfp.infolist()))
-    catfp = AppendFileHeader(catfp, numfiles, checksumtype, formatspecs)
+    AppendFileHeader(catfp, numfiles, [], checksumtype, formatspecs)
     for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
         if(re.findall("^[.|/]", member.filename)):
             fname = member.filename
@@ -5165,7 +5181,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
         ftypehex = format(ftype, 'x').lower()
         catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
-        catfp = AppendFileHeaderWithContent(
+        AppendFileHeaderWithContent(
             catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
         fcontents.close()
     if(numfiles > 0):
@@ -5266,7 +5282,7 @@ if(rarfile_support):
         if(rartest):
             VerbosePrintOut("Bad file found!")
         numfiles = int(len(rarfp.infolist()))
-        catfp = AppendFileHeader(catfp, numfiles, checksumtype, formatspecs)
+        AppendFileHeader(catfp, numfiles, [], checksumtype, formatspecs)
         try:
             catfp.flush()
             if(hasattr(os, "sync")):
@@ -5466,7 +5482,7 @@ if(rarfile_support):
             ftypehex = format(ftype, 'x').lower()
             catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
-            catfp = AppendFileHeaderWithContent(
+            AppendFileHeaderWithContent(
                 catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
             fcontents.close()
         if(numfiles > 0):
@@ -5567,7 +5583,7 @@ if(py7zr_support):
         if(sztestalt):
             VerbosePrintOut("Bad file found!")
         numfiles = int(len(szpfp.list()))
-        AppendFileHeader(catfp, numfiles, checksumtype, formatspecs)
+        AppendFileHeader(catfp, numfiles, [], checksumtype, formatspecs)
         for member in sorted(szpfp.list(), key=lambda x: x.filename):
             if(re.findall("^[.|/]", member.filename)):
                 fname = member.filename
@@ -5700,7 +5716,7 @@ if(py7zr_support):
             ftypehex = format(ftype, 'x').lower()
             catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
-            catfp = AppendFileHeaderWithContent(
+            AppendFileHeaderWithContent(
                 catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
             fcontents.close()
         if(numfiles > 0):
@@ -7175,7 +7191,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
         GetDirList = infilelist
     else:
         GetDirList = ListDir(infilelist, followlink, False)
-    if(not isinstance(infiles, (list, tuple, ))):
+    if(not isinstance(GetDirList, (list, tuple, ))):
         return False
     FullSizeFiles = GetTotalSize(GetDirList)
     if(not GetDirList):
@@ -8491,7 +8507,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
     fnumfiles = int(listcatfiles['fnumfiles'])
     if(lenlist > fnumfiles or lenlist < fnumfiles):
         fnumfiles = lenlist
-    AppendFileHeader(catfp, fnumfiles, checksumtype, formatspecs)
+    AppendFileHeader(catfp, fnumfiles, [], checksumtype, formatspecs)
     lenlist = len(listcatfiles['ffilelist'])
     fnumfiles = int(listcatfiles['fnumfiles'])
     lcfi = 0
@@ -8660,7 +8676,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
             fcompression = ""
         catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize,
                       fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile]
-        catfp = AppendFileHeaderWithContent(
+        AppendFileHeaderWithContent(
             catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
         fcontents.close()
         lcfi = lcfi + 1
