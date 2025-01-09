@@ -621,7 +621,10 @@ def ListDir(dirpath, followlink=False, duplicates=False, include_regex=None, exc
     Returns:
         list: A list of files and directories matching the criteria.
     """
-    if os.stat not in os.supports_follow_symlinks and followlink:
+    try:
+        if os.stat not in os.supports_follow_symlinks and followlink:
+            followlink = False
+    except AttributeError:
         followlink = False
     if isinstance(dirpath, (list, tuple)):
         dirpath = list(filter(None, dirpath))
@@ -688,7 +691,10 @@ def ListDirAdvanced(dirpath, followlink=False, duplicates=False, include_regex=N
     Returns:
         list: A list of files and directories matching the criteria.
     """
-    if os.stat not in os.supports_follow_symlinks and followlink:
+    try:
+        if os.stat not in os.supports_follow_symlinks and followlink:
+            followlink = False
+    except AttributeError:
         followlink = False
     if isinstance(dirpath, (list, tuple)):
         dirpath = list(filter(None, dirpath))
@@ -3149,7 +3155,10 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
             infilelist = list(filter(None, infiles))
         elif(isinstance(infiles, (basestring, ))):
             infilelist = list(filter(None, [infiles]))
-    if os.stat not in os.supports_follow_symlinks and followlink:
+    try:
+        if os.stat not in os.supports_follow_symlinks and followlink:
+            followlink = False
+    except AttributeError:
         followlink = False
     if(advancedlist):
         GetDirList = ListDirAdvanced(infilelist, followlink, False)
@@ -4374,7 +4383,10 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
             infilelist = list(filter(None, infiles))
         elif(isinstance(infiles, (basestring, ))):
             infilelist = list(filter(None, [infiles]))
-    if os.stat not in os.supports_follow_symlinks and followlink:
+    try:
+        if os.stat not in os.supports_follow_symlinks and followlink:
+            followlink = False
+    except AttributeError:
         followlink = False
     if(advancedlist):
         GetDirList = ListDirAdvanced(infilelist, followlink, False)
@@ -7233,7 +7245,10 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
             infilelist = list(filter(None, infiles))
         elif(isinstance(infiles, (basestring, ))):
             infilelist = list(filter(None, [infiles]))
-    if os.stat not in os.supports_follow_symlinks and followlink:
+    try:
+        if os.stat not in os.supports_follow_symlinks and followlink:
+            followlink = False
+    except AttributeError:
         followlink = False
     if(advancedlist):
         GetDirList = ListDirAdvanced(infilelist, followlink, False)
