@@ -520,8 +520,7 @@ mimetypes.add_type(archivefile_zlib_mimetype, __file_format_extension__+".zl", s
 mimetypes.add_type(archivefile_zlib_mimetype, __file_format_extension__+".zlib", strict=True)
 archivefile_zz_mimetype = archivefile_zlib_mimetype
 archivefile_zl_mimetype = archivefile_zlib_mimetype
-archivefile_extensions = [__file_format_extension__, __file_format_extension__+".gz", __file_format_extension__+".bz2", __file_format_extension__+".zst", __file_format_extension__+".lz4", __file_format_extension__ +
-                          ".lzo", __file_format_extension__+".lzop", __file_format_extension__+".lzma", __file_format_extension__+".xz", __file_format_extension__+".zz", __file_format_extension__+".zl", __file_format_extension__+".zlib"]
+archivefile_extensions = [__file_format_extension__, __file_format_extension__+".gz", __file_format_extension__+".bz2", __file_format_extension__+".zst", __file_format_extension__+".lz4", __file_format_extension__ + ".lzo", __file_format_extension__+".lzop", __file_format_extension__+".lzma", __file_format_extension__+".xz", __file_format_extension__+".zz", __file_format_extension__+".zl", __file_format_extension__+".zlib"]
 
 if __name__ == "__main__":
     import subprocess
@@ -1643,7 +1642,7 @@ def TarFileCheck(infile):
         if is_tarfile(infile):
             return True
         else:
-            return False
+            pass
     except TypeError:
         try:
             # Check if the input is a file object
@@ -1651,43 +1650,17 @@ def TarFileCheck(infile):
                 # Save the current file position
                 current_position = infile.tell()
                 # Attempt to open the file object as a tar file
-                tar = tarfile.open(fileobj=infile)
-                tar.close()
+                with tarfile.open(fileobj=infile) as tar:
+                    pass
                 # Restore the file position
                 infile.seek(current_position)
-                return True
             else:
-                # Assume it's a filename
-                tar = tarfile.open(name=infile)
-                tar.close()
-                return True
-        except tarfile.TarError:
-            return False
-
-
-def TarFileCheckAlt(infile):
-    try:
-        if is_tarfile(infile):
+                # Assume it's a filename and attempt to open it as a tar file
+                with tarfile.open(name=infile) as tar:
+                    pass
             return True
-    except TypeError:
-        pass
-    try:
-        # Check if the input is a file-like object
-        if hasattr(infile, "read"):
-            # Save the current file position
-            current_position = infile.tell()
-            # Attempt to open the file object as a tar file
-            with tarfile.open(fileobj=infile) as tar:
-                pass
-            # Restore the file position
-            infile.seek(current_position)
-        else:
-            # Assume it's a filename and attempt to open it as a tar file
-            with tarfile.open(name=infile) as tar:
-                pass
-        return True
-    except (tarfile.TarError, AttributeError, IOError):
-        return False
+        except (tarfile.TarError, AttributeError, IOError):
+            return False
 
 
 def ZipFileCheck(infile):
