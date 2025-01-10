@@ -133,6 +133,8 @@ try:
     rarfile_support = True
 except ImportError:
     pass
+except OSError:
+    pass
 
 # 7z file support
 py7zr_support = False
@@ -140,6 +142,8 @@ try:
     import py7zr
     py7zr_support = True
 except ImportError:
+    pass
+except OSError:
     pass
 
 # TAR file checking
@@ -167,6 +171,8 @@ try:
     haveparamiko = True
 except ImportError:
     pass
+except OSError:
+    pass
 
 # PySFTP support
 havepysftp = False
@@ -175,6 +181,8 @@ try:
     havepysftp = True
 except ImportError:
     pass
+except OSError:
+    pass
 
 # Add the mechanize import check
 havemechanize = False
@@ -182,6 +190,8 @@ try:
     import mechanize
     havemechanize = True
 except ImportError:
+    pass
+except OSError:
     pass
 
 # Requests support
@@ -193,6 +203,8 @@ try:
     logging.getLogger("urllib3").setLevel(logging.WARNING)
 except ImportError:
     pass
+except OSError:
+    pass
 
 # HTTPX support
 havehttpx = False
@@ -202,6 +214,8 @@ try:
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
 except ImportError:
+    pass
+except OSError:
     pass
 
 # HTTP and URL parsing
