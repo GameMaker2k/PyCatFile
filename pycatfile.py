@@ -8828,7 +8828,7 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
     if(isinstance(infile, dict)):
         listcatfiles = infile
     else:
-        if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
+        if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
             infile = RemoveWindowsPath(infile)
         listcatfiles = ArchiveFileToArray(
             infile, seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp)
@@ -9099,7 +9099,7 @@ def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, for
     if(isinstance(infile, dict)):
         listcatfiles = infile
     else:
-        if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write")):
+        if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
             infile = RemoveWindowsPath(infile)
         listcatfiles = ArchiveFileToArray(
             infile, seekstart, seekend, True, False, skipchecksum, formatspecs, returnfp)
