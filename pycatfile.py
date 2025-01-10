@@ -3079,7 +3079,7 @@ def MakeEmptyFile(outfile, compression="auto", compresswholefile=True, compressi
         return True
 
 
-def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="", checksumtype="crc32", formatspecs=__file_format_dict__):
+def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="", checksumtype=["crc32", "crc32"], formatspecs=__file_format_dict__):
     if(not hasattr(fp, "write")):
         return False
     formatspecs = FormatSpecsListToDict(formatspecs)
@@ -3101,19 +3101,19 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
         catfileoutstr = catfileoutstr + \
             AppendNullBytes(extradata, formatspecs['format_delimiter'])
     if(len(filecontent) == 0):
-        checksumlist = [checksumtype, "none"]
+        checksumlist = [checksumtype[0], "none"]
     else:
-        checksumlist = [checksumtype, checksumtype]
+        checksumlist = checksumtype
     catfileoutstr = catfileoutstr + \
         AppendNullBytes(checksumlist, formatspecs['format_delimiter'])
     catfileheadercshex = GetFileChecksum(
-        catfileoutstr, checksumtype, True, formatspecs)
+        catfileoutstr, checksumtype[0], True, formatspecs)
     if(len(filecontent) == 0):
         catfilecontentcshex = GetFileChecksum(
             filecontent, "none", False, formatspecs)
     else:
         catfilecontentcshex = GetFileChecksum(
-            filecontent, checksumtype, False, formatspecs)
+            filecontent, checksumtype[1], False, formatspecs)
     tmpfileoutstr = catfileoutstr + \
         AppendNullBytes([catfileheadercshex, catfilecontentcshex],
                         formatspecs['format_delimiter'])
@@ -3121,7 +3121,7 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
     catfileoutstr = AppendNullByte(
         catheaersize, formatspecs['format_delimiter']) + catfileoutstr
     catfileheadercshex = GetFileChecksum(
-        catfileoutstr, checksumtype, True, formatspecs)
+        catfileoutstr, checksumtype[0], True, formatspecs)
     catfileoutstr = catfileoutstr + \
         AppendNullBytes([catfileheadercshex, catfilecontentcshex],
                         formatspecs['format_delimiter'])
@@ -3142,7 +3142,7 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
     return fp
 
 
-def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], extradata=[], compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False):
+def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], extradata=[], compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
     if(not hasattr(fp, "write")):
         return False
     formatspecs = FormatSpecsListToDict(formatspecs)
@@ -3191,7 +3191,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
     inodetocatinode = {}
     numfiles = int(len(GetDirList))
     fnumfiles = format(numfiles, 'x').lower()
-    AppendFileHeader(fp, fnumfiles, [], checksumtype, formatspecs)
+    AppendFileHeader(fp, fnumfiles, [], checksumtype[0], formatspecs)
     FullSizeFilesAlt = 0
     for curfname in GetDirList:
         if(re.findall("^[.|/]", curfname)):
@@ -3427,7 +3427,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
         AppendFileHeaderWithContent(
-            fp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
+            fp, catoutlist, extradata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
     if(numfiles > 0):
         catfp.write(AppendNullBytes(
             [0, 0], formatspecs['format_delimiter']).encode("UTF-8"))
@@ -3435,7 +3435,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
     return fp
 
 
-def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extradata=[], compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False):
+def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extradata=[], compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
     if(not hasattr(fp, "write")):
         return False
     formatspecs = FormatSpecsListToDict(formatspecs)
@@ -3453,7 +3453,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
     inodetocatinode = {}
     numfiles = int(len(GetDirList))
     fnumfiles = format(numfiles, 'x').lower()
-    AppendFileHeader(fp, fnumfiles, [], checksumtype, formatspecs)
+    AppendFileHeader(fp, fnumfiles, [], checksumtype[0], formatspecs)
     for curfname in GetDirList:
         ftype = format(curfname[0], 'x').lower()
         if(re.findall("^[.|/]", curfname[1])):
@@ -3490,21 +3490,21 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
                       fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile]
         fcontents.seek(0, 0)
         AppendFileHeaderWithContent(
-            fp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
+            fp, catoutlist, extradata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
     if(numfiles > 0):
         fp.write(AppendNullBytes(
             [0, 0], formatspecs['format_delimiter']).encode("UTF-8"))
     return fp
 
 
-def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False):
+def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     inlist = ReadInFileBySizeWithContentToList(
         infile, 0, 0, False, True, False, formatspecs)
     return AppendListsWithContent(inlist, fp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs, verbose)
 
 
-def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, filevalues=[], extradata=[], followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         if(os.path.exists(outfile)):
@@ -3564,7 +3564,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
         return True
 
 
-def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         if(os.path.exists(outfile)):
@@ -3624,7 +3624,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
         return True
 
 
-def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     inlist = ReadInFileBySizeWithContentToList(
         infile, 0, 0, False, True, False, formatspecs)
@@ -4339,17 +4339,12 @@ def CheckSumSupportAlt(checkfor, guaranteed=True):
         return False
 
 
-def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     advancedlist = formatspecs['use_advanced_list']
     altinode = formatspecs['use_alt_inode']
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
-    checksumtype = checksumtype.lower()
-    if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
-        checksumtype = "crc32"
-    if(checksumtype == "none"):
-        checksumtype = ""
     if(not compression or compression == formatspecs['format_lower']):
         compression = "auto"
     if(compression not in compressionlist and compression is None):
@@ -4418,7 +4413,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
     filetoinode = {}
     inodetocatinode = {}
     numfiles = int(len(GetDirList))
-    AppendFileHeader(catfp, numfiles, [], checksumtype, formatspecs)
+    AppendFileHeader(catfp, numfiles, [], checksumtype[0], formatspecs)
     FullSizeFilesAlt = 0
     for curfname in GetDirList:
         if(re.findall("^[.|/]", curfname)):
@@ -4653,7 +4648,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
         catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
         AppendFileHeaderWithContent(
-            catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
+            catfp, catoutlist, extradata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
         fcontents.close()
     if(numfiles > 0):
         catfp.write(AppendNullBytes(
@@ -4700,20 +4695,15 @@ if(hasattr(shutil, "register_archive_format")):
         return PackArchiveFile(source_dir, archive_name, False, "auto", True, None, compressionlistalt, False, "crc32", [], __file_format_dict__['format_delimiter'], False, False)
 
 
-def PackArchiveFileFromDirList(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromDirList(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     return PackArchiveFile(infiles, outfile, dirlistfromtxt, compression, compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, extradata, formatspecs, verbose, returnfp)
 
 
-def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
-    checksumtype = checksumtype.lower()
-    if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
-        checksumtype = "crc32"
-    if(checksumtype == "none"):
-        checksumtype = ""
     if(not compression or compression == formatspecs['format_lower']):
         compression = "auto"
     if(compression not in compressionlist and compression is None):
@@ -4804,7 +4794,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
     except FileNotFoundError:
         return False
     numfiles = int(len(tarfp.getmembers()))
-    AppendFileHeader(catfp, numfiles, [], checksumtype, formatspecs)
+    AppendFileHeader(catfp, numfiles, [], checksumtype[0], formatspecs)
     for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
         if(re.findall("^[.|/]", member.name)):
             fname = member.name
@@ -4935,7 +4925,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
         AppendFileHeaderWithContent(
-            catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
+            catfp, catoutlist, extradata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
         fcontents.close()
     if(numfiles > 0):
         catfp.write(AppendNullBytes(
@@ -4977,15 +4967,10 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         return True
 
 
-def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
-    checksumtype = checksumtype.lower()
-    if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
-        checksumtype = "crc32"
-    if(checksumtype == "none"):
-        checksumtype = ""
     if(not compression or compression == formatspecs['format_lower']):
         compression = "auto"
     if(compression not in compressionlist and compression is None):
@@ -5050,7 +5035,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
     if(ziptest):
         VerbosePrintOut("Bad file found!")
     numfiles = int(len(zipfp.infolist()))
-    AppendFileHeader(catfp, numfiles, [], checksumtype, formatspecs)
+    AppendFileHeader(catfp, numfiles, [], checksumtype[0], formatspecs)
     for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
         if(re.findall("^[.|/]", member.filename)):
             fname = member.filename
@@ -5206,7 +5191,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
         catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
         AppendFileHeaderWithContent(
-            catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
+            catfp, catoutlist, extradata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
         fcontents.close()
     if(numfiles > 0):
         catfp.write(AppendNullBytes(
@@ -5249,19 +5234,14 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
 
 
 if(not rarfile_support):
-    def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         return False
 
 if(rarfile_support):
-    def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         formatspecs = FormatSpecsListToDict(formatspecs)
         if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
             outfile = RemoveWindowsPath(outfile)
-        checksumtype = checksumtype.lower()
-        if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
-            checksumtype = "crc32"
-        if(checksumtype == "none"):
-            checksumtype = ""
         if(not compression or compression == formatspecs['format_lower']):
             compression = "auto"
         if(compression not in compressionlist and compression is None):
@@ -5306,7 +5286,7 @@ if(rarfile_support):
         if(rartest):
             VerbosePrintOut("Bad file found!")
         numfiles = int(len(rarfp.infolist()))
-        AppendFileHeader(catfp, numfiles, [], checksumtype, formatspecs)
+        AppendFileHeader(catfp, numfiles, [], checksumtype[0], formatspecs)
         try:
             catfp.flush()
             if(hasattr(os, "sync")):
@@ -5507,7 +5487,7 @@ if(rarfile_support):
             catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
             AppendFileHeaderWithContent(
-                catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
+                catfp, catoutlist, extradata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
             fcontents.close()
         if(numfiles > 0):
             catfp.write(AppendNullBytes(
@@ -5550,19 +5530,14 @@ if(rarfile_support):
 
 
 if(not py7zr_support):
-    def PackArchiveFileFromSevenZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromSevenZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         return False
 
 if(py7zr_support):
-    def PackArchiveFileFromSevenZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromSevenZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         formatspecs = FormatSpecsListToDict(formatspecs)
         if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
             outfile = RemoveWindowsPath(outfile)
-        checksumtype = checksumtype.lower()
-        if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
-            checksumtype = "crc32"
-        if(checksumtype == "none"):
-            checksumtype = ""
         if(not compression or compression == formatspecs['format_lower']):
             compression = "auto"
         if(compression not in compressionlist and compression is None):
@@ -5607,7 +5582,7 @@ if(py7zr_support):
         if(sztestalt):
             VerbosePrintOut("Bad file found!")
         numfiles = int(len(szpfp.list()))
-        AppendFileHeader(catfp, numfiles, [], checksumtype, formatspecs)
+        AppendFileHeader(catfp, numfiles, [], checksumtype[0], formatspecs)
         for member in sorted(szpfp.list(), key=lambda x: x.filename):
             if(re.findall("^[.|/]", member.filename)):
                 fname = member.filename
@@ -5741,7 +5716,7 @@ if(py7zr_support):
             catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
             AppendFileHeaderWithContent(
-                catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
+                catfp, catoutlist, extradata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
             fcontents.close()
         if(numfiles > 0):
             catfp.write(AppendNullBytes(
@@ -5783,7 +5758,7 @@ if(py7zr_support):
             return True
 
 
-def PackArchiveFileFromInFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromInFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
     if(verbose):
@@ -7234,7 +7209,7 @@ def InFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=
     return False
 
 
-def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, contentasfile=True, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
+def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     catver = formatspecs['format_ver']
     fileheaderver = str(int(catver.replace(".", "")))
@@ -7290,18 +7265,18 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fostype = platform.system()
     fileheader = fileheader + \
-        AppendNullBytes([fostype, fnumfileshex, checksumtype],
+        AppendNullBytes([fostype, fnumfileshex, checksumtype[0]],
                         formatspecs['format_delimiter'])
     catversion = re.findall("([\\d]+)", fileheader)
     catversions = re.search('(.*?)(\\d+)', fileheader).groups()
     catfileheadercshex = GetFileChecksum(
-        fileheader, checksumtype, True, formatspecs)
+        fileheader, checksumtype[0], True, formatspecs)
     fileheader = fileheader + \
         AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
     fheadtell = len(fileheader)
-    catheader = [fostype, fnumfileshex, checksumtype, catfileheadercshex]
+    catheader = [fostype, fnumfileshex, checksumtype[0], catfileheadercshex]
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': "", 'fversion': catversions[1], 'fostype': fostype,
-               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'frawheader': [formatspecs['format_magic'] + fileheaderver] + catheader, 'ffilelist': []}
+               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype[0], 'fheaderchecksum': catfileheadercshex, 'frawheader': [formatspecs['format_magic'] + fileheaderver] + catheader, 'ffilelist': []}
     FullSizeFilesAlt = 0
     for curfname in GetDirList:
         catfhstart = fheadtell
@@ -7467,21 +7442,21 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
             catfileoutstr = catfileoutstr + \
                 AppendNullBytes(extradata, formatspecs['format_delimiter'])
         if(fsize == 0):
-            checksumlist = [checksumtype, "none"]
+            checksumlist = [checksumtype[1], "none"]
         else:
-            checksumlist = [checksumtype, checksumtype]
+            checksumlist = [checksumtype[1], checksumtype[2]]
         catfileoutstr = catfileoutstr + \
             AppendNullBytes(checksumlist, formatspecs['format_delimiter'])
         catfnumfields = catoutlen
         catfileheadercshex = GetFileChecksum(
-            catfileoutstr, checksumtype, True, formatspecs)
+            catfileoutstr, checksumtype[1], True, formatspecs)
         fcontents.seek(0, 0)
         if(fsize == 0):
             catfilecontentcshex = GetFileChecksum(
                 fcontents.read(), "none", False, formatspecs)
         else:
             catfilecontentcshex = GetFileChecksum(
-                fcontents.read(), checksumtype, False, formatspecs)
+                fcontents.read(), checksumtype[2], False, formatspecs)
         tmpfileoutstr = catfileoutstr + \
             AppendNullBytes([catfileheadercshex, catfilecontentcshex],
                             formatspecs['format_delimiter'])
@@ -7489,7 +7464,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
         catfileoutstr = AppendNullByte(
             catheaersize, formatspecs['format_delimiter']) + catfileoutstr
         catfileheadercshex = GetFileChecksum(
-            catfileoutstr, checksumtype, True, formatspecs)
+            catfileoutstr, checksumtype[1], True, formatspecs)
         catfileoutstr = catfileoutstr + \
             AppendNullBytes([catfileheadercshex, catfilecontentcshex],
                             formatspecs['format_delimiter'])
@@ -7511,12 +7486,12 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
         if(not contentasfile):
             fcontents = fcontents.read()
         catlist['ffilelist'].append({'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
-                                     'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': "+"+str(len(formatspecs['format_delimiter'])), 'fheaderchecksumtype': checksumtype, 'fcontentchecksumtype': checksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
+                                     'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': "+"+str(len(formatspecs['format_delimiter'])), 'fheaderchecksumtype': checksumtype[1], 'fcontentchecksumtype': checksumtype[2], 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
         fileidnum = fileidnum + 1
     return catlist
 
 
-def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
+def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     curinode = 0
     curfid = 0
@@ -7588,18 +7563,18 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fostype = platform.system()
     fileheader = fileheader + \
-        AppendNullBytes([fostype, fnumfileshex, checksumtype],
+        AppendNullBytes([fostype, fnumfileshex, checksumtype[0]],
                         formatspecs['format_delimiter'])
     catversion = re.findall("([\\d]+)", fileheader)
     catversions = re.search('(.*?)(\\d+)', fileheader).groups()
     catfileheadercshex = GetFileChecksum(
-        fileheader, checksumtype, True, formatspecs)
+        fileheader, checksumtype[0], True, formatspecs)
     fileheader = fileheader + \
         AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
     fheadtell = len(fileheader)
-    catheader = [fostype, fnumfileshex, checksumtype, catfileheadercshex]
+    catheader = [fostype, fnumfileshex, checksumtype[0], catfileheadercshex]
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': "", 'fversion': catversions[1], 'fostype': fostype,
-               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'frawheader': [formatspecs['format_magic'] + fileheaderver] + catheader, 'ffilelist': []}
+               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype[0], 'fheaderchecksum': catfileheadercshex, 'frawheader': [formatspecs['format_magic'] + fileheaderver] + catheader, 'ffilelist': []}
     for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
         catfhstart = fheadtell
         if(re.findall("^[.|/]", member.name)):
@@ -7709,21 +7684,21 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
             catfileoutstr = catfileoutstr + \
                 AppendNullBytes(extradata, formatspecs['format_delimiter'])
         if(fsize == 0):
-            checksumlist = [checksumtype, "none"]
+            checksumlist = [checksumtype[1], "none"]
         else:
-            checksumlist = [checksumtype, checksumtype]
+            checksumlist = [checksumtype[1], checksumtype[2]]
         catfileoutstr = catfileoutstr + \
             AppendNullBytes(checksumlist, formatspecs['format_delimiter'])
         catfnumfields = catoutlen
         catfileheadercshex = GetFileChecksum(
-            catfileoutstr, checksumtype, True, formatspecs)
+            catfileoutstr, checksumtype[1], True, formatspecs)
         fcontents.seek(0, 0)
         if(fsize == 0):
             catfilecontentcshex = GetFileChecksum(
                 fcontents.read(), "none", False, formatspecs)
         else:
             catfilecontentcshex = GetFileChecksum(
-                fcontents.read(), checksumtype, False, formatspecs)
+                fcontents.read(), checksumtype[2], False, formatspecs)
         tmpfileoutstr = catfileoutstr + \
             AppendNullBytes([catfileheadercshex, catfilecontentcshex],
                             formatspecs['format_delimiter'])
@@ -7731,7 +7706,7 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         catfileoutstr = AppendNullByte(
             catheaersize, formatspecs['format_delimiter']) + catfileoutstr
         catfileheadercshex = GetFileChecksum(
-            catfileoutstr, checksumtype, True, formatspecs)
+            catfileoutstr, checksumtype[1], True, formatspecs)
         catfileoutstr = catfileoutstr + \
             AppendNullBytes([catfileheadercshex, catfilecontentcshex],
                             formatspecs['format_delimiter'])
@@ -7753,12 +7728,12 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         if(not contentasfile):
             fcontents = fcontents.read()
         catlist['ffilelist'].append({'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
-                                    'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': "+"+str(len(formatspecs['format_delimiter'])), 'fheaderchecksumtype': checksumtype, 'fcontentchecksumtype': checksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
+                                    'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': "+"+str(len(formatspecs['format_delimiter'])), 'fheaderchecksumtype': checksumtype[1], 'fcontentchecksumtype': checksumtype[2], 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
         fileidnum = fileidnum + 1
     return catlist
 
 
-def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
+def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     curinode = 0
     curfid = 0
@@ -7806,16 +7781,16 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fostype = platform.system()
     fileheader = fileheader + \
-        AppendNullBytes([fostype, fnumfileshex, checksumtype],
+        AppendNullBytes([fostype, fnumfileshex, checksumtype[0]],
                         formatspecs['format_delimiter'])
     catfileheadercshex = GetFileChecksum(
-        fileheader, checksumtype, True, formatspecs)
+        fileheader, checksumtype[0], True, formatspecs)
     fileheader = fileheader + \
         AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
     fheadtell = len(fileheader)
-    catheader = [fostype, fnumfileshex, checksumtype, catfileheadercshex]
+    catheader = [fostype, fnumfileshex, checksumtype[0], catfileheadercshex]
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': "", 'fversion': catversions[1], 'fostype': fostype,
-               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'frawheader': [formatspecs['format_magic'] + fileheaderver] + catheader, 'ffilelist': []}
+               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype[0], 'fheaderchecksum': catfileheadercshex, 'frawheader': [formatspecs['format_magic'] + fileheaderver] + catheader, 'ffilelist': []}
     for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
         catfhstart = fheadtell
         if(re.findall("^[.|/]", member.filename)):
@@ -7948,21 +7923,21 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
             catfileoutstr = catfileoutstr + \
                 AppendNullBytes(extradata, formatspecs['format_delimiter'])
         if(fsize == 0):
-            checksumlist = [checksumtype, "none"]
+            checksumlist = [checksumtype[1], "none"]
         else:
-            checksumlist = [checksumtype, checksumtype]
+            checksumlist = [checksumtype[1], checksumtype[2]]
         catfileoutstr = catfileoutstr + \
             AppendNullBytes(checksumlist, formatspecs['format_delimiter'])
         catfnumfields = catoutlen
         catfileheadercshex = GetFileChecksum(
-            catfileoutstr, checksumtype, True, formatspecs)
+            catfileoutstr, checksumtype[1], True, formatspecs)
         fcontents.seek(0, 0)
         if(fsize == 0):
             catfilecontentcshex = GetFileChecksum(
                 fcontents.read(), "none", False, formatspecs)
         else:
             catfilecontentcshex = GetFileChecksum(
-                fcontents.read(), checksumtype, False, formatspecs)
+                fcontents.read(), checksumtype[2], False, formatspecs)
         tmpfileoutstr = catfileoutstr + \
             AppendNullBytes([catfileheadercshex, catfilecontentcshex],
                             formatspecs['format_delimiter'])
@@ -7970,7 +7945,7 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         catfileoutstr = AppendNullByte(
             catheaersize, formatspecs['format_delimiter']) + catfileoutstr
         catfileheadercshex = GetFileChecksum(
-            catfileoutstr, checksumtype, True, formatspecs)
+            catfileoutstr, checksumtype[1], True, formatspecs)
         catfileoutstr = catfileoutstr + \
             AppendNullBytes([catfileheadercshex, catfilecontentcshex],
                             formatspecs['format_delimiter'])
@@ -7992,17 +7967,17 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="
         if(not contentasfile):
             fcontents = fcontents.read()
         catlist['ffilelist'].append({'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
-                                    'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': "+"+str(len(formatspecs['format_delimiter'])), 'fheaderchecksumtype': checksumtype, 'fcontentchecksumtype': checksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
+                                    'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': "+"+str(len(formatspecs['format_delimiter'])), 'fheaderchecksumtype': checksumtype[1], 'fcontentchecksumtype': checksumtype[2], 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
         fileidnum = fileidnum + 1
     return catlist
 
 
 if(not rarfile_support):
-    def RarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
+    def RarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
         return False
 
 if(rarfile_support):
-    def RarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
+    def RarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
         formatspecs = FormatSpecsListToDict(formatspecs)
         curinode = 0
         curfid = 0
@@ -8029,16 +8004,16 @@ if(rarfile_support):
         fnumfileshex = format(int(fnumfiles), 'x').lower()
         fostype = platform.system
         fileheader = fileheader + \
-            AppendNullBytes([fostype, fnumfileshex, checksumtype],
+            AppendNullBytes([fostype, fnumfileshex, checksumtype[0]],
                             formatspecs['format_delimiter'])
         catfileheadercshex = GetFileChecksum(
-            fileheader, checksumtype, True, formatspecs)
+            fileheader, checksumtype[0], True, formatspecs)
         fileheader = fileheader + \
             AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
         fheadtell = len(fileheader)
-        catheader = [fostype, fnumfileshex, checksumtype, catfileheadercshex]
+        catheader = [fostype, fnumfileshex, checksumtype[0], catfileheadercshex]
         catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': "", 'fversion': catversions[1], 'fostype': fostype,
-                   'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'frawheader': [formatspecs['format_magic'] + fileheaderver] + catheader, 'ffilelist': []}
+                   'fformatspecs': formatspecs, 'fchecksumtype': checksumtype[0], 'fheaderchecksum': catfileheadercshex, 'frawheader': [formatspecs['format_magic'] + fileheaderver] + catheader, 'ffilelist': []}
         for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
             catfhstart = fheadtell
             is_unix = False
@@ -8197,21 +8172,21 @@ if(rarfile_support):
                 catfileoutstr = catfileoutstr + \
                     AppendNullBytes(extradata, formatspecs['format_delimiter'])
             if(fsize == 0):
-                checksumlist = [checksumtype, "none"]
+                checksumlist = [checksumtype[1], "none"]
             else:
-                checksumlist = [checksumtype, checksumtype]
+                checksumlist = [checksumtype[1], checksumtype[2]]
             ccatfileoutstr = catfileoutstr + \
                 AppendNullBytes(checksumlist, formatspecs['format_delimiter'])
             catfnumfields = 24 + catfextrafields
             catfileheadercshex = GetFileChecksum(
-                catfileoutstr, checksumtype, True, formatspecs)
+                catfileoutstr, checksumtype[1], True, formatspecs)
             fcontents.seek(0, 0)
             if(fsize == 0):
                 catfilecontentcshex = GetFileChecksum(
                     fcontents.read(), "none", False, formatspecs)
             else:
                 catfilecontentcshex = GetFileChecksum(
-                    fcontents.read(), checksumtype, False, formatspecs)
+                    fcontents.read(), checksumtype[2], False, formatspecs)
             tmpfileoutstr = catfileoutstr + \
                 AppendNullBytes(
                     [catfileheadercshex, catfilecontentcshex], formatspecs['format_delimiter'])
@@ -8219,7 +8194,7 @@ if(rarfile_support):
             catfileoutstr = AppendNullByte(
                 catheaersize, formatspecs['format_delimiter']) + catfileoutstr
             catfileheadercshex = GetFileChecksum(
-                catfileoutstr, checksumtype, True, formatspecs)
+                catfileoutstr, checksumtype[1], True, formatspecs)
             catfileoutstr = catfileoutstr + \
                 AppendNullBytes(
                     [catfileheadercshex, catfilecontentcshex], formatspecs['format_delimiter'])
@@ -8242,16 +8217,16 @@ if(rarfile_support):
             if(not contentasfile):
                 fcontents = fcontents.read()
             catlist['ffilelist'].append({'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
-                                        'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': "+"+str(len(formatspecs['format_delimiter'])), 'fheaderchecksumtype': checksumtype, 'fcontentchecksumtype': checksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
+                                        'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': "+"+str(len(formatspecs['format_delimiter'])), 'fheaderchecksumtype': checksumtype[1], 'fcontentchecksumtype': checksumtype[2], 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
             fileidnum = fileidnum + 1
         return catlist
 
 if(not py7zr_support):
-    def SevenZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
+    def SevenZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
         return False
 
 if(py7zr_support):
-    def SevenZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
+    def SevenZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
         formatspecs = FormatSpecsListToDict(formatspecs)
         curinode = 0
         curfid = 0
@@ -8276,16 +8251,16 @@ if(py7zr_support):
         fnumfileshex = format(int(fnumfiles), 'x').lower()
         fostype = platform.system
         fileheader = fileheader + \
-            AppendNullBytes([fostype, fnumfileshex, checksumtype],
+            AppendNullBytes([fostype, fnumfileshex, checksumtype[0]],
                             formatspecs['format_delimiter'])
         catfileheadercshex = GetFileChecksum(
-            fileheader, checksumtype, True, formatspecs)
+            fileheader, checksumtype[0], True, formatspecs)
         fileheader = fileheader + \
             AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
         fheadtell = len(fileheader)
-        catheader = [fostype, fnumfileshex, checksumtype, catfileheadercshex]
+        catheader = [fostype, fnumfileshex, checksumtype[0], catfileheadercshex]
         catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': "", 'fversion': catversions[1], 'fostype': fostype,
-                   'fformatspecs': formatspecs, 'fchecksumtype': checksumtype, 'fheaderchecksum': catfileheadercshex, 'frawheader': [formatspecs['format_magic'] + fileheaderver] + catheader, 'ffilelist': []}
+                   'fformatspecs': formatspecs, 'fchecksumtype': checksumtype[0], 'fheaderchecksum': catfileheadercshex, 'frawheader': [formatspecs['format_magic'] + fileheaderver] + catheader, 'ffilelist': []}
         for member in sorted(szpfp.list(), key=lambda x: x.filename):
             catfhstart = fheadtell
             if(re.findall("^[.|/]", member.filename)):
@@ -8392,21 +8367,21 @@ if(py7zr_support):
                 catfileoutstr = catfileoutstr + \
                     AppendNullBytes(extradata, formatspecs['format_delimiter'])
             if(fsize == 0):
-                checksumlist = [checksumtype, "none"]
+                checksumlist = [checksumtype[1], "none"]
             else:
-                checksumlist = [checksumtype, checksumtype]
+                checksumlist = [checksumtype[1], checksumtype[2]]
             catfileoutstr = catfileoutstr + \
                 AppendNullBytes(checksumlist, formatspecs['format_delimiter'])
             catfnumfields = 24 + catfextrafields
             catfileheadercshex = GetFileChecksum(
-                catfileoutstr, checksumtype, True, formatspecs)
+                catfileoutstr, checksumtype[1], True, formatspecs)
             fcontents.seek(0, 0)
             if(fsize == 0):
                 catfilecontentcshex = GetFileChecksum(
                     fcontents.read(), "none", False, formatspecs)
             else:
                 catfilecontentcshex = GetFileChecksum(
-                    fcontents.read(), checksumtype, False, formatspecs)
+                    fcontents.read(), checksumtype[2], False, formatspecs)
             tmpfileoutstr = catfileoutstr + \
                 AppendNullBytes(
                     [catfileheadercshex, catfilecontentcshex], formatspecs['format_delimiter'])
@@ -8414,7 +8389,7 @@ if(py7zr_support):
             catfileoutstr = AppendNullByte(
                 catheaersize, formatspecs['format_delimiter']) + catfileoutstr
             catfileheadercshex = GetFileChecksum(
-                catfileoutstr, checksumtype, True, formatspecs)
+                catfileoutstr, checksumtype[1], True, formatspecs)
             catfileoutstr = catfileoutstr + \
                 AppendNullBytes(
                     [catfileheadercshex, catfilecontentcshex], formatspecs['format_delimiter'])
@@ -8436,12 +8411,12 @@ if(py7zr_support):
             if(not contentasfile):
                 fcontents = fcontents.read()
             catlist['ffilelist'].append({'fid': fileidnum, 'fidalt': fileidnum, 'fheadersize': int(catheaersize, 16), 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': ftype, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
-                                        'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': "+"+str(len(formatspecs['format_delimiter'])), 'fheaderchecksumtype': checksumtype, 'fcontentchecksumtype': checksumtype, 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
+                                        'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': "+"+str(len(formatspecs['format_delimiter'])), 'fheaderchecksumtype': checksumtype[1], 'fcontentchecksumtype': checksumtype[2], 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': extrasizelen, 'fextralist': extrafieldslist, 'fheaderchecksum': int(catfileheadercshex, 16), 'fcontentchecksum': int(catfilecontentcshex, 16), 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents})
             fileidnum = fileidnum + 1
         return catlist
 
 
-def InFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False):
+def InFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
     if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
@@ -8459,7 +8434,7 @@ def InFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype="c
     return False
 
 
-def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     outarray = BytesIO()
     packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compresswholefile,
@@ -8536,7 +8511,7 @@ def ArchiveFileArrayToArrayIndex(inarray, seekstart=0, seekend=0, listonly=False
     return catarray
 
 
-def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, seekstart=0, seekend=0, checksumtype="crc32", skipchecksum=False, extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, seekstart=0, seekend=0, checksumtype=["crc32", "crc32", "crc32"], skipchecksum=False, extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     if(isinstance(infile, dict)):
         listcatfiles = infile
@@ -8547,11 +8522,6 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
             infile, seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp)
     if(outfile != "-" and not isinstance(infile, bytes) and not hasattr(infile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
-    checksumtype = checksumtype.lower()
-    if(not CheckSumSupport(checksumtype, hashlib_guaranteed)):
-        checksumtype = "crc32"
-    if(checksumtype == "none"):
-        checksumtype = ""
     if(not compression or compression == formatspecs['format_lower']):
         compression = "auto"
     if(compression not in compressionlist and compression is None):
@@ -8586,7 +8556,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
     fnumfiles = int(listcatfiles['fnumfiles'])
     if(lenlist > fnumfiles or lenlist < fnumfiles):
         fnumfiles = lenlist
-    AppendFileHeader(catfp, fnumfiles, [], checksumtype, formatspecs)
+    AppendFileHeader(catfp, fnumfiles, [], checksumtype[0], formatspecs)
     lenlist = len(listcatfiles['ffilelist'])
     fnumfiles = int(listcatfiles['fnumfiles'])
     lcfi = 0
@@ -8756,7 +8726,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
         catoutlist = [ftypehex, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize,
                       fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile]
         AppendFileHeaderWithContent(
-            catfp, catoutlist, extradata, fcontents.read(), checksumtype, formatspecs)
+            catfp, catoutlist, extradata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
         fcontents.close()
         lcfi = lcfi + 1
         reallcfi = reallcfi + 1
@@ -8800,7 +8770,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
         return True
 
 
-def RePackArchiveFileFromString(catstr, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", skipchecksum=False, extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def RePackArchiveFileFromString(catstr, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], skipchecksum=False, extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     catfp = BytesIO(catstr)
     listcatfiles = RePackArchiveFile(catfp, compression, compresswholefile, compressionlevel, compressionuselist,
@@ -8808,7 +8778,7 @@ def RePackArchiveFileFromString(catstr, outfile, compression="auto", compresswho
     return listcatfiles
 
 
-def PackArchiveFileFromListDir(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromListDir(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     outarray = BytesIO()
     packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compresswholefile,
@@ -9670,7 +9640,7 @@ def InFileListFiles(infile, verbose=False, formatspecs=__file_format_dict__, ret
     return False
 
 
-def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     outarray = BytesIO()
     packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compresswholefile,
@@ -9680,7 +9650,7 @@ def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compress
     return listcatfiles
 
 
-def ListDirListFilesAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, contentasfile=True, seekstart=0, seekend=0, skipchecksum=False, checksumtype="crc32", formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def ListDirListFilesAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, contentasfile=True, seekstart=0, seekend=0, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     outarray = ListDirToArrayAlt(infiles, dirlistfromtxt, followlink,
                                  listonly, contentasfile, checksumtype, formatspecs, verbose)
@@ -9689,7 +9659,7 @@ def ListDirListFilesAlt(infiles, dirlistfromtxt=False, followlink=False, listonl
     return listcatfiles
 
 
-def PackArchiveFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, skipchecksum=False, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     outarray = ListDirToArrayAlt(infiles, dirlistfromtxt, followlink,
                                  False, True, checksumtype, extradata, formatspecs, False)
@@ -9698,7 +9668,7 @@ def PackArchiveFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, compre
     return listcatfiles
 
 
-def PackArchiveFileFromTarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromTarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     outarray = TarFileToArrayAlt(
         infile, False, True, checksumtype, extradata, formatspecs, False)
@@ -9707,7 +9677,7 @@ def PackArchiveFileFromTarFileAlt(infile, outfile, compression="auto", compressw
     return listcatfiles
 
 
-def PackArchiveFileFromZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     outarray = ZipFileToArrayAlt(
         infile, False, True, checksumtype, extradata, formatspecs, False)
@@ -9717,11 +9687,11 @@ def PackArchiveFileFromZipFileAlt(infile, outfile, compression="auto", compressw
 
 
 if(not rarfile_support):
-    def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         return False
 
 if(rarfile_support):
-    def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         formatspecs = FormatSpecsListToDict(formatspecs)
         outarray = RarFileToArrayAlt(
             infile, False, True, checksumtype, extradata, formatspecs, False)
@@ -9731,11 +9701,11 @@ if(rarfile_support):
 
 
 if(not py7zr_support):
-    def PackArchiveFileFromSevenZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromSevenZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         return False
 
 if(py7zr_support):
-    def PackArchiveFileFromSevenZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromSevenZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         formatspecs = FormatSpecsListToDict(formatspecs)
         outarray = SevenZipFileToArrayAlt(
             infile, False, True, checksumtype, extradata, formatspecs, False)

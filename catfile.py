@@ -171,30 +171,30 @@ if active_action:
                 input_file, fnamedict, True)
             if(checkcompressfile == "catfile"):
                 tmpout = pycatfile.RePackArchiveFile(input_file, getargs.output, getargs.compression, getargs.wholefile,
-                                                     getargs.level, pycatfile.compressionlistalt, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, getargs.verbose, False)
+                                                     getargs.level, pycatfile.compressionlistalt, False, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], fnamedict, getargs.verbose, False)
             else:
                 tmpout = pycatfile.PackArchiveFileFromInFile(
-                    input_file, getargs.output, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, getargs.checksum, [], fnamedict, getargs.verbose, False)
+                    input_file, getargs.output, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, [getargs.checksum, getargs.checksum, getargs.checksum], [], fnamedict, getargs.verbose, False)
             if(not tmpout):
                 sys.exit(1)
         else:
             pycatfile.PackArchiveFile(getargs.input, getargs.output, getargs.text, getargs.compression,
-                                      getargs.wholefile, getargs.level, pycatfile.compressionlistalt, False, getargs.checksum, [], fnamedict, getargs.verbose, False)
+                                      getargs.wholefile, getargs.level, pycatfile.compressionlistalt, False, [getargs.checksum, getargs.checksum, getargs.checksum], [], fnamedict, getargs.verbose, False)
     elif active_action == 'repack':
         if getargs.convert:
             checkcompressfile = pycatfile.CheckCompressionSubType(
                 input_file, fnamedict, True)
             if(checkcompressfile == "catfile"):
                 pycatfile.RePackArchiveFile(input_file, getargs.output, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt,
-                                            False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, getargs.verbose, False)
+                                            False, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], fnamedict, getargs.verbose, False)
             else:
                 pycatfile.PackArchiveFileFromInFile(input_file, getargs.output, getargs.compression,
-                                                    getargs.wholefile, getargs.level, pycatfile.compressionlistalt, getargs.checksum, [], fnamedict, getargs.verbose, False)
+                                                    getargs.wholefile, getargs.level, pycatfile.compressionlistalt, [getargs.checksum, getargs.checksum, getargs.checksum], [], fnamedict, getargs.verbose, False)
             if(not tmpout):
                 sys.exit(1)
         else:
             pycatfile.RePackArchiveFile(input_file, getargs.output, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt,
-                                        False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, getargs.verbose, False)
+                                        False, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], fnamedict, getargs.verbose, False)
     elif active_action == 'extract':
         if getargs.convert:
             checkcompressfile = pycatfile.CheckCompressionSubType(
@@ -202,10 +202,10 @@ if active_action:
             tempout = BytesIO()
             if(checkcompressfile == "catfile"):
                 tmpout = pycatfile.RePackArchiveFile(input_file, tempout, getargs.compression, getargs.wholefile,
-                                                     getargs.level, pycatfile.compressionlistalt, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, False, False)
+                                                     getargs.level, pycatfile.compressionlistalt, False, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], fnamedict, False, False)
             else:
                 tmpout = pycatfile.PackArchiveFileFromInFile(
-                    input_file, tempout, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, getargs.checksum, [], fnamedict, False, False)
+                    input_file, tempout, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, [getargs.checksum, getargs.checksum, getargs.checksum], [], fnamedict, False, False)
             if(not tmpout):
                 sys.exit(1)
             input_file = tempout
@@ -233,10 +233,10 @@ if active_action:
             tempout = BytesIO()
             if(checkcompressfile == "catfile"):
                 tmpout = pycatfile.RePackArchiveFile(input_file, tempout, getargs.compression, getargs.wholefile,
-                                                     getargs.level, pycatfile.compressionlistalt, False, 0, 0, getargs.checksum, getargs.skipchecksum, [], fnamedict, False, False)
+                                                     getargs.level, pycatfile.compressionlistalt, False, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], fnamedict, False, False)
             else:
                 tmpout = pycatfile.PackArchiveFileFromInFile(
-                    input_file, tempout, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, getargs.checksum, [], fnamedict, False, False)
+                    input_file, tempout, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, [getargs.checksum, getargs.checksum, getargs.checksum], [], fnamedict, False, False)
             input_file = tempout
             if(not tmpout):
                 sys.exit(1)

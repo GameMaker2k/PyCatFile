@@ -122,10 +122,10 @@ def main():
     # Determine operation
     if args.create:
         pycatfile.PackArchiveFile(args.input, args.output, args.verbose, args.compression,
-                                  args.level, pycatfile.compressionlistalt, False, args.checksum, [], format_dict, args.verbose, False)
+                                  args.level, pycatfile.compressionlistalt, False, [args.checksum, args.checksum, args.checksum], [], format_dict, args.verbose, False)
     elif args.repack:
         pycatfile.RePackArchiveFile(
-            input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, args.checksum, args.verbose)
+            input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], args.verbose)
     elif args.extract:
         pycatfile.UnPackArchiveFile(
             input_file, args.output, args.verbose, args.preserve)
