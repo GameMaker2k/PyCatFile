@@ -6594,7 +6594,9 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
             try:
                 VerbosePrintOut(infile.name)
             except AttributeError:
-                VerbosePrintOut(infile)
+                pass
+        elif(sys.version_info[0] >= 3 and isinstance(infile, bytes)):
+            pass
         else:
             VerbosePrintOut(infile)
         VerbosePrintOut("Number of Records " + str(fnumfiles))
