@@ -2967,7 +2967,7 @@ def AppendNullBytes(indata=[], delimiter=__file_format_dict__['format_delimiter'
     return outdata
 
 
-def AppendFileHeader(fp, numfiles, extradata=[], checksumtype="crc32", formatspecs=__file_format_dict__):
+def AppendFileHeader(fp, numfiles, fencoding, extradata=[], checksumtype="crc32", formatspecs=__file_format_dict__):
     if(not hasattr(fp, "write")):
         return False
     formatspecs = FormatSpecsListToDict(formatspecs)
@@ -2988,7 +2988,7 @@ def AppendFileHeader(fp, numfiles, extradata=[], checksumtype="crc32", formatspe
     catoutlist.append(extrafields)
     fnumfiles = format(int(numfiles), 'x').lower()
     fnumfilesa = AppendNullBytes(
-        [platform.system(), fnumfiles], formatspecs['format_delimiter'])
+        [fencoding, platform.system(), fnumfiles], formatspecs['format_delimiter'])
     fnumfilesa = fnumfilesa + AppendNullBytes(
         catoutlist, formatspecs['format_delimiter'])
     if(len(extradata) > 0):
@@ -3016,7 +3016,7 @@ def AppendFileHeader(fp, numfiles, extradata=[], checksumtype="crc32", formatspe
 
 def MakeEmptyFilePointer(fp, checksumtype="crc32", formatspecs=__file_format_dict__):
     formatspecs = FormatSpecsListToDict(formatspecs)
-    AppendFileHeader(fp, 0, [], checksumtype, formatspecs)
+    AppendFileHeader(fp, 0, "UTF-8", [], checksumtype, formatspecs)
     return fp
 
 
@@ -3041,7 +3041,7 @@ def MakeEmptyFile(outfile, compression="auto", compresswholefile=True, compressi
         if(not compresswholefile and fextname in outextlistwd):
             compresswholefile = True
         catfp = CompressOpenFile(outfile, True, compressionlevel)
-    AppendFileHeader(catfp, 0, [], checksumtype, formatspecs)
+    AppendFileHeader(catfp, 0, "UTF-8", [], checksumtype, formatspecs)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
@@ -3191,7 +3191,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
     inodetocatinode = {}
     numfiles = int(len(GetDirList))
     fnumfiles = format(numfiles, 'x').lower()
-    AppendFileHeader(fp, fnumfiles, [], checksumtype[0], formatspecs)
+    AppendFileHeader(fp, fnumfiles, "UTF-8", [], checksumtype[0], formatspecs)
     FullSizeFilesAlt = 0
     for curfname in GetDirList:
         if(re.findall("^[.|/]", curfname)):
@@ -3453,7 +3453,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
     inodetocatinode = {}
     numfiles = int(len(GetDirList))
     fnumfiles = format(numfiles, 'x').lower()
-    AppendFileHeader(fp, fnumfiles, [], checksumtype[0], formatspecs)
+    AppendFileHeader(fp, fnumfiles, "UTF-8", [], checksumtype[0], formatspecs)
     for curfname in GetDirList:
         ftype = format(curfname[0], 'x').lower()
         if(re.findall("^[.|/]", curfname[1])):
@@ -4413,7 +4413,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
     filetoinode = {}
     inodetocatinode = {}
     numfiles = int(len(GetDirList))
-    AppendFileHeader(catfp, numfiles, [], checksumtype[0], formatspecs)
+    AppendFileHeader(catfp, numfiles, "UTF-8", [], checksumtype[0], formatspecs)
     FullSizeFilesAlt = 0
     for curfname in GetDirList:
         if(re.findall("^[.|/]", curfname)):
@@ -4794,7 +4794,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
     except FileNotFoundError:
         return False
     numfiles = int(len(tarfp.getmembers()))
-    AppendFileHeader(catfp, numfiles, [], checksumtype[0], formatspecs)
+    AppendFileHeader(catfp, numfiles, "UTF-8", [], checksumtype[0], formatspecs)
     for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
         if(re.findall("^[.|/]", member.name)):
             fname = member.name
@@ -5035,7 +5035,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
     if(ziptest):
         VerbosePrintOut("Bad file found!")
     numfiles = int(len(zipfp.infolist()))
-    AppendFileHeader(catfp, numfiles, [], checksumtype[0], formatspecs)
+    AppendFileHeader(catfp, numfiles, "UTF-8", [], checksumtype[0], formatspecs)
     for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
         if(re.findall("^[.|/]", member.filename)):
             fname = member.filename
@@ -5286,7 +5286,7 @@ if(rarfile_support):
         if(rartest):
             VerbosePrintOut("Bad file found!")
         numfiles = int(len(rarfp.infolist()))
-        AppendFileHeader(catfp, numfiles, [], checksumtype[0], formatspecs)
+        AppendFileHeader(catfp, numfiles, "UTF-8", [], checksumtype[0], formatspecs)
         try:
             catfp.flush()
             if(hasattr(os, "sync")):
@@ -5582,7 +5582,7 @@ if(py7zr_support):
         if(sztestalt):
             VerbosePrintOut("Bad file found!")
         numfiles = int(len(szpfp.list()))
-        AppendFileHeader(catfp, numfiles, [], checksumtype[0], formatspecs)
+        AppendFileHeader(catfp, numfiles, "UTF-8", [], checksumtype[0], formatspecs)
         for member in sorted(szpfp.list(), key=lambda x: x.filename):
             if(re.findall("^[.|/]", member.filename)):
                 fname = member.filename
@@ -5933,9 +5933,9 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         return False
     if(catdel != formatspecs['format_delimiter']):
         return False
-    catheader = ReadFileHeaderData(catfp, 4, formatspecs['format_delimiter'])
-    fnumextrafieldsize = int(catheader[2], 16)
-    fnumextrafields = int(catheader[3], 16)
+    catheader = ReadFileHeaderData(catfp, 5, formatspecs['format_delimiter'])
+    fnumextrafieldsize = int(catheader[3], 16)
+    fnumextrafields = int(catheader[4], 16)
     extrafieldslist = []
     if(fnumextrafields > 0):
         extrafieldslist = ReadFileHeaderData(catfp, fnumextrafields, formatspecs['format_delimiter'])
@@ -5943,11 +5943,12 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
     if(curloc > 0):
         catfp.seek(curloc, 0)
     catversion = re.findall("([\\d]+)", catstring)
-    fostype = catheader[0]
-    fprenumfiles = catheader[1]
+    fhencoding = catheader[0]
+    fostype = catheader[1]
+    fprenumfiles = catheader[2]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[4]
-    fprechecksum = catheader[5]
+    fprechecksumtype = catheader[5]
+    fprechecksum = catheader[6]
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
@@ -5975,7 +5976,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
     fcompresstype = compresscheck
     if(fcompresstype==formatspecs['format_lower']):
         fcompresstype = ""
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fversion': catversions[1], 'fostype': fostype,
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype,
                'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': extrafieldslist, 'ffilelist': {}}
     if(seekto >= fnumfiles):
         seekto = fnumfiles - 1
@@ -6212,9 +6213,9 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
         return False
     if(catdel != formatspecs['format_delimiter']):
         return False
-    catheader = ReadFileHeaderData(catfp, 4, formatspecs['format_delimiter'])
-    fnumextrafieldsize = int(catheader[2], 16)
-    fnumextrafields = int(catheader[3], 16)
+    catheader = ReadFileHeaderData(catfp, 5, formatspecs['format_delimiter'])
+    fnumextrafieldsize = int(catheader[3], 16)
+    fnumextrafields = int(catheader[4], 16)
     extrafieldslist = []
     if(fnumextrafields > 0):
         extrafieldslist = ReadFileHeaderData(catfp, fnumextrafields, formatspecs['format_delimiter'])
@@ -6222,10 +6223,11 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
     if(curloc > 0):
         catfp.seek(curloc, 0)
     catversion = re.findall("([\\d]+)", catstring)
-    fostype = catheader[0]
-    fnumfiles = int(catheader[1], 16)
-    fprechecksumtype = catheader[4]
-    fprechecksum = catheader[5]
+    fhencoding = catheader[0]
+    fostype = catheader[1]
+    fnumfiles = int(catheader[2], 16)
+    fprechecksumtype = catheader[5]
+    fprechecksum = catheader[6]
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
@@ -6253,7 +6255,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
     fcompresstype = compresscheck
     if(fcompresstype==formatspecs['format_lower']):
         fcompresstype = ""
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fversion': catversions[1], 'fostype': fostype,
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype,
                'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': extrafieldslist, 'ffilelist': {}}
     seekto = fnumfiles - 1
     filefound = False
@@ -6528,9 +6530,9 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         return False
     if(catdel != formatspecs['format_delimiter']):
         return False
-    catheader = ReadFileHeaderData(catfp, 4, formatspecs['format_delimiter'])
-    fnumextrafieldsize = int(catheader[2], 16)
-    fnumextrafields = int(catheader[3], 16)
+    catheader = ReadFileHeaderData(catfp, 5, formatspecs['format_delimiter'])
+    fnumextrafieldsize = int(catheader[3], 16)
+    fnumextrafields = int(catheader[4], 16)
     extrafieldslist = []
     if(fnumextrafields > 0):
         extrafieldslist = ReadFileHeaderData(catfp, fnumextrafields, formatspecs['format_delimiter'])
@@ -6538,11 +6540,12 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
     if(curloc > 0):
         catfp.seek(curloc, 0)
     catversion = re.findall("([\\d]+)", catstring)
-    fostype = catheader[0]
-    fprenumfiles = catheader[1]
+    fhencoding = catheader[0]
+    fostype = catheader[1]
+    fprenumfiles = catheader[2]
     fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[4]
-    fprechecksum = catheader[5]
+    fprechecksumtype = catheader[5]
+    fprechecksum = catheader[6]
     il = 0
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
@@ -6873,9 +6876,9 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         return False
     if(catdel != formatspecs['format_delimiter']):
         return False
-    catheader = ReadFileHeaderData(catfp, 4, formatspecs['format_delimiter'])
-    fnumextrafieldsize = int(catheader[2], 16)
-    fnumextrafields = int(catheader[3], 16)
+    catheader = ReadFileHeaderData(catfp, 5, formatspecs['format_delimiter'])
+    fnumextrafieldsize = int(catheader[3], 16)
+    fnumextrafields = int(catheader[4], 16)
     extrafieldslist = []
     if(fnumextrafields > 0):
         extrafieldslist = ReadFileHeaderData(catfp, fnumextrafields, formatspecs['format_delimiter'])
@@ -6883,10 +6886,11 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
     if(curloc > 0):
         catfp.seek(curloc, 0)
     catversion = re.findall("([\\d]+)", catstring)
-    fostype = catheader[0]
-    fnumfiles = int(catheader[1], 16)
-    fprechecksumtype = catheader[4]
-    fprechecksum = catheader[5]
+    fhencoding = catheader[0]
+    fostype = catheader[1]
+    fnumfiles = int(catheader[2], 16)
+    fprechecksumtype = catheader[5]
+    fprechecksum = catheader[6]
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
@@ -6914,7 +6918,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
     fcompresstype = compresscheck
     if(fcompresstype==formatspecs['format_lower']):
         fcompresstype = ""
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fversion': catversions[1], 'fostype': fostype,
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype,
                'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': extrafieldslist, 'ffilelist': []}
     if(seekstart < 0 and seekstart > fnumfiles):
         seekstart = 0
@@ -8556,7 +8560,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
     fnumfiles = int(listcatfiles['fnumfiles'])
     if(lenlist > fnumfiles or lenlist < fnumfiles):
         fnumfiles = lenlist
-    AppendFileHeader(catfp, fnumfiles, [], checksumtype[0], formatspecs)
+    AppendFileHeader(catfp, fnumfiles, "UTF-8", [], checksumtype[0], formatspecs)
     lenlist = len(listcatfiles['ffilelist'])
     fnumfiles = int(listcatfiles['fnumfiles'])
     lcfi = 0
