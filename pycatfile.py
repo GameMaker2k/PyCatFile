@@ -2123,15 +2123,15 @@ def ReadFileHeaderData(fp, rounds=0, delimiter=__file_format_dict__['format_deli
 def ReadFileHeaderDataBySize(fp, delimiter=__file_format_dict__['format_delimiter']):
     if(not hasattr(fp, "read")):
         return False
-    headerpresize = ReadTillNullByte(fp, delimiter)
-    headersize = int(headerpresize, 16)
+    preheaderdata = ReadFileHeaderData(fp, 1, delimiter)
+    headersize = int(preheaderdata[0], 16)
     if(headersize <= 0):
         return []
     headercontent = str(fp.read(headersize).decode('UTF-8')).split(delimiter)
     fp.seek(1, 1)
     rocount = 0
     roend = int(len(headercontent))
-    HeaderOut = [headerpresize]
+    HeaderOut = preheaderdata
     while(rocount < roend):
         HeaderOut.append(headercontent[rocount])
         rocount = rocount + 1
