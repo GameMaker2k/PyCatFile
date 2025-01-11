@@ -3029,7 +3029,7 @@ def AppendFileHeader(fp, numfiles, fencoding, extradata=[], checksumtype="crc32"
         fileheader + fnumfilesa, checksumtype, True, formatspecs)
     fnumfilesa = fnumfilesa + \
         AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
-    catheaersize = format(int(len(fnumfilesa) - 1), 'x').lower()
+    catheaersize = format(int(len(fnumfilesa) - len(formatspecs['format_delimiter'])), 'x').lower()
     catheaersizestr = AppendNullByte(catheaersize, formatspecs['format_delimiter'])
     fp.write(catheaersizestr.encode('UTF-8'))
     fp.write(fnumfilesa.encode('UTF-8'))
@@ -3149,7 +3149,7 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
     tmpfileoutstr = catfileoutstr + \
         AppendNullBytes([catfileheadercshex, catfilecontentcshex],
                         formatspecs['format_delimiter'])
-    catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
+    catheaersize = format(int(len(tmpfileoutstr) - len(formatspecs['format_delimiter'])), 'x').lower()
     catfileoutstr = AppendNullByte(
         catheaersize, formatspecs['format_delimiter']) + catfileoutstr
     catfileheadercshex = GetFileChecksum(
@@ -7481,7 +7481,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
         tmpfileoutstr = catfileoutstr + \
             AppendNullBytes([catfileheadercshex, catfilecontentcshex],
                             formatspecs['format_delimiter'])
-        catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
+        catheaersize = format(int(len(tmpfileoutstr) - len(formatspecs['format_delimiter'])), 'x').lower()
         catfileoutstr = AppendNullByte(
             catheaersize, formatspecs['format_delimiter']) + catfileoutstr
         catfileheadercshex = GetFileChecksum(
@@ -7723,7 +7723,7 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=[
         tmpfileoutstr = catfileoutstr + \
             AppendNullBytes([catfileheadercshex, catfilecontentcshex],
                             formatspecs['format_delimiter'])
-        catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
+        catheaersize = format(int(len(tmpfileoutstr) - len(formatspecs['format_delimiter'])), 'x').lower()
         catfileoutstr = AppendNullByte(
             catheaersize, formatspecs['format_delimiter']) + catfileoutstr
         catfileheadercshex = GetFileChecksum(
@@ -7962,7 +7962,7 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=[
         tmpfileoutstr = catfileoutstr + \
             AppendNullBytes([catfileheadercshex, catfilecontentcshex],
                             formatspecs['format_delimiter'])
-        catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
+        catheaersize = format(int(len(tmpfileoutstr) - len(formatspecs['format_delimiter'])), 'x').lower()
         catfileoutstr = AppendNullByte(
             catheaersize, formatspecs['format_delimiter']) + catfileoutstr
         catfileheadercshex = GetFileChecksum(
@@ -8211,7 +8211,7 @@ if(rarfile_support):
             tmpfileoutstr = catfileoutstr + \
                 AppendNullBytes(
                     [catfileheadercshex, catfilecontentcshex], formatspecs['format_delimiter'])
-            catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
+            catheaersize = format(int(len(tmpfileoutstr) - len(formatspecs['format_delimiter'])), 'x').lower()
             catfileoutstr = AppendNullByte(
                 catheaersize, formatspecs['format_delimiter']) + catfileoutstr
             catfileheadercshex = GetFileChecksum(
@@ -8406,7 +8406,7 @@ if(py7zr_support):
             tmpfileoutstr = catfileoutstr + \
                 AppendNullBytes(
                     [catfileheadercshex, catfilecontentcshex], formatspecs['format_delimiter'])
-            catheaersize = format(int(len(tmpfileoutstr) - 1), 'x').lower()
+            catheaersize = format(int(len(tmpfileoutstr) - len(formatspecs['format_delimiter'])), 'x').lower()
             catfileoutstr = AppendNullByte(
                 catheaersize, formatspecs['format_delimiter']) + catfileoutstr
             catfileheadercshex = GetFileChecksum(
