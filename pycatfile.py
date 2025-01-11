@@ -5952,7 +5952,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
-        AppendNullBytes([fostype, fnumfileshex],
+        AppendNullBytes([fhencoding, fostype, fnumfileshex],
                         formatspecs['format_delimiter'])
     fileheader = fileheader + AppendNullBytes(
         [fnumextrafieldsize, fnumextrafields], formatspecs['format_delimiter'])
@@ -6231,7 +6231,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
-        AppendNullBytes([fostype, fnumfileshex],
+        AppendNullBytes([fhencoding, fostype, fnumfileshex],
                         formatspecs['format_delimiter'])
     fileheader = fileheader + AppendNullBytes(
         [fnumextrafieldsize, fnumextrafields], formatspecs['format_delimiter'])
@@ -6550,7 +6550,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
-        AppendNullBytes([fostype, fnumfileshex],
+        AppendNullBytes([fhencoding, fostype, fnumfileshex],
                         formatspecs['format_delimiter'])
     fileheader = fileheader + AppendNullBytes(
         [fnumextrafieldsize, fnumextrafields], formatspecs['format_delimiter'])
@@ -6894,7 +6894,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
     fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
     fnumfileshex = format(int(fnumfiles), 'x').lower()
     fileheader = fileheader + \
-        AppendNullBytes([fostype, fnumfileshex],
+        AppendNullBytes([fhencoding, fostype, fnumfileshex],
                         formatspecs['format_delimiter'])
     fileheader = fileheader + AppendNullBytes(
         [fnumextrafieldsize, fnumextrafields], formatspecs['format_delimiter'])
