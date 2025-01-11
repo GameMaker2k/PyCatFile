@@ -2493,19 +2493,24 @@ def ReadFileDataBySizeWithContent(fp, listonly=False, uncompress=True, skipcheck
         return False
     if(catdel != formatspecs['format_delimiter']):
         return False
-    catheader = ReadFileHeaderData(fp, 4, delimiter)
+    if(formatspecs['new_style']):
+        catheader = ReadFileHeaderDataBySize(
+            catfp, formatspecs['format_delimiter'])
+    else:
+        catheader = ReadFileHeaderDataWoSize(
+            catfp, formatspecs['format_delimiter'])
     if(curloc > 0):
         fp.seek(curloc, 0)
     headercheck = ValidateHeaderChecksum(
-        catheader[:-1], catheader[2], catheader[3], formatspecs)
-    newfcs = GetHeaderChecksum(catheader[:-2], catheader[2], True, formatspecs)
+        catheader[:-1], catheader[-2], catheader[-1], formatspecs)
+    newfcs = GetHeaderChecksum(catheader[:-2], catheader[-2], True, formatspecs)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
         VerbosePrintOut("'" + str(newfcs) + "' != " +
-                        "'" + str(catheader[3]) + "'")
+                        "'" + str(catheader[-1]) + "'")
         return False
-    fnumfiles = int(catheader[1], 16)
+    fnumfiles = int(catheader[4], 16)
     countnum = 0
     flist = []
     while(countnum < fnumfiles):
@@ -2526,27 +2531,32 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
     curloc = fp.tell()
     if(curloc > 0):
         fp.seek(0, 0)
-
-    catheader = ReadFileHeaderData(fp, 4, delimiter)
+    if(formatspecs['new_style']):
+        catheader = ReadFileHeaderDataBySize(
+            catfp, formatspecs['format_delimiter'])
+    else:
+        catheader = ReadFileHeaderDataWoSize(
+            catfp, formatspecs['format_delimiter'])
     if(curloc > 0):
         fp.seek(curloc, 0)
     headercheck = ValidateHeaderChecksum(
-        catheader[:-1], catheader[2], catheader[3], formatspecs)
-    newfcs = GetHeaderChecksum(catheader[:-2], catheader[2], True, formatspecs)
+        catheader[:-1], catheader[-2], catheader[-1], formatspecs)
+    newfcs = GetHeaderChecksum(catheader[:-2], catheader[-2], True, formatspecs)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
         VerbosePrintOut("'" + str(newfcs) + "' != " +
-                        "'" + str(catheader[3]) + "'")
+                        "'" + str(catheader[-1]) + "'")
         return False
     catversion = re.findall("([\\d]+)", catstring)
-    fostype = catheader[0]
-    fprenumfiles = catheader[1]
-    fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[2]
-    fprechecksum = catheader[3]
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': "", 'fversion': catversions[1], 'fostype': fostype,
-               'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'ffilelist': []}
+    fheadsize = int(catheader[0], 16)
+    fnumfields = int(catheader[1], 16)
+    fhencoding = catheader[2]
+    fostype = catheader[3]
+    fnumfiles = int(catheader[4], 16)
+    fprechecksumtype = catheader[-2]
+    fprechecksum = catheader[-1]
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': fextrafieldslist, 'ffilelist': []}
     if(seekstart < 0 and seekstart > fnumfiles):
         seekstart = 0
     if(seekend == 0 or seekend > fnumfiles and seekend < seekstart):
@@ -2629,8 +2639,9 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
     formatspecs = FormatSpecsListToDict(formatspecs)
     delimiter = formatspecs['format_delimiter']
     curloc = fp.tell()
+    curloc = catfp.tell()
     if(curloc > 0):
-        fp.seek(0, 0)
+        catfp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
     catstring = catfp.read(formatspecs['format_len'] + len(catheaderver)).decode("UTF-8")
     catdelszie = len(formatspecs['format_delimiter'])
@@ -2639,9 +2650,12 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
         return False
     if(catdel != formatspecs['format_delimiter']):
         return False
-    catheader = ReadFileHeaderData(fp, 4, delimiter)
-    if(curloc > 0):
-        fp.seek(curloc, 0)
+    if(formatspecs['new_style']):
+        catheader = ReadFileHeaderDataBySize(
+            catfp, formatspecs['format_delimiter'])
+    else:
+        catheader = ReadFileHeaderDataWoSize(
+            catfp, formatspecs['format_delimiter'])
     headercheck = ValidateHeaderChecksum(
         catheader[:-1], catheader[2], catheader[3], formatspecs)
     newfcs = GetHeaderChecksum(catheader[:-2], catheader[2], True, formatspecs)
@@ -2651,12 +2665,25 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
         VerbosePrintOut("'" + str(newfcs) + "' != " +
                         "'" + str(catheader[3]) + "'")
         return False
+    fnumextrafieldsize = int(catheader[5], 16)
+    fnumextrafields = int(catheader[6], 16)
+    fextrafieldslist = []
+    extrastart = 7
+    extraend = extrastart + fnumextrafields
+    extrafieldslist = []
+    if(extrastart < extraend):
+        fextrafieldslist.append(catheader[extrastart])
+        extrastart = extrastart + 1
+    if(curloc > 0):
+        catfp.seek(curloc, 0)
     catversion = re.findall("([\\d]+)", catstring)
-    fostype = catheader[0]
-    fprenumfiles = catheader[1]
-    fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[2]
-    fprechecksum = catheader[3]
+    fheadsize = int(catheader[0], 16)
+    fnumfields = int(catheader[1], 16)
+    fhencoding = catheader[2]
+    fostype = catheader[3]
+    fnumfiles = int(catheader[4], 16)
+    fprechecksumtype = catheader[-2]
+    fprechecksum = catheader[-1]
     catlist = []
     if(seekstart < 0 and seekstart > fnumfiles):
         seekstart = 0
@@ -2987,8 +3014,10 @@ def AppendFileHeader(fp, numfiles, fencoding, extradata=[], checksumtype="crc32"
     catoutlist.append(extrasizelen)
     catoutlist.append(extrafields)
     fnumfiles = format(int(numfiles), 'x').lower()
+    catoutlen = 3 + len(catoutlist) + len(extradata) + 2
+    catoutlenhex = format(catoutlen, 'x').lower()
     fnumfilesa = AppendNullBytes(
-        [fencoding, platform.system(), fnumfiles], formatspecs['format_delimiter'])
+        [catoutlenhex, fencoding, platform.system(), fnumfiles], formatspecs['format_delimiter'])
     fnumfilesa = fnumfilesa + AppendNullBytes(
         catoutlist, formatspecs['format_delimiter'])
     if(len(extradata) > 0):
@@ -3000,6 +3029,9 @@ def AppendFileHeader(fp, numfiles, fencoding, extradata=[], checksumtype="crc32"
         fileheader + fnumfilesa, checksumtype, True, formatspecs)
     fnumfilesa = fnumfilesa + \
         AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
+    catheaersize = format(int(len(fnumfilesa) - 1), 'x').lower()
+    catheaersizestr = AppendNullByte(catheaersize, formatspecs['format_delimiter'])
+    fp.write(catheaersizestr.encode('UTF-8'))
     fp.write(fnumfilesa.encode('UTF-8'))
     try:
         fp.flush()
@@ -3797,6 +3829,14 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
     catfp.seek(0, 0)
     prefp = catfp.read(formatspecs['format_len'])
     if(prefp == binascii.unhexlify(formatspecs['format_hex'])):
+        catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+        catstring = catfp.read(len(catheaderver)).decode("UTF-8")
+        catdelszie = len(formatspecs['format_delimiter'])
+        catdel = catfp.read(catdelszie).decode("UTF-8")
+        if(catstring != catheaderver):
+            return False
+        if(catdel != formatspecs['format_delimiter']):
+            return False
         filetype = formatspecs['format_lower']
     catfp.seek(0, 0)
     prefp = catfp.read(9)
@@ -5933,51 +5973,44 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         return False
     if(catdel != formatspecs['format_delimiter']):
         return False
-    catheader = ReadFileHeaderData(catfp, 5, formatspecs['format_delimiter'])
-    fnumextrafieldsize = int(catheader[3], 16)
-    fnumextrafields = int(catheader[4], 16)
+    if(formatspecs['new_style']):
+        catheader = ReadFileHeaderDataBySize(
+            catfp, formatspecs['format_delimiter'])
+    else:
+        catheader = ReadFileHeaderDataWoSize(
+            catfp, formatspecs['format_delimiter'])
+    fnumextrafieldsize = int(catheader[5], 16)
+    fnumextrafields = int(catheader[6], 16)
+    fextrafieldslist = []
+    extrastart = 7
+    extraend = extrastart + fnumextrafields
     extrafieldslist = []
-    if(fnumextrafields > 0):
-        extrafieldslist = ReadFileHeaderData(catfp, fnumextrafields, formatspecs['format_delimiter'])
-    catheader += ReadFileHeaderData(catfp, 2, formatspecs['format_delimiter'])
+    if(extrastart < extraend):
+        fextrafieldslist.append(catheader[extrastart])
+        extrastart = extrastart + 1
     if(curloc > 0):
         catfp.seek(curloc, 0)
     catversion = re.findall("([\\d]+)", catstring)
-    fhencoding = catheader[0]
-    fostype = catheader[1]
-    fprenumfiles = catheader[2]
-    fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[5]
-    fprechecksum = catheader[6]
-    fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
-    fnumfileshex = format(int(fnumfiles), 'x').lower()
-    fileheader = fileheader + \
-        AppendNullBytes([fhencoding, fostype, fnumfileshex],
-                        formatspecs['format_delimiter'])
-    fileheader = fileheader + AppendNullBytes(
-        [fnumextrafieldsize, fnumextrafields], formatspecs['format_delimiter'])
-    if(fnumextrafields > 0):
-        fileheader = fileheader + AppendNullBytes(
-            extrafieldslist, formatspecs['format_delimiter'])
-    fileheader = fileheader + \
-        AppendNullByte(fprechecksumtype, formatspecs['format_delimiter'])
-    catfileheadercshex = GetFileChecksum(
-        fileheader, fprechecksumtype, True, formatspecs)
-    fileheader = fileheader + \
-        AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
-    fheadtell = len(fileheader)
-    if(fprechecksum != catfileheadercshex and not skipchecksum):
-        VerbosePrintOut("File Header Checksum Error with file " +
-                        infile + " at offset " + str(0))
-        VerbosePrintOut("'" + str(fprechecksum) + "' != " +
-                        "'" + str(catfileheadercshex) + "'")
-        return False
+    fheadsize = int(catheader[0], 16)
+    fnumfields = int(catheader[1], 16)
+    fhencoding = catheader[2]
+    fostype = catheader[3]
+    fnumfiles = int(catheader[4], 16)
+    fprechecksumtype = catheader[-2]
+    fprechecksum = catheader[-1]
+    headercheck = ValidateHeaderChecksum(
+        catheader[:-1], catheader[-2], catheader[-1], formatspecs)
+    newfcs = GetHeaderChecksum(catheader[:-2], catheader[-2], True, formatspecs)
+    if(not headercheck and not skipchecksum):
+        VerbosePrintOut(
+            "File Header Checksum Error with file at offset " + str(0))
+        VerbosePrintOut("'" + str(newfcs) + "' != " +
+                        "'" + str(catheader[-1]) + "'")
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
     fcompresstype = compresscheck
     if(fcompresstype==formatspecs['format_lower']):
         fcompresstype = ""
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype,
-               'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': extrafieldslist, 'ffilelist': {}}
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': fextrafieldslist, 'ffilelist': []}
     if(seekto >= fnumfiles):
         seekto = fnumfiles - 1
     if(seekto < 0):
@@ -6213,50 +6246,44 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
         return False
     if(catdel != formatspecs['format_delimiter']):
         return False
-    catheader = ReadFileHeaderData(catfp, 5, formatspecs['format_delimiter'])
-    fnumextrafieldsize = int(catheader[3], 16)
-    fnumextrafields = int(catheader[4], 16)
+    if(formatspecs['new_style']):
+        catheader = ReadFileHeaderDataBySize(
+            catfp, formatspecs['format_delimiter'])
+    else:
+        catheader = ReadFileHeaderDataWoSize(
+            catfp, formatspecs['format_delimiter'])
+    fnumextrafieldsize = int(catheader[5], 16)
+    fnumextrafields = int(catheader[6], 16)
+    fextrafieldslist = []
+    extrastart = 7
+    extraend = extrastart + fnumextrafields
     extrafieldslist = []
-    if(fnumextrafields > 0):
-        extrafieldslist = ReadFileHeaderData(catfp, fnumextrafields, formatspecs['format_delimiter'])
-    catheader += ReadFileHeaderData(catfp, 2, formatspecs['format_delimiter'])
+    if(extrastart < extraend):
+        fextrafieldslist.append(catheader[extrastart])
+        extrastart = extrastart + 1
     if(curloc > 0):
         catfp.seek(curloc, 0)
     catversion = re.findall("([\\d]+)", catstring)
-    fhencoding = catheader[0]
-    fostype = catheader[1]
-    fnumfiles = int(catheader[2], 16)
-    fprechecksumtype = catheader[5]
-    fprechecksum = catheader[6]
-    fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
-    fnumfileshex = format(int(fnumfiles), 'x').lower()
-    fileheader = fileheader + \
-        AppendNullBytes([fhencoding, fostype, fnumfileshex],
-                        formatspecs['format_delimiter'])
-    fileheader = fileheader + AppendNullBytes(
-        [fnumextrafieldsize, fnumextrafields], formatspecs['format_delimiter'])
-    if(fnumextrafields > 0):
-        fileheader = fileheader + AppendNullBytes(
-            extrafieldslist, formatspecs['format_delimiter'])
-    fileheader = fileheader + \
-        AppendNullByte(fprechecksumtype, formatspecs['format_delimiter'])
-    catfileheadercshex = GetFileChecksum(
-        fileheader, fprechecksumtype, True, formatspecs)
-    fileheader = fileheader + \
-        AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
-    fheadtell = len(fileheader)
-    if(fprechecksum != catfileheadercshex and not skipchecksum):
-        VerbosePrintOut("File Header Checksum Error with file " +
-                        infile + " at offset " + str(0))
-        VerbosePrintOut("'" + str(fprechecksum) + "' != " +
-                        "'" + str(catfileheadercshex) + "'")
-        return False
+    fheadsize = int(catheader[0], 16)
+    fnumfields = int(catheader[1], 16)
+    fhencoding = catheader[2]
+    fostype = catheader[3]
+    fnumfiles = int(catheader[4], 16)
+    fprechecksumtype = catheader[-2]
+    fprechecksum = catheader[-1]
+    headercheck = ValidateHeaderChecksum(
+        catheader[:-1], catheader[-2], catheader[-1], formatspecs)
+    newfcs = GetHeaderChecksum(catheader[:-2], catheader[-2], True, formatspecs)
+    if(not headercheck and not skipchecksum):
+        VerbosePrintOut(
+            "File Header Checksum Error with file at offset " + str(0))
+        VerbosePrintOut("'" + str(newfcs) + "' != " +
+                        "'" + str(catheader[-1]) + "'")
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
     fcompresstype = compresscheck
     if(fcompresstype==formatspecs['format_lower']):
         fcompresstype = ""
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype,
-               'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': extrafieldslist, 'ffilelist': {}}
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': fextrafieldslist, 'ffilelist': []}
     seekto = fnumfiles - 1
     filefound = False
     if(seekto >= 0):
@@ -6530,39 +6557,35 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         return False
     if(catdel != formatspecs['format_delimiter']):
         return False
-    catheader = ReadFileHeaderData(catfp, 5, formatspecs['format_delimiter'])
-    fnumextrafieldsize = int(catheader[3], 16)
-    fnumextrafields = int(catheader[4], 16)
+    if(formatspecs['new_style']):
+        catheader = ReadFileHeaderDataBySize(
+            catfp, formatspecs['format_delimiter'])
+    else:
+        catheader = ReadFileHeaderDataWoSize(
+            catfp, formatspecs['format_delimiter'])
+    fnumextrafieldsize = int(catheader[5], 16)
+    fnumextrafields = int(catheader[6], 16)
+    fextrafieldslist = []
+    extrastart = 7
+    extraend = extrastart + fnumextrafields
     extrafieldslist = []
-    if(fnumextrafields > 0):
-        extrafieldslist = ReadFileHeaderData(catfp, fnumextrafields, formatspecs['format_delimiter'])
-    catheader += ReadFileHeaderData(catfp, 2, formatspecs['format_delimiter'])
+    if(extrastart < extraend):
+        fextrafieldslist.append(catheader[extrastart])
+        extrastart = extrastart + 1
     if(curloc > 0):
         catfp.seek(curloc, 0)
     catversion = re.findall("([\\d]+)", catstring)
-    fhencoding = catheader[0]
-    fostype = catheader[1]
-    fprenumfiles = catheader[2]
-    fnumfiles = int(fprenumfiles, 16)
-    fprechecksumtype = catheader[5]
-    fprechecksum = catheader[6]
+    fheadsize = int(catheader[0], 16)
+    fnumfields = int(catheader[1], 16)
+    fhencoding = catheader[2]
+    fostype = catheader[3]
+    fnumfiles = int(catheader[4], 16)
+    fprechecksumtype = catheader[-2]
+    fprechecksum = catheader[-1]
     il = 0
-    fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
-    fnumfileshex = format(int(fnumfiles), 'x').lower()
-    fileheader = fileheader + \
-        AppendNullBytes([fhencoding, fostype, fnumfileshex],
-                        formatspecs['format_delimiter'])
-    fileheader = fileheader + AppendNullBytes(
-        [fnumextrafieldsize, fnumextrafields], formatspecs['format_delimiter'])
-    if(fnumextrafields > 0):
-        fileheader = fileheader + AppendNullBytes(
-            extrafieldslist, formatspecs['format_delimiter'])
-    fileheader = fileheader + \
-        AppendNullByte(fprechecksumtype, formatspecs['format_delimiter'])
-    catfileheadercshex = GetFileChecksum(
-        fileheader, fprechecksumtype, True, formatspecs)
-    fileheader = fileheader + \
-        AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
+    headercheck = ValidateHeaderChecksum(
+        catheader[:-1], catheader[-2], catheader[-1], formatspecs)
+    newfcs = GetHeaderChecksum(catheader[:-2], catheader[-2], True, formatspecs)
     valid_archive = True
     invalid_archive = False
     if(verbose):
@@ -6576,16 +6599,16 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         else:
             VerbosePrintOut(infile)
         VerbosePrintOut("Number of Records " + str(fnumfiles))
-    if(fprechecksum == catfileheadercshex):
+    if(not headercheck):
         if(verbose):
             VerbosePrintOut("File Header Checksum Passed at offset " + str(0))
             VerbosePrintOut("'" + str(fprechecksum) + "' == " +
-                            "'" + str(catfileheadercshex) + "'")
+                            "'" + str(catheader[-1]) + "'")
     else:
         if(verbose):
             VerbosePrintOut("File Header Checksum Failed at offset " + str(0))
             VerbosePrintOut("'" + str(fprechecksum) + "' != " +
-                            "'" + str(catfileheadercshex) + "'")
+                            "'" + str(catheader[-1]) + "'")
             valid_archive = False
             invalid_archive = True
     if(verbose):
@@ -6876,50 +6899,45 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         return False
     if(catdel != formatspecs['format_delimiter']):
         return False
-    catheader = ReadFileHeaderData(catfp, 5, formatspecs['format_delimiter'])
-    fnumextrafieldsize = int(catheader[3], 16)
-    fnumextrafields = int(catheader[4], 16)
+    if(formatspecs['new_style']):
+        catheader = ReadFileHeaderDataBySize(
+            catfp, formatspecs['format_delimiter'])
+    else:
+        catheader = ReadFileHeaderDataWoSize(
+            catfp, formatspecs['format_delimiter'])
+    fnumextrafieldsize = int(catheader[5], 16)
+    fnumextrafields = int(catheader[6], 16)
+    fextrafieldslist = []
+    extrastart = 7
+    extraend = extrastart + fnumextrafields
     extrafieldslist = []
-    if(fnumextrafields > 0):
-        extrafieldslist = ReadFileHeaderData(catfp, fnumextrafields, formatspecs['format_delimiter'])
-    catheader += ReadFileHeaderData(catfp, 2, formatspecs['format_delimiter'])
+    if(extrastart < extraend):
+        fextrafieldslist.append(catheader[extrastart])
+        extrastart = extrastart + 1
     if(curloc > 0):
         catfp.seek(curloc, 0)
     catversion = re.findall("([\\d]+)", catstring)
-    fhencoding = catheader[0]
-    fostype = catheader[1]
-    fnumfiles = int(catheader[2], 16)
-    fprechecksumtype = catheader[5]
-    fprechecksum = catheader[6]
-    fileheader = AppendNullByte(catstring, formatspecs['format_delimiter'])
-    fnumfileshex = format(int(fnumfiles), 'x').lower()
-    fileheader = fileheader + \
-        AppendNullBytes([fhencoding, fostype, fnumfileshex],
-                        formatspecs['format_delimiter'])
-    fileheader = fileheader + AppendNullBytes(
-        [fnumextrafieldsize, fnumextrafields], formatspecs['format_delimiter'])
-    if(fnumextrafields > 0):
-        fileheader = fileheader + AppendNullBytes(
-            extrafieldslist, formatspecs['format_delimiter'])
-    fileheader = fileheader + \
-        AppendNullByte(fprechecksumtype, formatspecs['format_delimiter'])
-    catfileheadercshex = GetFileChecksum(
-        fileheader, fprechecksumtype, True, formatspecs)
-    fileheader = fileheader + \
-        AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
-    fheadtell = len(fileheader)
-    if(fprechecksum != catfileheadercshex and not skipchecksum):
+    fheadsize = int(catheader[0], 16)
+    fnumfields = int(catheader[1], 16)
+    fhencoding = catheader[2]
+    fostype = catheader[3]
+    fnumfiles = int(catheader[4], 16)
+    fprechecksumtype = catheader[-2]
+    fprechecksum = catheader[-1]
+    headercheck = ValidateHeaderChecksum(
+        catheader[:-1], catheader[-2], catheader[-1], formatspecs)
+    newfcs = GetHeaderChecksum(catheader[:-2], catheader[-2], True, formatspecs)
+    if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
-        VerbosePrintOut("'" + str(fprechecksum) + "' != " +
-                        "'" + str(catfileheadercshex) + "'")
+        VerbosePrintOut("'" + str(newfcs) + "' != " +
+                        "'" + str(catheader[-1]) + "'")
         return False
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
     fcompresstype = compresscheck
     if(fcompresstype==formatspecs['format_lower']):
         fcompresstype = ""
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype,
-               'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': extrafieldslist, 'ffilelist': []}
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': fextrafieldslist, 'ffilelist': []}
     if(seekstart < 0 and seekstart > fnumfiles):
         seekstart = 0
     if(seekend == 0 or seekend > fnumfiles and seekend < seekstart):
@@ -6947,11 +6965,11 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
             prefsize = int(preheaderdata[5], 16)
             prefcompression = preheaderdata[12]
             prefcsize = int(preheaderdata[13], 16)
-            prefseeknextfile = preheaderdata[25]
-            prefextrasize = int(preheaderdata[26], 16)
-            prefextrafields = int(preheaderdata[27], 16)
+            prefseeknextfile = preheaderdata[24]
+            prefextrasize = int(preheaderdata[25], 16)
+            prefextrafields = int(preheaderdata[26], 16)
             extrafieldslist = []
-            extrastart = 28
+            extrastart = 27
             extraend = extrastart + prefextrafields
             extrafieldslist = []
             if(extrastart < extraend):
@@ -7080,7 +7098,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
             catnewfccs = GetFileChecksum(
                 catfcontents.read(), catheaderdata[-3].lower(), False, formatspecs)
             pyhascontents = True
-            if(catfccs != catnewfccs and skipchecksum):
+            if(catfccs != catnewfccs and not skipchecksum):
                 VerbosePrintOut("File Content Checksum Error with file " +
                                 catfname + " at offset " + str(catfcontentstart))
                 VerbosePrintOut("'" + str(catfccs) + "' != " +
@@ -7127,8 +7145,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         catfcontents.seek(0, 0)
         if(not contentasfile):
             catfcontents = catfcontents.read()
-        catlist['ffilelist'].append({'fid': realidnum, 'fidalt': fileidnum, 'fheadersize': catfheadsize, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmode': catfchmode, 'ftypemod': catftypemod, 'fwinattributes': catfwinattributes, 'fcompression': catfcompression, 'fcsize': catfcsize, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': catfinode, 'flinkcount': catflinkcount,
-                                    'fdev': catfdev, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'fseeknextfile': catfseeknextfile, 'fheaderchecksumtype': catheaderdata[-4], 'fcontentchecksumtype': catheaderdata[-3], 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': catfextrasize, 'fextralist': extrafieldslist, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': catfcontents})
+        catlist['ffilelist'].append({'fid': realidnum, 'fidalt': fileidnum, 'fheadersize': catfheadsize, 'fhstart': catfhstart, 'fhend': catfhend, 'ftype': catftype, 'fname': catfname, 'fbasedir': catfbasedir, 'flinkname': catflinkname, 'fsize': catfsize, 'fatime': catfatime, 'fmtime': catfmtime, 'fctime': catfctime, 'fbtime': catfbtime, 'fmode': catfmode, 'fchmode': catfchmode, 'ftypemod': catftypemod, 'fwinattributes': catfwinattributes, 'fcompression': catfcompression, 'fcsize': catfcsize, 'fuid': catfuid, 'funame': catfuname, 'fgid': catfgid, 'fgname': catfgname, 'finode': catfinode, 'flinkcount': catflinkcount, 'fdev': catfdev, 'fminor': catfdev_minor, 'fmajor': catfdev_major, 'fseeknextfile': catfseeknextfile, 'fheaderchecksumtype': catheaderdata[-4], 'fcontentchecksumtype': catheaderdata[-3], 'fnumfields': catfnumfields + 2, 'frawheader': catheaderdata, 'fextrafields': catfextrafields, 'fextrafieldsize': catfextrasize, 'fextralist': extrafieldslist, 'fheaderchecksum': catfcs, 'fcontentchecksum': catfccs, 'fhascontents': pyhascontents, 'fcontentstart': catfcontentstart, 'fcontentend': catfcontentend, 'fcontentasfile': contentasfile, 'fcontents': catfcontents})
         fileidnum = fileidnum + 1
         realidnum = realidnum + 1
     if(returnfp):
