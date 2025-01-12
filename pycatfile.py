@@ -2503,8 +2503,8 @@ def ReadFileDataBySizeWithContent(fp, listonly=False, uncompress=True, skipcheck
         fp.seek(curloc, 0)
     fprechecksumtype = catheader[-2]
     fprechecksum = catheader[-1]
-    headercheck = ValidateHeaderChecksum(catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
-    newfcs = GetHeaderChecksum(catheader[:-2], fprechecksumtype, True, formatspecs)
+    headercheck = ValidateHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
+    newfcs = GetHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, True, formatspecs)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
@@ -2542,8 +2542,8 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
         fp.seek(curloc, 0)
     fprechecksumtype = catheader[-2]
     fprechecksum = catheader[-1]
-    headercheck = ValidateHeaderChecksum(catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
-    newfcs = GetHeaderChecksum(catheader[:-2], fprechecksumtype, True, formatspecs)
+    headercheck = ValidateHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
+    newfcs = GetHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, True, formatspecs)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
@@ -2660,8 +2660,8 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
             catfp, formatspecs['format_delimiter'])
     fprechecksumtype = catheader[-2]
     fprechecksum = catheader[-1]
-    headercheck = ValidateHeaderChecksum(catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
-    newfcs = GetHeaderChecksum(catheader[:-2], fprechecksumtype, True, formatspecs)
+    headercheck = ValidateHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
+    newfcs = GetHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, True, formatspecs)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
@@ -3006,7 +3006,6 @@ def AppendFileHeader(fp, numfiles, fencoding, extradata=[], checksumtype="crc32"
     fileheaderver = str(int(catver.replace(".", "")))
     fileheader = AppendNullByte(
         formatspecs['format_magic'] + fileheaderver, formatspecs['format_delimiter'])
-    fp.write(fileheader.encode('UTF-8'))
     extrafields = format(len(extradata), 'x').lower()
     extrasizestr = AppendNullByte(extrafields, formatspecs['format_delimiter'])
     if(len(extradata) > 0):
@@ -3029,12 +3028,20 @@ def AppendFileHeader(fp, numfiles, fencoding, extradata=[], checksumtype="crc32"
     fnumfilesa = fnumfilesa + \
         AppendNullByte(checksumtype, formatspecs['format_delimiter'])
     catfileheadercshex = GetFileChecksum(
-        fileheader + fnumfilesa, checksumtype, True, formatspecs)
+        fnumfilesa, checksumtype, True, formatspecs)
+    tmpfileoutstr = fnumfilesa + \
+        AppendNullByte(catfileheadercshex,
+                        formatspecs['format_delimiter'])
+    catheaersize = format(int(len(tmpfileoutstr) - len(formatspecs['format_delimiter'])), 'x').lower()
+    fnumfilesa = fileheader + \
+        AppendNullByte(
+        catheaersize, formatspecs['format_delimiter']) + fnumfilesa
+    catfileheadercshex = GetFileChecksum(
+        fnumfilesa, checksumtype, True, formatspecs)
     fnumfilesa = fnumfilesa + \
         AppendNullByte(catfileheadercshex, formatspecs['format_delimiter'])
     catheaersize = format(int(len(fnumfilesa) - len(formatspecs['format_delimiter'])), 'x').lower()
     catheaersizestr = AppendNullByte(catheaersize, formatspecs['format_delimiter'])
-    fp.write(catheaersizestr.encode('UTF-8'))
     fp.write(fnumfilesa.encode('UTF-8'))
     try:
         fp.flush()
@@ -6001,8 +6008,8 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
     fnumfiles = int(catheader[4], 16)
     fprechecksumtype = catheader[-2]
     fprechecksum = catheader[-1]
-    headercheck = ValidateHeaderChecksum(catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
-    newfcs = GetHeaderChecksum(catheader[:-2], fprechecksumtype, True, formatspecs)
+    headercheck = ValidateHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
+    newfcs = GetHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, True, formatspecs)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
@@ -6274,8 +6281,8 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
     fnumfiles = int(catheader[4], 16)
     fprechecksumtype = catheader[-2]
     fprechecksum = catheader[-1]
-    headercheck = ValidateHeaderChecksum(catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
-    newfcs = GetHeaderChecksum(catheader[:-2], fprechecksumtype, True, formatspecs)
+    headercheck = ValidateHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
+    newfcs = GetHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, True, formatspecs)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
@@ -6586,8 +6593,8 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
     fprechecksumtype = catheader[-2]
     fprechecksum = catheader[-1]
     il = 0
-    headercheck = ValidateHeaderChecksum(catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
-    newfcs = GetHeaderChecksum(catheader[:-2], fprechecksumtype, True, formatspecs)
+    headercheck = ValidateHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
+    newfcs = GetHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, True, formatspecs)
     valid_archive = True
     invalid_archive = False
     if(verbose):
@@ -6601,7 +6608,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         else:
             VerbosePrintOut(infile)
         VerbosePrintOut("Number of Records " + str(fnumfiles))
-    if(not headercheck):
+    if(headercheck):
         if(verbose):
             VerbosePrintOut("File Header Checksum Passed at offset " + str(0))
             VerbosePrintOut("'" + str(fprechecksum) + "' == " +
@@ -6926,8 +6933,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
     fnumfiles = int(catheader[4], 16)
     fprechecksumtype = catheader[-2]
     fprechecksum = catheader[-1]
-    headercheck = ValidateHeaderChecksum(catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
-    newfcs = GetHeaderChecksum(catheader[:-2], fprechecksumtype, True, formatspecs)
+    headercheck = ValidateHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
+    newfcs = GetHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, True, formatspecs)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
