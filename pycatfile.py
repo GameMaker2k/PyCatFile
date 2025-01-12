@@ -323,6 +323,7 @@ else:
         __program_name__ = "Py" + __file_format_name__
         __file_format_lower__ = __file_format_name__.lower()
         __file_format_magic__ = "ねこファイル"
+        # __file_format_magic__ = "네코파일"
         __file_format_len__ = len(__file_format_magic__.encode('utf-8'))
         __file_format_hex__ = binascii.hexlify(
             __file_format_magic__.encode("UTF-8")).decode("UTF-8")
