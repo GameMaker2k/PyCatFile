@@ -72,7 +72,7 @@ pymodule['maintainer'] = 'Kazuki Przyborowski'
 pymodule['maintaineremail'] = 'kazuki.przyborowski@gmail.com'
 pymodule['description'] = 'A tar like file format name catfile after unix cat command (concatenate files) .'
 pymodule['license'] = 'Revised BSD License'
-pymodule['keywords'] = 'catfile pycatfile python python-catfile'
+pymodule['keywords'] = 'cat catfile cat-archive catfile-archive pycatfile python python-catfile neko nekofile neko-archive nekofile-archive pynekofile python python-nekofile compression tarball gzip tar bzip2 tar-archive lzma xz gz lzma2 xz2 tarlike tarlite hairball'
 pymodule['url'] = 'https://github.com/GameMaker2k/PyCatFile'
 pymodule['downloadurl'] = 'https://github.com/GameMaker2k/PyCatFile/archive/master.tar.gz'
 pymodule[
