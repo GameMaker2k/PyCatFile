@@ -343,7 +343,7 @@ __version_date_info__ = (2025, 1, 11, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: c3aca46818f956837f8e3396ed9cbe439565ebd1 $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -2657,8 +2657,8 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
         catheader = ReadFileHeaderDataWoSize(
             catfp, formatspecs['format_delimiter'])
     headercheck = ValidateHeaderChecksum(
-        catheader[:-1], catheader[2], catheader[3], formatspecs)
-    newfcs = GetHeaderChecksum(catheader[:-2], catheader[2], True, formatspecs)
+        catheader[:-1], catheader[-2], catheader[-1], formatspecs)
+    newfcs = GetHeaderChecksum(catheader[:-2], catheader[-2], True, formatspecs)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
