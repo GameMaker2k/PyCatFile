@@ -323,7 +323,7 @@ else:
         __program_name__ = "Py" + __file_format_name__
         __file_format_lower__ = __file_format_name__.lower()
         __file_format_magic__ = "ねこファイル"
-        # __file_format_magic__ = "네코파일"
+        #__file_format_magic__ = "네코파일"
         __file_format_len__ = len(__file_format_magic__.encode('utf-8'))
         __file_format_hex__ = binascii.hexlify(
             __file_format_magic__.encode("UTF-8")).decode("UTF-8")
@@ -927,111 +927,192 @@ class ZlibFile:
         self.close()
 
 
-class GzipFile:
-    def __init__(self, file_path=None, fileobj=None, mode='rb', compresslevel=9, encoding=None, errors=None, newline=None):
+class GzipFile(object):
+    """
+    A file-like wrapper around gzip compression/decompression using
+    gzip.compress() and gzip.decompress() for a single-shot in-memory approach.
+
+    - In read mode (r): Reads the entire file, checks for GZIP magic bytes, then
+      decompresses into memory.
+    - In write mode (w/a/x): Buffers all data in memory. On close, compresses
+      everything with gzip.compress() (using the specified level) and writes it out.
+    - Tries to mimic gzip.GzipFile usage, but without streaming writes.
+    """
+
+    # GZIP magic bytes: b'\x1f\x8b'
+    GZIP_MAGIC = b'\x1f\x8b'
+
+    def __init__(self, file_path=None, fileobj=None, mode='rb',
+                 level=9, encoding=None, errors=None, newline=None):
+        """
+        :param file_path: Path to file (if any)
+        :param fileobj: An existing file object (if any)
+        :param mode: File mode, e.g., 'rb', 'wb', 'rt', 'wt', etc.
+        :param level: Compression level (1..9)
+        :param encoding: For text mode, the text encoding
+        :param errors: Error handling for encoding/decoding
+        :param newline: Placeholder to mimic built-in open() signature
+        """
         if file_path is None and fileobj is None:
             raise ValueError("Either file_path or fileobj must be provided")
         if file_path is not None and fileobj is not None:
-            raise ValueError(
-                "Only one of file_path or fileobj should be provided")
+            raise ValueError("Only one of file_path or fileobj should be provided")
 
         self.file_path = file_path
         self.fileobj = fileobj
         self.mode = mode
-        self.compresslevel = compresslevel
+        self.level = level
         self.encoding = encoding
         self.errors = errors
         self.newline = newline
-        self._compressed_data = b''
+
+        # Decompressed data (if reading)
         self._decompressed_data = b''
         self._position = 0
+
+        # Buffer to hold raw (uncompressed) data (if writing)
+        self._write_buffer = b''
+
+        # Track text vs. binary
         self._text_mode = 't' in mode
 
-        # Force binary mode for internal handling
+        # Force binary mode internally for file I/O
         internal_mode = mode.replace('t', 'b')
 
-        if 'w' in mode or 'a' in mode or 'x' in mode:
-            self.file = gzip.open(file_path, internal_mode, compresslevel=compresslevel) if file_path else gzip.GzipFile(
-                fileobj=fileobj, mode=internal_mode, compresslevel=compresslevel)
-            self._compressor = gzip.GzipFile(
-                fileobj=self.file, mode=internal_mode, compresslevel=compresslevel)
+        if any(m in mode for m in ('w', 'a', 'x')):
+            # Writing / appending
+            if file_path:
+                self.file = open(file_path, internal_mode)
+            else:
+                self.file = fileobj
+
         elif 'r' in mode:
+            # Reading
             if file_path:
                 if os.path.exists(file_path):
-                    self.file = gzip.open(file_path, internal_mode)
+                    self.file = open(file_path, internal_mode)
                     self._load_file()
                 else:
-                    raise FileNotFoundError(
-                        "No such file: '{}'".format(file_path))
-            elif fileobj:
-                self.file = gzip.GzipFile(fileobj=fileobj, mode=internal_mode)
+                    raise FileNotFoundError("No such file: '{}'".format(file_path))
+            else:
+                # fileobj provided
+                self.file = fileobj
                 self._load_file()
         else:
-            raise ValueError("Mode should be 'rb' or 'wb'")
+            raise ValueError("Mode should be 'rb'/'rt' or 'wb'/'wt'")
 
     def _load_file(self):
+        """
+        Reads the entire compressed file into memory and decompresses it.
+        Checks for the GZIP magic bytes first.
+        """
         self.file.seek(0)
-        self._compressed_data = self.file.read()
-        if not self._compressed_data.startswith(b'\x1f\x8b'):
-            raise ValueError("Invalid gzip file header")
-        self._decompressed_data = gzip.decompress(self._compressed_data)
+        compressed_data = self.file.read()
+
+        if not compressed_data.startswith(self.GZIP_MAGIC):
+            raise ValueError("Invalid GZIP file header (magic bytes missing)")
+
+        # Decompress everything
+        self._decompressed_data = gzip.decompress(compressed_data)
+
+        # If in text mode, decode from bytes -> str
         if self._text_mode:
-            self._decompressed_data = self._decompressed_data.decode(
-                self.encoding or 'UTF-8', self.errors or 'strict')
+            enc = self.encoding or 'UTF-8'
+            err = self.errors or 'strict'
+            self._decompressed_data = self._decompressed_data.decode(enc, err)
 
     def write(self, data):
+        """
+        Write data to our in-memory buffer. The actual compression
+        happens on close().
+        """
+        if 'r' in self.mode:
+            raise IOError("File not open for writing")
+
         if self._text_mode:
-            data = data.encode(self.encoding or 'UTF-8',
-                               self.errors or 'strict')
-        compressed_data = self._compressor.compress(data)
-        self.file.write(compressed_data)
-        self.file.flush()
+            # Convert str (Py3) or unicode (Py2) to bytes
+            data = data.encode(self.encoding or 'UTF-8', self.errors or 'strict')
+
+        self._write_buffer += data
 
     def read(self, size=-1):
-        if size == -1:
+        """
+        Read from the decompressed data buffer.
+        """
+        if 'r' not in self.mode:
+            raise IOError("File not open for reading")
+
+        if size < 0:
             size = len(self._decompressed_data) - self._position
         data = self._decompressed_data[self._position:self._position + size]
         self._position += size
         return data
 
     def seek(self, offset, whence=0):
-        if whence == 0:  # absolute file positioning
-            self._position = offset
-        elif whence == 1:  # seek relative to the current position
-            self._position += offset
-        elif whence == 2:  # seek relative to the file's end
-            self._position = len(self._decompressed_data) + offset
+        """
+        Adjust the current read position in the decompressed buffer.
+        """
+        if 'r' not in self.mode:
+            raise IOError("File not open for reading")
+
+        if whence == 0:  # absolute
+            new_pos = offset
+        elif whence == 1:  # relative
+            new_pos = self._position + offset
+        elif whence == 2:  # relative to end
+            new_pos = len(self._decompressed_data) + offset
         else:
             raise ValueError("Invalid value for whence")
 
-        # Ensure the position is within bounds
-        self._position = max(
-            0, min(self._position, len(self._decompressed_data)))
+        self._position = max(0, min(new_pos, len(self._decompressed_data)))
 
     def tell(self):
+        """
+        Return the current position in the decompressed buffer.
+        """
         return self._position
 
     def flush(self):
-        self.file.flush()
+        """
+        Flush the underlying file. (We don't do partial compression flushes—
+        data is only compressed on close.)
+        """
+        if hasattr(self.file, 'flush'):
+            self.file.flush()
 
     def fileno(self):
+        """
+        Return the file descriptor if available.
+        """
         if hasattr(self.file, 'fileno'):
             return self.file.fileno()
         raise OSError("The underlying file object does not support fileno()")
 
     def isatty(self):
+        """
+        Return whether the underlying file is a TTY.
+        """
         if hasattr(self.file, 'isatty'):
             return self.file.isatty()
         return False
 
     def truncate(self, size=None):
+        """
+        Truncate the underlying file if possible.
+        """
         if hasattr(self.file, 'truncate'):
             return self.file.truncate(size)
         raise OSError("The underlying file object does not support truncate()")
 
     def close(self):
-        if 'w' in self.mode or 'a' in self.mode or 'x' in self.mode:
-            self.file.write(self._compressor.flush())
+        """
+        If in write mode, compress the entire `_write_buffer` with gzip.compress
+        using `level`, then write it to the file.
+        """
+        if any(m in self.mode for m in ('w', 'a', 'x')):
+            compressed = gzip.compress(self._write_buffer, compresslevel=self.level)
+            self.file.write(compressed)
+
         if self.file_path:
             self.file.close()
 
@@ -3971,7 +4052,10 @@ def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
             mode = "w"
     try:
         if(compresscheck == "gzip" and compresscheck in compressionsupport):
-            filefp = gzip.open(infile, mode)
+            if sys.version_info[0] == 2:
+                filefp = GzipFile(infile, mode=mode)
+            else:
+                filefp = gzip.open(infile, mode)
         elif(compresscheck == "bzip2" and compresscheck in compressionsupport):
             filefp = bz2.open(infile, mode)
         elif(compresscheck == "zstd" and compresscheck in compressionsupport):
@@ -4152,7 +4236,10 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
     else:
         try:
             if(compresscheck == "gzip" and compresscheck in compressionsupport):
-                catfp = gzip.GzipFile(infile, "rb")
+                if sys.version_info[0] == 2:
+                    catfp = GzipFile(infile, mode="rb")
+                else:
+                    catfp = gzip.GzipFile(infile, "rb")
             elif(compresscheck == "bzip2" and compresscheck in compressionsupport):
                 catfp = bz2.BZ2File(infile, "rb")
             elif(compresscheck == "lz4" and compresscheck in compressionsupport):
@@ -4292,7 +4379,10 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
         if(fextname not in outextlistwd or not compressionenable):
             outfp = open(outfile, "wb")
         elif(fextname == ".gz" and "gzip" in compressionsupport):
-            outfp = gzip.open(outfile, mode, compressionlevel)
+            if sys.version_info[0] == 2:
+                outfp = GzipFile(outfile, mode=mode, level=compressionlevel)
+            else:
+                outfp = gzip.open(outfile, mode, compressionlevel)
         elif(fextname == ".bz2" and "bzip2" in compressionsupport):
             outfp = bz2.open(outfile, mode, compressionlevel)
         elif(fextname == ".zst" and "zstandard" in compressionsupport):
