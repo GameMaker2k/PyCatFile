@@ -3631,7 +3631,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
             fp, catoutlist, extradata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
     if(numfiles > 0):
         catfp.write(AppendNullBytes(
-            [0, 0], formatspecs['format_delimiter']).encode("UTF-8"))
+            ["0", "0"], formatspecs['format_delimiter']).encode("UTF-8"))
     fp.seek(0, 0)
     return fp
 
@@ -3695,7 +3695,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
             fp, catoutlist, extradata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
     if(numfiles > 0):
         fp.write(AppendNullBytes(
-            [0, 0], formatspecs['format_delimiter']).encode("UTF-8"))
+            ["0", "0"], formatspecs['format_delimiter']).encode("UTF-8"))
     return fp
 
 
@@ -4872,7 +4872,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
         fcontents.close()
     if(numfiles > 0):
         catfp.write(AppendNullBytes(
-            [0, 0], formatspecs['format_delimiter']).encode("UTF-8"))
+            ["0", "0"], formatspecs['format_delimiter']).encode("UTF-8"))
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
@@ -5150,7 +5150,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         fcontents.close()
     if(numfiles > 0):
         catfp.write(AppendNullBytes(
-            [0, 0], formatspecs['format_delimiter']).encode("UTF-8"))
+            ["0", "0"], formatspecs['format_delimiter']).encode("UTF-8"))
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
@@ -5417,7 +5417,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
         fcontents.close()
     if(numfiles > 0):
         catfp.write(AppendNullBytes(
-            [0, 0], formatspecs['format_delimiter']).encode("UTF-8"))
+            ["0", "0"], formatspecs['format_delimiter']).encode("UTF-8"))
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
@@ -5714,7 +5714,7 @@ if(rarfile_support):
             fcontents.close()
         if(numfiles > 0):
             catfp.write(AppendNullBytes(
-                [0, 0], formatspecs['format_delimiter']).encode("UTF-8"))
+                ["0", "0"], formatspecs['format_delimiter']).encode("UTF-8"))
         if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
             catfp = CompressArchiveFile(
                 catfp, compression, compressionlevel, formatspecs)
@@ -5944,7 +5944,7 @@ if(py7zr_support):
             fcontents.close()
         if(numfiles > 0):
             catfp.write(AppendNullBytes(
-                [0, 0], formatspecs['format_delimiter']).encode("UTF-8"))
+                ["0", "0"], formatspecs['format_delimiter']).encode("UTF-8"))
         if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
             catfp = CompressArchiveFile(
                 catfp, compression, compressionlevel, formatspecs)
@@ -9126,7 +9126,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
         reallcfi = reallcfi + 1
     if(lcfx > 0):
         catfp.write(AppendNullBytes(
-            [0, 0], formatspecs['format_delimiter']).encode("UTF-8"))
+            ["0", "0"], formatspecs['format_delimiter']).encode("UTF-8"))
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
