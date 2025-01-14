@@ -2330,7 +2330,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, ski
     if(fcs != newfcs and not skipchecksum):
         VerbosePrintOut("File Header Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
-        VerbosePrintOut("'" + str(fcs) + "' != " + "'" + str(newfcs) + "'")
+        VerbosePrintOut("'" + fcs + "' != " + "'" + newfcs + "'")
         return False
     fhend = fp.tell() - 1
     fcontentstart = fp.tell()
@@ -2351,7 +2351,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, ski
     if(fccs != newfccs and not skipchecksum and not listonly):
         VerbosePrintOut("File Content Checksum Error with file " +
                         fname + " at offset " + str(fcontentstart))
-        VerbosePrintOut("'" + str(fccs) + "' != " + "'" + str(newfccs) + "'")
+        VerbosePrintOut("'" + fccs + "' != " + "'" + newfccs + "'")
         return False
     if(fcompression == "none" or fcompression == "" or fcompression == "auto"):
         pass
@@ -2446,7 +2446,7 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, contentasfile
     if(fcs != newfcs and not skipchecksum):
         VerbosePrintOut("File Header Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
-        VerbosePrintOut("'" + str(fcs) + "' != " + "'" + str(newfcs) + "'")
+        VerbosePrintOut("'" + fcs + "' != " + "'" + newfcs + "'")
         return False
     fhend = fp.tell() - 1
     fcontentstart = fp.tell()
@@ -2470,7 +2470,7 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, contentasfile
     if(fccs != newfccs and not skipchecksum and not listonly):
         VerbosePrintOut("File Content Checksum Error with file " +
                         fname + " at offset " + str(fcontentstart))
-        VerbosePrintOut("'" + str(fccs) + "' != " + "'" + str(newfccs) + "'")
+        VerbosePrintOut("'" + fccs + "' != " + "'" + newfccs + "'")
         return False
     if(fcompression == "none" or fcompression == "" or fcompression == "auto"):
         pass
@@ -2573,7 +2573,7 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
     if(fcs != newfcs and not skipchecksum):
         VerbosePrintOut("File Header Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
-        VerbosePrintOut("'" + str(fcs) + "' != " + "'" + str(newfcs) + "'")
+        VerbosePrintOut("'" + fcs + "' != " + "'" + newfcs + "'")
         return False
     fhend = fp.tell() - 1
     fcontentstart = fp.tell()
@@ -2597,7 +2597,7 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
     if(fccs != newfccs and not skipchecksum and not listonly):
         VerbosePrintOut("File Content Checksum Error with file " +
                         fname + " at offset " + str(fcontentstart))
-        VerbosePrintOut("'" + str(fccs) + "' != " + "'" + str(newfccs) + "'")
+        VerbosePrintOut("'" + fccs + "' != " + "'" + newfccs + "'")
         return False
     if(fcompression == "none" or fcompression == "" or fcompression == "auto"):
         pass
@@ -2664,8 +2664,8 @@ def ReadFileDataBySizeWithContent(fp, listonly=False, uncompress=True, skipcheck
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
-        VerbosePrintOut("'" + str(fprechecksum) + "' != " +
-                        "'" + str(newfcs) + "'")
+        VerbosePrintOut("'" + fprechecksum + "' != " +
+                        "'" + newfcs + "'")
         return False
     fnumfiles = int(catheader[4], 16)
     countnum = 0
@@ -2703,8 +2703,8 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
-        VerbosePrintOut("'" + str(fprechecksum) + "' != " +
-                        "'" + str(newfcs) + "'")
+        VerbosePrintOut("'" + fprechecksum + "' != " +
+                        "'" + newfcs + "'")
         return False
     catversion = re.findall("([\\d]+)", catstring)
     fheadsize = int(catheader[0], 16)
@@ -2737,8 +2737,8 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
             if(prefcs != prenewfcs and not skipchecksum):
                 VVerbosePrintOut("File Header Checksum Error with file " +
                                  prefname + " at offset " + str(prefhstart))
-                VerbosePrintOut("'" + str(prefcs) + "' != " +
-                                "'" + str(prenewfcs) + "'")
+                VerbosePrintOut("'" + prefcs + "' != " +
+                                "'" + prenewfcs + "'")
                 return False
                 valid_archive = False
                 invalid_archive = True
@@ -2756,8 +2756,8 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
                 if(prefccs != prenewfccs and not skipchecksum):
                     VerbosePrintOut("File Content Checksum Error with file " +
                                     prefname + " at offset " + str(prefcontentstart))
-                    VerbosePrintOut("'" + str(prefccs) +
-                                    "' != " + "'" + str(prenewfccs) + "'")
+                    VerbosePrintOut("'" + prefccs +
+                                    "' != " + "'" + prenewfccs + "'")
                     return False
             if(re.findall("^\\+([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile.replace("+", ""))
@@ -2821,8 +2821,8 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
-        VerbosePrintOut("'" + str(fprechecksum) + "' != " +
-                        "'" + str(newfcs) + "'")
+        VerbosePrintOut("'" + fprechecksum + "' != " +
+                        "'" + newfcs + "'")
         return False
     fnumextrafieldsize = int(catheader[5], 16)
     fnumextrafields = int(catheader[6], 16)
@@ -2868,8 +2868,8 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
             if(prefcs != prenewfcs and not skipchecksum):
                 VerbosePrintOut("File Header Checksum Error with file " +
                                 prefname + " at offset " + str(prefhstart))
-                VerbosePrintOut("'" + str(prefcs) + "' != " +
-                                "'" + str(prenewfcs) + "'")
+                VerbosePrintOut("'" + prefcs + "' != " +
+                                "'" + prenewfcs + "'")
                 return False
                 valid_archive = False
                 invalid_archive = True
@@ -2889,8 +2889,8 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
                 if(prefccs != prenewfccs and not skipchecksum):
                     VerbosePrintOut("File Content Checksum Error with file " +
                                     prefname + " at offset " + str(prefcontentstart))
-                    VerbosePrintOut("'" + str(prefccs) +
-                                    "' != " + "'" + str(prenewfccs) + "'")
+                    VerbosePrintOut("'" + prefccs +
+                                    "' != " + "'" + prenewfccs + "'")
                     return False
             if(re.findall("^\\+([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile.replace("+", ""))
@@ -2971,7 +2971,7 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
         if(not fp):
             return False
         fp.seek(0, 0)
-    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         fp = download_file_from_internet_file(infile)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(not compresscheck):
@@ -3078,7 +3078,7 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
         if(not fp):
             return False
         fp.seek(0, 0)
-    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         fp = download_file_from_internet_file(infile)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(not compresscheck):
@@ -3139,7 +3139,9 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
 
 
 def AppendNullByte(indata, delimiter=__file_format_dict__['format_delimiter']):
-    outdata = str(indata) + delimiter
+    if(isinstance(indata, int)):
+        indata = str(indata)
+    outdata = indata + delimiter
     return outdata
 
 
@@ -3231,7 +3233,7 @@ def MakeEmptyFile(outfile, compression="auto", compresswholefile=True, compressi
         catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         catfp = BytesIO()
     else:
         fbasename = os.path.splitext(outfile)[0]
@@ -3264,7 +3266,7 @@ def MakeEmptyFile(outfile, compression="auto", compresswholefile=True, compressi
         outvar = catfp.read()
         catfp.close()
         return outvar
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         catfp.seek(0, 0)
@@ -3717,7 +3719,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
         catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         catfp = BytesIO()
     else:
         fbasename = os.path.splitext(outfile)[0]
@@ -3751,7 +3753,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
         outvar = catfp.read()
         catfp.close()
         return outvar
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         catfp.seek(0, 0)
@@ -3777,7 +3779,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
         catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         catfp = BytesIO()
     else:
         fbasename = os.path.splitext(outfile)[0]
@@ -3811,7 +3813,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
         outvar = catfp.read()
         catfp.close()
         return outvar
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         catfp.seek(0, 0)
@@ -4580,7 +4582,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
         catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         catfp = BytesIO()
     else:
         fbasename = os.path.splitext(outfile)[0]
@@ -4895,7 +4897,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
         outvar = catfp.read()
         catfp.close()
         return outvar
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         catfp.seek(0, 0)
@@ -4940,7 +4942,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         catfp = BytesIO()
     else:
         fbasename = os.path.splitext(outfile)[0]
@@ -4966,7 +4968,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         if(not infile):
             return False
         infile.seek(0, 0)
-    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         infile = download_file_from_internet_file(infile)
         infile.seek(0, 0)
         if(not infile):
@@ -5173,7 +5175,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         outvar = catfp.read()
         catfp.close()
         return outvar
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         catfp.seek(0, 0)
@@ -5208,7 +5210,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
         catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         catfp = BytesIO()
     else:
         fbasename = os.path.splitext(outfile)[0]
@@ -5234,7 +5236,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
         if(not infile):
             return False
         infile.seek(0, 0)
-    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         infile = download_file_from_internet_file(infile)
         infile.seek(0, 0)
         if(not infile):
@@ -5440,7 +5442,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
         outvar = catfp.read()
         catfp.close()
         return outvar
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         catfp.seek(0, 0)
@@ -5480,7 +5482,7 @@ if(rarfile_support):
             catfp = BytesIO()
         elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
             catfp = outfile
-        elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+        elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
             catfp = BytesIO()
         else:
             fbasename = os.path.splitext(outfile)[0]
@@ -5737,7 +5739,7 @@ if(rarfile_support):
             outvar = catfp.read()
             catfp.close()
             return outvar
-        elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+        elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
             catfp = CompressArchiveFile(
                 catfp, compression, compressionlevel, formatspecs)
             catfp.seek(0, 0)
@@ -5777,7 +5779,7 @@ if(py7zr_support):
             catfp = BytesIO()
         elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
             catfp = outfile
-        elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+        elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
             catfp = BytesIO()
         else:
             fbasename = os.path.splitext(outfile)[0]
@@ -5967,7 +5969,7 @@ if(py7zr_support):
             outvar = catfp.read()
             catfp.close()
             return outvar
-        elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+        elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
             catfp = CompressArchiveFile(
                 catfp, compression, compressionlevel, formatspecs)
             catfp.seek(0, 0)
@@ -6063,7 +6065,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         if(not catfp):
             return False
         catfp.seek(0, 0)
-    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         catfp = download_file_from_internet_file(infile)
         catfp.seek(0, 0)
         compresscheck = CheckCompressionType(catfp, formatspecs, False)
@@ -6185,8 +6187,8 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
-        VerbosePrintOut("'" + str(fprechecksum) + "' != " +
-                        "'" + str(newfcs) + "'")
+        VerbosePrintOut("'" + fprechecksum + "' != " +
+                        "'" + newfcs + "'")
         return False
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
     fcompresstype = compresscheck
@@ -6257,8 +6259,8 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
             if(prefcs != prenewfcs and not skipchecksum):
                 VerbosePrintOut("File Header Checksum Error with file " +
                                 prefname + " at offset " + str(prefhstart))
-                VerbosePrintOut("'" + str(prefcs) + "' != " +
-                                "'" + str(prenewfcs) + "'")
+                VerbosePrintOut("'" + prefcs + "' != " +
+                                "'" + prenewfcs + "'")
                 return False
                 valid_archive = False
                 invalid_archive = True
@@ -6277,8 +6279,8 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
                 if(prefccs != prenewfccs and not skipchecksum):
                     VerbosePrintOut("File Content Checksum Error with file " +
                                     prefname + " at offset " + str(prefcontentstart))
-                    VerbosePrintOut("'" + str(prefccs) +
-                                    "' != " + "'" + str(prenewfccs) + "'")
+                    VerbosePrintOut("'" + prefccs +
+                                    "' != " + "'" + prenewfccs + "'")
                     return False
             if(re.findall("^\\+([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile.replace("+", ""))
@@ -6359,7 +6361,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
         if(not catfp):
             return False
         catfp.seek(0, 0)
-    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         catfp = download_file_from_internet_file(infile)
         catfp = UncompressArchiveFile(catfp, formatspecs)
         catfp.seek(0, 0)
@@ -6460,8 +6462,8 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
-        VerbosePrintOut("'" + str(fprechecksum) + "' != " +
-                        "'" + str(newfcs) + "'")
+        VerbosePrintOut("'" + fprechecksum + "' != " +
+                        "'" + newfcs + "'")
         return False
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
     fcompresstype = compresscheck
@@ -6530,8 +6532,8 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
             if(prefcs != prenewfcs and not skipchecksum):
                 VerbosePrintOut("File Header Checksum Error with file " +
                                 prefname + " at offset " + str(prefhstart))
-                VerbosePrintOut("'" + str(prefcs) + "' != " +
-                                "'" + str(prenewfcs) + "'")
+                VerbosePrintOut("'" + prefcs + "' != " +
+                                "'" + prenewfcs + "'")
                 return False
                 valid_archive = False
                 invalid_archive = True
@@ -6550,8 +6552,8 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
                 if(prefccs != prenewfccs and not skipchecksum):
                     VerbosePrintOut("File Content Checksum Error with file " +
                                     prefname + " at offset " + str(prefcontentstart))
-                    VerbosePrintOut("'" + str(prefccs) +
-                                    "' != " + "'" + str(prenewfccs) + "'")
+                    VerbosePrintOut("'" + prefccs +
+                                    "' != " + "'" + prenewfccs + "'")
                     return False
             if(re.findall("^\\+([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile.replace("+", ""))
@@ -6665,7 +6667,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         if(not catfp):
             return False
         catfp.seek(0, 0)
-    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         catfp = download_file_from_internet_file(infile)
         catfp.seek(0, 0)
         compresscheck = CheckCompressionType(catfp, formatspecs, False)
@@ -6782,13 +6784,13 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
     if(headercheck):
         if(verbose):
             VerbosePrintOut("File Header Checksum Passed at offset " + str(0))
-            VerbosePrintOut("'" + str(fprechecksum) + "' == " +
-                            "'" + str(newfcs) + "'")
+            VerbosePrintOut("'" + fprechecksum + "' == " +
+                            "'" + newfcs + "'")
     else:
         if(verbose):
             VerbosePrintOut("File Header Checksum Failed at offset " + str(0))
-            VerbosePrintOut("'" + str(fprechecksum) + "' != " +
-                            "'" + str(newfcs) + "'")
+            VerbosePrintOut("'" + fprechecksum + "' != " +
+                            "'" + newfcs + "'")
             valid_archive = False
             invalid_archive = True
     if(verbose):
@@ -6856,14 +6858,14 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
             if(verbose):
                 VerbosePrintOut(
                     "File Header Checksum Passed at offset " + str(catfhstart))
-                VerbosePrintOut("'" + str(catfcs) + "' == " +
-                                "'" + str(catnewfcs) + "'")
+                VerbosePrintOut("'" + catfcs + "' == " +
+                                "'" + catnewfcs + "'")
         else:
             if(verbose):
                 VerbosePrintOut(
                     "File Header Checksum Failed at offset " + str(catfhstart))
-                VerbosePrintOut("'" + str(catfcs) + "' != " +
-                                "'" + str(catnewfcs) + "'")
+                VerbosePrintOut("'" + catfcs + "' != " +
+                                "'" + catnewfcs + "'")
             valid_archive = False
             invalid_archive = True
         catfhend = catfp.tell() - 1
@@ -6882,14 +6884,14 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
                 if(verbose):
                     VerbosePrintOut(
                         "File Content Checksum Passed at offset " + str(catfcontentstart))
-                    VerbosePrintOut("'" + str(catfccs) +
-                                    "' == " + "'" + str(catnewfccs) + "'")
+                    VerbosePrintOut("'" + catfccs +
+                                    "' == " + "'" + catnewfccs + "'")
             else:
                 if(verbose):
                     VerbosePrintOut(
                         "File Content Checksum Failed at offset " + str(catfcontentstart))
-                    VerbosePrintOut("'" + str(catfccs) +
-                                    "' != " + "'" + str(catnewfccs) + "'")
+                    VerbosePrintOut("'" + catfccs +
+                                    "' != " + "'" + catnewfccs + "'")
                 valid_archive = False
                 invalid_archive = True
         if(verbose):
@@ -6988,7 +6990,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         if(not catfp):
             return False
         catfp.seek(0, 0)
-    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         catfp = download_file_from_internet_file(infile)
         compresscheck = CheckCompressionType(catfp, formatspecs, False)
         if(not compresscheck):
@@ -7110,8 +7112,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
-        VerbosePrintOut("'" + str(fprechecksum) + "' != " +
-                        "'" + str(newfcs) + "'")
+        VerbosePrintOut("'" + fprechecksum + "' != " +
+                        "'" + newfcs + "'")
         return False
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
     fcompresstype = compresscheck
@@ -7163,8 +7165,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
             if(prefcs != prenewfcs and not skipchecksum):
                 VerbosePrintOut("File Header Checksum Error with file " +
                                 prefname + " at offset " + str(prefhstart))
-                VerbosePrintOut("'" + str(prefcs) + "' != " +
-                                "'" + str(prenewfcs) + "'")
+                VerbosePrintOut("'" + prefcs + "' != " +
+                                "'" + prenewfcs + "'")
                 return False
                 valid_archive = False
                 invalid_archive = True
@@ -7183,8 +7185,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
                 if(prefccs != prenewfccs and not skipchecksum):
                     VerbosePrintOut("File Content Checksum Error with file " +
                                     prefname + " at offset " + str(prefcontentstart))
-                    VerbosePrintOut("'" + str(prefccs) +
-                                    "' != " + "'" + str(prenewfccs) + "'")
+                    VerbosePrintOut("'" + prefccs +
+                                    "' != " + "'" + prenewfccs + "'")
                     return False
             if(re.findall("^\\+([0-9]+)", prefseeknextfile)):
                 fseeknextasnum = int(prefseeknextfile.replace("+", ""))
@@ -7264,8 +7266,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         if(catfcs != catnewfcs and not skipchecksum):
             VerbosePrintOut("File Header Checksum Error with file " +
                             catfname + " at offset " + str(catfhstart))
-            VerbosePrintOut("'" + str(catfcs) + "' != " +
-                            "'" + str(catnewfcs) + "'")
+            VerbosePrintOut("'" + catfcs + "' != " +
+                            "'" + catnewfcs + "'")
             return False
         catfhend = catfp.tell() - 1
         catfcontentstart = catfp.tell()
@@ -7283,8 +7285,8 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
             if(catfccs != catnewfccs and not skipchecksum):
                 VerbosePrintOut("File Content Checksum Error with file " +
                                 catfname + " at offset " + str(catfcontentstart))
-                VerbosePrintOut("'" + str(catfccs) + "' != " +
-                                "'" + str(catnewfccs) + "'")
+                VerbosePrintOut("'" + catfccs + "' != " +
+                                "'" + catnewfccs + "'")
                 return False
             if(catfcompression == "none" or catfcompression == "" or catfcompression == "auto"):
                 pass
@@ -7750,7 +7752,7 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=[
         if(not infile):
             return False
         infile.seek(0, 0)
-    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         infile = download_file_from_internet_file(infile)
         infile.seek(0, 0)
         if(not infile):
@@ -8028,7 +8030,7 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=[
         if(not infile):
             return False
         infile.seek(0, 0)
-    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         infile = download_file_from_internet_file(infile)
         infile.seek(0, 0)
         if(not infile):
@@ -8933,7 +8935,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
         catfp = BytesIO()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         catfp = outfile
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         catfp = BytesIO()
     else:
         fbasename = os.path.splitext(outfile)[0]
@@ -9149,7 +9151,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
         outvar = catfp.read()
         catfp.close()
         return outvar
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", str(outfile))):
+    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         catfp = CompressArchiveFile(
             catfp, compression, compressionlevel, formatspecs)
         catfp.seek(0, 0)
@@ -9496,8 +9498,8 @@ def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, for
             fgprint = listcatfiles['ffilelist'][lcfi]['fgname']
             if(len(fgprint) <= 0):
                 fgprint = listcatfiles['ffilelist'][lcfi]['fgid']
-            VerbosePrintOut(PrintPermissionString(listcatfiles['ffilelist'][lcfi]['fmode'], listcatfiles['ffilelist'][lcfi]['ftype']) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(
-                listcatfiles['ffilelist'][lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles['ffilelist'][lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname))
+            VerbosePrintOut(PrintPermissionString(listcatfiles['ffilelist'][lcfi]['fmode'], listcatfiles['ffilelist'][lcfi]['ftype']) + " " + str(fuprint) + "/" + str(fgprint) + " " + str(
+                listcatfiles['ffilelist'][lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listcatfiles['ffilelist'][lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname)
         lcfi = lcfi + 1
     if(returnfp):
         return listcatfiles['catfp']
@@ -9526,7 +9528,7 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
         if(not infile):
             return False
         infile.seek(0, 0)
-    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         infile = download_file_from_internet_file(infile)
         infile.seek(0, 0)
         if(not infile):
@@ -9625,8 +9627,8 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
             fgprint = member.gname
             if(len(fgprint) <= 0):
                 fgprint = member.gid
-            VerbosePrintOut(PrintPermissionString(ffullmode, ftype) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(
-                member.size).rjust(15) + " " + datetime.datetime.utcfromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + " " + printfname))
+            VerbosePrintOut(PrintPermissionString(ffullmode, ftype) + " " + str(fuprint) + "/" + str(fgprint) + " " + str(
+                member.size).rjust(15) + " " + datetime.datetime.utcfromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + " " + printfname)
         lcfi = lcfi + 1
     if(returnfp):
         return listcatfiles['catfp']
@@ -9647,7 +9649,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
         if(not infile):
             return False
         infile.seek(0, 0)
-    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", str(infile))):
+    elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         infile = download_file_from_internet_file(infile)
         infile.seek(0, 0)
         if(not infile):
@@ -9758,8 +9760,8 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
             fgprint = fgname
             if(len(fgprint) <= 0):
                 fgprint = str(fgid)
-            VerbosePrintOut(PrintPermissionString(fmode, ftype) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(member.file_size).rjust(
-                15) + " " + datetime.datetime.utcfromtimestamp(int(time.mktime(member.date_time + (0, 0, -1)))).strftime('%Y-%m-%d %H:%M') + " " + printfname))
+            VerbosePrintOut(PrintPermissionString(fmode, ftype) + " " + str(fuprint) + "/" + str(fgprint) + " " + str(member.file_size).rjust(
+                15) + " " + datetime.datetime.utcfromtimestamp(int(time.mktime(member.date_time + (0, 0, -1)))).strftime('%Y-%m-%d %H:%M') + " " + printfname)
         lcfi = lcfi + 1
     if(returnfp):
         return listcatfiles['catfp']
@@ -9896,8 +9898,8 @@ if(rarfile_support):
                 fgprint = fgname
                 if(len(fgprint) <= 0):
                     fgprint = str(fgid)
-                VerbosePrintOut(PrintPermissionString(fmode, ftype) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(
-                    member.file_size).rjust(15) + " " + member.mtime.strftime('%Y-%m-%d %H:%M') + " " + printfname))
+                VerbosePrintOut(PrintPermissionString(fmode, ftype) + " " + str(fuprint) + "/" + str(fgprint) + " " + str(
+                    member.file_size).rjust(15) + " " + member.mtime.strftime('%Y-%m-%d %H:%M') + " " + printfname)
             lcfi = lcfi + 1
         if(returnfp):
             return listcatfiles['catfp']
@@ -10003,8 +10005,8 @@ if(py7zr_support):
                 fgprint = fgname
                 if(len(fgprint) <= 0):
                     fgprint = str(fgid)
-                VerbosePrintOut(PrintPermissionString(fmode, ftype) + " " + str(str(fuprint) + "/" + str(fgprint) + " " + str(
-                    fsize).rjust(15) + " " + member.creationtime.strftime('%Y-%m-%d %H:%M') + " " + printfname))
+                VerbosePrintOut(PrintPermissionString(fmode, ftype) + " " + str(fuprint) + "/" + str(fgprint) + " " + str(
+                    fsize).rjust(15) + " " + member.creationtime.strftime('%Y-%m-%d %H:%M') + " " + printfname)
             lcfi = lcfi + 1
         if(returnfp):
             return listcatfiles['catfp']
