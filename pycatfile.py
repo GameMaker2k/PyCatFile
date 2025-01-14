@@ -7470,6 +7470,15 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
     fhencoding = "UTF-8"
     tmpcatfile = BytesIO()
     AppendFileHeader(tmpcatfile, fnumfiles, fhencoding, [], checksumtype[0], formatspecs)
+    tmpcatfile.seek(0, 0)
+    catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+    catstring = tmpcatfile.read(formatspecs['format_len'] + len(catheaderver)).decode("UTF-8")
+    catdelszie = len(formatspecs['format_delimiter'])
+    catdel = tmpcatfile.read(catdelszie).decode("UTF-8")
+    if(catstring != formatspecs['format_magic']+catheaderver):
+        return False
+    if(catdel != formatspecs['format_delimiter']):
+        return False
     if(formatspecs['new_style']):
         catheader = ReadFileHeaderDataBySize(
             tmpcatfile, formatspecs['format_delimiter'])
@@ -7499,13 +7508,12 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
         return False
     fileheader = tmpcatfile.read()
     tmpcatfile.close()
-    catversion = re.findall("([\\d]+)", fileheader)
-    catversions = re.search('(.*?)(\\d+)', fileheader).groups()
+    catversions = re.search('(.*?)(\\d+)', catstring).groups()
     catfileheadercshex = GetFileChecksum(
-        fileheader, checksumtype[0], True, formatspecs)
+        fileheader, checksumtype[0], False, formatspecs)
     fheadtell = len(fileheader)
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': "", 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype,
-               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype[0], 'fheaderchecksum': catfileheadercshex, 'frawheader': catheader, 'ffilelist': []}
+               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype[0], 'fheaderchecksum': catfileheadercshex, 'frawheader': [catstring] + catheader, 'ffilelist': []}
     FullSizeFilesAlt = 0
     for curfname in GetDirList:
         catfhstart = fheadtell
@@ -7644,10 +7652,12 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
         if ftype in data_types:
             with open(fname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
+            fcsize = fcontents.tell()
         if(followlink and (ftype == 1 or ftype == 2)):
             flstatinfo = os.stat(flinkname)
             with open(flinkname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
+            fcsize = fcontents.tell()
         fcontents.seek(0, 0)
         ftypehex = format(ftype, 'x').lower()
         extrafields = len(extradata)
@@ -7661,7 +7671,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
         extrasizelen = len(extrasizestr)
         extrasizelenhex = format(extrasizelen, 'x').lower()
         catoutlist = [ftypehex, fencoding, fname, flinkname, format(int(fsize), 'x').lower(), format(int(fatime), 'x').lower(), format(int(fmtime), 'x').lower(), format(int(fctime), 'x').lower(), format(int(fbtime), 'x').lower(), format(int(fmode), 'x').lower(), format(int(fwinattributes), 'x').lower(), fcompression, format(int(fcsize), 'x').lower(), format(int(fuid), 'x').lower(
-        ), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), format(int(fcurinode), 'x').lower(), format(int(flinkcount), 'x').lower(), format(int(fdev), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), "+"+str(len(formatspecs['format_delimiter'])), extrasizelenhex, format(catfextrafields, 'x').lower()]
+        ), funame, format(int(fgid), 'x').lower(), fgname, format(int(fcurfid), 'x').lower(), fcurinode, format(int(flinkcount), 'x').lower(), format(int(fdev), 'x').lower(), format(int(fdev_minor), 'x').lower(), format(int(fdev_major), 'x').lower(), "+"+str(len(formatspecs['format_delimiter'])), extrasizelenhex, format(catfextrafields, 'x').lower()]
         catoutlen = len(catoutlist) + len(extradata) + 3
         catoutlenhex = format(catoutlen, 'x').lower()
         catoutlist.insert(0, catoutlenhex)
@@ -7795,6 +7805,15 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=[
     fhencoding = "UTF-8"
     tmpcatfile = BytesIO()
     AppendFileHeader(tmpcatfile, fnumfiles, fhencoding, [], checksumtype[0], formatspecs)
+    tmpcatfile.seek(0, 0)
+    catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+    catstring = tmpcatfile.read(formatspecs['format_len'] + len(catheaderver)).decode("UTF-8")
+    catdelszie = len(formatspecs['format_delimiter'])
+    catdel = tmpcatfile.read(catdelszie).decode("UTF-8")
+    if(catstring != formatspecs['format_magic']+catheaderver):
+        return False
+    if(catdel != formatspecs['format_delimiter']):
+        return False
     if(formatspecs['new_style']):
         catheader = ReadFileHeaderDataBySize(
             tmpcatfile, formatspecs['format_delimiter'])
@@ -7824,13 +7843,12 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=[
         return False
     fileheader = tmpcatfile.read()
     tmpcatfile.close()
-    catversion = re.findall("([\\d]+)", fileheader)
-    catversions = re.search('(.*?)(\\d+)', fileheader).groups()
+    catversions = re.search('(.*?)(\\d+)', catstring).groups()
     catfileheadercshex = GetFileChecksum(
-        fileheader, checksumtype[0], True, formatspecs)
+        fileheader, checksumtype[0], False, formatspecs)
     fheadtell = len(fileheader)
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': "", 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype,
-               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype[0], 'fheaderchecksum': catfileheadercshex, 'frawheader': catheader, 'ffilelist': []}
+               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype[0], 'fheaderchecksum': catfileheadercshex, 'frawheader': [catstring] + catheader, 'ffilelist': []}
     for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
         catfhstart = fheadtell
         fencoding = "UTF-8"
@@ -7917,6 +7935,7 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=[
         if ftype in data_types:
             fpc = tarfp.extractfile(member)
             shutil.copyfileobj(fpc, fcontents)
+            fcsize = fcontents.tell()
         fcontents.seek(0, 0)
         ftypehex = format(ftype, 'x').lower()
         extrafields = len(extradata)
@@ -8040,6 +8059,15 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=[
     fhencoding = "UTF-8"
     tmpcatfile = BytesIO()
     AppendFileHeader(tmpcatfile, fnumfiles, fhencoding, [], checksumtype[0], formatspecs)
+    tmpcatfile.seek(0, 0)
+    catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+    catstring = tmpcatfile.read(formatspecs['format_len'] + len(catheaderver)).decode("UTF-8")
+    catdelszie = len(formatspecs['format_delimiter'])
+    catdel = tmpcatfile.read(catdelszie).decode("UTF-8")
+    if(catstring != formatspecs['format_magic']+catheaderver):
+        return False
+    if(catdel != formatspecs['format_delimiter']):
+        return False
     if(formatspecs['new_style']):
         catheader = ReadFileHeaderDataBySize(
             tmpcatfile, formatspecs['format_delimiter'])
@@ -8069,13 +8097,12 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=[
         return False
     fileheader = tmpcatfile.read()
     tmpcatfile.close()
-    catversion = re.findall("([\\d]+)", fileheader)
-    catversions = re.search('(.*?)(\\d+)', fileheader).groups()
+    catversions = re.search('(.*?)(\\d+)', catstring).groups()
     catfileheadercshex = GetFileChecksum(
-        fileheader, checksumtype[0], True, formatspecs)
+        fileheader, checksumtype[0], False, formatspecs)
     fheadtell = len(fileheader)
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': "", 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype,
-               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype[0], 'fheaderchecksum': catfileheadercshex, 'frawheader': catheader, 'ffilelist': []}
+               'fformatspecs': formatspecs, 'fchecksumtype': checksumtype[0], 'fheaderchecksum': catfileheadercshex, 'frawheader': [catstring] + catheader, 'ffilelist': []}
     for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
         catfhstart = fheadtell
         fencoding = "UTF-8"
@@ -8185,6 +8212,7 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=[
         fcontents = BytesIO()
         if(ftype == 0):
             fcontents.write(zipfp.read(member.filename))
+            fcsize = fcontents.tell()
         fcontents.seek(0, 0)
         ftypehex = format(ftype, 'x').lower()
         extrafields = len(extradata)
@@ -8285,13 +8313,21 @@ if(rarfile_support):
         fileheaderver = str(int(catver.replace(".", "")))
         fileheader = AppendNullByte(
             formatspecs['format_magic'] + fileheaderver, formatspecs['format_delimiter'])
-        catversion = re.findall("([\\d]+)", fileheader)
-        catversions = re.search('(.*?)(\\d+)', fileheader).groups()
+        catversions = re.search('(.*?)(\\d+)', catstring).groups()
         fnumfileshex = format(int(fnumfiles), 'x').lower()
         fostype = platform.system()
         fhencoding = "UTF-8"
         tmpcatfile = BytesIO()
         AppendFileHeader(tmpcatfile, fnumfiles, fhencoding, [], checksumtype[0], formatspecs)
+        tmpcatfile.seek(0, 0)
+        catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+        catstring = tmpcatfile.read(formatspecs['format_len'] + len(catheaderver)).decode("UTF-8")
+        catdelszie = len(formatspecs['format_delimiter'])
+        catdel = tmpcatfile.read(catdelszie).decode("UTF-8")
+        if(catstring != formatspecs['format_magic']+catheaderver):
+            return False
+        if(catdel != formatspecs['format_delimiter']):
+            return False
         if(formatspecs['new_style']):
             catheader = ReadFileHeaderDataBySize(
                 tmpcatfile, formatspecs['format_delimiter'])
@@ -8324,10 +8360,10 @@ if(rarfile_support):
         catversion = re.findall("([\\d]+)", fileheader)
         catversions = re.search('(.*?)(\\d+)', fileheader).groups()
         catfileheadercshex = GetFileChecksum(
-            fileheader, checksumtype[0], True, formatspecs)
+            fileheader, checksumtype[0], False, formatspecs)
         fheadtell = len(fileheader)
         catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': "", 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype,
-                   'fformatspecs': formatspecs, 'fchecksumtype': checksumtype[0], 'fheaderchecksum': catfileheadercshex, 'frawheader': catheader, 'ffilelist': []}
+                   'fformatspecs': formatspecs, 'fchecksumtype': checksumtype[0], 'fheaderchecksum': catfileheadercshex, 'frawheader': [catstring] + catheader, 'ffilelist': []}
         for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
             catfhstart = fheadtell
             fencoding = "UTF-8"
@@ -8464,6 +8500,7 @@ if(rarfile_support):
             fcontents = BytesIO()
             if(ftype == 0):
                 fcontents.write(rarfp.read(member.filename))
+                fcsize = fcontents.tell()
             fcontents.seek(0, 0)
             ftypehex = format(ftype, 'x').lower()
             extrafields = len(extradata)
@@ -8568,6 +8605,15 @@ if(py7zr_support):
         fhencoding = "UTF-8"
         tmpcatfile = BytesIO()
         AppendFileHeader(tmpcatfile, fnumfiles, fhencoding, [], checksumtype[0], formatspecs)
+        tmpcatfile.seek(0, 0)
+        catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+        catstring = tmpcatfile.read(formatspecs['format_len'] + len(catheaderver)).decode("UTF-8")
+        catdelszie = len(formatspecs['format_delimiter'])
+        catdel = tmpcatfile.read(catdelszie).decode("UTF-8")
+        if(catstring != formatspecs['format_magic']+catheaderver):
+            return False
+        if(catdel != formatspecs['format_delimiter']):
+            return False
         if(formatspecs['new_style']):
             catheader = ReadFileHeaderDataBySize(
                 tmpcatfile, formatspecs['format_delimiter'])
@@ -8600,10 +8646,10 @@ if(py7zr_support):
         catversion = re.findall("([\\d]+)", fileheader)
         catversions = re.search('(.*?)(\\d+)', fileheader).groups()
         catfileheadercshex = GetFileChecksum(
-            fileheader, checksumtype[0], True, formatspecs)
+            fileheader, checksumtype[0], False, formatspecs)
         fheadtell = len(fileheader)
         catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': "", 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype,
-                   'fformatspecs': formatspecs, 'fchecksumtype': checksumtype[0], 'fheaderchecksum': catfileheadercshex, 'frawheader': catheader, 'ffilelist': []}
+                   'fformatspecs': formatspecs, 'fchecksumtype': checksumtype[0], 'fheaderchecksum': catfileheadercshex, 'frawheader': [catstring] + catheader, 'ffilelist': []}
         for member in sorted(szpfp.list(), key=lambda x: x.filename):
             catfhstart = fheadtell
             fencoding = "UTF-8"
@@ -8687,6 +8733,7 @@ if(py7zr_support):
                 fcontents.write(file_content[member.filename].read())
                 fsize = format(fcontents.tell(), 'x').lower()
                 fileop.close()
+                fcsize = fcontents.tell()
             fcontents.seek(0, 0)
             ftypehex = format(ftype, 'x').lower()
             extrafields = len(extradata)
