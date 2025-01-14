@@ -285,23 +285,38 @@ if((__use_http_lib__ == "httpx" or __use_http_lib__ == "requests") and not haveh
 if os.path.exists(__config_file__) and __use_ini_file__:
     config = configparser.ConfigParser()
     config.read(__config_file__)
+    __use_alt_format__ = config.getboolean('config', 'usealt')
     def decode_unicode_escape(value):
         if sys.version_info[0] < 3:  # Python 2
             return value.decode('unicode_escape')
         else:  # Python 3
             return bytes(value, 'UTF-8').decode('unicode_escape')
-    __file_format_name__ = config.get('main', 'name')
-    __program_name__ = config.get('main', 'proname')
-    __file_format_lower__ = config.get('main', 'lower')
-    __file_format_magic__ = decode_unicode_escape(config.get('main', 'magic'))
-    __file_format_len__ = config.getint('main', 'len')
-    __file_format_hex__ = config.get('main', 'hex')
-    __file_format_delimiter__ = decode_unicode_escape(config.get('main', 'delimiter'))
-    __file_format_ver__ = config.get('main', 'ver')
-    __use_new_style__ = config.getboolean('main', 'newstyle')
-    __use_advanced_list__ = config.getboolean('main', 'advancedlist')
-    __use_alt_inode__ = config.getboolean('main', 'altinode')
-    __file_format_extension__ = config.get('main', 'extension')
+    if not __use_alt_format__:
+        __file_format_name__ = config.get('main', 'name')
+        __program_name__ = config.get('main', 'proname')
+        __file_format_lower__ = config.get('main', 'lower')
+        __file_format_magic__ = decode_unicode_escape(config.get('main', 'magic'))
+        __file_format_len__ = config.getint('main', 'len')
+        __file_format_hex__ = config.get('main', 'hex')
+        __file_format_delimiter__ = decode_unicode_escape(config.get('main', 'delimiter'))
+        __file_format_ver__ = config.get('main', 'ver')
+        __use_new_style__ = config.getboolean('main', 'newstyle')
+        __use_advanced_list__ = config.getboolean('main', 'advancedlist')
+        __use_alt_inode__ = config.getboolean('main', 'altinode')
+        __file_format_extension__ = config.get('main', 'extension')
+    else:
+        __file_format_name__ = config.get('alt', 'name')
+        __program_name__ = config.get('alt', 'proname')
+        __file_format_lower__ = config.get('alt', 'lower')
+        __file_format_magic__ = decode_unicode_escape(config.get('alt', 'magic'))
+        __file_format_len__ = config.getint('alt', 'len')
+        __file_format_hex__ = config.get('alt', 'hex')
+        __file_format_delimiter__ = decode_unicode_escape(config.get('alt', 'delimiter'))
+        __file_format_ver__ = config.get('alt', 'ver')
+        __use_new_style__ = config.getboolean('alt', 'newstyle')
+        __use_advanced_list__ = config.getboolean('alt', 'advancedlist')
+        __use_alt_inode__ = config.getboolean('alt', 'altinode')
+        __file_format_extension__ = config.get('alt', 'extension')
 else:
     if not __use_alt_format__:
         # Format Info by Kazuki Przyborowski
@@ -310,8 +325,7 @@ else:
         __file_format_lower__ = __file_format_name__.lower()
         __file_format_magic__ = __file_format_name__
         __file_format_len__ = len(__file_format_magic__.encode('utf-8'))
-        __file_format_hex__ = binascii.hexlify(
-            __file_format_magic__.encode("UTF-8")).decode("UTF-8")
+        __file_format_hex__ = binascii.hexlify(__file_format_magic__.encode("UTF-8")).decode("UTF-8")
         __file_format_delimiter__ = "\x00"
         __file_format_ver__ = "001"
         __use_new_style__ = True
@@ -325,8 +339,7 @@ else:
         __file_format_magic__ = "ねこファイル"
         #__file_format_magic__ = "네코파일"
         __file_format_len__ = len(__file_format_magic__.encode('utf-8'))
-        __file_format_hex__ = binascii.hexlify(
-            __file_format_magic__.encode("UTF-8")).decode("UTF-8")
+        __file_format_hex__ = binascii.hexlify(__file_format_magic__.encode("UTF-8")).decode("UTF-8")
         __file_format_delimiter__ = "\x00"
         __file_format_ver__ = "001"
         __use_new_style__ = True
@@ -2267,14 +2280,15 @@ def ReadFileHeaderDataBySize(fp, delimiter=__file_format_dict__['format_delimite
     headersize = int(preheaderdata[0], 16)
     if(headersize <= 0):
         return []
-    headercontent = str(fp.read(headersize).decode('UTF-8')).split(delimiter)
+    subfp = BytesIO()
+    subfp.write(fp.read(headersize))
     fp.seek(len(delimiter), 1)
-    rocount = 0
-    roend = int(len(headercontent))
-    HeaderOut = preheaderdata
-    while(rocount < roend):
-        HeaderOut.append(headercontent[rocount])
-        rocount = rocount + 1
+    subfp.seek(0, 0)
+    prealtheaderdata = ReadFileHeaderData(subfp, 1, delimiter)
+    headernumfields = int(prealtheaderdata[0], 16)
+    headerdata = ReadTillNullByteByNum(subfp, delimiter, headernumfields)
+    HeaderOut = preheaderdata + prealtheaderdata + headerdata
+    subfp.close()
     return HeaderOut
 
 
