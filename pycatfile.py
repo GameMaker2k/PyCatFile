@@ -929,17 +929,16 @@ class ZlibFile:
 
 def _gzip_compress(data, compresslevel=9):
     """
-    Compress data with gzip headers/trailers using zlib at wbits=31.
-    Single-shot approach (not streaming).
-    :param data: Bytes to compress
+    Compress data with a GZIP wrapper (wbits=31) in one shot.
+    :param data: Bytes to compress.
     :param compresslevel: 1..9
-    :return: GZIP-compressed bytes
+    :return: GZIP-compressed bytes.
     """
-    # compressobj usage for gzip: method=zlib.DEFLATED, wbits=31 => GZIP container
     compobj = zlib.compressobj(compresslevel, zlib.DEFLATED, 31)
     cdata = compobj.compress(data)
     cdata += compobj.flush(zlib.Z_FINISH)
     return cdata
+
 
 def _gzip_decompress(data):
     """
@@ -951,30 +950,66 @@ def _gzip_decompress(data):
     # If you need multi-member support, you'd need a streaming loop here.
     return zlib.decompress(data, 31)
 
+
+def _gzip_decompress_multimember(data):
+    """
+    Decompress possibly multi-member GZIP data, returning all uncompressed bytes.
+
+    - We loop over each GZIP member.
+    - zlib.decompressobj(wbits=31) stops after the first member it encounters.
+    - We use 'unused_data' to detect leftover data and continue until no more.
+    """
+    result = b""
+    current_data = data
+
+    while current_data:
+        # Create a new decompress object for the next member
+        dobj = zlib.decompressobj(31)
+        try:
+            part = dobj.decompress(current_data)
+        except zlib.error as e:
+            # If there's a decompression error, break or raise
+            raise ValueError("Decompression error: {}".format(str(e)))
+
+        result += part
+        result += dobj.flush()
+
+        if dobj.unused_data:
+            # 'unused_data' holds the bytes after the end of this gzip member
+            # So we move on to the next member
+            current_data = dobj.unused_data
+        else:
+            # No leftover => we reached the end of the data
+            break
+
+    return result
+
 class GzipFile(object):
     """
     A file-like wrapper that uses zlib at wbits=31 to mimic gzip compress/decompress,
-    for Python versions lacking gzip.compress/gzip.decompress (e.g., Python <3.2 or Py2).
-    
-    - Read mode: loads entire file, checks for magic bytes, decompresses.
-    - Write mode: buffers data in memory, writes compressed data on close().
-    - Includes 'level' to set compression level (1..9).
-    - Text vs. binary mode: specify 't' in the mode for text, with optional encoding/errors.
+    with multi-member support. Works on older Python versions (including Py2),
+    where gzip.compress / gzip.decompress might be unavailable.
+
+    - In read mode: loads entire file, checks GZIP magic if needed, and
+      decompresses all members in a loop.
+    - In write mode: buffers uncompressed data, then writes compressed bytes on close.
+    - 'level' sets compression level (1..9).
+    - Supports text ('t') vs binary modes.
     """
 
-    # GZIP magic
+    # GZIP magic (first 2 bytes)
     GZIP_MAGIC = b'\x1f\x8b'
 
     def __init__(self, file_path=None, fileobj=None, mode='rb',
                  level=9, encoding=None, errors=None, newline=None):
         """
         :param file_path: Path to file on disk (optional)
-        :param fileobj: Existing file-like object (optional)
-        :param mode: e.g. 'rb', 'wb', 'rt', 'wt'
+        :param fileobj:  An existing file-like object (optional)
+        :param mode: e.g. 'rb', 'wb', 'rt', 'wt', etc.
         :param level: Compression level (1..9)
-        :param encoding: Used if 't' in mode for text encoding
+        :param encoding: If 't' in mode, text encoding
         :param errors: Error handling for text encode/decode
-        :param newline: Placeholder for signature compatibility; not implemented
+        :param newline: Placeholder for signature compatibility
         """
         if file_path is None and fileobj is None:
             raise ValueError("Either file_path or fileobj must be provided")
@@ -989,17 +1024,17 @@ class GzipFile(object):
         self.errors = errors
         self.newline = newline
 
-        # For reading, we store decompressed data in memory
+        # If reading, we store fully decompressed data in memory
         self._decompressed_data = b''
         self._position = 0
 
-        # For writing, we store uncompressed data in memory until close()
+        # If writing, we store uncompressed data in memory, compress at close()
         self._write_buffer = b''
 
-        # Text mode if 't' is present in mode
+        # Text mode if 't' in mode
         self._text_mode = 't' in mode
 
-        # Force binary mode for the actual file I/O
+        # Force binary file I/O mode
         internal_mode = mode.replace('t', 'b')
 
         if any(m in mode for m in ('w', 'a', 'x')):
@@ -1026,19 +1061,19 @@ class GzipFile(object):
 
     def _load_file(self):
         """
-        Read entire compressed file. Check magic. Decompress (single-shot).
+        Read entire compressed file. Decompress all GZIP members.
         """
         self.file.seek(0)
         compressed_data = self.file.read()
 
-        # Verify GZIP magic
+        # (Optional) Check magic if you want to fail early on non-GZIP data
+        # We'll do a quick check to see if it starts with GZIP magic
         if not compressed_data.startswith(self.GZIP_MAGIC):
             raise ValueError("Invalid GZIP header (magic bytes missing)")
 
-        # Decompress everything in one shot
-        self._decompressed_data = _gzip_decompress(compressed_data)
+        self._decompressed_data = _gzip_decompress_multimember(compressed_data)
 
-        # If text mode, decode to str (Py3) or unicode (Py2)
+        # If text mode, decode
         if self._text_mode:
             enc = self.encoding or 'UTF-8'
             err = self.errors or 'strict'
@@ -1047,20 +1082,20 @@ class GzipFile(object):
     def write(self, data):
         """
         Write data to our in-memory buffer.
-        Actual compression to GZIP happens on close().
+        Actual compression (GZIP) occurs on close().
         """
         if 'r' in self.mode:
             raise IOError("File not open for writing")
 
         if self._text_mode:
-            # Encode str/unicode to bytes
+            # Encode text to bytes
             data = data.encode(self.encoding or 'UTF-8', self.errors or 'strict')
 
         self._write_buffer += data
 
     def read(self, size=-1):
         """
-        Read from the decompressed data buffer in memory.
+        Read from the decompressed data buffer.
         """
         if 'r' not in self.mode:
             raise IOError("File not open for reading")
@@ -1091,20 +1126,21 @@ class GzipFile(object):
 
     def tell(self):
         """
-        Return current position in decompressed data.
+        Return the current position in the decompressed data buffer.
         """
         return self._position
 
     def flush(self):
         """
-        Flush the underlying file. No partial compression flush in this design.
+        Flush the underlying file, if possible.
+        (No partial compression flush is performed here.)
         """
         if hasattr(self.file, 'flush'):
             self.file.flush()
 
     def fileno(self):
         """
-        Return underlying file descriptor if available.
+        Return the file descriptor if available.
         """
         if hasattr(self.file, 'fileno'):
             return self.file.fileno()
@@ -1112,7 +1148,7 @@ class GzipFile(object):
 
     def isatty(self):
         """
-        Return True if file is a TTY, else False.
+        Return whether the underlying file is a TTY.
         """
         if hasattr(self.file, 'isatty'):
             return self.file.isatty()
@@ -1120,7 +1156,7 @@ class GzipFile(object):
 
     def truncate(self, size=None):
         """
-        Truncate underlying file if possible.
+        Truncate the underlying file if possible.
         """
         if hasattr(self.file, 'truncate'):
             return self.file.truncate(size)
@@ -1128,8 +1164,8 @@ class GzipFile(object):
 
     def close(self):
         """
-        If in write mode, compress buffered data using _gzip_compress(level),
-        then write it. Close file if we opened it ourselves.
+        If in write mode, compress the entire buffer with wbits=31 (gzip) at the
+        specified compression level, then write it out. Close file if we opened it.
         """
         if any(m in self.mode for m in ('w', 'a', 'x')):
             compressed = _gzip_compress(self._write_buffer, compresslevel=self.level)
