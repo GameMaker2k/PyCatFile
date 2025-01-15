@@ -6819,6 +6819,10 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         return False
 
 
+def ArchiveFileValidateFile(infile, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    return ArchiveFileValidate(infile, formatspecs, verbose, returnfp)
+
+
 def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     if(hasattr(infile, "read") or hasattr(infile, "write")):
