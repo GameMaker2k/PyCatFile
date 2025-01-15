@@ -2426,22 +2426,31 @@ def ReadFileDataBySizeWithContent(fp, listonly=False, uncompress=True, skipcheck
     formatspecs = FormatSpecsListToDict(formatspecs)
     delimiter = formatspecs['format_delimiter']
     curloc = fp.tell()
+    try:
+        fp.seek(0, 2);
+    except OSError:
+        SeekToEndOfFile(fp);
+    except ValueError:
+        SeekToEndOfFile(fp);
+    CatSize = fp.tell();
+    CatSizeEnd = CatSize;
+    fp.seek(curloc, 0)
     if(curloc > 0):
         fp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
-    catstring = catfp.read(formatspecs['format_len'] + len(catheaderver)).decode("UTF-8")
+    catstring = fp.read(formatspecs['format_len'] + len(catheaderver)).decode("UTF-8")
     catdelszie = len(formatspecs['format_delimiter'])
-    catdel = catfp.read(catdelszie).decode("UTF-8")
+    catdel = fp.read(catdelszie).decode("UTF-8")
     if(catstring != formatspecs['format_magic']+catheaderver):
         return False
     if(catdel != formatspecs['format_delimiter']):
         return False
     if(formatspecs['new_style']):
         catheader = ReadFileHeaderDataBySize(
-            catfp, formatspecs['format_delimiter'])
+            fp, formatspecs['format_delimiter'])
     else:
         catheader = ReadFileHeaderDataWoSize(
-            catfp, formatspecs['format_delimiter'])
+            fp, formatspecs['format_delimiter'])
     if(curloc > 0):
         fp.seek(curloc, 0)
     fprechecksumtype = catheader[-2]
@@ -2473,6 +2482,15 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
     formatspecs = FormatSpecsListToDict(formatspecs)
     delimiter = formatspecs['format_delimiter']
     curloc = fp.tell()
+    try:
+        fp.seek(0, 2);
+    except OSError:
+        SeekToEndOfFile(fp);
+    except ValueError:
+        SeekToEndOfFile(fp);
+    CatSize = fp.tell();
+    CatSizeEnd = CatSize;
+    fp.seek(curloc, 0)
     if(curloc > 0):
         fp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
@@ -2601,6 +2619,15 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
     formatspecs = FormatSpecsListToDict(formatspecs)
     delimiter = formatspecs['format_delimiter']
     curloc = fp.tell()
+    try:
+        fp.seek(0, 2);
+    except OSError:
+        SeekToEndOfFile(fp);
+    except ValueError:
+        SeekToEndOfFile(fp);
+    CatSize = fp.tell();
+    CatSizeEnd = CatSize;
+    fp.seek(curloc, 0)
     if(curloc > 0):
         fp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
@@ -2727,7 +2754,6 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
 
 def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
     formatspecs = FormatSpecsListToDict(formatspecs)
-    delimiter = formatspecs['format_delimiter']
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
@@ -2735,12 +2761,20 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
         fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
-        if(checkcompressfile != formatspecs['format_lower']):
+        if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
+            return TarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+        elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
+            return ZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+        elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
+            return RarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+        elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
+            return SevenZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+        elif(checkcompressfile != formatspecs['format_lower']):
             return False
         if(not fp):
             return False
-        if(not compresscheck and hasattr(catfp, "name")):
-            fextname = os.path.splitext(catfp.name)[1]
+        if(not compresscheck and hasattr(fp, "name")):
+            fextname = os.path.splitext(fp.name)[1]
             if(fextname == ".gz"):
                 compresscheck = "gzip"
             elif(fextname == ".bz2"):
@@ -2773,6 +2807,16 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
         if(not fp):
             return False
         fp.seek(0, 0)
+    elif(isinstance(infile, bytes) and sys.version_info[0] >= 3):
+        fp = BytesIO()
+        fp.write(infile)
+        fp.seek(0, 0)
+        compresscheck = CheckCompressionType(fp, formatspecs, False)
+        fp.seek(0, 0)
+        fp = UncompressArchiveFile(fp, formatspecs)
+        if(not fp):
+            return False
+        fp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         fp = download_file_from_internet_file(infile)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
@@ -2796,6 +2840,7 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
                 compresscheck = "zlib"
             else:
                 return False
+        fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
         if(not fp):
             return False
@@ -2803,7 +2848,15 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
     else:
         infile = RemoveWindowsPath(infile)
         checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
-        if(checkcompressfile != formatspecs['format_lower']):
+        if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
+            return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+        elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
+            return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+        elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
+            return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+        elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
+            return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+        elif(checkcompressfile != formatspecs['format_lower']):
             return False
         compresscheck = CheckCompressionType(infile, formatspecs, True)
         if(not compresscheck):
@@ -2834,7 +2887,6 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
 
 def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
     formatspecs = FormatSpecsListToDict(formatspecs)
-    delimiter = formatspecs['format_delimiter']
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
@@ -2842,12 +2894,20 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
         fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
-        if(checkcompressfile != formatspecs['format_lower']):
+        if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
+            return TarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+        elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
+            return ZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+        elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
+            return RarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+        elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
+            return SevenZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+        elif(checkcompressfile != formatspecs['format_lower']):
             return False
         if(not fp):
             return False
-        if(not compresscheck and hasattr(catfp, "name")):
-            fextname = os.path.splitext(catfp.name)[1]
+        if(not compresscheck and hasattr(fp, "name")):
+            fextname = os.path.splitext(fp.name)[1]
             if(fextname == ".gz"):
                 compresscheck = "gzip"
             elif(fextname == ".bz2"):
@@ -2873,6 +2933,16 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
             shutil.copyfileobj(sys.stdin.buffer, fp)
         else:
             shutil.copyfileobj(sys.stdin, fp)
+        fp.seek(0, 0)
+        compresscheck = CheckCompressionType(fp, formatspecs, False)
+        fp.seek(0, 0)
+        fp = UncompressArchiveFile(fp, formatspecs)
+        if(not fp):
+            return False
+        fp.seek(0, 0)
+    elif(isinstance(infile, bytes) and sys.version_info[0] >= 3):
+        fp = BytesIO()
+        fp.write(infile)
         fp.seek(0, 0)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         fp.seek(0, 0)
@@ -2911,7 +2981,15 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
     else:
         infile = RemoveWindowsPath(infile)
         checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
-        if(checkcompressfile != formatspecs['format_lower']):
+        if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
+            return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+        elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
+            return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+        elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
+            return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+        elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
+            return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+        elif(checkcompressfile != formatspecs['format_lower']):
             return False
         compresscheck = CheckCompressionType(infile, formatspecs, True)
         if(not compresscheck):
@@ -3025,6 +3103,10 @@ def MakeEmptyFilePointer(fp, checksumtype="crc32", formatspecs=__file_format_dic
     return fp
 
 
+def MakeEmptyArchiveFilePointer(fp, checksumtype="crc32", formatspecs=__file_format_dict__):
+    return MakeEmptyFilePointer(fp, checksumtype, formatspecs)
+
+
 def MakeEmptyFile(outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", formatspecs=__file_format_dict__, returnfp=False):
     formatspecs = FormatSpecsListToDict(formatspecs)
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
@@ -3082,6 +3164,10 @@ def MakeEmptyFile(outfile, compression="auto", compresswholefile=True, compressi
     else:
         catfp.close()
         return True
+
+
+def MakeEmptyArchiveFile(outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", formatspecs=__file_format_dict__, returnfp=False):
+    return MakeEmptyFile(outfile, compression, compresswholefile, compressionlevel, checksumtype, formatspecs, returnfp)
 
 
 def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="", checksumtype=["crc32", "crc32"], formatspecs=__file_format_dict__):
@@ -5959,7 +6045,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         if(not compresscheck):
             return False
         catfp = UncompressFile(infile, formatspecs, "rb")
-    '''
+    curloc = catfp.tell()
     try:
         catfp.seek(0, 2);
     except OSError:
@@ -5968,14 +6054,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         SeekToEndOfFile(catfp);
     CatSize = catfp.tell();
     CatSizeEnd = CatSize;
-    '''
-    try:
-        catfp.seek(0, 0)
-    except OSError:
-        return False
-    except ValueError:
-        return False
-    curloc = catfp.tell()
+    catfp.seek(curloc, 0)
     if(curloc > 0):
         catfp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
@@ -6234,7 +6313,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
         if(not compresscheck):
             return False
         catfp = UncompressFile(infile, formatspecs, "rb")
-    '''
+    curloc = catfp.tell()
     try:
         catfp.seek(0, 2);
     except OSError:
@@ -6243,14 +6322,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
         SeekToEndOfFile(catfp);
     CatSize = catfp.tell();
     CatSizeEnd = CatSize;
-    '''
-    try:
-        catfp.seek(0, 0)
-    except OSError:
-        return False
-    except ValueError:
-        return False
-    curloc = catfp.tell()
+    catfp.seek(curloc, 0)
     if(curloc > 0):
         catfp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
@@ -6542,7 +6614,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         if(not compresscheck):
             return False
         catfp = UncompressFile(infile, formatspecs, "rb")
-    '''
+    curloc = catfp.tell()
     try:
         catfp.seek(0, 2);
     except OSError:
@@ -6551,14 +6623,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         SeekToEndOfFile(catfp);
     CatSize = catfp.tell();
     CatSizeEnd = CatSize;
-    '''
-    try:
-        catfp.seek(0, 0)
-    except OSError:
-        return False
-    except ValueError:
-        return False
-    curloc = catfp.tell()
+    catfp.seek(curloc, 0)
     if(curloc > 0):
         catfp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
@@ -6884,7 +6949,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         if(not compresscheck):
             return False
         catfp = UncompressFile(infile, formatspecs, "rb")
-    '''
+    curloc = catfp.tell()
     try:
         catfp.seek(0, 2);
     except OSError:
@@ -6893,14 +6958,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         SeekToEndOfFile(catfp);
     CatSize = catfp.tell();
     CatSizeEnd = CatSize;
-    '''
-    try:
-        catfp.seek(0, 0)
-    except OSError:
-        return False
-    except ValueError:
-        return False
-    curloc = catfp.tell()
+    catfp.seek(curloc, 0)
     if(curloc > 0):
         catfp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
