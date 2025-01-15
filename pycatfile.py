@@ -2260,9 +2260,10 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, contentasfile
     else:
         fcontents.seek(0, 0)
         if(uncompress):
-            cfcontents = UncompressArchiveFile(fcontents, formatspecs)
+            cfcontents = UncompressArchiveFile(
+                fcontents, formatspecs)
             cfcontents.seek(0, 0)
-            cfcontents.seek(0, 0)
+            fcontents = BytesIO()
             shutil.copyfileobj(cfcontents, fcontents)
             cfcontents.close()
             fcontents.seek(0, 0)
@@ -2309,46 +2310,44 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
     fheadsize = int(HeaderOut[0], 16)
     fnumfields = int(HeaderOut[1], 16)
     ftype = int(HeaderOut[2], 16)
-    fencoding = "UTF-8"
-    if(re.findall("^[.|/]", HeaderOut[3])):
-        fname = HeaderOut[3]
+    fencoding = HeaderOut[3]
+    if(re.findall("^[.|/]", HeaderOut[4])):
+        fname = HeaderOut[4]
     else:
-        fname = "./"+HeaderOut[3]
+        fname = "./"+HeaderOut[4]
     fbasedir = os.path.dirname(fname)
-    flinkname = HeaderOut[4]
-    fsize = int(HeaderOut[5], 16)
-    fatime = int(HeaderOut[6], 16)
-    fmtime = int(HeaderOut[7], 16)
-    fctime = int(HeaderOut[8], 16)
-    fbtime = int(HeaderOut[9], 16)
-    fmode = int(HeaderOut[10], 16)
+    flinkname = HeaderOut[5]
+    fsize = int(HeaderOut[6], 16)
+    fatime = int(HeaderOut[7], 16)
+    fmtime = int(HeaderOut[8], 16)
+    fctime = int(HeaderOut[9], 16)
+    fbtime = int(HeaderOut[10], 16)
+    fmode = int(HeaderOut[11], 16)
     fchmode = stat.S_IMODE(fmode)
     ftypemod = stat.S_IFMT(fmode)
-    fwinattributes = int(HeaderOut[11], 16)
-    fcompression = HeaderOut[12]
-    fcsize = int(HeaderOut[13], 16)
-    fuid = int(HeaderOut[14], 16)
-    funame = HeaderOut[15]
-    fgid = int(HeaderOut[16], 16)
-    fgname = HeaderOut[17]
-    fid = int(HeaderOut[18], 16)
-    finode = int(HeaderOut[19], 16)
-    flinkcount = int(HeaderOut[20], 16)
-    fdev = int(HeaderOut[21], 16)
-    fdev_minor = int(HeaderOut[22], 16)
-    fdev_major = int(HeaderOut[23], 16)
-    fseeknextfile = HeaderOut[24]
-    fextrasize = int(HeaderOut[25], 16)
-    fextrafields = int(HeaderOut[26], 16)
+    fwinattributes = int(HeaderOut[12], 16)
+    fcompression = HeaderOut[13]
+    fcsize = int(HeaderOut[14], 16)
+    fuid = int(HeaderOut[15], 16)
+    funame = HeaderOut[16]
+    fgid = int(HeaderOut[17], 16)
+    fgname = HeaderOut[18]
+    fid = int(HeaderOut[19], 16)
+    finode = int(HeaderOut[20], 16)
+    flinkcount = int(HeaderOut[21], 16)
+    fdev = int(HeaderOut[22], 16)
+    fdev_minor = int(HeaderOut[23], 16)
+    fdev_major = int(HeaderOut[24], 16)
+    fseeknextfile = HeaderOut[25]
+    fextrasize = int(HeaderOut[26], 16)
+    fextrafields = int(HeaderOut[27], 16)
     extrafieldslist = []
-    extrastart = 27
+    extrastart = 28
     extraend = extrastart + fextrafields
     extrafieldslist = []
     if(extrastart < extraend):
         extrafieldslist.append(HeaderOut[extrastart])
         extrastart = extrastart + 1
-    fheaderchecksumtype = HeaderOut[extrastart].lower()
-    fcontentchecksumtype = HeaderOut[extrastart + 1].lower()
     fcs = HeaderOut[-2].lower()
     fccs = HeaderOut[-1].lower()
     newfcs = GetHeaderChecksum(
@@ -2369,7 +2368,7 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
             fcontents.write(fp.read(fcsize))
         pyhascontents = True
     elif(fsize > 0 and listonly):
-        if(fcompression == "none" or fcompression == "" or fcompression == "atuo"):
+        if(fcompression == "none" or fcompression == "" or fcompression == "auto"):
             fp.seek(fsize, 1)
         else:
             fp.seek(fcsize, 1)
@@ -2387,12 +2386,15 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
     else:
         fcontents.seek(0, 0)
         if(uncompress):
-            cfcontents = UncompressArchiveFile(fcontents, formatspecs)
+            cfcontents = UncompressArchiveFile(
+                fcontents, formatspecs)
             cfcontents.seek(0, 0)
-            cfcontents.seek(0, 0)
+            fcontents = BytesIO()
             shutil.copyfileobj(cfcontents, fcontents)
             cfcontents.close()
             fcontents.seek(0, 0)
+            fccs = GetFileChecksum(
+                fcontents.read(), HeaderOut[-3].lower(), False, formatspecs)
     fcontentend = fp.tell() - 1
     if(re.findall("^\\+([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile.replace("+", ""))
@@ -2411,8 +2413,10 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
         fp.seek(fseeknextasnum, 0)
     else:
         return False
+    fcontents.seek(0, 0)
+    fcontents = fcontents.read()
     catlist = [ftype, fencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fid,
-               finode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile, extrafieldslist, fheaderchecksumtype, fcontentchecksumtype, fcontents]
+               finode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile, extrafieldslist, HeaderOut[-4], HeaderOut[-3], fcontents]
     return catlist
 
 
@@ -2471,14 +2475,37 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
     curloc = fp.tell()
     if(curloc > 0):
         fp.seek(0, 0)
+    catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+    catstring = fp.read(formatspecs['format_len'] + len(catheaderver)).decode("UTF-8")
+    catdelszie = len(formatspecs['format_delimiter'])
+    catdel = fp.read(catdelszie).decode("UTF-8")
+    if(catstring != formatspecs['format_magic']+catheaderver):
+        return False
+    if(catdel != formatspecs['format_delimiter']):
+        return False
     if(formatspecs['new_style']):
         catheader = ReadFileHeaderDataBySize(
-            catfp, formatspecs['format_delimiter'])
+            fp, formatspecs['format_delimiter'])
     else:
         catheader = ReadFileHeaderDataWoSize(
-            catfp, formatspecs['format_delimiter'])
+            fp, formatspecs['format_delimiter'])
+    fnumextrafieldsize = int(catheader[5], 16)
+    fnumextrafields = int(catheader[6], 16)
+    fextrafieldslist = []
+    extrastart = 7
+    extraend = extrastart + fnumextrafields
+    extrafieldslist = []
+    if(extrastart < extraend):
+        fextrafieldslist.append(catheader[extrastart])
+        extrastart = extrastart + 1
     if(curloc > 0):
         fp.seek(curloc, 0)
+    catversion = re.findall("([\\d]+)", catstring)
+    fheadsize = int(catheader[0], 16)
+    fnumfields = int(catheader[1], 16)
+    fhencoding = catheader[2]
+    fostype = catheader[3]
+    fnumfiles = int(catheader[4], 16)
     fprechecksumtype = catheader[-2]
     fprechecksum = catheader[-1]
     headercheck = ValidateHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
@@ -2489,14 +2516,8 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
         VerbosePrintOut("'" + fprechecksum + "' != " +
                         "'" + newfcs + "'")
         return False
-    catversion = re.findall("([\\d]+)", catstring)
-    fheadsize = int(catheader[0], 16)
-    fnumfields = int(catheader[1], 16)
-    fhencoding = catheader[2]
-    fostype = catheader[3]
-    fnumfiles = int(catheader[4], 16)
-    fprechecksumtype = catheader[-2]
-    fprechecksum = catheader[-1]
+    catversions = re.search('(.*?)(\\d+)', catstring).groups()
+    fcompresstype = ""
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': fextrafieldslist, 'ffilelist': []}
     if(seekstart < 0 and seekstart > fnumfiles):
         seekstart = 0
@@ -2580,33 +2601,22 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
     formatspecs = FormatSpecsListToDict(formatspecs)
     delimiter = formatspecs['format_delimiter']
     curloc = fp.tell()
-    curloc = catfp.tell()
     if(curloc > 0):
-        catfp.seek(0, 0)
+        fp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
-    catstring = catfp.read(formatspecs['format_len'] + len(catheaderver)).decode("UTF-8")
+    catstring = fp.read(formatspecs['format_len'] + len(catheaderver)).decode("UTF-8")
     catdelszie = len(formatspecs['format_delimiter'])
-    catdel = catfp.read(catdelszie).decode("UTF-8")
+    catdel = fp.read(catdelszie).decode("UTF-8")
     if(catstring != formatspecs['format_magic']+catheaderver):
         return False
     if(catdel != formatspecs['format_delimiter']):
         return False
     if(formatspecs['new_style']):
         catheader = ReadFileHeaderDataBySize(
-            catfp, formatspecs['format_delimiter'])
+            fp, formatspecs['format_delimiter'])
     else:
         catheader = ReadFileHeaderDataWoSize(
-            catfp, formatspecs['format_delimiter'])
-    fprechecksumtype = catheader[-2]
-    fprechecksum = catheader[-1]
-    headercheck = ValidateHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
-    newfcs = GetHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, True, formatspecs)
-    if(not headercheck and not skipchecksum):
-        VerbosePrintOut(
-            "File Header Checksum Error with file at offset " + str(0))
-        VerbosePrintOut("'" + fprechecksum + "' != " +
-                        "'" + newfcs + "'")
-        return False
+            fp, formatspecs['format_delimiter'])
     fnumextrafieldsize = int(catheader[5], 16)
     fnumextrafields = int(catheader[6], 16)
     fextrafieldslist = []
@@ -2617,7 +2627,7 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
         fextrafieldslist.append(catheader[extrastart])
         extrastart = extrastart + 1
     if(curloc > 0):
-        catfp.seek(curloc, 0)
+        fp.seek(curloc, 0)
     catversion = re.findall("([\\d]+)", catstring)
     fheadsize = int(catheader[0], 16)
     fnumfields = int(catheader[1], 16)
@@ -2626,6 +2636,15 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
     fnumfiles = int(catheader[4], 16)
     fprechecksumtype = catheader[-2]
     fprechecksum = catheader[-1]
+    headercheck = ValidateHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
+    newfcs = GetHeaderChecksum([catstring] + catheader[:-1], fprechecksumtype, True, formatspecs)
+    if(not headercheck and not skipchecksum):
+        VerbosePrintOut(
+            "File Header Checksum Error with file at offset " + str(0))
+        VerbosePrintOut("'" + fprechecksum + "' != " +
+                        "'" + newfcs + "'")
+        return False
+    catversions = re.search('(.*?)(\\d+)', catstring).groups()
     catlist = []
     if(seekstart < 0 and seekstart > fnumfiles):
         seekstart = 0
