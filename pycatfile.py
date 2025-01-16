@@ -2536,7 +2536,7 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
         return False
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
     fcompresstype = ""
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'ffilesize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': fextrafieldslist, 'ffilelist': []}
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fsize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': fextrafieldslist, 'ffilelist': []}
     if(seekstart < 0 and seekstart > fnumfiles):
         seekstart = 0
     if(seekend == 0 or seekend > fnumfiles and seekend < seekstart):
@@ -6102,7 +6102,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
     fcompresstype = compresscheck
     if(fcompresstype==formatspecs['format_lower']):
         fcompresstype = ""
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'ffilesize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': fextrafieldslist, 'ffilelist': []}
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fsize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': fextrafieldslist, 'ffilelist': []}
     if(seekto >= fnumfiles):
         seekto = fnumfiles - 1
     if(seekto < 0):
@@ -6370,7 +6370,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
     fcompresstype = compresscheck
     if(fcompresstype==formatspecs['format_lower']):
         fcompresstype = ""
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'ffilesize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': fextrafieldslist, 'ffilelist': []}
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fsize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': fextrafieldslist, 'ffilelist': []}
     seekto = fnumfiles - 1
     filefound = False
     if(seekto >= 0):
@@ -7010,7 +7010,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
     fcompresstype = compresscheck
     if(fcompresstype==formatspecs['format_lower']):
         fcompresstype = ""
-    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'ffilesize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': fextrafieldslist, 'ffilelist': []}
+    catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fsize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': fextrafieldslist, 'ffilelist': []}
     if(seekstart < 0 and seekstart > fnumfiles):
         seekstart = 0
     if(seekend == 0 or seekend > fnumfiles and seekend < seekstart):
