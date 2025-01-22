@@ -2771,7 +2771,7 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
             return RarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
             return SevenZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
-        elif(checkcompressfile != formatspecs['format_lower']):
+        elif(checkcompressfile != formatspecs['format_magic']):
             return False
         if(not fp):
             return False
@@ -2858,7 +2858,7 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
             return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
             return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
-        elif(checkcompressfile != formatspecs['format_lower']):
+        elif(checkcompressfile != formatspecs['format_magic']):
             return False
         compresscheck = CheckCompressionType(infile, formatspecs, True)
         if(not compresscheck):
@@ -2904,7 +2904,7 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
             return RarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
             return SevenZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
-        elif(checkcompressfile != formatspecs['format_lower']):
+        elif(checkcompressfile != formatspecs['format_magic']):
             return False
         if(not fp):
             return False
@@ -2991,7 +2991,7 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
             return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
             return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
-        elif(checkcompressfile != formatspecs['format_lower']):
+        elif(checkcompressfile != formatspecs['format_magic']):
             return False
         compresscheck = CheckCompressionType(infile, formatspecs, True)
         if(not compresscheck):
@@ -3909,7 +3909,7 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
             return False
         if(catdel != formatspecs['format_delimiter']):
             return False
-        filetype = formatspecs['format_lower']
+        filetype = formatspecs['format_magic']
     fp.seek(0, 0)
     prefp = fp.read(9)
     if(prefp == binascii.unhexlify("894c5a4f000d0a1a0a")):
@@ -3933,6 +3933,102 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
             return "7zipfile"
         else:
             filetype = False
+    fp.seek(0, 0)
+    if(closefp):
+        fp.close()
+    return filetype
+
+
+def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=True):
+    formatspecs = FormatSpecsListToDict(formatspecs)
+    compresscheck = CheckCompressionType(infile, formatspecs, False)
+    if(not compresscheck):
+        fextname = os.path.splitext(infile)[1]
+        if(fextname == ".gz"):
+            compresscheck = "gzip"
+        elif(fextname == ".bz2"):
+            compresscheck = "bzip2"
+        elif(fextname == ".zst"):
+            compresscheck = "zstd"
+        elif(fextname == ".lz4"):
+            compresscheck = "lz4"
+        elif(fextname == ".lzo" or fextname == ".lzop"):
+            compresscheck = "lzo"
+        elif(fextname == ".lzma"):
+            compresscheck = "lzma"
+        elif(fextname == ".xz"):
+            compresscheck = "xz"
+        elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
+            compresscheck = "zlib"
+        else:
+            return False
+    if(compresscheck == "gzip" or compresscheck == "bzip2" or compresscheck == "lzma" or compresscheck == "zstd" or compresscheck == "lz4" or compresscheck == "zlib"):
+        if(TarFileCheck(infile)):
+            filetype = "tarfile"
+    elif(not compresscheck):
+        if(TarFileCheck(infile)):
+            return "tarfile"
+        elif(zipfile.is_zipfile(infile)):
+            return "zipfile"
+        elif(rarfile_support and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
+            return "rarile"
+        elif(py7zr_support and py7zr.is_7zfile(infile)):
+            return "7zipfile"
+        else:
+            return False
+        return False
+    elif(compresscheck == formatspecs['format_magic']):
+        return formatspecs['format_magic']
+    elif(compresscheck == "tarfile"):
+        return "tarfile"
+    elif(compresscheck == "zipfile"):
+        return "zipfile"
+    elif(rarfile_support and compresscheck == "rarfile"):
+        return "rarfile"
+    elif(py7zr_support and compresscheck == "7zipfile" and py7zr.is_7zfile(infile)):
+        return "7zipfile"
+    if(hasattr(infile, "read") or hasattr(infile, "write")):
+        fp = UncompressArchiveFile(infile, formatspecs['format_magic'])
+    else:
+        try:
+            if(compresscheck == "gzip" and compresscheck in compressionsupport):
+                if sys.version_info[0] == 2:
+                    fp = GzipFile(infile, mode="rb")
+                else:
+                    fp = gzip.GzipFile(infile, "rb")
+            elif(compresscheck == "bzip2" and compresscheck in compressionsupport):
+                fp = bz2.BZ2File(infile, "rb")
+            elif(compresscheck == "lz4" and compresscheck in compressionsupport):
+                fp = lz4.frame.open(infile, "rb")
+            elif(compresscheck == "zstd" and compresscheck in compressionsupport):
+                if 'zstandard' in sys.modules:
+                    fp = ZstdFile(infile, mode="rb")
+                elif 'pyzstd' in sys.modules:
+                    fp = pyzstd.zstdfile.ZstdFile(infile, mode="rb")
+                else:
+                    return Flase
+            elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
+                fp = LzopFile(infile, mode="rb")
+            elif((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
+                fp = lzma.open(infile, "rb")
+            elif(compresscheck == "zlib" and compresscheck in compressionsupport):
+                fp = ZlibFile(infile, mode="rb")
+            else:
+                fp = open(infile, "rb")
+        except FileNotFoundError:
+            return False
+    filetype = False
+    prefp = fp.read(5)
+    if(prefp == binascii.unhexlify("7573746172")):
+        filetype = "tarfile"
+    fp.seek(0, 0)
+    prefp = fp.read(formatspecs['format_len'])
+    if(prefp == binascii.unhexlify(formatspecs['format_hex'])):
+        filetype = formatspecs['format_magic']
+    fp.seek(0, 0)
+    prefp = fp.read(10)
+    if(prefp == binascii.unhexlify("7061785f676c6f62616c")):
+        filetype = "tarfile"
     fp.seek(0, 0)
     if(closefp):
         fp.close()
@@ -3977,7 +4073,7 @@ def GetCompressionMimeType(infile, formatspecs=__file_format_dict__):
         return archivefile_lzma_mimetype
     elif(compresscheck == "xz"):
         return archivefile_xz_mimetype
-    elif(compresscheck == formatspecs['format_lower']):
+    elif(compresscheck == formatspecs['format_magic']):
         return archivefile_cat_mimetype
     else:
         return False
@@ -4010,14 +4106,14 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
         fp = lzma.LZMAFile(fp)
     elif(compresscheck == "zlib" and compresscheck in compressionsupport):
         fp = ZlibFile(fileobj=fp, mode="rb")
-    elif(compresscheck == formatspecs['format_lower']):
+    elif(compresscheck == formatspecs['format_magic']):
         fp = fp
     elif(not compresscheck):
         try:
             fp = lz4.frame.LZ4FrameFile(fp, mode='rb')
         except lzma.LZMAError:
             return False
-        if(compresscheck != formatspecs['format_lower']):
+        if(compresscheck != formatspecs['format_magic']):
             fp.close()
     return fp
 
@@ -4053,7 +4149,7 @@ def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
             filefp = lzma.open(infile, mode)
         elif(compresscheck == "zlib" and compresscheck in compressionsupport):
             filefp = ZlibFile(infile, mode=mode)
-        elif(compresscheck == formatspecs['format_lower']):
+        elif(compresscheck == formatspecs['format_magic']):
             filefp = open(infile, mode)
         elif(not compresscheck):
             filefp = open(infile, mode)
@@ -4163,108 +4259,12 @@ def UncompressBytesAltFP(fp, formatspecs=__file_format_dict__):
     return filefp
 
 
-def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=True):
-    formatspecs = FormatSpecsListToDict(formatspecs)
-    compresscheck = CheckCompressionType(infile, formatspecs, False)
-    if(not compresscheck):
-        fextname = os.path.splitext(infile)[1]
-        if(fextname == ".gz"):
-            compresscheck = "gzip"
-        elif(fextname == ".bz2"):
-            compresscheck = "bzip2"
-        elif(fextname == ".zst"):
-            compresscheck = "zstd"
-        elif(fextname == ".lz4"):
-            compresscheck = "lz4"
-        elif(fextname == ".lzo" or fextname == ".lzop"):
-            compresscheck = "lzo"
-        elif(fextname == ".lzma"):
-            compresscheck = "lzma"
-        elif(fextname == ".xz"):
-            compresscheck = "xz"
-        elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
-            compresscheck = "zlib"
-        else:
-            return False
-    if(compresscheck == "gzip" or compresscheck == "bzip2" or compresscheck == "lzma" or compresscheck == "zstd" or compresscheck == "lz4" or compresscheck == "zlib"):
-        if(TarFileCheck(infile)):
-            filetype = "tarfile"
-    elif(not compresscheck):
-        if(TarFileCheck(infile)):
-            return "tarfile"
-        elif(zipfile.is_zipfile(infile)):
-            return "zipfile"
-        elif(rarfile_support and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return "rarile"
-        elif(py7zr_support and py7zr.is_7zfile(infile)):
-            return "7zipfile"
-        else:
-            return False
-        return False
-    elif(compresscheck == formatspecs['format_lower']):
-        return formatspecs['format_lower']
-    elif(compresscheck == "tarfile"):
-        return "tarfile"
-    elif(compresscheck == "zipfile"):
-        return "zipfile"
-    elif(rarfile_support and compresscheck == "rarfile"):
-        return "rarfile"
-    elif(py7zr_support and compresscheck == "7zipfile" and py7zr.is_7zfile(infile)):
-        return "7zipfile"
-    if(hasattr(infile, "read") or hasattr(infile, "write")):
-        fp = UncompressArchiveFile(infile, formatspecs['format_lower'])
-    else:
-        try:
-            if(compresscheck == "gzip" and compresscheck in compressionsupport):
-                if sys.version_info[0] == 2:
-                    fp = GzipFile(infile, mode="rb")
-                else:
-                    fp = gzip.GzipFile(infile, "rb")
-            elif(compresscheck == "bzip2" and compresscheck in compressionsupport):
-                fp = bz2.BZ2File(infile, "rb")
-            elif(compresscheck == "lz4" and compresscheck in compressionsupport):
-                fp = lz4.frame.open(infile, "rb")
-            elif(compresscheck == "zstd" and compresscheck in compressionsupport):
-                if 'zstandard' in sys.modules:
-                    fp = ZstdFile(infile, mode="rb")
-                elif 'pyzstd' in sys.modules:
-                    fp = pyzstd.zstdfile.ZstdFile(infile, mode="rb")
-                else:
-                    return Flase
-            elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
-                fp = LzopFile(infile, mode="rb")
-            elif((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
-                fp = lzma.open(infile, "rb")
-            elif(compresscheck == "zlib" and compresscheck in compressionsupport):
-                fp = ZlibFile(infile, mode="rb")
-            else:
-                fp = open(infile, "rb")
-        except FileNotFoundError:
-            return False
-    filetype = False
-    prefp = fp.read(5)
-    if(prefp == binascii.unhexlify("7573746172")):
-        filetype = "tarfile"
-    fp.seek(0, 0)
-    prefp = fp.read(formatspecs['format_len'])
-    if(prefp == binascii.unhexlify(formatspecs['format_hex'])):
-        filetype = formatspecs['format_lower']
-    fp.seek(0, 0)
-    prefp = fp.read(10)
-    if(prefp == binascii.unhexlify("7061785f676c6f62616c")):
-        filetype = "tarfile"
-    fp.seek(0, 0)
-    if(closefp):
-        fp.close()
-    return filetype
-
-
 def CompressArchiveFile(fp, compression="auto", compressionlevel=None, formatspecs=__file_format_dict__):
     formatspecs = FormatSpecsListToDict(formatspecs)
     if(not hasattr(fp, "read")):
         return False
     fp.seek(0, 0)
-    if(not compression or compression == formatspecs['format_lower']):
+    if(not compression or compression == formatspecs['format_magic']):
         compression = "auto"
     if(compression not in compressionlist and compression is None):
         compression = "auto"
@@ -4466,7 +4466,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
     altinode = formatspecs['use_alt_inode']
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
-    if(not compression or compression == formatspecs['format_lower']):
+    if(not compression or compression == formatspecs['format_magic']):
         compression = "auto"
     if(compression not in compressionlist and compression is None):
         compression = "auto"
@@ -4829,7 +4829,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
     formatspecs = FormatSpecsListToDict(formatspecs)
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
-    if(not compression or compression == formatspecs['format_lower']):
+    if(not compression or compression == formatspecs['format_magic']):
         compression = "auto"
     if(compression not in compressionlist and compression is None):
         compression = "auto"
@@ -5100,7 +5100,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
     formatspecs = FormatSpecsListToDict(formatspecs)
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
-    if(not compression or compression == formatspecs['format_lower']):
+    if(not compression or compression == formatspecs['format_magic']):
         compression = "auto"
     if(compression not in compressionlist and compression is None):
         compression = "auto"
@@ -5375,7 +5375,7 @@ if(rarfile_support):
         formatspecs = FormatSpecsListToDict(formatspecs)
         if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
             outfile = RemoveWindowsPath(outfile)
-        if(not compression or compression == formatspecs['format_lower']):
+        if(not compression or compression == formatspecs['format_magic']):
             compression = "auto"
         if(compression not in compressionlist and compression is None):
             compression = "auto"
@@ -5675,7 +5675,7 @@ if(py7zr_support):
         formatspecs = FormatSpecsListToDict(formatspecs)
         if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
             outfile = RemoveWindowsPath(outfile)
-        if(not compression or compression == formatspecs['format_lower']):
+        if(not compression or compression == formatspecs['format_magic']):
             compression = "auto"
         if(compression not in compressionlist and compression is None):
             compression = "auto"
@@ -5913,7 +5913,7 @@ def PackArchiveFileFromInFile(infile, outfile, compression="auto", compresswhole
         return PackArchiveFileFromRarFile(infile, outfile, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, formatspecs, verbose, returnfp)
     elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
         return PackArchiveFileFromSevenZipFile(infile, outfile, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, formatspecs, verbose, returnfp)
-    elif(checkcompressfile == formatspecs['format_lower']):
+    elif(checkcompressfile == formatspecs['format_magic']):
         return RePackArchiveFile(infile, outfile, compression, compresswholefile, compressionlevel, False, 0, 0, checksumtype, False, extradata, formatspecs, verbose, returnfp)
     else:
         return False
@@ -5936,7 +5936,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
             return RarFileToArray(infile, seekto, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
             return SevenZipFileToArray(infile, seekto, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
-        elif(checkcompressfile != formatspecs['format_lower']):
+        elif(checkcompressfile != formatspecs['format_magic']):
             return False
         if(not fp):
             return False
@@ -6021,7 +6021,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
             return RarFileToArray(infile, seekto, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
             return SevenZipFileToArray(infile, seekto, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
-        elif(checkcompressfile != formatspecs['format_lower']):
+        elif(checkcompressfile != formatspecs['format_magic']):
             return False
         compresscheck = CheckCompressionType(infile, formatspecs, True)
         if(not compresscheck):
@@ -6102,7 +6102,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         return False
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
     fcompresstype = compresscheck
-    if(fcompresstype==formatspecs['format_lower']):
+    if(fcompresstype==formatspecs['format_magic']):
         fcompresstype = ""
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fsize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': fextrafieldslist, 'ffilelist': []}
     if(seekto >= fnumfiles):
@@ -6247,7 +6247,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
             return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
             return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
-        elif(checkcompressfile != formatspecs['format_lower']):
+        elif(checkcompressfile != formatspecs['format_magic']):
             return False
         if(not fp):
             return False
@@ -6289,7 +6289,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
             return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
             return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
-        elif(checkcompressfile != formatspecs['format_lower']):
+        elif(checkcompressfile != formatspecs['format_magic']):
             return False
         compresscheck = CheckCompressionType(infile, formatspecs, True)
         if(not compresscheck):
@@ -6370,7 +6370,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
         return False
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
     fcompresstype = compresscheck
-    if(fcompresstype==formatspecs['format_lower']):
+    if(fcompresstype==formatspecs['format_magic']):
         fcompresstype = ""
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fsize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': fextrafieldslist, 'ffilelist': []}
     seekto = fnumfiles - 1
@@ -6524,7 +6524,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
             return RarFileToArray(infile, 0, 0, False, True, False, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
             return SevenZipFileToArray(infile, 0, 0, False, True, False, formatspecs, returnfp)
-        elif(checkcompressfile != formatspecs['format_lower']):
+        elif(checkcompressfile != formatspecs['format_magic']):
             return False
         if(not fp):
             return False
@@ -6590,7 +6590,7 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
             return RarFileToArray(infile, 0, 0, False, True, False, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
             return SevenZipFileToArray(infile, 0, 0, False, True, False, formatspecs, returnfp)
-        elif(checkcompressfile != formatspecs['format_lower']):
+        elif(checkcompressfile != formatspecs['format_magic']):
             return False
         compresscheck = CheckCompressionType(infile, formatspecs, True)
         if(not compresscheck):
@@ -6842,7 +6842,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
             return RarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
             return SevenZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
-        elif(checkcompressfile != formatspecs['format_lower']):
+        elif(checkcompressfile != formatspecs['format_magic']):
             return False
         if(not fp):
             return False
@@ -6929,7 +6929,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
             return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
             return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
-        elif(checkcompressfile != formatspecs['format_lower']):
+        elif(checkcompressfile != formatspecs['format_magic']):
             return False
         compresscheck = CheckCompressionType(infile, formatspecs, True)
         if(not compresscheck):
@@ -7010,7 +7010,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         return False
     catversions = re.search('(.*?)(\\d+)', catstring).groups()
     fcompresstype = compresscheck
-    if(fcompresstype==formatspecs['format_lower']):
+    if(fcompresstype==formatspecs['format_magic']):
         fcompresstype = ""
     catlist = {'fnumfiles': fnumfiles, 'fformat': catversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': catversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fsize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [catstring] + catheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextralist': fextrafieldslist, 'ffilelist': []}
     if(seekstart < 0 and seekstart > fnumfiles):
@@ -7300,7 +7300,7 @@ def InFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=
         return RarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
     elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
         return SevenZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
-    elif(checkcompressfile == formatspecs['format_lower']):
+    elif(checkcompressfile == formatspecs['format_magic']):
         return ArchiveFileToArray(infile, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
     else:
         return False
@@ -8713,7 +8713,7 @@ def InFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=["
         return RarFileToArrayAlt(infile, listonly, contentasfile, checksumtype, extradata, formatspecs, verbose)
     elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
         return SevenZipFileToArrayAlt(infile, listonly, contentasfile, checksumtype, extradata, formatspecs, verbose)
-    elif(checkcompressfile == formatspecs['format_lower']):
+    elif(checkcompressfile == formatspecs['format_magic']):
         return ArchiveFileToArray(infile, 0, 0, listonly, contentasfile, True, False, formatspecs, False)
     else:
         return False
@@ -8808,7 +8808,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
             infile, seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp)
     if(outfile != "-" and not isinstance(infile, bytes) and not hasattr(infile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
-    if(not compression or compression == formatspecs['format_lower']):
+    if(not compression or compression == formatspecs['format_magic']):
         compression = "auto"
     if(compression not in compressionlist and compression is None):
         compression = "auto"
@@ -9923,7 +9923,7 @@ def InFileListFiles(infile, verbose=False, formatspecs=__file_format_dict__, ret
         return RarFileListFiles(infile, verbose, returnfp)
     elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
         return SevenZipFileListFiles(infile, verbose, returnfp)
-    elif(checkcompressfile == formatspecs['format_lower']):
+    elif(checkcompressfile == formatspecs['format_magic']):
         return ArchiveFileListFiles(infile, 0, 0, False, formatspecs, verbose, returnfp)
     else:
         return False
