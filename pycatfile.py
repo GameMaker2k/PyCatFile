@@ -3854,6 +3854,8 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
     prefp = fp.read(2)
     if(prefp == binascii.unhexlify("1f8b")):
         filetype = "gzip"
+    elif(prefp == binascii.unhexlify("60ea")):
+        filetype = "ajr"
     elif(prefp == binascii.unhexlify("7801")):
         filetype = "zlib"
     elif(prefp == binascii.unhexlify("785e")):
@@ -3874,10 +3876,16 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
         filetype = "zstd"
     elif(prefp == binascii.unhexlify("04224d18")):
         filetype = "lz4"
-    elif(prefp == binascii.unhexlify("504B0304")):
+    elif(prefp == binascii.unhexlify("504b0304")):
+        filetype = "zipfile"
+    elif(prefp == binascii.unhexlify("504b0506")):
+        filetype = "zipfile"
+    elif(prefp == binascii.unhexlify("504b0708")):
         filetype = "zipfile"
     fp.seek(0, 0)
     prefp = fp.read(5)
+    if(prefp == binascii.unhexlify("7573746172")):
+        filetype = "tarfile"
     if(prefp == binascii.unhexlify("7573746172")):
         filetype = "tarfile"
     fp.seek(0, 0)
@@ -3890,12 +3898,18 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
     prefp = fp.read(7)
     if(prefp == binascii.unhexlify("526172211a0700")):
         filetype = "rarfile"
+    elif(prefp == binascii.unhexlify("2a2a4143452a2a")):
+        filetype = "ace"
     fp.seek(0, 0)
     prefp = fp.read(7)
     if(prefp == binascii.unhexlify("894c5a4f0d0a1a")):
         filetype = "lzo"
     fp.seek(0, 0)
     prefp = fp.read(8)
+    if(prefp == binascii.unhexlify("7573746172003030")):
+        filetype = "tarfile"
+    if(prefp == binascii.unhexlify("7573746172202000")):
+        filetype = "tarfile"
     if(prefp == binascii.unhexlify("526172211a070100")):
         filetype = "rarfile"
     fp.seek(0, 0)
