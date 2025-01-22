@@ -293,62 +293,39 @@ if os.path.exists(__config_file__) and __use_ini_file__:
             return value.decode('unicode_escape')
         else:  # Python 3
             return bytes(value, 'UTF-8').decode('unicode_escape')
-    if not __use_alt_format__:
-        __file_format_name__ = config.get(main_fmt, 'name')
-        __program_name__ = config.get(main_fmt, 'proname')
-        __file_format_lower__ = config.get(main_fmt, 'lower')
-        __file_format_magic__ = decode_unicode_escape(config.get(main_fmt, 'magic'))
-        __file_format_len__ = config.getint(main_fmt, 'len')
-        __file_format_hex__ = config.get(main_fmt, 'hex')
-        __file_format_delimiter__ = decode_unicode_escape(config.get(main_fmt, 'delimiter'))
-        __file_format_ver__ = config.get(main_fmt, 'ver')
-        __use_new_style__ = config.getboolean(main_fmt, 'newstyle')
-        __use_advanced_list__ = config.getboolean(main_fmt, 'advancedlist')
-        __use_alt_inode__ = config.getboolean(main_fmt, 'altinode')
-        __file_format_extension__ = config.get(main_fmt, 'extension')
-    else:
-        __file_format_name__ = config.get(alt_fmt, 'name')
-        __program_name__ = config.get(alt_fmt, 'proname')
-        __file_format_lower__ = config.get(alt_fmt, 'lower')
-        __file_format_magic__ = decode_unicode_escape(config.get(alt_fmt, 'magic'))
-        __file_format_len__ = config.getint(alt_fmt, 'len')
-        __file_format_hex__ = config.get(alt_fmt, 'hex')
-        __file_format_delimiter__ = decode_unicode_escape(config.get(alt_fmt, 'delimiter'))
-        __file_format_ver__ = config.get(alt_fmt, 'ver')
-        __use_new_style__ = config.getboolean(alt_fmt, 'newstyle')
-        __use_advanced_list__ = config.getboolean(alt_fmt, 'advancedlist')
-        __use_alt_inode__ = config.getboolean(alt_fmt, 'altinode')
-        __file_format_extension__ = config.get(alt_fmt, 'extension')
+    __file_format_main__ = {'format_name': config.get(main_fmt, 'name'), 'format_magic': decode_unicode_escape(config.get(main_fmt, 'magic')), 'format_lower': config.get(main_fmt, 'lower'), 'format_len': config.getint(main_fmt, 'len'), 'format_hex': config.get(main_fmt, 'hex'), 'format_delimiter': decode_unicode_escape(config.get(main_fmt, 'delimiter')), 'format_ver': config.get(main_fmt, 'ver'), 'new_style': config.getboolean(main_fmt, 'newstyle'), 'use_advanced_list': config.getboolean(main_fmt, 'advancedlist'), 'use_alt_inode': config.getboolean(main_fmt, 'altinode'), 'format_extension': config.get(main_fmt, 'extension'), 'program_name': config.get(main_fmt, 'proname')}
+    __file_format_alt__ = {'format_name': config.get(alt_fmt, 'name'), 'format_magic': decode_unicode_escape(config.get(alt_fmt, 'magic')), 'format_lower': config.get(alt_fmt, 'lower'), 'format_len': config.getint(alt_fmt, 'len'), 'format_hex': config.get(alt_fmt, 'hex'), 'format_delimiter': decode_unicode_escape(config.get(alt_fmt, 'delimiter')), 'format_ver': config.get(alt_fmt, 'ver'), 'new_style': config.getboolean(alt_fmt, 'newstyle'), 'use_advanced_list': config.getboolean(alt_fmt, 'advancedlist'), 'use_alt_inode': config.getboolean(alt_fmt, 'altinode'), 'format_extension': config.get(alt_fmt, 'extension'), 'program_name': config.get(alt_fmt, 'proname')}
 else:
-    if not __use_alt_format__:
-        # Format Info by Kazuki Przyborowski
-        __file_format_name__ = "CatFile"
-        __program_name__ = "Py" + __file_format_name__
-        __file_format_lower__ = __file_format_name__.lower()
-        __file_format_magic__ = __file_format_name__
-        __file_format_len__ = len(__file_format_magic__.encode('utf-8'))
-        __file_format_hex__ = binascii.hexlify(__file_format_magic__.encode("UTF-8")).decode("UTF-8")
-        __file_format_delimiter__ = "\x00"
-        __file_format_ver__ = "001"
-        __use_new_style__ = True
-        __use_advanced_list__ = True
-        __use_alt_inode__ = False
-        __file_format_extension__ = ".cat"
-    else:
-        __file_format_name__ = "NekoFile"
-        __program_name__ = "Py" + __file_format_name__
-        __file_format_lower__ = __file_format_name__.lower()
-        __file_format_magic__ = "ねこファイル"
-        #__file_format_magic__ = "네코파일"
-        __file_format_len__ = len(__file_format_magic__.encode('utf-8'))
-        __file_format_hex__ = binascii.hexlify(__file_format_magic__.encode("UTF-8")).decode("UTF-8")
-        __file_format_delimiter__ = "\x00"
-        __file_format_ver__ = "001"
-        __use_new_style__ = True
-        __use_advanced_list__ = True
-        __use_alt_inode__ = False
-        __file_format_extension__ = ".neko"
-__file_format_dict__ = {'format_name': __file_format_name__, 'format_magic': __file_format_magic__, 'format_lower': __file_format_lower__, 'format_len': __file_format_len__, 'format_hex': __file_format_hex__, 'format_delimiter': __file_format_delimiter__, 'format_ver': __file_format_ver__, 'new_style': __use_new_style__, 'use_advanced_list': __use_advanced_list__, 'use_alt_inode': __use_alt_inode__}
+    __file_format_main__ = {'format_name': "CatFile", 'format_magic': "CatFile", 'format_lower': "catfile", 'format_len': 7, 'format_hex': "43617446696c65", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".cat", 'program_name': "PyCatFile"}
+    __file_format_alt__ = {'format_name': "NekoFile", 'format_magic': "ねこファイル", 'format_lower': "nekofile", 'format_len': 21, 'format_hex': "e381ade38193e38395e382a1e382a4e383abe", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".neko", 'program_name': "PyNekoFile"}
+    #__file_format_alt__ = { 'format_name': "NekoFile", 'format_magic': "네코파일", 'format_lower': "nekofile", 'format_len': 15, 'format_hex': "eb84a4ecbd94ed8c8c", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".neko", 'program_name': "PyNekoFile"}
+if not __use_alt_format__:
+    __file_format_name__ = __file_format_main__['format_name']
+    __program_name__ = __file_format_main__['program_name']
+    __file_format_lower__ = __file_format_main__['format_lower']
+    __file_format_magic__ = __file_format_main__['format_magic']
+    __file_format_len__ = __file_format_main__['format_len']
+    __file_format_hex__ = __file_format_main__['format_hex']
+    __file_format_delimiter__ = __file_format_main__['format_delimiter']
+    __file_format_ver__ = __file_format_main__['format_ver']
+    __use_new_style__ = __file_format_main__['new_style']
+    __use_advanced_list__ = __file_format_main__['use_advanced_list']
+    __use_alt_inode__ = __file_format_main__['use_alt_inode']
+    __file_format_extension__ = __file_format_main__['format_extension']
+else:
+    __file_format_name__ =  __file_format_alt__['format_name']
+    __program_name__ =  __file_format_alt__['program_name']
+    __file_format_lower__ =  __file_format_alt__['format_lower']
+    __file_format_magic__ =  __file_format_alt__['format_magic']
+    __file_format_len__ =  __file_format_alt__['format_len']
+    __file_format_hex__ =  __file_format_alt__['format_hex']
+    __file_format_delimiter__ =  __file_format_alt__['format_delimiter']
+    __file_format_ver__ =  __file_format_alt__['format_ver']
+    __use_new_style__ =  __file_format_alt__['new_style']
+    __use_advanced_list__ =  __file_format_alt__['use_advanced_list']
+    __use_alt_inode__ =  __file_format_alt__['use_alt_inode']
+    __file_format_extension__ =  __file_format_alt__['format_extension']
+__file_format_dict__ = {'format_name': __file_format_name__, 'format_magic': __file_format_magic__, 'format_lower': __file_format_lower__, 'format_len': __file_format_len__, 'format_hex': __file_format_hex__, 'format_delimiter': __file_format_delimiter__, 'format_ver': __file_format_ver__, 'new_style': __use_new_style__, 'use_advanced_list': __use_advanced_list__, 'use_alt_inode': __use_alt_inode__, 'format_extension': __file_format_extension__, 'program_name': __program_name__}
 __project__ = __program_name__
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile"
 __version_info__ = (0, 16, 4, "RC 1", 1)
