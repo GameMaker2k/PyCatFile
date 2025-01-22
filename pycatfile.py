@@ -297,8 +297,10 @@ if os.path.exists(__config_file__) and __use_ini_file__:
     __file_format_alt__ = {'format_name': config.get(alt_fmt, 'name'), 'format_magic': decode_unicode_escape(config.get(alt_fmt, 'magic')), 'format_lower': config.get(alt_fmt, 'lower'), 'format_len': config.getint(alt_fmt, 'len'), 'format_hex': config.get(alt_fmt, 'hex'), 'format_delimiter': decode_unicode_escape(config.get(alt_fmt, 'delimiter')), 'format_ver': config.get(alt_fmt, 'ver'), 'new_style': config.getboolean(alt_fmt, 'newstyle'), 'use_advanced_list': config.getboolean(alt_fmt, 'advancedlist'), 'use_alt_inode': config.getboolean(alt_fmt, 'altinode'), 'format_extension': config.get(alt_fmt, 'extension'), 'program_name': config.get(alt_fmt, 'proname')}
 else:
     __file_format_main__ = {'format_name': "CatFile", 'format_magic': "CatFile", 'format_lower': "catfile", 'format_len': 7, 'format_hex': "43617446696c65", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".cat", 'program_name': "PyCatFile"}
+    __file_format_alt_eng__ = __file_format_main__
     __file_format_alt__ = {'format_name': "NekoFile", 'format_magic': "ねこファイル", 'format_lower': "nekofile", 'format_len': 21, 'format_hex': "e381ade38193e38395e382a1e382a4e383abe", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".neko", 'program_name': "PyNekoFile"}
-    #__file_format_alt__ = { 'format_name': "NekoFile", 'format_magic': "네코파일", 'format_lower': "nekofile", 'format_len': 15, 'format_hex': "eb84a4ecbd94ed8c8c", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".neko", 'program_name': "PyNekoFile"}
+    __file_format_alt_jpn__ = __file_format_alt__
+    __file_format_alt_kor__ = { 'format_name': "NekoFile", 'format_magic': "네코파일", 'format_lower': "nekofile", 'format_len': 15, 'format_hex': "eb84a4ecbd94ed8c8c", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".neko", 'program_name': "PyNekoFile"}
 if not __use_alt_format__:
     __file_format_name__ = __file_format_main__['format_name']
     __program_name__ = __file_format_main__['program_name']
