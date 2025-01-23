@@ -2717,7 +2717,7 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
     return catlist
 
 
-def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
@@ -2859,7 +2859,7 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
     return ReadFileDataBySizeWithContentToArray(fp, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
 
 
-def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
@@ -3850,7 +3850,7 @@ def IsSingleDict(variable):
     return True
 
 
-def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True):
+def CheckCompressionType(infile, formatspecs=__file_format_multi_dict__, closefp=True):
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
     else:
@@ -3981,7 +3981,7 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
     return filetype
 
 
-def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=True):
+def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, closefp=True):
     compresscheck = CheckCompressionType(infile, formatspecs, False)
     if(not compresscheck):
         fextname = os.path.splitext(infile)[1]
@@ -4105,7 +4105,7 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
     return filetype
 
 
-def CheckCompressionTypeFromString(instring, formatspecs=__file_format_dict__, closefp=True):
+def CheckCompressionTypeFromString(instring, formatspecs=__file_format_multi_dict__, closefp=True):
     try:
         instringsfile = BytesIO(instring)
     except TypeError:
@@ -4113,7 +4113,7 @@ def CheckCompressionTypeFromString(instring, formatspecs=__file_format_dict__, c
     return CheckCompressionType(instringsfile, formatspecs, closefp)
 
 
-def CheckCompressionTypeFromBytes(instring, formatspecs=__file_format_dict__, closefp=True):
+def CheckCompressionTypeFromBytes(instring, formatspecs=__file_format_multi_dict__, closefp=True):
     try:
         instringsfile = BytesIO(instring)
     except TypeError:
@@ -4122,7 +4122,7 @@ def CheckCompressionTypeFromBytes(instring, formatspecs=__file_format_dict__, cl
 
 
 
-def GetCompressionMimeType(infile, formatspecs=__file_format_dict__):
+def GetCompressionMimeType(infile, formatspecs=__file_format_multi_dict__):
     compresscheck = CheckCompressionType(fp, formatspecs, False)
     if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
         formatspecs = formatspecs[compresscheck]
@@ -4151,7 +4151,7 @@ def GetCompressionMimeType(infile, formatspecs=__file_format_dict__):
     return False
 
 
-def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
+def UncompressArchiveFile(fp, formatspecs=__file_format_multi_dict__):
     if(not hasattr(fp, "read")):
         return False
     compresscheck = CheckCompressionType(fp, formatspecs, False)
@@ -4188,7 +4188,7 @@ def UncompressArchiveFile(fp, formatspecs=__file_format_dict__):
     return fp
 
 
-def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
+def UncompressFile(infile, formatspecs=__file_format_multi_dict__, mode="rb"):
     compresscheck = CheckCompressionType(infile, formatspecs, False)
     if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
         formatspecs = formatspecs[compresscheck]
@@ -4235,7 +4235,7 @@ def UncompressFile(infile, formatspecs=__file_format_dict__, mode="rb"):
     return filefp
 
 
-def UncompressString(infile, formatspecs=__file_format_dict__):
+def UncompressString(infile, formatspecs=__file_format_multi_dict__):
     compresscheck = CheckCompressionTypeFromString(infile, formatspecs, False)
     if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
         formatspecs = formatspecs[compresscheck]
@@ -4263,14 +4263,14 @@ def UncompressString(infile, formatspecs=__file_format_dict__):
     return fileuz
 
 
-def UncompressStringAlt(instring, formatspecs=__file_format_dict__):
+def UncompressStringAlt(instring, formatspecs=__file_format_multi_dict__):
     filefp = StringIO()
     outstring = UncompressString(instring, formatspecs)
     filefp.write(outstring)
     filefp.seek(0, 0)
     return filefp
 
-def UncompressStringAltFP(fp, formatspecs=__file_format_dict__):
+def UncompressStringAltFP(fp, formatspecs=__file_format_multi_dict__):
     if(not hasattr(fp, "read")):
         return False
     prechck = CheckCompressionType(fp, formatspecs, False)
@@ -4287,7 +4287,7 @@ def UncompressStringAltFP(fp, formatspecs=__file_format_dict__):
     return filefp
 
 
-def UncompressBytes(infile, formatspecs=__file_format_dict__):
+def UncompressBytes(infile, formatspecs=__file_format_multi_dict__):
     compresscheck = CheckCompressionTypeFromBytes(infile, formatspecs, False)
     if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
         formatspecs = formatspecs[compresscheck]
@@ -4313,7 +4313,7 @@ def UncompressBytes(infile, formatspecs=__file_format_dict__):
     return fileuz
 
 
-def UncompressBytesAlt(inbytes, formatspecs=__file_format_dict__):
+def UncompressBytesAlt(inbytes, formatspecs=__file_format_multi_dict__):
     filefp = BytesIO()
     outstring = UncompressBytes(inbytes, formatspecs)
     filefp.write(outstring)
@@ -4321,7 +4321,7 @@ def UncompressBytesAlt(inbytes, formatspecs=__file_format_dict__):
     return filefp
 
 
-def UncompressBytesAltFP(fp, formatspecs=__file_format_dict__):
+def UncompressBytesAltFP(fp, formatspecs=__file_format_multi_dict__):
     if(not hasattr(fp, "read")):
         return False
     prechck = CheckCompressionType(fp, formatspecs, False)
@@ -5997,7 +5997,7 @@ def PackArchiveFileFromInFile(infile, outfile, compression="auto", compresswhole
     return False
 
 
-def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
+def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
@@ -6318,7 +6318,7 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
     return catlist
 
 
-def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
+def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
@@ -6603,7 +6603,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
     return catlist
 
 
-def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def ArchiveFileValidate(infile, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     if(verbose):
         logging.basicConfig(format="%(message)s",
                             stream=sys.stdout, level=logging.DEBUG)
@@ -6928,11 +6928,11 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_dict__, verbose=False,
         return False
 
 
-def ArchiveFileValidateFile(infile, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def ArchiveFileValidateFile(infile, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     return ArchiveFileValidate(infile, formatspecs, verbose, returnfp)
 
 
-def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
+def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
@@ -7350,7 +7350,7 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
     return catlist
 
 
-def ArchiveFileStringToArray(catstr, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
+def ArchiveFileStringToArray(catstr, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
     fp = BytesIO(catstr)
     listcatfiles = ArchiveFileToArray(
         fp, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
@@ -7382,7 +7382,7 @@ if(not rarfile_support):
 if(rarfile_support):
     def RarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
         fp = BytesIO()
-        fp = PackArchiveFileFromSevenZipFile(
+        fp = PackArchiveFileFromRarFile(
             infile, fp, "auto", True, None, compressionlistalt, "crc32", [], formatspecs, False, True)
         listcatfiles = ArchiveFileToArray(
             fp, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
@@ -7402,7 +7402,7 @@ if(py7zr_support):
         return listcatfiles
 
 
-def InFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
+def InFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         formatspecs = formatspecs[checkcompressfile]
@@ -8843,7 +8843,7 @@ def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", compresswh
     return listcatfiles
 
 
-def ArchiveFileArrayToArrayIndex(inarray, seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
+def ArchiveFileArrayToArrayIndex(inarray, seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, returnfp=False):
     if(isinstance(inarray, dict)):
         listcatfiles = inarray
     else:
@@ -9187,7 +9187,7 @@ def PackArchiveFileFromListDir(infiles, outfile, dirlistfromtxt=False, compressi
     return listcatfiles
 
 
-def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_dict__, preservepermissions=True, preservetime=True, verbose=False, returnfp=False):
+def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, preservepermissions=True, preservetime=True, verbose=False, returnfp=False):
     if(outdir is not None):
         outdir = RemoveWindowsPath(outdir)
     if(verbose):
@@ -9452,14 +9452,14 @@ if(hasattr(shutil, "register_unpack_format")):
         return UnPackArchiveFile(archive_name, extract_dir, False, 0, 0, False, __file_format_dict__['format_delimiter'], False, False)
 
 
-def UnPackArchiveFileString(catstr, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def UnPackArchiveFileString(catstr, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     fp = BytesIO(catstr)
     listcatfiles = UnPackArchiveFile(
         fp, outdir, followlink, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp)
     return listcatfiles
 
 
-def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     logging.basicConfig(format="%(message)s",
                         stream=sys.stdout, level=logging.DEBUG)
     if(isinstance(infile, dict)):
@@ -9468,7 +9468,7 @@ def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, for
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
             infile = RemoveWindowsPath(infile)
         listcatfiles = ArchiveFileToArray(
-            infile, seekstart, seekend, True, False, skipchecksum, formatspecs, returnfp)
+            infile, seekstart, seekend, True, False, False, skipchecksum, formatspecs, returnfp)
     if(not listcatfiles):
         return False
     lenlist = len(listcatfiles['ffilelist'])
@@ -9509,7 +9509,7 @@ def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, for
         return True
 
 
-def ArchiveFileStringListFiles(catstr, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def ArchiveFileStringListFiles(catstr, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     fp = BytesIO(catstr)
     listcatfiles = ArchiveFileListFiles(
         catstr, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp)
@@ -10019,7 +10019,7 @@ if(py7zr_support):
             return True
 
 
-def InFileListFiles(infile, verbose=False, formatspecs=__file_format_dict__, returnfp=False):
+def InFileListFiles(infile, verbose=False, formatspecs=__file_format_multi_dict__, returnfp=False):
     logging.basicConfig(format="%(message)s",
                         stream=sys.stdout, level=logging.DEBUG)
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
