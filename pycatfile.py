@@ -6347,6 +6347,9 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
             shutil.copyfileobj(sys.stdin, fp)
         fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
+        checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
+        if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+            formatspecs = formatspecs[checkcompressfile]
         if(not fp):
             return False
         fp.seek(0, 0)
@@ -6355,12 +6358,18 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
         fp.write(infile)
         fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
+        checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
+        if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+            formatspecs = formatspecs[checkcompressfile]
         if(not fp):
             return False
         fp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         fp = download_file_from_internet_file(infile)
         fp = UncompressArchiveFile(fp, formatspecs)
+        checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
+        if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+            formatspecs = formatspecs[checkcompressfile]
         fp.seek(0, 0)
         if(not fp):
             return False
