@@ -4963,7 +4963,7 @@ def PackArchiveFileFromDirList(infiles, outfile, dirlistfromtxt=False, fmttype="
 
 
 def PackArchiveFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
+    if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
         tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
@@ -5254,7 +5254,7 @@ def PackArchiveFileFromTarFile(infile, outfile, fmttype="auto", compression="aut
 
 
 def PackArchiveFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
+    if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
         tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
