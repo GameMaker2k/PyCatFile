@@ -3998,6 +3998,8 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
         else:
             return False
         return False
+    elif(IsNestedDict(formatspecs) and compresscheck in formatspecs):
+        return formatspecs[compresscheck]['format_magic']
     elif(IsSingleDict(formatspecs) and compresscheck == formatspecs['format_magic']):
         return formatspecs['format_magic']
     elif(compresscheck == "tarfile"):
