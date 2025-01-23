@@ -78,7 +78,7 @@ __file_format_magic__ = pycatfile.__file_format_magic__
 __file_format_len__ = pycatfile.__file_format_len__
 __file_format_hex__ = pycatfile.__file_format_hex__
 __file_format_delimiter__ = pycatfile.__file_format_delimiter__
-__file_format_list__ = pycatfile.__file_format_list__
+__file_format_dict__ = pycatfile.__file_format_dict__
 __use_new_style__ = pycatfile.__use_new_style__
 __use_advanced_list__ = pycatfile.__use_advanced_list__
 __use_alt_inode__ = pycatfile.__use_alt_inode__
@@ -112,11 +112,11 @@ argparser.add_argument("-r", "--repack", action="store_true",
                        help="Re-concatenate files, fixing checksum errors if any.")
 # File manipulation options
 argparser.add_argument(
-    "-F", "--format", default=__file_format_list__[0], help="Specify the format to use.")
+    "-F", "--format", default=__file_format_dict__['format_name'], help="Specify the format to use.")
 argparser.add_argument(
-    "-D", "--delimiter", default=__file_format_list__[5], help="Specify the delimiter to use.")
+    "-D", "--delimiter", default=__file_format_dict__['format_delimiter'], help="Specify the delimiter to use.")
 argparser.add_argument(
-    "-m", "--formatver", default=__file_format_list__[6], help="Specify the format version.")
+    "-m", "--formatver", default=__file_format_dict__['format_ver'], help="Specify the format version.")
 argparser.add_argument("-l", "--list", action="store_true",
                        help="List files included in the concatenated file.")
 # Compression options
@@ -146,7 +146,7 @@ getargs = argparser.parse_args()
 
 fname = getargs.format
 fnamelower = fname.lower()
-if(getargs.format==__file_format_list__[0]):
+if(getargs.format==__file_format_dict__['format_name']):
     fnamemagic = __file_format_magic__
     fnamelen = __file_format_len__
     fnamehex = __file_format_hex__
