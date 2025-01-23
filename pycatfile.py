@@ -3998,7 +3998,7 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
         else:
             return False
         return False
-    elif(compresscheck == formatspecs['format_magic']):
+    elif(IsSingleDict(formatspecs) and compresscheck == formatspecs['format_magic']):
         return formatspecs['format_magic']
     elif(compresscheck == "tarfile"):
         return "tarfile"
@@ -4043,9 +4043,36 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_dict__, closefp=Tr
     if(prefp == binascii.unhexlify("7573746172")):
         filetype = "tarfile"
     fp.seek(0, 0)
-    prefp = fp.read(formatspecs['format_len'])
-    if(prefp == binascii.unhexlify(formatspecs['format_hex'])):
-        filetype = formatspecs['format_magic']
+    if(IsNestedDict(formatspecs)):
+        for key, value in formatspecs.items():
+            prefp = fp.read(formatspecs[key]['format_len'])
+            if(prefp == binascii.unhexlify(formatspecs[key]['format_hex'])):
+                catheaderver = str(int(formatspecs[key]['format_ver'].replace(".", "")))
+                catstring = fp.read(len(catheaderver)).decode("UTF-8")
+                catdelszie = len(formatspecs[key]['format_delimiter'])
+                catdel = fp.read(catdelszie).decode("UTF-8")
+                if(catstring != catheaderver):
+                    break
+                if(catdel != formatspecs[key]['format_delimiter']):
+                    break
+                if(catstring == catheaderver and catdel == formatspecs[key]['format_delimiter']):
+                    filetype = formatspecs[key]['format_magic']
+                    continue
+            fp.seek(0, 0)
+    elif(IsSingleDict(formatspecs)):
+        prefp = fp.read(formatspecs['format_len'])
+        if(prefp == binascii.unhexlify(formatspecs['format_hex'])):
+            catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+            catstring = fp.read(len(catheaderver)).decode("UTF-8")
+            catdelszie = len(formatspecs['format_delimiter'])
+            catdel = fp.read(catdelszie).decode("UTF-8")
+            if(catstring != catheaderver):
+                return False
+            if(catdel != formatspecs['format_delimiter']):
+                return False
+            filetype = formatspecs['format_magic']
+    else:
+        pass
     fp.seek(0, 0)
     prefp = fp.read(10)
     if(prefp == binascii.unhexlify("7061785f676c6f62616c")):
