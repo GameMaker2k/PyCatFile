@@ -327,6 +327,13 @@ else:
     __use_advanced_list__ =  __file_format_alt__['use_advanced_list']
     __use_alt_inode__ =  __file_format_alt__['use_alt_inode']
     __file_format_extension__ =  __file_format_alt__['format_extension']
+__file_format_multi_dict__ = {}
+__file_format_multi_dict__.update({__file_format_main__['format_magic']: __file_format_main__})
+__file_format_multi_dict__.update({__file_format_alt__['format_magic']: __file_format_alt__})
+try:
+    __file_format_multi_dict__.update({__file_format_alt_kor__['format_magic']: __file_format_alt_kor__})
+except:
+    pass
 __file_format_dict__ = {'format_name': __file_format_name__, 'format_magic': __file_format_magic__, 'format_lower': __file_format_lower__, 'format_len': __file_format_len__, 'format_hex': __file_format_hex__, 'format_delimiter': __file_format_delimiter__, 'format_ver': __file_format_ver__, 'new_style': __use_new_style__, 'use_advanced_list': __use_advanced_list__, 'use_alt_inode': __use_alt_inode__, 'format_extension': __file_format_extension__, 'program_name': __program_name__}
 __project__ = __program_name__
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile"
