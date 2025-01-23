@@ -33,6 +33,7 @@ __file_format_len__ = pycatfile.__file_format_len__
 __file_format_hex__ = pycatfile.__file_format_hex__
 __file_format_delimiter__ = pycatfile.__file_format_delimiter__
 __file_format_dict__ = pycatfile.__file_format_dict__
+__file_format_default__ = pycatfile.__file_format_default__
 __use_new_style__ = pycatfile.__use_new_style__
 __use_advanced_list__ = pycatfile.__use_advanced_list__
 __use_alt_inode__ = pycatfile.__use_alt_inode__
@@ -117,18 +118,17 @@ def main():
         'format_ver': format_version
     }
 
+    __file_format_default__ = format_dict['format_magic']
+
     input_file = args.input[0]
 
     # Determine operation
     if args.create:
-        pycatfile.PackArchiveFile(args.input, args.output, args.verbose, args.compression,
-                                  args.level, pycatfile.compressionlistalt, False, [args.checksum, args.checksum, args.checksum], [], format_dict, args.verbose, False)
+        pycatfile.PackArchiveFile(args.input, args.output, False, __file_format_default__, args.compression, args.level, pycatfile.compressionlistalt, False, [args.checksum, args.checksum, args.checksum], [], format_dict, args.verbose, False)
     elif args.repack:
-        pycatfile.RePackArchiveFile(
-            input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], args.verbose)
+        pycatfile.RePackArchiveFile( input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], args.verbose)
     elif args.extract:
-        pycatfile.UnPackArchiveFile(
-            input_file, args.output, args.verbose, args.preserve)
+        pycatfile.UnPackArchiveFile(input_file, args.output, args.verbose, args.preserve)
     elif args.list:
         pycatfile.ArchiveFileListFiles(input_file, verbose=args.verbose)
     elif args.validate:

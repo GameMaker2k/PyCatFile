@@ -300,7 +300,7 @@ else:
     __file_format_alt_eng__ = __file_format_main__
     __file_format_alt__ = {'format_name': "NekoFile", 'format_magic': "ねこファイル", 'format_lower': "nekofile", 'format_len': 21, 'format_hex': "e381ade38193e38395e382a1e382a4e383abe", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".neko", 'program_name': "PyNekoFile"}
     __file_format_alt_jpn__ = __file_format_alt__
-    __file_format_alt_kor__ = { 'format_name': "NekoFile", 'format_magic': "네코파일", 'format_lower': "nekofile", 'format_len': 15, 'format_hex': "eb84a4ecbd94ed8c8c", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".neko", 'program_name': "PyNekoFile"}
+    __file_format_alt_kor__ = {'format_name': "NekoFile", 'format_magic': "네코파일", 'format_lower': "nekofile", 'format_len': 15, 'format_hex': "eb84a4ecbd94ed8c8c", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".neko", 'program_name': "PyNekoFile"}
 if not __use_alt_format__:
     __file_format_name__ = __file_format_main__['format_name']
     __program_name__ = __file_format_main__['program_name']
@@ -327,6 +327,7 @@ else:
     __use_advanced_list__ =  __file_format_alt__['use_advanced_list']
     __use_alt_inode__ =  __file_format_alt__['use_alt_inode']
     __file_format_extension__ =  __file_format_alt__['format_extension']
+__file_format_default__ = __file_format_magic__
 __file_format_multi_dict__ = {}
 __file_format_multi_dict__.update({__file_format_main__['format_magic']: __file_format_main__})
 __file_format_multi_dict__.update({__file_format_alt__['format_magic']: __file_format_alt__})
@@ -3515,8 +3516,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
     if(not hasattr(fp, "write")):
         return False
     if(verbose):
-        logging.basicConfig(format="%(message)s",
-                            stream=sys.stdout, level=logging.DEBUG)
+        logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     GetDirList = inlist
     if(not GetDirList):
         return False
@@ -3582,7 +3582,25 @@ def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, filevalues=[], ext
     return AppendListsWithContent(inlist, fp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs, verbose)
 
 
-def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, filevalues=[], extradata=[], followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, filevalues=[], extradata=[], followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    if(IsNestedDict(formatspecs) and fmttype=="auto" and 
+        (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
+        get_in_ext = os.path.splitext(outfile)
+        tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
+        if(tmpfmt is None and get_in_ext[1]!=""):
+            get_in_ext = os.path.splitext(get_in_ext[0])
+            tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
+        if(tmpfmt is None):
+            fmttype = __file_format_default__
+            formatspecs = formatspecs[fmttype]
+        else:
+            fmttype = tmpfmt
+            formatspecs = formatspecs[tmpfmt]
+    elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         if(os.path.exists(outfile)):
             try:
@@ -3641,7 +3659,25 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, comp
         return True
 
 
-def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    if(IsNestedDict(formatspecs) and fmttype=="auto" and 
+        (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
+        get_in_ext = os.path.splitext(outfile)
+        tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
+        if(tmpfmt is None and get_in_ext[1]!=""):
+            get_in_ext = os.path.splitext(get_in_ext[0])
+            tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
+        if(tmpfmt is None):
+            fmttype = __file_format_default__
+            formatspecs = formatspecs[fmttype]
+        else:
+            fmttype = tmpfmt
+            formatspecs = formatspecs[tmpfmt]
+    elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         if(os.path.exists(outfile)):
             try:
@@ -3700,10 +3736,10 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, compr
         return True
 
 
-def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     inlist = ReadInFileBySizeWithContentToList(
         infile, 0, 0, False, True, False, formatspecs)
-    return AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt, compression, compresswholefile, compressionlevel, filevalues, extradata, followlink, checksumtype, formatspecs, verbose, returnfp)
+    return AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, filevalues, extradata, followlink, checksumtype, formatspecs, verbose, returnfp)
 
 
 def PrintPermissionString(fchmode, ftype):
@@ -3809,6 +3845,13 @@ def BzipDecompressData(compressed_data):
         decompressor = bz2.BZ2Decompressor()
         decompressed_data = decompressor.decompress(compressed_data)
     return decompressed_data
+
+
+def GetKeyByFormatExtension(format_extension, formatspecs=__file_format_multi_dict__):
+    for key, value in formatspecs.items():
+        if value.get('format_extension') == format_extension:
+            return key
+    return None
 
 
 def IsNestedDict(variable):
@@ -4538,7 +4581,25 @@ def CheckSumSupportAlt(checkfor, guaranteed=True):
         return False
 
 
-def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    if(IsNestedDict(formatspecs) and fmttype=="auto" and 
+        (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
+        get_in_ext = os.path.splitext(outfile)
+        tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
+        if(tmpfmt is None and get_in_ext[1]!=""):
+            get_in_ext = os.path.splitext(get_in_ext[0])
+            tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
+        if(tmpfmt is None):
+            fmttype = __file_format_default__
+            formatspecs = formatspecs[fmttype]
+        else:
+            fmttype = tmpfmt
+            formatspecs = formatspecs[tmpfmt]
+    elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
     advancedlist = formatspecs['use_advanced_list']
     altinode = formatspecs['use_alt_inode']
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
@@ -4894,14 +4955,32 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, compression="auto", 
 
 if(hasattr(shutil, "register_archive_format")):
     def PackArchiveFileFunc(archive_name, source_dir, **kwargs):
-        return PackArchiveFile(source_dir, archive_name, False, "auto", True, None, compressionlistalt, False, "crc32", [], __file_format_dict__['format_delimiter'], False, False)
+        return PackArchiveFile(source_dir, archive_name, False, "auto", "auto", True, None, compressionlistalt, False, "crc32", [], __file_format_dict__['format_delimiter'], False, False)
 
 
-def PackArchiveFileFromDirList(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-    return PackArchiveFile(infiles, outfile, dirlistfromtxt, compression, compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, extradata, formatspecs, verbose, returnfp)
+def PackArchiveFileFromDirList(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    return PackArchiveFile(infiles, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, extradata, formatspecs, verbose, returnfp)
 
 
-def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
+        (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
+        get_in_ext = os.path.splitext(outfile)
+        tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
+        if(tmpfmt is None and get_in_ext[1]!=""):
+            get_in_ext = os.path.splitext(get_in_ext[0])
+            tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
+        if(tmpfmt is None):
+            fmttype = __file_format_default__
+            formatspecs = formatspecs[fmttype]
+        else:
+            fmttype = tmpfmt
+            formatspecs = formatspecs[tmpfmt]
+    elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
     if(not compression or compression == formatspecs['format_magic']):
@@ -4909,8 +4988,7 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
     if(compression not in compressionlist and compression is None):
         compression = "auto"
     if(verbose):
-        logging.basicConfig(format="%(message)s",
-                            stream=sys.stdout, level=logging.DEBUG)
+        logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         if(os.path.exists(outfile)):
             try:
@@ -5175,7 +5253,25 @@ def PackArchiveFileFromTarFile(infile, outfile, compression="auto", compresswhol
         return True
 
 
-def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
+        (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
+        get_in_ext = os.path.splitext(outfile)
+        tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
+        if(tmpfmt is None and get_in_ext[1]!=""):
+            get_in_ext = os.path.splitext(get_in_ext[0])
+            tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
+        if(tmpfmt is None):
+            fmttype = __file_format_default__
+            formatspecs = formatspecs[fmttype]
+        else:
+            fmttype = tmpfmt
+            formatspecs = formatspecs[tmpfmt]
+    elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
     if(not compression or compression == formatspecs['format_magic']):
@@ -5183,8 +5279,7 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
     if(compression not in compressionlist and compression is None):
         compression = "auto"
     if(verbose):
-        logging.basicConfig(format="%(message)s",
-                            stream=sys.stdout, level=logging.DEBUG)
+        logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         if(os.path.exists(outfile)):
             try:
@@ -5445,11 +5540,29 @@ def PackArchiveFileFromZipFile(infile, outfile, compression="auto", compresswhol
 
 
 if(not rarfile_support):
-    def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromRarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         return False
 
 if(rarfile_support):
-    def PackArchiveFileFromRarFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromRarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+        if(IsNestedDict(formatspecs) and fmttype=="auto" and 
+            (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
+            get_in_ext = os.path.splitext(outfile)
+            tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
+            if(tmpfmt is None and get_in_ext[1]!=""):
+                get_in_ext = os.path.splitext(get_in_ext[0])
+                tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
+            if(tmpfmt is None):
+                fmttype = __file_format_default__
+                formatspecs = formatspecs[fmttype]
+            else:
+                fmttype = tmpfmt
+                formatspecs = formatspecs[tmpfmt]
+        elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
+            formatspecs = formatspecs[fmttype]
+        elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+            fmttype = __file_format_default__
+            formatspecs = formatspecs[fmttype]
         if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
             outfile = RemoveWindowsPath(outfile)
         if(not compression or compression == formatspecs['format_magic']):
@@ -5457,8 +5570,7 @@ if(rarfile_support):
         if(compression not in compressionlist and compression is None):
             compression = "auto"
         if(verbose):
-            logging.basicConfig(format="%(message)s",
-                                stream=sys.stdout, level=logging.DEBUG)
+            logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
         if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
             if(os.path.exists(outfile)):
                 try:
@@ -5744,11 +5856,29 @@ if(rarfile_support):
 
 
 if(not py7zr_support):
-    def PackArchiveFileFromSevenZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromSevenZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         return False
 
 if(py7zr_support):
-    def PackArchiveFileFromSevenZipFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromSevenZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+        if(IsNestedDict(formatspecs) and fmttype=="auto" and 
+            (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
+            get_in_ext = os.path.splitext(outfile)
+            tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
+            if(tmpfmt is None and get_in_ext[1]!=""):
+                get_in_ext = os.path.splitext(get_in_ext[0])
+                tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
+            if(tmpfmt is None):
+                fmttype = __file_format_default__
+                formatspecs = formatspecs[fmttype]
+            else:
+                fmttype = tmpfmt
+                formatspecs = formatspecs[tmpfmt]
+        elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
+            formatspecs = formatspecs[fmttype]
+        elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+            fmttype = __file_format_default__
+            formatspecs = formatspecs[fmttype]
         if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
             outfile = RemoveWindowsPath(outfile)
         if(not compression or compression == formatspecs['format_magic']):
@@ -5756,8 +5886,7 @@ if(py7zr_support):
         if(compression not in compressionlist and compression is None):
             compression = "auto"
         if(verbose):
-            logging.basicConfig(format="%(message)s",
-                                stream=sys.stdout, level=logging.DEBUG)
+            logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
         if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
             if(os.path.exists(outfile)):
                 try:
@@ -5975,23 +6104,22 @@ if(py7zr_support):
             return True
 
 
-def PackArchiveFileFromInFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromInFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         formatspecs = formatspecs[checkcompressfile]
     if(verbose):
-        logging.basicConfig(format="%(message)s",
-                            stream=sys.stdout, level=logging.DEBUG)
+        logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-        return PackArchiveFileFromTarFile(infile, outfile, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, formatspecs, verbose, returnfp)
+        return PackArchiveFileFromTarFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, formatspecs, verbose, returnfp)
     elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-        return PackArchiveFileFromZipFile(infile, outfile, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, formatspecs, verbose, returnfp)
+        return PackArchiveFileFromZipFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, formatspecs, verbose, returnfp)
     elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-        return PackArchiveFileFromRarFile(infile, outfile, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, formatspecs, verbose, returnfp)
+        return PackArchiveFileFromRarFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, formatspecs, verbose, returnfp)
     elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-        return PackArchiveFileFromSevenZipFile(infile, outfile, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, formatspecs, verbose, returnfp)
-    elif(checkcompressfile == formatspecs['format_magic']):
-        return RePackArchiveFile(infile, outfile, compression, compresswholefile, compressionlevel, False, 0, 0, checksumtype, False, extradata, formatspecs, verbose, returnfp)
+        return PackArchiveFileFromSevenZipFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, formatspecs, verbose, returnfp)
+    elif(IsSingleDict(formatspecs) and checkcompressfile == formatspecs['format_magic']):
+        return RePackArchiveFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, False, 0, 0, checksumtype, False, extradata, formatspecs, verbose, returnfp)
     else:
         return False
     return False
@@ -6605,8 +6733,7 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
 
 def ArchiveFileValidate(infile, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     if(verbose):
-        logging.basicConfig(format="%(message)s",
-                            stream=sys.stdout, level=logging.DEBUG)
+        logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
@@ -7351,6 +7478,9 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
 
 
 def ArchiveFileStringToArray(catstr, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
+    checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
+    if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+        formatspecs = formatspecs[checkcompressfile]
     fp = BytesIO(catstr)
     listcatfiles = ArchiveFileToArray(
         fp, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
@@ -7358,6 +7488,9 @@ def ArchiveFileStringToArray(catstr, seekstart=0, seekend=0, listonly=False, con
 
 
 def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
+    checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
+    if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+        formatspecs = formatspecs[checkcompressfile]
     fp = BytesIO()
     fp = PackArchiveFileFromTarFile(
         infile, fp, "auto", True, None, compressionlistalt, "crc32", [], formatspecs, False, True)
@@ -7367,6 +7500,9 @@ def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile
 
 
 def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
+    checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
+    if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+        formatspecs = formatspecs[checkcompressfile]
     fp = BytesIO()
     fp = PackArchiveFileFromZipFile(
         infile, fp, "auto", True, None, compressionlistalt, "crc32", [], formatspecs, False, True)
@@ -7381,6 +7517,9 @@ if(not rarfile_support):
 
 if(rarfile_support):
     def RarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
+        checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
+        if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+            formatspecs = formatspecs[checkcompressfile]
         fp = BytesIO()
         fp = PackArchiveFileFromRarFile(
             infile, fp, "auto", True, None, compressionlistalt, "crc32", [], formatspecs, False, True)
@@ -7394,6 +7533,9 @@ if(not py7zr_support):
 
 if(py7zr_support):
     def SevenZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
+        checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
+        if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+            formatspecs = formatspecs[checkcompressfile]
         fp = BytesIO()
         fp = PackArchiveFileFromSevenZipFile(
             infile, fp, "auto", True, None, compressionlistalt, "crc32", [], formatspecs, False, True)
@@ -7421,7 +7563,12 @@ def InFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=
     return False
 
 
-def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
+def ListDirToArrayAlt(infiles, dirlistfromtxt=False, fmttype=__file_format_default__, followlink=False, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_multi_dict__, verbose=False):
+    if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
     catver = formatspecs['format_ver']
     fileheaderver = str(int(catver.replace(".", "")))
     fileheader = AppendNullByte(
@@ -7739,7 +7886,12 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=
     return catlist
 
 
-def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
+def TarFileToArrayAlt(infile, fmttype=__file_format_default__, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_multi_dict__, verbose=False):
+    if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
     curinode = 0
     curfid = 0
     inodelist = []
@@ -8020,7 +8172,12 @@ def TarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=[
     return catlist
 
 
-def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
+def ZipFileToArrayAlt(infile, fmttype=__file_format_default__, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
+    if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
     curinode = 0
     curfid = 0
     inodelist = []
@@ -8297,11 +8454,16 @@ def ZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=[
 
 
 if(not rarfile_support):
-    def RarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
+    def RarFileToArrayAlt(infile, fmttype=__file_format_default__, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
         return False
 
 if(rarfile_support):
-    def RarFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
+    def RarFileToArrayAlt(infile, fmttype=__file_format_default__, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
+        if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+            formatspecs = formatspecs[fmttype]
+        elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+            fmttype = __file_format_default__
+            formatspecs = formatspecs[fmttype]
         curinode = 0
         curfid = 0
         inodelist = []
@@ -8583,11 +8745,16 @@ if(rarfile_support):
         return catlist
 
 if(not py7zr_support):
-    def SevenZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
+    def SevenZipFileToArrayAlt(infile, fmttype=__file_format_default__, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
         return False
 
 if(py7zr_support):
-    def SevenZipFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
+    def SevenZipFileToArrayAlt(infile, fmttype=__file_format_default__, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
+        if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+            formatspecs = formatspecs[fmttype]
+        elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+            fmttype = __file_format_default__
+            formatspecs = formatspecs[fmttype]
         curinode = 0
         curfid = 0
         inodelist = []
@@ -8815,18 +8982,15 @@ if(py7zr_support):
         return catlist
 
 
-def InFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
-    checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
-    if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
-        formatspecs = formatspecs[checkcompressfile]
+def InFileToArrayAlt(infile, fmttype=__file_format_default__, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
     if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-        return TarFileToArrayAlt(infile, listonly, contentasfile, checksumtype, extradata, formatspecs, verbose)
+        return TarFileToArrayAlt(infile, fmttype, listonly, contentasfile, checksumtype, extradata, formatspecs, verbose)
     elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-        return ZipFileToArrayAlt(infile, listonly, contentasfile, checksumtype, extradata, formatspecs, verbose)
+        return ZipFileToArrayAlt(infile, fmttype, listonly, contentasfile, checksumtype, extradata, formatspecs, verbose)
     elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-        return RarFileToArrayAlt(infile, listonly, contentasfile, checksumtype, extradata, formatspecs, verbose)
+        return RarFileToArrayAlt(infile, fmttype, listonly, contentasfile, checksumtype, extradata, formatspecs, verbose)
     elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-        return SevenZipFileToArrayAlt(infile, listonly, contentasfile, checksumtype, extradata, formatspecs, verbose)
+        return SevenZipFileToArrayAlt(infile, fmttype, listonly, contentasfile, checksumtype, extradata, formatspecs, verbose)
     elif(checkcompressfile == formatspecs['format_magic']):
         return ArchiveFileToArray(infile, 0, 0, listonly, contentasfile, True, False, formatspecs, False)
     else:
@@ -8834,9 +8998,9 @@ def InFileToArrayAlt(infile, listonly=False, contentasfile=True, checksumtype=["
     return False
 
 
-def ListDirToArray(infiles, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def ListDirToArray(infiles, dirlistfromtxt=False, fmttype=__file_format_default__, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     outarray = BytesIO()
-    packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compresswholefile,
+    packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, fmttype, compression, compresswholefile,
                               compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, True)
     listcatfiles = ArchiveFileToArray(
         outarray, seekstart, seekend, listonly, True, skipchecksum, formatspecs, returnfp)
@@ -8909,7 +9073,7 @@ def ArchiveFileArrayToArrayIndex(inarray, seekstart=0, seekend=0, listonly=False
     return catarray
 
 
-def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, seekstart=0, seekend=0, checksumtype=["crc32", "crc32", "crc32"], skipchecksum=False, extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def RePackArchiveFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, seekstart=0, seekend=0, checksumtype=["crc32", "crc32", "crc32"], skipchecksum=False, extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     if(isinstance(infile, dict)):
         listcatfiles = infile
     else:
@@ -8917,6 +9081,17 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
             infile = RemoveWindowsPath(infile)
         listcatfiles = ArchiveFileToArray(
             infile, seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp)
+    if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
+
+        if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+            formatspecs = formatspecs[fmttype]
+        elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+            fmttype = __file_format_default__
+            formatspecs = formatspecs[fmttype]
     if(outfile != "-" and not isinstance(infile, bytes) and not hasattr(infile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
     if(not compression or compression == formatspecs['format_magic']):
@@ -8924,8 +9099,7 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
     if(compression not in compressionlist and compression is None):
         compression = "auto"
     if(verbose):
-        logging.basicConfig(format="%(message)s",
-                            stream=sys.stdout, level=logging.DEBUG)
+        logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         if(os.path.exists(outfile)):
             try:
@@ -9171,18 +9345,18 @@ def RePackArchiveFile(infile, outfile, compression="auto", compresswholefile=Tru
         return True
 
 
-def RePackArchiveFileFromString(catstr, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], skipchecksum=False, extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def RePackArchiveFileFromString(catstr, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], skipchecksum=False, extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     fp = BytesIO(catstr)
-    listcatfiles = RePackArchiveFile(fp, compression, compresswholefile, compressionlevel, compressionuselist,
+    listcatfiles = RePackArchiveFile(fp, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist,
                                      checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp)
     return listcatfiles
 
 
-def PackArchiveFileFromListDir(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromListDir(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     outarray = BytesIO()
-    packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, compression, compresswholefile,
+    packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, fmttype, compression, compresswholefile,
                               compressionlevel, compressionuselist, followlink, checksumtype, extradata, formatspecs, verbose, True)
-    listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile,
+    listcatfiles = RePackArchiveFile(outarray, outfile, fmttype, compression, compresswholefile,
                                      compressionlevel, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp)
     return listcatfiles
 
@@ -9191,8 +9365,7 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
     if(outdir is not None):
         outdir = RemoveWindowsPath(outdir)
     if(verbose):
-        logging.basicConfig(format="%(message)s",
-                            stream=sys.stdout, level=logging.DEBUG)
+        logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     if(isinstance(infile, dict)):
         listcatfiles = infile
     else:
@@ -9460,8 +9633,8 @@ def UnPackArchiveFileString(catstr, outdir=None, followlink=False, seekstart=0, 
 
 
 def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
-    logging.basicConfig(format="%(message)s",
-                        stream=sys.stdout, level=logging.DEBUG)
+    if(verbose):
+        logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     if(isinstance(infile, dict)):
         listcatfiles = infile
     else:
@@ -9517,8 +9690,8 @@ def ArchiveFileStringListFiles(catstr, seekstart=0, seekend=0, skipchecksum=Fals
 
 
 def TarFileListFiles(infile, verbose=False, returnfp=False):
-    logging.basicConfig(format="%(message)s",
-                        stream=sys.stdout, level=logging.DEBUG)
+    if(verbose):
+        logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     if(infile == "-"):
         infile = BytesIO()
         if(hasattr(sys.stdin, "buffer")):
@@ -9642,8 +9815,8 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
 
 
 def ZipFileListFiles(infile, verbose=False, returnfp=False):
-    logging.basicConfig(format="%(message)s",
-                        stream=sys.stdout, level=logging.DEBUG)
+    if(verbose):
+        logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     if(infile == "-"):
         infile = BytesIO()
         if(hasattr(sys.stdin, "buffer")):
@@ -9780,8 +9953,8 @@ if(not rarfile_support):
 
 if(rarfile_support):
     def RarFileListFiles(infile, verbose=False, returnfp=False):
-        logging.basicConfig(format="%(message)s",
-                            stream=sys.stdout, level=logging.DEBUG)
+        if(verbose):
+            logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
         if(not os.path.exists(infile) or not os.path.isfile(infile)):
             return False
         if(not rarfile.is_rarfile(infile) and not rarfile.is_rarfile_sfx(infile)):
@@ -9917,8 +10090,8 @@ if(not py7zr_support):
 
 if(py7zr_support):
     def SevenZipFileListFiles(infile, verbose=False, returnfp=False):
-        logging.basicConfig(format="%(message)s",
-                            stream=sys.stdout, level=logging.DEBUG)
+        if(verbose):
+            logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
         if(not os.path.exists(infile) or not os.path.isfile(infile)):
             return False
         lcfi = 0
@@ -10020,8 +10193,8 @@ if(py7zr_support):
 
 
 def InFileListFiles(infile, verbose=False, formatspecs=__file_format_multi_dict__, returnfp=False):
-    logging.basicConfig(format="%(message)s",
-                        stream=sys.stdout, level=logging.DEBUG)
+    if(verbose):
+        logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         formatspecs = formatspecs[checkcompressfile]
@@ -10049,60 +10222,60 @@ def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compress
     return listcatfiles
 
 
-def ListDirListFilesAlt(infiles, dirlistfromtxt=False, followlink=False, listonly=False, contentasfile=True, seekstart=0, seekend=0, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-    outarray = ListDirToArrayAlt(infiles, dirlistfromtxt, followlink,
+def ListDirListFilesAlt(infiles, dirlistfromtxt=False, fmttype="auto", followlink=False, listonly=False, contentasfile=True, seekstart=0, seekend=0, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    outarray = ListDirToArrayAlt(infiles, dirlistfromtxt, fmttype, followlink,
                                  listonly, contentasfile, checksumtype, formatspecs, verbose)
     listcatfiles = ArchiveFileListFiles(
         outarray, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp)
     return listcatfiles
 
 
-def PackArchiveFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-    outarray = ListDirToArrayAlt(infiles, dirlistfromtxt, followlink,
-                                 False, True, checksumtype, extradata, formatspecs, False)
-    listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile, compressionlevel, compressionuselist,
+def PackArchiveFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    outarray = ListDirToArrayAlt(infiles, dirlistfromtxt, fmttype, followlink,
+                                 False, True, checksumtype, extradata, formatspecs, False)z
+    listcatfiles = RePackArchiveFile(outarray, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist,
                                      followlink, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp)
     return listcatfiles
 
 
-def PackArchiveFileFromTarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromTarFileAlt(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     outarray = TarFileToArrayAlt(
-        infile, False, True, checksumtype, extradata, formatspecs, False)
-    listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile,
+        infile, fmttype, False, True, checksumtype, extradata, formatspecs, False)
+    listcatfiles = RePackArchiveFile(outarray, outfile, fmttype=, compression, compresswholefile,
                                      compressionlevel, compressionuselist, False, checksumtype, False, extradata, formatspecs, verbose, returnfp)
     return listcatfiles
 
 
-def PackArchiveFileFromZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackArchiveFileFromZipFileAlt(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     outarray = ZipFileToArrayAlt(
-        infile, False, True, checksumtype, extradata, formatspecs, False)
-    listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile,
+        infile, fmttype, False, True, checksumtype, extradata, formatspecs, False)
+    listcatfiles = RePackArchiveFile(outarray, outfile, fmttype, compression, compresswholefile,
                                      compressionlevel, compressionuselist, False, checksumtype, False, extradata, formatspecs, verbose, returnfp)
     return listcatfiles
 
 
 if(not rarfile_support):
-    def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromRarFileAlt(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         return False
 
 if(rarfile_support):
-    def PackArchiveFileFromRarFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromRarFileAlt(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         outarray = RarFileToArrayAlt(
-            infile, False, True, checksumtype, extradata, formatspecs, False)
-        listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile,
+            infile, fmttype, False, True, checksumtype, extradata, formatspecs, False)
+        listcatfiles = RePackArchiveFile(outarray, outfile, fmttype, compression, compresswholefile,
                                          compressionlevel, compressionuselist, False, checksumtype, False, extradata, formatspecs, verbose, returnfp)
         return listcatfiles
 
 
 if(not py7zr_support):
-    def PackArchiveFileFromSevenZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromSevenZipFileAlt(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         return False
 
 if(py7zr_support):
-    def PackArchiveFileFromSevenZipFileAlt(infile, outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackArchiveFileFromSevenZipFileAlt(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         outarray = SevenZipFileToArrayAlt(
-            infile, False, True, checksumtype, extradata, formatspecs, False)
-        listcatfiles = RePackArchiveFile(outarray, outfile, compression, compresswholefile,
+            infile, fmttype, False, True, checksumtype, extradata, formatspecs, False)
+        listcatfiles = RePackArchiveFile(outarray, outfile, fmttype, compression, compresswholefile,
                                          compressionlevel, compressionuselist, False, checksumtype, False, extradata, formatspecs, verbose, returnfp)
         return listcatfiles
 
