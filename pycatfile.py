@@ -3791,6 +3791,45 @@ def BzipDecompressData(compressed_data):
     return decompressed_data
 
 
+def IsNestedDict(variable):
+    """
+    Check if a variable is a single dictionary or a dictionary containing dictionaries.
+    
+    :param variable: The variable to check.
+    :return: "single_dict" if it's a single dictionary, 
+             "nested_dict" if it contains other dictionaries, 
+             or "not_a_dict" if it's not a dictionary.
+    """
+    if not isinstance(variable, dict):
+        return False
+
+    # Check if any value in the dictionary is itself a dictionary
+    for value in variable.values():
+        if isinstance(value, dict):
+            return True
+
+    return False
+
+def IsSingleDict(variable):
+    """
+    Check if a variable is a single dictionary or a dictionary containing dictionaries.
+    
+    :param variable: The variable to check.
+    :return: "single_dict" if it's a single dictionary, 
+             "nested_dict" if it contains other dictionaries, 
+             or "not_a_dict" if it's not a dictionary.
+    """
+    if not isinstance(variable, dict):
+        return False
+
+    # Check if any value in the dictionary is itself a dictionary
+    for value in variable.values():
+        if isinstance(value, dict):
+            return False
+
+    return True
+
+
 def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True):
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
@@ -3863,17 +3902,36 @@ def CheckCompressionType(infile, formatspecs=__file_format_dict__, closefp=True)
     if(prefp == binascii.unhexlify("526172211a070100")):
         filetype = "rarfile"
     fp.seek(0, 0)
-    prefp = fp.read(formatspecs['format_len'])
-    if(prefp == binascii.unhexlify(formatspecs['format_hex'])):
-        catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
-        catstring = fp.read(len(catheaderver)).decode("UTF-8")
-        catdelszie = len(formatspecs['format_delimiter'])
-        catdel = fp.read(catdelszie).decode("UTF-8")
-        if(catstring != catheaderver):
-            return False
-        if(catdel != formatspecs['format_delimiter']):
-            return False
-        filetype = formatspecs['format_magic']
+    if(IsNestedDict(formatspecs)):
+        for key, value in formatspecs.items():
+            prefp = fp.read(formatspecs[key]['format_len'])
+            if(prefp == binascii.unhexlify(formatspecs[key]['format_hex'])):
+                catheaderver = str(int(formatspecs[key]['format_ver'].replace(".", "")))
+                catstring = fp.read(len(catheaderver)).decode("UTF-8")
+                catdelszie = len(formatspecs[key]['format_delimiter'])
+                catdel = fp.read(catdelszie).decode("UTF-8")
+                if(catstring != catheaderver):
+                    break
+                if(catdel != formatspecs[key]['format_delimiter']):
+                    break
+                if(catstring == catheaderver and catdel == formatspecs[key]['format_delimiter']):
+                    filetype = formatspecs[key]['format_magic']
+                    continue
+            fp.seek(0, 0)
+    elif(IsSingleDict(formatspecs)):
+        prefp = fp.read(formatspecs['format_len'])
+        if(prefp == binascii.unhexlify(formatspecs['format_hex'])):
+            catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
+            catstring = fp.read(len(catheaderver)).decode("UTF-8")
+            catdelszie = len(formatspecs['format_delimiter'])
+            catdel = fp.read(catdelszie).decode("UTF-8")
+            if(catstring != catheaderver):
+                return False
+            if(catdel != formatspecs['format_delimiter']):
+                return False
+            filetype = formatspecs['format_magic']
+    else:
+        pass
     fp.seek(0, 0)
     prefp = fp.read(9)
     if(prefp == binascii.unhexlify("894c5a4f000d0a1a0a")):
