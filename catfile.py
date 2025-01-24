@@ -114,7 +114,7 @@ argparser.add_argument("-r", "--repack", action="store_true",
                        help="Re-concatenate files, fixing checksum errors if any.")
 # File manipulation options
 argparser.add_argument(
-    "-F", "--format", default=__file_format_dict__['format_name'], help="Specify the format to use.")
+    "-F", "--format", default="auto", help="Specify the format to use.")
 argparser.add_argument(
     "-D", "--delimiter", default=__file_format_dict__['format_delimiter'], help="Specify the delimiter to use.")
 argparser.add_argument(
@@ -148,9 +148,9 @@ getargs = argparser.parse_args()
 
 fname = getargs.format
 fnamelower = fname.lower()
-if(getargs.format==__file_format_dict__['format_name']):
+if(getargs.format=="auto"):
     fnamedict = __file_format_multi_dict__
-    __file_format_default__ = "auto"
+    __file_format_default__ = getargs.format
 else:
     fnamemagic = fname
     fnamelen = len(fname)
