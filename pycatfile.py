@@ -3140,7 +3140,7 @@ def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile
         fextname = os.path.splitext(outfile)[1]
         if(not compresswholefile and fextname in outextlistwd):
             compresswholefile = True
-        fp = CompressOpenFile(outfile, True, compressionlevel)
+        fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
     AppendFileHeader(fp, 0, "UTF-8", [], checksumtype, formatspecs)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressArchiveFile(
