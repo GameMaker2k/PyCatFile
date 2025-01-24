@@ -44,6 +44,13 @@ __version_date__ = pycatfile.__version_date__
 __version_date_plusrc__ = pycatfile.__version_date_plusrc__
 __version__ = pycatfile.__version__
 
+
+def decode_unicode_escape(value):
+    if sys.version_info[0] < 3:  # Python 2
+        return value.decode('unicode_escape')
+    else:  # Python 3
+        return bytes(value, 'UTF-8').decode('unicode_escape')
+
 # Initialize Configuration
 def load_config():
     if 'PYCATFILE_CONFIG_FILE' in os.environ and os.path.exists(os.environ['PYCATFILE_CONFIG_FILE']):
@@ -52,13 +59,14 @@ def load_config():
         scriptconf = os.path.join(os.path.dirname(__file__), "catfile.ini")
     
     config = configparser.ConfigParser()
+    __file_format_default__ = decode_unicode_escape(config.get('config', 'default'))
     if os.path.exists(scriptconf):
         config.read(scriptconf)
         return {
-            'name': config.get('main', 'name', fallback="CatFile"),
-            'delimiter': config.get('main', 'delimiter', fallback="\x00"),
-            'version': config.get('main', 'ver', fallback="001"),
-            'extension': config.get('main', 'extension', fallback=".cat")
+            'name': decode_unicode_escape(config.get(__file_format_default__, 'name')),
+            'delimiter': decode_unicode_escape(config.get(__file_format_default__, 'delimiter')),
+            'version': config.get(section, 'ver'),
+            'extension': decode_unicode_escape(config.get(__file_format_default__, 'extension'))
         }
     else:
         return {
