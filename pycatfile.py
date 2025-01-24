@@ -35,7 +35,6 @@ import logging
 import zipfile
 import binascii
 import platform
-import mimetypes
 try:
     from backports import tempfile
 except ImportError:
@@ -480,49 +479,6 @@ if('zlib' in compressionsupport):
     outextlist.append('zlib')
     outextlistwd.append('.zlib')
 
-tarfile_mimetype = "application/tar"
-tarfile_tar_mimetype = tarfile_mimetype
-zipfile_mimetype = "application/zip"
-zipfile_zip_mimetype = zipfile_mimetype
-rarfile_mimetype = "application/rar"
-rarfile_rar_mimetype = rarfile_mimetype
-archivefile_mimetype = "application/x-"+__file_format_dict__['format_lower']+""
-mimetypes.add_type(archivefile_mimetype, __file_format_extension__, strict=True)
-archivefile_cat_mimetype = archivefile_mimetype
-archivefile_gzip_mimetype = "application/x-" + \
-    __file_format_dict__['format_lower']+"+gzip"
-archivefile_gz_mimetype = archivefile_gzip_mimetype
-mimetypes.add_type(archivefile_gz_mimetype, __file_format_extension__+".gz", strict=True)
-archivefile_bzip2_mimetype = "application/x-" + \
-    __file_format_dict__['format_lower']+"+bzip2"
-archivefile_bz2_mimetype = archivefile_bzip2_mimetype
-mimetypes.add_type(archivefile_bz2_mimetype, __file_format_extension__+".bz2", strict=True)
-archivefile_lz4_mimetype = "application/x-" + \
-    __file_format_dict__['format_lower']+"+lz4"
-mimetypes.add_type(archivefile_lz4_mimetype, __file_format_extension__+".lz4", strict=True)
-archivefile_lzop_mimetype = "application/x-" + \
-    __file_format_dict__['format_lower']+"+lzop"
-mimetypes.add_type(archivefile_lzop_mimetype, __file_format_extension__+".lzop", strict=True)
-archivefile_lzo_mimetype = archivefile_lzop_mimetype
-mimetypes.add_type(archivefile_lzo_mimetype, __file_format_extension__+".lzo", strict=True)
-archivefile_zstandard_mimetype = "application/x-" + \
-    __file_format_dict__['format_lower']+"+zstandard"
-archivefile_zstd_mimetype = archivefile_zstandard_mimetype
-mimetypes.add_type(archivefile_zstd_mimetype, __file_format_extension__+".zst", strict=True)
-archivefile_lzma_mimetype = "application/x-" + \
-    __file_format_dict__['format_lower']+"+lzma"
-mimetypes.add_type(archivefile_lzma_mimetype, __file_format_extension__+".lzma", strict=True)
-archivefile_xz_mimetype = "application/x-" + \
-    __file_format_dict__['format_lower']+"+xz"
-mimetypes.add_type(archivefile_xz_mimetype, __file_format_extension__+".xz", strict=True)
-archivefile_zlib_mimetype = "application/x-" + \
-    __file_format_dict__['format_lower']+"+zlib"
-mimetypes.add_type(archivefile_zlib_mimetype, __file_format_extension__+".zz", strict=True)
-mimetypes.add_type(archivefile_zlib_mimetype, __file_format_extension__+".zl", strict=True)
-mimetypes.add_type(archivefile_zlib_mimetype, __file_format_extension__+".zlib", strict=True)
-archivefile_zz_mimetype = archivefile_zlib_mimetype
-archivefile_zl_mimetype = archivefile_zlib_mimetype
-archivefile_extensions = [__file_format_extension__, __file_format_extension__+".gz", __file_format_extension__+".bz2", __file_format_extension__+".zst", __file_format_extension__+".lz4", __file_format_extension__ + ".lzo", __file_format_extension__+".lzop", __file_format_extension__+".lzma", __file_format_extension__+".xz", __file_format_extension__+".zz", __file_format_extension__+".zl", __file_format_extension__+".zlib"]
 
 if __name__ == "__main__":
     import subprocess
@@ -4217,36 +4173,6 @@ def CheckCompressionTypeFromBytes(instring, formatspecs=__file_format_multi_dict
     return CheckCompressionType(instringsfile, formatspecs, closefp)
 
 
-
-def GetCompressionMimeType(infile, formatspecs=__file_format_multi_dict__):
-    compresscheck = CheckCompressionType(fp, formatspecs, False)
-    if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
-        formatspecs = formatspecs[compresscheck]
-    if(compresscheck == "gzip" or compresscheck == "gz"):
-        return archivefile_gzip_mimetype
-    elif(compresscheck == "zlib" or (compresscheck == "zz" or compresscheck == "zl" or compresscheck == "zlib")):
-        return archivefile_zlib_mimetype
-    elif(compresscheck == "bzip2" or compresscheck == "bz2"):
-        return archivefile_bzip2_mimetype
-    elif(compresscheck == "zstd" or compresscheck == "zstandard"):
-        return archivefile_zstandard_mimetype
-    elif(compresscheck == "lz4"):
-        return archivefile_lz4_mimetype
-    elif(compresscheck == "lzo" or compresscheck == "lzop"):
-        return archivefile_lzop_mimetype
-    elif(compresscheck == "lzma"):
-        return archivefile_lzma_mimetype
-    elif(compresscheck == "xz"):
-        return archivefile_xz_mimetype
-    elif(compresscheck == formatspecs['format_magic']):
-        return archivefile_cat_mimetype
-    else:
-        return False
-    if(not compresscheck):
-        return False
-    return False
-
-
 def UncompressArchiveFile(fp, formatspecs=__file_format_multi_dict__):
     if(not hasattr(fp, "read")):
         return False
@@ -5004,11 +4930,6 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", comp
     else:
         fp.close()
         return True
-
-
-if(hasattr(shutil, "register_archive_format")):
-    def PackArchiveFileFunc(archive_name, source_dir, **kwargs):
-        return PackArchiveFile(source_dir, archive_name, False, "auto", "auto", True, None, compressionlistalt, False, "crc32", [], __file_format_dict__['format_delimiter'], False, False)
 
 
 def PackArchiveFileFromDirList(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
@@ -9580,11 +9501,6 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
         return True
 
 
-if(hasattr(shutil, "register_unpack_format")):
-    def UnPackArchiveFileFunc(archive_name, extract_dir=None, **kwargs):
-        return UnPackArchiveFile(archive_name, extract_dir, False, 0, 0, False, __file_format_dict__['format_delimiter'], False, False)
-
-
 def UnPackArchiveFileString(catstr, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     fp = BytesIO(catstr)
     listcatfiles = UnPackArchiveFile(
@@ -10795,19 +10711,3 @@ def upload_file_to_internet_compress_string(ifp, url, compression="auto", compre
     upload_file_to_internet_file(fp, outfile)
     return True
 
-
-try:
-    if(hasattr(shutil, "register_archive_format")):
-        # Register the packing format
-        shutil.register_archive_format(
-            __file_format_name__, PackArchiveFileFunc, description='Pack concatenated files')
-except shutil.RegistryError:
-    pass
-
-try:
-    if(hasattr(shutil, "register_unpack_format")):
-        # Register the unpacking format
-        shutil.register_unpack_format(__file_format_name__, archivefile_extensions,
-                                      UnPackArchiveFileFunc, description='UnPack concatenated files')
-except shutil.RegistryError:
-    pass
