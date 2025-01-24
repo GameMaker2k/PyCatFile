@@ -80,6 +80,7 @@ __file_format_hex__ = pycatfile.__file_format_hex__
 __file_format_delimiter__ = pycatfile.__file_format_delimiter__
 __file_format_dict__ = pycatfile.__file_format_dict__
 __file_format_default__ = pycatfile.__file_format_default__
+__file_format_multi_dict__ = pycatfile.__file_format_multi_dict__
 __use_new_style__ = pycatfile.__use_new_style__
 __use_advanced_list__ = pycatfile.__use_advanced_list__
 __use_alt_inode__ = pycatfile.__use_alt_inode__
@@ -148,21 +149,17 @@ getargs = argparser.parse_args()
 fname = getargs.format
 fnamelower = fname.lower()
 if(getargs.format==__file_format_dict__['format_name']):
-    fnamemagic = __file_format_magic__
-    fnamelen = __file_format_len__
-    fnamehex = __file_format_hex__
+    fnamedict = __file_format_multi_dict__
 else:
     fnamemagic = fname
     fnamelen = len(fname)
     fnamehex = binascii.hexlify(fname.encode("UTF-8")).decode("UTF-8")
-__file_format_default__ = fnamemagic
-fnamesty = __use_new_style__
-fnamelst = __use_advanced_list__
-fnameino = __use_alt_inode__
-fnamelist = [fname, fnamemagic, fnamelower, fnamelen, fnamehex,
-             getargs.delimiter, getargs.formatver, fnamesty, fnamelst, fnameino]
-fnamedict = {'format_name': fname, 'format_magic': fnamemagic, 'format_lower': fnamelower, 'format_len': fnamelen, 'format_hex': fnamehex,
-             'format_delimiter': getargs.delimiter, 'format_ver': getargs.formatver, 'new_style': fnamesty, 'use_advanced_list': fnamelst, 'use_alt_inode': fnameino}
+    __file_format_default__ = fnamemagic
+    fnamesty = __use_new_style__
+    fnamelst = __use_advanced_list__
+    fnameino = __use_alt_inode__
+    fnamedict = {'format_name': fname, 'format_magic': fnamemagic, 'format_lower': fnamelower, 'format_len': fnamelen, 'format_hex': fnamehex,
+                 'format_delimiter': getargs.delimiter, 'format_ver': getargs.formatver, 'new_style': fnamesty, 'use_advanced_list': fnamelst, 'use_alt_inode': fnameino}
 
 # Determine the primary action based on user input
 actions = ['create', 'extract', 'list', 'repack', 'validate']
