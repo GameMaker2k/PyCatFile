@@ -153,9 +153,9 @@ if(getargs.format==__file_format_dict__['format_name']):
     fnamehex = __file_format_hex__
 else:
     fnamemagic = fname
-    __file_format_default__ = fnamemagic
     fnamelen = len(fname)
     fnamehex = binascii.hexlify(fname.encode("UTF-8")).decode("UTF-8")
+__file_format_default__ = fnamemagic
 fnamesty = __use_new_style__
 fnamelst = __use_advanced_list__
 fnameino = __use_alt_inode__
