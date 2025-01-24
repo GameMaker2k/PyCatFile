@@ -2061,12 +2061,15 @@ def ReadFileHeaderDataWoSize(fp, delimiter=__file_format_dict__['format_delimite
     return HeaderOut
 
 
-def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
     fheaderstart = fp.tell()
-    HeaderOut = ReadFileHeaderDataBySize(fp, delimiter)
+    if(formatspecs['new_style']):
+        HeaderOut = ReadFileHeaderDataBySize(fp, delimiter)
+    else:
+        HeaderOut = ReadFileHeaderDataWoSize(fp, delimiter)
     if(len(HeaderOut) == 0):
         return False
     if(re.findall("^[.|/]", HeaderOut[3])):
@@ -2140,7 +2143,7 @@ def ReadFileHeaderDataBySizeWithContent(fp, listonly=False, uncompress=True, ski
     return HeaderOut
 
 
-def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
@@ -2265,7 +2268,7 @@ def ReadFileHeaderDataBySizeWithContentToArray(fp, listonly=False, contentasfile
     return catlist
 
 
-def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadFileHeaderDataWithContentToList(fp, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
@@ -2389,7 +2392,7 @@ def ReadFileHeaderDataBySizeWithContentToList(fp, listonly=False, uncompress=Tru
     return catlist
 
 
-def ReadFileDataBySizeWithContent(fp, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadFileDataWithContent(fp, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
@@ -2435,7 +2438,7 @@ def ReadFileDataBySizeWithContent(fp, listonly=False, uncompress=True, skipcheck
     countnum = 0
     flist = []
     while(countnum < fnumfiles):
-        HeaderOut = ReadFileHeaderDataBySizeWithContent(
+        HeaderOut = ReadFileHeaderDataWithContent(
             fp, listonly, uncompress, skipchecksum, formatspecs)
         if(len(HeaderOut) == 0):
             break
@@ -2444,7 +2447,7 @@ def ReadFileDataBySizeWithContent(fp, listonly=False, uncompress=True, skipcheck
     return flist
 
 
-def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadFileDataWithContentToArray(fp, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
@@ -2569,7 +2572,7 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
     realidnum = 0
     countnum = seekstart
     while(countnum < seekend):
-        HeaderOut = ReadFileHeaderDataBySizeWithContentToArray(
+        HeaderOut = ReadFileHeaderDataWithContentToArray(
             fp, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
         if(len(HeaderOut) == 0):
             break
@@ -2580,7 +2583,7 @@ def ReadFileDataBySizeWithContentToArray(fp, seekstart=0, seekend=0, listonly=Fa
     return catlist
 
 
-def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadFileDataWithContentToList(fp, seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
@@ -2649,8 +2652,12 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
         il = 0
         while(il < seekstart):
             prefhstart = fp.tell()
-            preheaderdata = ReadFileHeaderDataBySize(
-                fp, formatspecs['format_delimiter'])
+            if(formatspecs['new_style']):
+                preheaderdata = ReadFileHeaderDataBySize(
+                    fp, formatspecs['format_delimiter'])
+            else:
+                preheaderdata = ReadFileHeaderDataWoSize(
+                    fp, formatspecs['format_delimiter'])
             if(len(preheaderdata) == 0):
                 break
             prefsize = int(preheaderdata[5], 16)
@@ -2708,7 +2715,7 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
     realidnum = 0
     countnum = seekstart
     while(countnum < seekend):
-        HeaderOut = ReadFileHeaderDataBySizeWithContentToList(
+        HeaderOut = ReadFileHeaderDataWithContentToList(
             fp, listonly, uncompress, skipchecksum, formatspecs)
         if(len(HeaderOut) == 0):
             break
@@ -2718,7 +2725,7 @@ def ReadFileDataBySizeWithContentToList(fp, seekstart=0, seekend=0, listonly=Fal
     return catlist
 
 
-def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
+def ReadInFileWithContentToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
@@ -2775,6 +2782,8 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
         else:
             shutil.copyfileobj(sys.stdin, fp)
         fp.seek(0, 0)
+        fp = UncompressArchiveFile(fp, formatspecs)
+        fp.seek(0, 0)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
@@ -2784,7 +2793,6 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
             if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
                 formatspecs = formatspecs[checkcompressfile]
         fp.seek(0, 0)
-        fp = UncompressArchiveFile(fp, formatspecs)
         if(not fp):
             return False
         fp.seek(0, 0)
@@ -2792,6 +2800,8 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
         fp = BytesIO()
         fp.write(infile)
         fp.seek(0, 0)
+        fp = UncompressArchiveFile(fp, formatspecs)
+        fp.seek(0, 0)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
@@ -2801,7 +2811,6 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
             if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
                 formatspecs = formatspecs[checkcompressfile]
         fp.seek(0, 0)
-        fp = UncompressArchiveFile(fp, formatspecs)
         if(not fp):
             return False
         fp.seek(0, 0)
@@ -2883,10 +2892,10 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
         if(not compresscheck):
             return False
         fp = UncompressFile(infile, formatspecs, "rb")
-    return ReadFileDataBySizeWithContentToArray(fp, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
+    return ReadFileDataWithContentToArray(fp, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
 
 
-def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
+def ReadInFileWithContentToList(infile, seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
@@ -2943,6 +2952,8 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
         else:
             shutil.copyfileobj(sys.stdin, fp)
         fp.seek(0, 0)
+        fp = UncompressArchiveFile(fp, formatspecs)
+        fp.seek(0, 0)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
@@ -2952,7 +2963,6 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
             if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
                 formatspecs = formatspecs[checkcompressfile]
         fp.seek(0, 0)
-        fp = UncompressArchiveFile(fp, formatspecs)
         if(not fp):
             return False
         fp.seek(0, 0)
@@ -2960,6 +2970,8 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
         fp = BytesIO()
         fp.write(infile)
         fp.seek(0, 0)
+        fp = UncompressArchiveFile(fp, formatspecs)
+        fp.seek(0, 0)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
@@ -2969,7 +2981,6 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
             if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
                 formatspecs = formatspecs[checkcompressfile]
         fp.seek(0, 0)
-        fp = UncompressArchiveFile(fp, formatspecs)
         if(not fp):
             return False
         fp.seek(0, 0)
@@ -3051,7 +3062,7 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
         if(not compresscheck):
             return False
         fp = UncompressFile(infile, formatspecs, "rb")
-    return ReadFileDataBySizeWithContentToList(fp, seekstart, seekend, listonly, uncompress, skipchecksum, formatspecs)
+    return ReadFileDataWithContentToList(fp, seekstart, seekend, listonly, uncompress, skipchecksum, formatspecs)
 
 
 def AppendNullByte(indata, delimiter=__file_format_dict__['format_delimiter']):
@@ -3629,7 +3640,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
 
 
 def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
-    inlist = ReadInFileBySizeWithContentToList(
+    inlist = ReadInFileWithContentToList(
         infile, 0, 0, False, True, False, formatspecs)
     return AppendListsWithContent(inlist, fp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs, verbose)
 
@@ -3789,7 +3800,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmtty
 
 
 def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-    inlist = ReadInFileBySizeWithContentToList(
+    inlist = ReadInFileWithContentToList(
         infile, 0, 0, False, True, False, formatspecs)
     return AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, filevalues, extradata, followlink, checksumtype, formatspecs, verbose, returnfp)
 
