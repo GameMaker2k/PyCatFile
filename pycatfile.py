@@ -284,7 +284,7 @@ if((__use_http_lib__ == "httpx" or __use_http_lib__ == "requests") and not haveh
     __use_http_lib__ = "urllib"
 __file_format_multi_dict__ = {}
 __file_format_default__ = "CatFile"
-__program_name__ = "Py".__file_format_default__
+__program_name__ = "Py"+__file_format_default__
 if os.path.exists(__config_file__) and __use_ini_file__:
     config = configparser.ConfigParser()
     config.read(__config_file__)
