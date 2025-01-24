@@ -3103,7 +3103,7 @@ def MakeEmptyArchiveFilePointer(fp, fmttype=__file_format_default__, checksumtyp
     return MakeEmptyFilePointer(fp, fmttype, checksumtype, formatspecs)
 
 
-def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", formatspecs=__file_format_dict__, returnfp=False):
+def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", formatspecs=__file_format_multi_dict__, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
