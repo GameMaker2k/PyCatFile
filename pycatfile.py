@@ -14,7 +14,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 1/24/2025 Ver. 0.17.0 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 1/24/2025 Ver. 0.17.2 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals, generators, with_statement, nested_scopes
@@ -333,7 +333,7 @@ __file_format_extension__ = __file_format_multi_dict__[__file_format_default__][
 __file_format_dict__ = __file_format_multi_dict__[__file_format_default__]
 __project__ = __program_name__
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile"
-__version_info__ = (0, 17, 0, "RC 1", 1)
+__version_info__ = (0, 17, 2, "RC 1", 1)
 __version_date_info__ = (2025, 1, 24, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
@@ -1741,7 +1741,7 @@ def GetDataFromArrayAlt(structure, path, default=None):
 def GetHeaderChecksum(inlist=[], checksumtype="crc32", encodedata=True, formatspecs=__file_format_dict__):
     fileheader = AppendNullBytes(inlist, formatspecs['format_delimiter']) if isinstance(
         inlist, list) else AppendNullByte(inlist, formatspecs['format_delimiter'])
-    if encodedata:
+    if encodedata and hasattr(fileheader, "encode"):
         fileheader = fileheader.encode('UTF-8')
     checksum_methods = {
         "crc16": lambda data: format(crc16(data) & 0xffff, '04x').lower(),
@@ -1764,7 +1764,7 @@ def GetHeaderChecksum(inlist=[], checksumtype="crc32", encodedata=True, formatsp
 
 
 def GetFileChecksum(instr, checksumtype="crc32", encodedata=True, formatspecs=__file_format_dict__):
-    if encodedata:
+    if encodedata and hasattr(instr, "encode"):
         instr = instr.encode('UTF-8')
     checksum_methods = {
         "crc16": lambda data: format(crc16(data) & 0xffff, '04x').lower(),
@@ -3028,12 +3028,12 @@ def ReadInFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, 
 def AppendNullByte(indata, delimiter=__file_format_dict__['format_delimiter']):
     if(isinstance(indata, int)):
         indata = str(indata)
-    outdata = indata + delimiter
+    outdata = indata.encode("UTF-8") + delimiter.encode("UTF-8")
     return outdata
 
 
 def AppendNullBytes(indata=[], delimiter=__file_format_dict__['format_delimiter']):
-    outdata = ""
+    outdata = "".encode("UTF-8")
     inum = 0
     il = len(indata)
     while(inum < il):
@@ -3087,7 +3087,7 @@ def AppendFileHeader(fp, numfiles, fencoding, extradata=[], checksumtype="crc32"
     catheaersize = format(int(len(fnumfilesa) - len(formatspecs['format_delimiter'])), 'x').lower()
     catheaersizestr = AppendNullByte(catheaersize, formatspecs['format_delimiter'])
     try:
-        fp.write(fnumfilesa.encode('UTF-8'))
+        fp.write(fnumfilesa)
     except OSError:
         return False
     try:
@@ -3242,7 +3242,7 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
     catfileoutstr = catfileoutstr + \
         AppendNullBytes([catfileheadercshex, catfilecontentcshex],
                         formatspecs['format_delimiter'])
-    catfileoutstrecd = catfileoutstr.encode('UTF-8')
+    catfileoutstrecd = catfileoutstr
     nullstrecd = formatspecs['format_delimiter'].encode('UTF-8')
     catfileout = catfileoutstrecd + filecontent + nullstrecd
     try:
@@ -3551,7 +3551,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
     if(numfiles > 0):
         try:
             fp.write(AppendNullBytes(
-                ["0", "0"], formatspecs['format_delimiter']).encode("UTF-8"))
+                ["0", "0"], formatspecs['format_delimiter']))
         except OSError:
             return False
     fp.seek(0, 0)
@@ -3616,7 +3616,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
     if(numfiles > 0):
         try:
             fp.write(AppendNullBytes(
-                ["0", "0"], formatspecs['format_delimiter']).encode("UTF-8"))
+                ["0", "0"], formatspecs['format_delimiter']))
         except OSError:
             return False
     return fp
@@ -4927,7 +4927,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", comp
     if(numfiles > 0):
         try:
             fp.write(AppendNullBytes(
-                ["0", "0"], formatspecs['format_delimiter']).encode("UTF-8"))
+                ["0", "0"], formatspecs['format_delimiter']))
         except OSError:
             return False
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -5222,7 +5222,7 @@ def PackArchiveFileFromTarFile(infile, outfile, fmttype="auto", compression="aut
     if(numfiles > 0):
         try:
             fp.write(AppendNullBytes(
-                ["0", "0"], formatspecs['format_delimiter']).encode("UTF-8"))
+                ["0", "0"], formatspecs['format_delimiter']))
         except OSError:
             return False
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -5508,7 +5508,7 @@ def PackArchiveFileFromZipFile(infile, outfile, fmttype="auto", compression="aut
     if(numfiles > 0):
         try:
             fp.write(AppendNullBytes(
-                ["0", "0"], formatspecs['format_delimiter']).encode("UTF-8"))
+                ["0", "0"], formatspecs['format_delimiter']))
         except OSError:
             return False
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -5824,7 +5824,7 @@ if(rarfile_support):
         if(numfiles > 0):
             try:
                 fp.write(AppendNullBytes(
-                    ["0", "0"], formatspecs['format_delimiter']).encode("UTF-8"))
+                    ["0", "0"], formatspecs['format_delimiter']))
             except OSError:
                 return False
         if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -6073,7 +6073,7 @@ if(py7zr_support):
         if(numfiles > 0):
             try:
                 fp.write(AppendNullBytes(
-                    ["0", "0"], formatspecs['format_delimiter']).encode("UTF-8"))
+                    ["0", "0"], formatspecs['format_delimiter']))
             except OSError:
                 return False
         if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -7794,7 +7794,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, fmttype=__file_format_defau
         catfileoutstr = catfileoutstr + \
             AppendNullBytes([catfileheadercshex, catfilecontentcshex],
                             formatspecs['format_delimiter'])
-        catfileoutstrecd = catfileoutstr.encode('UTF-8')
+        catfileoutstrecd = catfileoutstr
         nullstrecd = formatspecs['format_delimiter'].encode('UTF-8')
         catfcontentstart = fheadtell
         fheadtell += len(catfileoutstr) + 1
@@ -8080,7 +8080,7 @@ def TarFileToArrayAlt(infile, fmttype=__file_format_default__, listonly=False, c
         catfileoutstr = catfileoutstr + \
             AppendNullBytes([catfileheadercshex, catfilecontentcshex],
                             formatspecs['format_delimiter'])
-        catfileoutstrecd = catfileoutstr.encode('UTF-8')
+        catfileoutstrecd = catfileoutstr
         nullstrecd = formatspecs['format_delimiter'].encode('UTF-8')
         catfcontentstart = fheadtell
         fheadtell += len(catfileoutstr) + 1
@@ -8361,7 +8361,7 @@ def ZipFileToArrayAlt(infile, fmttype=__file_format_default__, listonly=False, c
         catfileoutstr = catfileoutstr + \
             AppendNullBytes([catfileheadercshex, catfilecontentcshex],
                             formatspecs['format_delimiter'])
-        catfileoutstrecd = catfileoutstr.encode('UTF-8')
+        catfileoutstrecd = catfileoutstr
         nullstrecd = formatspecs['format_delimiter'].encode('UTF-8')
         catfcontentstart = fheadtell
         fheadtell += len(catfileoutstr) + 1
@@ -8653,7 +8653,7 @@ if(rarfile_support):
                 AppendNullBytes(
                     [catfileheadercshex, catfilecontentcshex], formatspecs['format_delimiter'])
             catheaderdata = catoutlist
-            catfileoutstrecd = catfileoutstr.encode('UTF-8')
+            catfileoutstrecd = catfileoutstr
             nullstrecd = formatspecs['format_delimiter'].encode('UTF-8')
             catfcontentstart = fheadtell
             fheadtell += len(catfileoutstr) + 1
@@ -8890,7 +8890,7 @@ if(py7zr_support):
             catfileoutstr = catfileoutstr + \
                 AppendNullBytes(
                     [catfileheadercshex, catfilecontentcshex], formatspecs['format_delimiter'])
-            catfileoutstrecd = catfileoutstr.encode('UTF-8')
+            catfileoutstrecd = catfileoutstr
             nullstrecd = formatspecs['format_delimiter'].encode('UTF-8')
             catfcontentstart = fheadtell
             fheadtell += len(catfileoutstr) + 1
@@ -9234,7 +9234,7 @@ def RePackArchiveFile(infile, outfile, fmttype="auto", compression="auto", compr
     if(lcfx > 0):
         try:
             fp.write(AppendNullBytes(
-                ["0", "0"], formatspecs['format_delimiter']).encode("UTF-8"))
+                ["0", "0"], formatspecs['format_delimiter']))
         except OSError:
             return False
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
