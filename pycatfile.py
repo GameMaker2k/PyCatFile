@@ -6139,7 +6139,9 @@ def ArchiveFileSeekToFileNum(infile, fmttype="auto", seekto=0, listonly=False, c
         formatspecs = formatspecs[fmttype]
     elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
         fmttype = "auto"
+    curloc = 0
     if(hasattr(infile, "read") or hasattr(infile, "write")):
+        curloc = infile.tell()
         fp = infile
         fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
@@ -6237,7 +6239,6 @@ def ArchiveFileSeekToFileNum(infile, fmttype="auto", seekto=0, listonly=False, c
         if(not compresscheck):
             return False
         fp = UncompressFile(infile, formatspecs, "rb")
-    curloc = fp.tell()
     try:
         fp.seek(0, 2);
     except OSError:
@@ -6427,7 +6428,9 @@ def ArchiveFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=Fa
         formatspecs = formatspecs[fmttype]
     elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
         fmttype = "auto"
+    curloc = 0
     if(hasattr(infile, "read") or hasattr(infile, "write")):
+        curloc = infile.tell()
         fp = infile
         fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
@@ -6525,7 +6528,6 @@ def ArchiveFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=Fa
         if(not compresscheck):
             return False
         fp = UncompressFile(infile, formatspecs, "rb")
-    curloc = fp.tell()
     try:
         fp.seek(0, 2);
     except OSError:
@@ -6722,7 +6724,9 @@ def ArchiveFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_
         formatspecs = formatspecs[fmttype]
     elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
         fmttype = "auto"
+    curloc = 0
     if(hasattr(infile, "read") or hasattr(infile, "write")):
+        curloc = infile.tell()
         fp = infile
         fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
@@ -6820,7 +6824,6 @@ def ArchiveFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_
         if(not compresscheck):
             return False
         fp = UncompressFile(infile, formatspecs, "rb")
-    curloc = fp.tell()
     try:
         fp.seek(0, 2);
     except OSError:
@@ -7034,7 +7037,9 @@ def ArchiveFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=
         formatspecs = formatspecs[fmttype]
     elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
         fmttype = "auto"
+    curloc = 0
     if(hasattr(infile, "read") or hasattr(infile, "write")):
+        curloc = infile.tell()
         fp = infile
         fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
@@ -7132,7 +7137,6 @@ def ArchiveFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=
         if(not compresscheck):
             return False
         fp = UncompressFile(infile, formatspecs, "rb")
-    curloc = fp.tell()
     try:
         fp.seek(0, 2);
     except OSError:
