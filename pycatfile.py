@@ -10232,7 +10232,7 @@ def ListDirListFilesAlt(infiles, dirlistfromtxt=False, fmttype="auto", followlin
 
 def PackArchiveFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     outarray = ListDirToArrayAlt(infiles, dirlistfromtxt, fmttype, followlink,
-                                 False, True, checksumtype, extradata, formatspecs, False)z
+                                 False, True, checksumtype, extradata, formatspecs, False)
     listcatfiles = RePackArchiveFile(outarray, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist,
                                      followlink, checksumtype, skipchecksum, extradata, formatspecs, verbose, returnfp)
     return listcatfiles
@@ -10241,7 +10241,7 @@ def PackArchiveFileFromListDirAlt(infiles, outfile, dirlistfromtxt=False, fmttyp
 def PackArchiveFileFromTarFileAlt(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     outarray = TarFileToArrayAlt(
         infile, fmttype, False, True, checksumtype, extradata, formatspecs, False)
-    listcatfiles = RePackArchiveFile(outarray, outfile, fmttype=, compression, compresswholefile,
+    listcatfiles = RePackArchiveFile(outarray, outfile, fmttype, compression, compresswholefile,
                                      compressionlevel, compressionuselist, False, checksumtype, False, extradata, formatspecs, verbose, returnfp)
     return listcatfiles
 
