@@ -131,7 +131,7 @@ elif primary_action == 'list':
     else:
         pycatfile.ArchiveFileListFiles(input_file, verbose=args.verbose)
 elif primary_action == 'validate':
-    is_valid = pycatfile.ArchiveFileValidate(input_file, args.verbose)
+    is_valid = pycatfile.ArchiveFileValidate(input_file, verbose=args.verbose)
     result_msg = "Validation result for {0}: {1}".format(
         input_file, 'Valid' if is_valid else 'Invalid')
     print(result_msg)

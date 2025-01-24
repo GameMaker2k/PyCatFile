@@ -140,7 +140,7 @@ def main():
     elif args.list:
         pycatfile.ArchiveFileListFiles(input_file, verbose=args.verbose)
     elif args.validate:
-        is_valid = pycatfile.ArchiveFileValidate(input_file, args.verbose)
+        is_valid = pycatfile.ArchiveFileValidate(input_file, verbose=args.verbose)
         result_msg = "Validation result for {}: {}".format(input_file, 'Valid' if is_valid else 'Invalid')
         print(result_msg)
     else:

@@ -9541,12 +9541,11 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
 
 def UnPackArchiveFileString(catstr, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     fp = BytesIO(catstr)
-    listcatfiles = UnPackArchiveFile(
-        fp, outdir, followlink, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp)
+    listcatfiles = UnPackArchiveFile(fp, outdir, followlink, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp)
     return listcatfiles
 
 
-def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def ArchiveFileListFiles(infile, fmttype="auto", seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     if(verbose):
         logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     if(isinstance(infile, dict)):
@@ -9554,7 +9553,7 @@ def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, for
     else:
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
             infile = RemoveWindowsPath(infile)
-        listcatfiles = ArchiveFileToArray(infile, "auto", seekstart, seekend, True, False, False, skipchecksum, formatspecs, returnfp)
+        listcatfiles = ArchiveFileToArray(infile, fmttype, seekstart, seekend, True, False, False, skipchecksum, formatspecs, returnfp)
     if(not listcatfiles):
         return False
     lenlist = len(listcatfiles['ffilelist'])
