@@ -2725,6 +2725,11 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
+        else:
+            fp.seek(0, 0)
+            checkcompressfile = CheckCompressionSubType(fp, formatspecs, False)
+            if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+                formatspecs = formatspecs[checkcompressfile]
         fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
@@ -2773,6 +2778,11 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
+        else:
+            fp.seek(0, 0)
+            checkcompressfile = CheckCompressionSubType(fp, formatspecs, False)
+            if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+                formatspecs = formatspecs[checkcompressfile]
         fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
         if(not fp):
@@ -2785,6 +2795,11 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
+        else:
+            fp.seek(0, 0)
+            checkcompressfile = CheckCompressionSubType(fp, formatspecs, False)
+            if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+                formatspecs = formatspecs[checkcompressfile]
         fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
         if(not fp):
@@ -2792,9 +2807,16 @@ def ReadInFileBySizeWithContentToArray(infile, seekstart=0, seekend=0, listonly=
         fp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         fp = download_file_from_internet_file(infile)
+        fp.seek(0, 0)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
+        else:
+            fp.seek(0, 0)
+            checkcompressfile = CheckCompressionSubType(fp, formatspecs, False)
+            if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+                formatspecs = formatspecs[checkcompressfile]
+        fp.seek(0, 0)
         if(not compresscheck):
             fextname = os.path.splitext(infile)[1]
             if(fextname == ".gz"):
@@ -2871,6 +2893,11 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
+        else:
+            fp.seek(0, 0)
+            checkcompressfile = CheckCompressionSubType(fp, formatspecs, False)
+            if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+                formatspecs = formatspecs[checkcompressfile]
         fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
@@ -2919,6 +2946,11 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
+        else:
+            fp.seek(0, 0)
+            checkcompressfile = CheckCompressionSubType(fp, formatspecs, False)
+            if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+                formatspecs = formatspecs[checkcompressfile]
         fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
         if(not fp):
@@ -2931,6 +2963,11 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
+        else:
+            fp.seek(0, 0)
+            checkcompressfile = CheckCompressionSubType(fp, formatspecs, False)
+            if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+                formatspecs = formatspecs[checkcompressfile]
         fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
         if(not fp):
@@ -2938,9 +2975,16 @@ def ReadInFileBySizeWithContentToList(infile, seekstart=0, seekend=0, listonly=F
         fp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         fp = download_file_from_internet_file(infile)
+        fp.seek(0, 0)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
+        else:
+            fp.seek(0, 0)
+            checkcompressfile = CheckCompressionSubType(fp, formatspecs, False)
+            if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+                formatspecs = formatspecs[checkcompressfile]
+        fp.seek(0, 0)
         if(not compresscheck):
             fextname = os.path.splitext(infile)[1]
             if(fextname == ".gz"):
@@ -4082,7 +4126,7 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, clos
     elif(py7zr_support and compresscheck == "7zipfile" and py7zr.is_7zfile(infile)):
         return "7zipfile"
     if(hasattr(infile, "read") or hasattr(infile, "write")):
-        fp = UncompressArchiveFile(infile, formatspecs['format_magic'])
+        fp = UncompressArchiveFile(infile, formatspecs)
     else:
         try:
             if(compresscheck == "gzip" and compresscheck in compressionsupport):
@@ -6137,45 +6181,24 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
-        compresscheck = CheckCompressionType(fp, formatspecs, False)
-        if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
-            formatspecs = formatspecs[compresscheck]
         fp = UncompressArchiveFile(fp, formatspecs)
-        checkcompressfile = CheckCompressionSubType(fp, formatspecs, False)
+        checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
+        if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+            formatspecs = formatspecs[checkcompressfile]
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, seekto, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, seekto, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, seekto, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, seekto, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
             return False
         if(not fp):
             return False
-        if(not compresscheck and hasattr(fp, "name")):
-            fextname = os.path.splitext(fp.name)[1]
-            if(fextname == ".gz"):
-                compresscheck = "gzip"
-            elif(fextname == ".bz2"):
-                compresscheck = "bzip2"
-            elif(fextname == ".zst"):
-                compresscheck = "zstd"
-            elif(fextname == ".lz4" or fextname == ".clz4"):
-                compresscheck = "lz4"
-            elif(fextname == ".lzo" or fextname == ".lzop"):
-                compresscheck = "lzo"
-            elif(fextname == ".lzma"):
-                compresscheck = "lzma"
-            elif(fextname == ".xz"):
-                compresscheck = "xz"
-            elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
-                compresscheck = "zlib"
-            else:
-                return False
         fp.seek(0, 0)
     elif(infile == "-"):
         fp = BytesIO()
@@ -6184,10 +6207,10 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         else:
             shutil.copyfileobj(sys.stdin, fp)
         fp.seek(0, 0)
-        compresscheck = CheckCompressionType(fp, formatspecs, False)
-        if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
-            formatspecs = formatspecs[compresscheck]
         fp = UncompressArchiveFile(fp, formatspecs)
+        checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
+        if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+            formatspecs = formatspecs[checkcompressfile]
         if(not fp):
             return False
         fp.seek(0, 0)
@@ -6195,40 +6218,20 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         fp = BytesIO()
         fp.write(infile)
         fp.seek(0, 0)
+        fp = UncompressArchiveFile(fp, formatspecs)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
-        fp = UncompressArchiveFile(fp, formatspecs)
         if(not fp):
             return False
         fp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         fp = download_file_from_internet_file(infile)
-        fp.seek(0, 0)
+        fp = UncompressArchiveFile(fp, formatspecs)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
-        if(not compresscheck):
-            fextname = os.path.splitext(infile)[1]
-            if(fextname == ".gz"):
-                compresscheck = "gzip"
-            elif(fextname == ".bz2"):
-                compresscheck = "bzip2"
-            elif(fextname == ".zst"):
-                compresscheck = "zstd"
-            elif(fextname == ".lz4" or fextname == ".clz4"):
-                compresscheck = "lz4"
-            elif(fextname == ".lzo" or fextname == ".lzop"):
-                compresscheck = "lzo"
-            elif(fextname == ".lzma"):
-                compresscheck = "lzma"
-            elif(fextname == ".xz"):
-                compresscheck = "xz"
-            elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
-                compresscheck = "zlib"
-            else:
-                return False
-        fp = UncompressArchiveFile(fp, formatspecs)
+        fp.seek(0, 0)
         if(not fp):
             return False
         fp.seek(0, 0)
@@ -6238,13 +6241,13 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, seekto, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, seekto, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, seekto, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, seekto, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
@@ -6500,18 +6503,18 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
         fp.write(infile)
         fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
-        checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
-        if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
-            formatspecs = formatspecs[checkcompressfile]
+        compresscheck = CheckCompressionType(fp, formatspecs, False)
+        if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
+            formatspecs = formatspecs[compresscheck]
         if(not fp):
             return False
         fp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         fp = download_file_from_internet_file(infile)
         fp = UncompressArchiveFile(fp, formatspecs)
-        checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
-        if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
-            formatspecs = formatspecs[checkcompressfile]
+        compresscheck = CheckCompressionType(fp, formatspecs, False)
+        if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
+            formatspecs = formatspecs[compresscheck]
         fp.seek(0, 0)
         if(not fp):
             return False
@@ -6753,45 +6756,24 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_multi_dict__, verbose=
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
-        compresscheck = CheckCompressionType(fp, formatspecs, False)
-        if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
-            formatspecs = formatspecs[compresscheck]
         fp = UncompressArchiveFile(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
+        if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+            formatspecs = formatspecs[checkcompressfile]
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, 0, 0, False, True, False, formatspecs, returnfp)
+            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, 0, 0, False, True, False, formatspecs, returnfp)
+            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, 0, 0, False, True, False, formatspecs, returnfp)
+            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, 0, 0, False, True, False, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
             return False
         if(not fp):
             return False
-        if(not compresscheck and hasattr(fp, "name")):
-            fextname = os.path.splitext(fp.name)[1]
-            if(fextname == ".gz"):
-                compresscheck = "gzip"
-            elif(fextname == ".bz2"):
-                compresscheck = "bzip2"
-            elif(fextname == ".zst"):
-                compresscheck = "zstd"
-            elif(fextname == ".lz4" or fextname == ".clz4"):
-                compresscheck = "lz4"
-            elif(fextname == ".lzo" or fextname == ".lzop"):
-                compresscheck = "lzo"
-            elif(fextname == ".lzma"):
-                compresscheck = "lzma"
-            elif(fextname == ".xz"):
-                compresscheck = "xz"
-            elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
-                compresscheck = "zlib"
-            else:
-                return False
         fp.seek(0, 0)
     elif(infile == "-"):
         fp = BytesIO()
@@ -6800,10 +6782,10 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_multi_dict__, verbose=
         else:
             shutil.copyfileobj(sys.stdin, fp)
         fp.seek(0, 0)
-        compresscheck = CheckCompressionType(fp, formatspecs, False)
-        if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
-            formatspecs = formatspecs[compresscheck]
         fp = UncompressArchiveFile(fp, formatspecs)
+        checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
+        if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+            formatspecs = formatspecs[checkcompressfile]
         if(not fp):
             return False
         fp.seek(0, 0)
@@ -6811,20 +6793,19 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_multi_dict__, verbose=
         fp = BytesIO()
         fp.write(infile)
         fp.seek(0, 0)
+        fp = UncompressArchiveFile(fp, formatspecs)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
-        fp = UncompressArchiveFile(fp, formatspecs)
         if(not fp):
             return False
         fp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         fp = download_file_from_internet_file(infile)
-        fp.seek(0, 0)
+        fp = UncompressArchiveFile(fp, formatspecs)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
-        fp = UncompressArchiveFile(fp, formatspecs)
         fp.seek(0, 0)
         if(not fp):
             return False
@@ -6835,13 +6816,13 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_multi_dict__, verbose=
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, 0, 0, False, True, False, formatspecs, returnfp)
+            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, 0, 0, False, True, False, formatspecs, returnfp)
+            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, 0, 0, False, True, False, formatspecs, returnfp)
+            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, 0, 0, False, True, False, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
@@ -7083,48 +7064,24 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
-        compresscheck = CheckCompressionType(fp, formatspecs, False)
-        if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
-            formatspecs = formatspecs[compresscheck]
-        fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
             return False
         if(not fp):
             return False
-        if(not compresscheck and hasattr(fp, "name")):
-            fextname = os.path.splitext(fp.name)[1]
-            if(fextname == ".gz"):
-                compresscheck = "gzip"
-            elif(fextname == ".bz2"):
-                compresscheck = "bzip2"
-            elif(fextname == ".zst"):
-                compresscheck = "zstd"
-            elif(fextname == ".lz4" or fextname == ".clz4"):
-                compresscheck = "lz4"
-            elif(fextname == ".lzo" or fextname == ".lzop"):
-                compresscheck = "lzo"
-            elif(fextname == ".lzma"):
-                compresscheck = "lzma"
-            elif(fextname == ".xz"):
-                compresscheck = "xz"
-            elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
-                compresscheck = "zlib"
-            else:
-                return False
         fp.seek(0, 0)
     elif(infile == "-"):
         fp = BytesIO()
@@ -7133,11 +7090,10 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         else:
             shutil.copyfileobj(sys.stdin, fp)
         fp.seek(0, 0)
-        compresscheck = CheckCompressionType(fp, formatspecs, False)
-        if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
-            formatspecs = formatspecs[compresscheck]
-        fp.seek(0, 0)
         fp = UncompressArchiveFile(fp, formatspecs)
+        checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
+        if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+            formatspecs = formatspecs[checkcompressfile]
         if(not fp):
             return False
         fp.seek(0, 0)
@@ -7145,41 +7101,20 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         fp = BytesIO()
         fp.write(infile)
         fp.seek(0, 0)
+        fp = UncompressArchiveFile(fp, formatspecs)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
-        fp.seek(0, 0)
-        fp = UncompressArchiveFile(fp, formatspecs)
         if(not fp):
             return False
         fp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         fp = download_file_from_internet_file(infile)
+        fp = UncompressArchiveFile(fp, formatspecs)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
-        if(not compresscheck):
-            fextname = os.path.splitext(infile)[1]
-            if(fextname == ".gz"):
-                compresscheck = "gzip"
-            elif(fextname == ".bz2"):
-                compresscheck = "bzip2"
-            elif(fextname == ".zst"):
-                compresscheck = "zstd"
-            elif(fextname == ".lz4" or fextname == ".clz4"):
-                compresscheck = "lz4"
-            elif(fextname == ".lzo" or fextname == ".lzop"):
-                compresscheck = "lzo"
-            elif(fextname == ".lzma"):
-                compresscheck = "lzma"
-            elif(fextname == ".xz"):
-                compresscheck = "xz"
-            elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
-                compresscheck = "zlib"
-            else:
-                return False
         fp.seek(0, 0)
-        fp = UncompressArchiveFile(fp, formatspecs)
         if(not fp):
             return False
         fp.seek(0, 0)
@@ -7189,13 +7124,13 @@ def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentas
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
