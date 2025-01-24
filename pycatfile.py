@@ -3089,13 +3089,36 @@ def AppendFileHeader(fp, numfiles, fencoding, extradata=[], checksumtype="crc32"
     return fp
 
 
-def MakeEmptyFilePointer(fp, checksumtype="crc32", formatspecs=__file_format_dict__):
+def MakeEmptyFilePointer(fp, fmttype=__file_format_default__, checksumtype="crc32", formatspecs=__file_format_multi_dict__):
+    if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
     AppendFileHeader(fp, 0, "UTF-8", [], checksumtype, formatspecs)
     return fp
 
 
-def MakeEmptyArchiveFilePointer(fp, checksumtype="crc32", formatspecs=__file_format_dict__):
-    return MakeEmptyFilePointer(fp, checksumtype, formatspecs)
+def MakeEmptyArchiveFilePointer(fp, fmttype="auto", checksumtype="crc32", formatspecs=__file_format_multi_dict__):
+    if(IsNestedDict(formatspecs) and fmttype=="auto" and 
+        (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
+        get_in_ext = os.path.splitext(outfile)
+        tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
+        if(tmpfmt is None and get_in_ext[1]!=""):
+            get_in_ext = os.path.splitext(get_in_ext[0])
+            tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
+        if(tmpfmt is None):
+            fmttype = __file_format_default__
+            formatspecs = formatspecs[fmttype]
+        else:
+            fmttype = tmpfmt
+            formatspecs = formatspecs[tmpfmt]
+    elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
+    return MakeEmptyFilePointer(fp, fmttype, checksumtype, formatspecs)
 
 
 def MakeEmptyFile(outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", formatspecs=__file_format_dict__, returnfp=False):
