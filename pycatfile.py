@@ -310,6 +310,8 @@ if("ねこファイル" not in __file_format_multi_dict__):
     __file_format_multi_dict__.update({'ねこファイル': {'format_name': "NekoFile", 'format_magic': "ねこファイル", 'format_lower': "nekofile", 'format_len': 21, 'format_hex': "e381ade38193e38395e382a1e382a4e383abe", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".ねこ" } } )
 if("네코파일" not in __file_format_multi_dict__):
     __file_format_multi_dict__.update({'네코파일': {'format_name': "NekoFile", 'format_magic': "네코파일", 'format_lower': "nekofile", 'format_len': 15, 'format_hex': "eb84a4ecbd94ed8c8c", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".네코" } } )
+if("고양이파일" not in __file_format_multi_dict__):
+    __file_format_multi_dict__.update({'고양이파일': {'format_name': "GoyangiFile", 'format_magic': "고양이파일", 'format_lower': "goyangifile", 'format_len': 21, 'format_hex': "ea3eaeb095eab094ed8c8cec9db4", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".고양이" } } )
 __file_format_name__ = __file_format_multi_dict__[__file_format_default__]['format_name']
 __file_format_lower__ = __file_format_multi_dict__[__file_format_default__]['format_lower']
 __file_format_magic__ = __file_format_multi_dict__[__file_format_default__]['format_magic']
