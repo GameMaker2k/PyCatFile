@@ -150,6 +150,7 @@ fname = getargs.format
 fnamelower = fname.lower()
 if(getargs.format==__file_format_dict__['format_name']):
     fnamedict = __file_format_multi_dict__
+    __file_format_default__ = "auto"
 else:
     fnamemagic = fname
     fnamelen = len(fname)
