@@ -260,7 +260,7 @@ __use_pysftp__ = False
 __use_alt_format__ = False
 __use_env_file__ = True
 __use_ini_file__ = True
-__use_ini_name__ "catfile.ini"
+__use_ini_name__ = "catfile.ini"
 if('PYCATFILE_CONFIG_FILE' in os.environ and os.path.exists(os.environ['PYCATFILE_CONFIG_FILE']) and __use_env_file__):
     scriptconf = os.environ['PYCATFILE_CONFIG_FILE']
 else:
@@ -2672,7 +2672,11 @@ def ReadFileDataWithContentToList(fp, seekstart=0, seekend=0, listonly=False, un
     return catlist
 
 
-def ReadInFileWithContentToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
+def ReadInFileWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
+    if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
+        fmttype = "auto"
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
@@ -2842,7 +2846,11 @@ def ReadInFileWithContentToArray(infile, seekstart=0, seekend=0, listonly=False,
     return ReadFileDataWithContentToArray(fp, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
 
 
-def ReadInFileWithContentToList(infile, seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
+def ReadInFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
+    if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
+        fmttype = "auto"
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
@@ -3610,8 +3618,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
 
 
 def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
-    inlist = ReadInFileWithContentToList(
-        infile, 0, 0, False, True, False, formatspecs)
+    inlist = ReadInFileWithContentToList(infile, "auto", 0, 0, False, True, False, formatspecs)
     return AppendListsWithContent(inlist, fp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs, verbose)
 
 
@@ -3770,8 +3777,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmtty
 
 
 def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-    inlist = ReadInFileWithContentToList(
-        infile, 0, 0, False, True, False, formatspecs)
+    inlist = ReadInFileWithContentToList(infile, "auto", 0, 0, False, True, False, formatspecs)
     return AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, filevalues, extradata, followlink, checksumtype, formatspecs, verbose, returnfp)
 
 
@@ -6123,7 +6129,11 @@ def PackArchiveFileFromInFile(infile, outfile, fmttype="auto", compression="auto
     return False
 
 
-def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
+def ArchiveFileSeekToFileNum(infile, fmttype="auto", seekto=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
+    if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
+        fmttype = "auto"
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
@@ -6407,7 +6417,11 @@ def ArchiveFileSeekToFileNum(infile, seekto=0, listonly=False, contentasfile=Tru
     return catlist
 
 
-def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
+def ArchiveFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
+    if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
+        fmttype = "auto"
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
@@ -6696,9 +6710,13 @@ def ArchiveFileSeekToFileName(infile, seekfile=None, listonly=False, contentasfi
     return catlist
 
 
-def ArchiveFileValidate(infile, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def ArchiveFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     if(verbose):
         logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
+    if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
+        fmttype = "auto"
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
@@ -7002,11 +7020,15 @@ def ArchiveFileValidate(infile, formatspecs=__file_format_multi_dict__, verbose=
         return False
 
 
-def ArchiveFileValidateFile(infile, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
-    return ArchiveFileValidate(infile, formatspecs, verbose, returnfp)
+def ArchiveFileValidateFile(infile, fmttype="auto", formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    return ArchiveFileValidate(infile, fmttype, formatspecs, verbose, returnfp)
 
 
-def ArchiveFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
+def ArchiveFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
+    if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
+        fmttype = "auto"
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         fp.seek(0, 0)
@@ -7387,8 +7409,7 @@ def ArchiveFileStringToArray(catstr, seekstart=0, seekend=0, listonly=False, con
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         formatspecs = formatspecs[checkcompressfile]
     fp = BytesIO(catstr)
-    listcatfiles = ArchiveFileToArray(
-        fp, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
+    listcatfiles = ArchiveFileToArray(fp, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
     return listcatfiles
 
 
@@ -7399,8 +7420,7 @@ def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile
     fp = BytesIO()
     fp = PackArchiveFileFromTarFile(
         infile, fp, "auto", True, None, compressionlistalt, "crc32", [], formatspecs, False, True)
-    listcatfiles = ArchiveFileToArray(
-        fp, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
+    listcatfiles = ArchiveFileToArray(fp, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
     return listcatfiles
 
 
@@ -7411,8 +7431,7 @@ def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile
     fp = BytesIO()
     fp = PackArchiveFileFromZipFile(
         infile, fp, "auto", True, None, compressionlistalt, "crc32", [], formatspecs, False, True)
-    listcatfiles = ArchiveFileToArray(
-        fp, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
+    listcatfiles = ArchiveFileToArray(fp, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
     return listcatfiles
 
 
@@ -7428,8 +7447,7 @@ if(rarfile_support):
         fp = BytesIO()
         fp = PackArchiveFileFromRarFile(
             infile, fp, "auto", True, None, compressionlistalt, "crc32", [], formatspecs, False, True)
-        listcatfiles = ArchiveFileToArray(
-            fp, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
+        listcatfiles = ArchiveFileToArray(fp, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
         return listcatfiles
 
 if(not py7zr_support):
@@ -7444,8 +7462,7 @@ if(py7zr_support):
         fp = BytesIO()
         fp = PackArchiveFileFromSevenZipFile(
             infile, fp, "auto", True, None, compressionlistalt, "crc32", [], formatspecs, False, True)
-        listcatfiles = ArchiveFileToArray(
-            fp, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
+        listcatfiles = ArchiveFileToArray(fp, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
         return listcatfiles
 
 
@@ -7462,7 +7479,7 @@ def InFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=
     elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
         return SevenZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
     elif(checkcompressfile == formatspecs['format_magic']):
-        return ArchiveFileToArray(infile, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
+        return ArchiveFileToArray(infile, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
     else:
         return False
     return False
@@ -8897,7 +8914,7 @@ def InFileToArrayAlt(infile, fmttype=__file_format_default__, listonly=False, co
     elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
         return SevenZipFileToArrayAlt(infile, fmttype, listonly, contentasfile, checksumtype, extradata, formatspecs, verbose)
     elif(checkcompressfile == formatspecs['format_magic']):
-        return ArchiveFileToArray(infile, 0, 0, listonly, contentasfile, True, False, formatspecs, False)
+        return ArchiveFileToArray(infile, "auto", 0, 0, listonly, contentasfile, True, False, formatspecs, False)
     else:
         return False
     return False
@@ -8907,8 +8924,7 @@ def ListDirToArray(infiles, dirlistfromtxt=False, fmttype=__file_format_default_
     outarray = BytesIO()
     packcat = PackArchiveFile(infiles, outarray, dirlistfromtxt, fmttype, compression, compresswholefile,
                               compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, True)
-    listcatfiles = ArchiveFileToArray(
-        outarray, seekstart, seekend, listonly, True, skipchecksum, formatspecs, returnfp)
+    listcatfiles = ArchiveFileToArray(outarray, "auto", seekstart, seekend, listonly, True, skipchecksum, formatspecs, returnfp)
     return listcatfiles
 
 
@@ -8984,8 +9000,7 @@ def RePackArchiveFile(infile, outfile, fmttype="auto", compression="auto", compr
     else:
         if(infile != "-" and not isinstance(infile, bytes) and not hasattr(infile, "read") and not hasattr(infile, "write")):
             infile = RemoveWindowsPath(infile)
-        listcatfiles = ArchiveFileToArray(
-            infile, seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp)
+        listcatfiles = ArchiveFileToArray(infile, "auto", seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp)
     if(IsNestedDict(formatspecs) and fmttype in formatspecs):
         formatspecs = formatspecs[fmttype]
     elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
@@ -9276,8 +9291,7 @@ def UnPackArchiveFile(infile, outdir=None, followlink=False, seekstart=0, seeken
     else:
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
             infile = RemoveWindowsPath(infile)
-        listcatfiles = ArchiveFileToArray(
-            infile, seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp)
+        listcatfiles = ArchiveFileToArray(infile, "auto", seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp)
     if(not listcatfiles):
         return False
     lenlist = len(listcatfiles['ffilelist'])
@@ -9540,8 +9554,7 @@ def ArchiveFileListFiles(infile, seekstart=0, seekend=0, skipchecksum=False, for
     else:
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
             infile = RemoveWindowsPath(infile)
-        listcatfiles = ArchiveFileToArray(
-            infile, seekstart, seekend, True, False, False, skipchecksum, formatspecs, returnfp)
+        listcatfiles = ArchiveFileToArray(infile, "auto", seekstart, seekend, True, False, False, skipchecksum, formatspecs, returnfp)
     if(not listcatfiles):
         return False
     lenlist = len(listcatfiles['ffilelist'])
