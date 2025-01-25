@@ -306,6 +306,13 @@ if os.path.exists(__config_file__) and __use_ini_file__:
         ]
         if all(key in config[section] for key in required_keys):
             __file_format_multi_dict__.update( { decode_unicode_escape(config.get(section, 'magic')): {'format_name': decode_unicode_escape(config.get(section, 'name')), 'format_magic': decode_unicode_escape(config.get(section, 'magic')), 'format_lower': decode_unicode_escape(config.get(section, 'lower')), 'format_len': config.getint(section, 'len'), 'format_hex': config.get(section, 'hex'), 'format_delimiter': decode_unicode_escape(config.get(section, 'delimiter')), 'format_ver': config.get(section, 'ver'), 'new_style': config.getboolean(section, 'newstyle'), 'use_advanced_list': config.getboolean(section, 'advancedlist'), 'use_alt_inode': config.getboolean(section, 'altinode'), 'format_extension': decode_unicode_escape(config.get(section, 'extension')) } } )
+        if not __file_format_multi_dict__ and not __include_defaults__:
+            __include_defaults__ = True
+elif not os.path.exists(__config_file__) and __use_ini_file__:
+    __use_ini_file__ = False
+    __include_defaults__ = True
+if not __use_ini_file__ and not __include_defaults__:
+    __include_defaults__ = True
 if(__include_defaults__):
     if("CatFile" not in __file_format_multi_dict__):
         __file_format_multi_dict__.update( { 'CatFile': {'format_name': "CatFile", 'format_magic': "CatFile", 'format_lower': "catfile", 'format_len': 7, 'format_hex': "43617446696c65", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".cat" } } )
