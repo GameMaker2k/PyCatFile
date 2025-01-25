@@ -286,7 +286,7 @@ __file_format_multi_dict__ = {}
 __file_format_default__ = "CatFile"
 __include_defaults__ = True
 __program_name__ = "Py"+__file_format_default__
-if os.path.exists(__config_file__) and __use_ini_file__:
+if __use_ini_file__ and os.path.exists(__config_file__):
     config = configparser.ConfigParser()
     config.read(__config_file__)
     def decode_unicode_escape(value):
@@ -308,7 +308,7 @@ if os.path.exists(__config_file__) and __use_ini_file__:
             __file_format_multi_dict__.update( { decode_unicode_escape(config.get(section, 'magic')): {'format_name': decode_unicode_escape(config.get(section, 'name')), 'format_magic': decode_unicode_escape(config.get(section, 'magic')), 'format_lower': decode_unicode_escape(config.get(section, 'lower')), 'format_len': config.getint(section, 'len'), 'format_hex': config.get(section, 'hex'), 'format_delimiter': decode_unicode_escape(config.get(section, 'delimiter')), 'format_ver': config.get(section, 'ver'), 'new_style': config.getboolean(section, 'newstyle'), 'use_advanced_list': config.getboolean(section, 'advancedlist'), 'use_alt_inode': config.getboolean(section, 'altinode'), 'format_extension': decode_unicode_escape(config.get(section, 'extension')) } } )
         if not __file_format_multi_dict__ and not __include_defaults__:
             __include_defaults__ = True
-elif not os.path.exists(__config_file__) and __use_ini_file__:
+elif __use_ini_file__ and not os.path.exists(__config_file__):
     __use_ini_file__ = False
     __include_defaults__ = True
 if not __use_ini_file__ and not __include_defaults__:
