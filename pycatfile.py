@@ -3454,7 +3454,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         if ftype in data_types:
             with open(fname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
-                fencoding = GetFileEncoding(fcontents, True)
+                fencoding = GetFileEncoding(fcontents, False)
                 if(not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
@@ -3609,7 +3609,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
         fheaderchecksumtype = curfname[25]
         fcontentchecksumtype = curfname[26]
         fcontents = curfname[27]
-        fencoding = GetFileEncoding(fcontents, True)
+        fencoding = GetFileEncoding(fcontents, False)
         catoutlist = [ftype, fencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize,
                       fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile]
         fcontents.seek(0, 0)
@@ -4882,7 +4882,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", comp
         if ftype in data_types:
             with open(fname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
-                fencoding = GetFileEncoding(fcontents, True)
+                fencoding = GetFileEncoding(fcontents, False)
                 if(not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
@@ -5223,7 +5223,7 @@ def PackArchiveFileFromTarFile(infile, outfile, fmttype="auto", compression="aut
         if ftype in data_types:
             fpc = tarfp.extractfile(member)
             shutil.copyfileobj(fpc, fcontents)
-            fencoding = GetFileEncoding(fcontents, True)
+            fencoding = GetFileEncoding(fcontents, False)
             if(not compresswholefile):
                 fcontents.seek(0, 2)
                 ucfsize = fcontents.tell()
@@ -5516,7 +5516,7 @@ def PackArchiveFileFromZipFile(infile, outfile, fmttype="auto", compression="aut
         fcontents = BytesIO()
         if(ftype == 0):
             fcontents.write(zipfp.read(member.filename))
-            fencoding = GetFileEncoding(fcontents, True)
+            fencoding = GetFileEncoding(fcontents, False)
             if(not compresswholefile):
                 fcontents.seek(0, 2)
                 ucfsize = fcontents.tell()
@@ -5827,7 +5827,7 @@ if(rarfile_support):
             fcontents = BytesIO()
             if(ftype == 0):
                 fcontents.write(rarfp.read(member.filename))
-                fencoding = GetFileEncoding(fcontents, True)
+                fencoding = GetFileEncoding(fcontents, False)
                 if(not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
@@ -6075,7 +6075,7 @@ if(py7zr_support):
             fcontents = BytesIO()
             if(ftype == 0):
                 fcontents.write(file_content[member.filename].read())
-                fencoding = GetFileEncoding(fcontents, True)
+                fencoding = GetFileEncoding(fcontents, False)
                 fsize = format(fcontents.tell(), 'x').lower()
                 file_content[member.filename].close()
                 if(not compresswholefile):
@@ -7797,7 +7797,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, fmttype=__file_format_defau
             with open(fname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
             fcsize = fcontents.tell()
-            fencoding = GetFileEncoding(fcontents, True)
+            fencoding = GetFileEncoding(fcontents, False)
         if(followlink and (ftype == 1 or ftype == 2)):
             flstatinfo = os.stat(flinkname)
             with open(flinkname, "rb") as fpc:
@@ -8089,7 +8089,7 @@ def TarFileToArrayAlt(infile, fmttype=__file_format_default__, listonly=False, c
             fpc = tarfp.extractfile(member)
             shutil.copyfileobj(fpc, fcontents)
             fcsize = fcontents.tell()
-            fencoding = GetFileEncoding(fcontents, True)
+            fencoding = GetFileEncoding(fcontents, False)
         fcontents.seek(0, 0)
         ftypehex = format(ftype, 'x').lower()
         extrafields = len(extradata)
@@ -8371,7 +8371,7 @@ def ZipFileToArrayAlt(infile, fmttype=__file_format_default__, listonly=False, c
         if(ftype == 0):
             fcontents.write(zipfp.read(member.filename))
             fcsize = fcontents.tell()
-            fencoding = GetFileEncoding(fcontents, True)
+            fencoding = GetFileEncoding(fcontents, False)
         fcontents.seek(0, 0)
         ftypehex = format(ftype, 'x').lower()
         extrafields = len(extradata)
@@ -8664,7 +8664,7 @@ if(rarfile_support):
             if(ftype == 0):
                 fcontents.write(rarfp.read(member.filename))
                 fcsize = fcontents.tell()
-                fencoding = GetFileEncoding(fcontents, True)
+                fencoding = GetFileEncoding(fcontents, False)
             fcontents.seek(0, 0)
             ftypehex = format(ftype, 'x').lower()
             extrafields = len(extradata)
@@ -8902,7 +8902,7 @@ if(py7zr_support):
                 fsize = format(fcontents.tell(), 'x').lower()
                 fileop.close()
                 fcsize = fcontents.tell()
-                fencoding = GetFileEncoding(fcontents, True)
+                fencoding = GetFileEncoding(fcontents, False)
             fcontents.seek(0, 0)
             ftypehex = format(ftype, 'x').lower()
             extrafields = len(extradata)
@@ -9189,7 +9189,7 @@ def RePackArchiveFile(infile, outfile, fmttype="auto", compression="auto", compr
         fcontents = listcatfiles['ffilelist'][reallcfi]['fcontents']
         if(not listcatfiles['ffilelist'][reallcfi]['fcontentasfile']):
             fcontents = BytesIO(fcontents)
-        fencoding = GetFileEncoding(fcontents, True)
+        fencoding = GetFileEncoding(fcontents, False)
         fcompression = ""
         fcsize = format(int(0), 'x').lower()
         if(not compresswholefile):
