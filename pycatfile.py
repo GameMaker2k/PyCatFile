@@ -7090,6 +7090,21 @@ def ArchiveFileValidateFile(infile, fmttype="auto", formatspecs=__file_format_mu
     return ArchiveFileValidate(infile, fmttype, formatspecs, verbose, returnfp)
 
 
+def ArchiveFileValidateMultiple(infile, fmttype="auto", formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    if(isinstance(infile, (list, tuple, ))):
+        pass
+    else:
+        infile = [infile]
+    outretval = True
+    for curfname in infile:
+        curretfile = ArchiveFileValidate(curfname, fmttype, formatspecs, verbose, returnfp)
+        if(not curretfile):
+            outretval = False
+    return outretval
+
+def ArchiveFileValidateMultipleFile(infile, fmttype="auto", formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    return ArchiveFileValidateMultiple(infile, fmttype, formatspecs, verbose, returnfp)
+
 def ArchiveFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
         formatspecs = formatspecs[fmttype]
