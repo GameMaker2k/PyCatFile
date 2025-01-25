@@ -7486,6 +7486,20 @@ def ArchiveFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=
     return catlist
 
 
+def MultipleArchiveFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
+    if(isinstance(infile, (list, tuple, ))):
+        pass
+    else:
+        infile = [infile]
+    outretval = {}
+    for curfname in infile:
+        curretfile = outretval.update({curfname: ArchiveFileToArray(curfname, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, returnfp)})
+    return outretval
+
+def MultipleArchiveFilesToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
+    return MultipleArchiveFileToArray(infile, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, returnfp)
+
+
 def ArchiveFileStringToArray(catstr, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
