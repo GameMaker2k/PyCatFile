@@ -2859,7 +2859,7 @@ def ReadInMultipleFileWithContentToArray(infile, fmttype="auto", seekstart=0, se
         infile = [infile]
     outretval = {}
     for curfname in infile:
-        curretfile = outretval.update({curfname: ArchiveFileToArray(curfname, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)})
+        curretfile = outretval.update({curfname: ReadInFileWithContentToArray(curfname, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)})
     return outretval
 
 def ReadInMultipleFilesWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
@@ -3047,7 +3047,7 @@ def ReadInMultipleFileWithContentToList(infile, fmttype="auto", seekstart=0, see
         infile = [infile]
     outretval = {}
     for curfname in infile:
-        curretfile = outretval.update({curfname: ArchiveFileToList(curfname, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)})
+        curretfile = outretval.update({curfname: ReadInFileWithContentToList(curfname, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)})
     return outretval
 
 def ReadInMultipleFilesWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
