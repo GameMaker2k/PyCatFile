@@ -2220,7 +2220,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     return catlist
 
 
-def ReadFileHeaderDataWithContentToList(fp, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
@@ -2338,7 +2338,8 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, uncompress=True, ski
     else:
         return False
     fcontents.seek(0, 0)
-    fcontents = fcontents.read()
+    if(not contentasfile):
+        fcontents = fcontents.read()
     catlist = [ftype, fencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fid,
                finode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile, extrafieldslist, HeaderOut[-4], HeaderOut[-3], fcontents]
     return catlist
@@ -2535,7 +2536,7 @@ def ReadFileDataWithContentToArray(fp, seekstart=0, seekend=0, listonly=False, c
     return catlist
 
 
-def ReadFileDataWithContentToList(fp, seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadFileDataWithContentToList(fp, seekstart=0, seekend=0, listonly=False, contentasfile=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
@@ -2668,7 +2669,7 @@ def ReadFileDataWithContentToList(fp, seekstart=0, seekend=0, listonly=False, un
     countnum = seekstart
     while(countnum < seekend):
         HeaderOut = ReadFileHeaderDataWithContentToList(
-            fp, listonly, uncompress, skipchecksum, formatspecs)
+            fp, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
         if(len(HeaderOut) == 0):
             break
         catlist.append(HeaderOut)
@@ -2851,7 +2852,21 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0,
     return ReadFileDataWithContentToArray(fp, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
 
 
-def ReadInFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
+def ReadInMultipleFileWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
+    if(isinstance(infile, (list, tuple, ))):
+        pass
+    else:
+        infile = [infile]
+    outretval = {}
+    for curfname in infile:
+        curretfile = outretval.update({curfname: ArchiveFileToArray(curfname, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)})
+    return outretval
+
+def ReadInMultipleFilesWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
+    return ReadInMultipleFileWithContentToArray(infile, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
+
+
+def ReadInFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
     if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
         formatspecs = formatspecs[fmttype]
     elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
@@ -3022,7 +3037,21 @@ def ReadInFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, 
         if(not compresscheck):
             return False
         fp = UncompressFile(infile, formatspecs, "rb")
-    return ReadFileDataWithContentToList(fp, seekstart, seekend, listonly, uncompress, skipchecksum, formatspecs)
+    return ReadFileDataWithContentToList(fp, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
+
+
+def ReadInMultipleFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
+    if(isinstance(infile, (list, tuple, ))):
+        pass
+    else:
+        infile = [infile]
+    outretval = {}
+    for curfname in infile:
+        curretfile = outretval.update({curfname: ArchiveFileToList(curfname, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)})
+    return outretval
+
+def ReadInMultipleFilesWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
+    return ReadInMultipleFileWithContentToList(infile, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
 
 
 def AppendNullByte(indata, delimiter=__file_format_dict__['format_delimiter']):
@@ -3625,7 +3654,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
 
 
 def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
-    inlist = ReadInFileWithContentToList(infile, "auto", 0, 0, False, True, False, formatspecs)
+    inlist = ReadInFileWithContentToList(infile, "auto", 0, 0, False, False, True, False, formatspecs)
     return AppendListsWithContent(inlist, fp, dirlistfromtxt, filevalues, extradata, followlink, checksumtype, formatspecs, verbose)
 
 
@@ -3784,7 +3813,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmtty
 
 
 def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-    inlist = ReadInFileWithContentToList(infile, "auto", 0, 0, False, True, False, formatspecs)
+    inlist = ReadInFileWithContentToList(infile, "auto", 0, 0, False, False, True, False, formatspecs)
     return AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, filevalues, extradata, followlink, checksumtype, formatspecs, verbose, returnfp)
 
 
