@@ -7102,7 +7102,7 @@ def ArchiveFileValidateMultiple(infile, fmttype="auto", formatspecs=__file_forma
             outretval = False
     return outretval
 
-def ArchiveFileValidateMultipleFile(infile, fmttype="auto", formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def ArchiveFileValidateMultipleFiles(infile, fmttype="auto", formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     return ArchiveFileValidateMultiple(infile, fmttype, formatspecs, verbose, returnfp)
 
 def ArchiveFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
