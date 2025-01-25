@@ -3454,6 +3454,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         if ftype in data_types:
             with open(fname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
+                fencoding = GetFileEncoding(fcontents, True)
                 if(not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
@@ -3608,6 +3609,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
         fheaderchecksumtype = curfname[25]
         fcontentchecksumtype = curfname[26]
         fcontents = curfname[27]
+        fencoding = GetFileEncoding(fcontents, True)
         catoutlist = [ftype, fencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize,
                       fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile]
         fcontents.seek(0, 0)
@@ -3935,6 +3937,57 @@ def IsSingleDict(variable):
             return False
 
     return True
+
+
+def GetFileEncoding(infile, closefp=True):
+    if(hasattr(infile, "read") or hasattr(infile, "write")):
+        fp = infile
+    else:
+        try:
+            fp = open(infile, "rb")
+        except FileNotFoundError:
+            return False
+    file_encoding = "UTF-8"
+    fp.seek(0, 0)
+    prefp = fp.read(2)
+    if(prefp == binascii.unhexlify("fffe")):
+        file_encoding = "UTF-16LE"
+    elif(prefp == binascii.unhexlify("feff")):
+        file_encoding = "UTF-16BE"
+    fp.seek(0, 0)
+    prefp = fp.read(3)
+    if(prefp == binascii.unhexlify("efbbbf")):
+        file_encoding = "UTF-8"
+    elif(prefp == binascii.unhexlify("0efeff")):
+        file_encoding = "SCSU"
+    fp.seek(0, 0)
+    prefp = fp.read(4)
+    if(prefp == binascii.unhexlify("fffe0000")):
+        file_encoding = "UTF-32LE"
+    elif(prefp == binascii.unhexlify("0000feff")):
+        file_encoding = "UTF-32BE"
+    elif(prefp == binascii.unhexlify("dd736673")):
+        file_encoding = "UTF-EBCDIC"
+    elif(prefp == binascii.unhexlify("2b2f7638")):
+        file_encoding = "UTF-7"
+    elif(prefp == binascii.unhexlify("2b2f7639")):
+        file_encoding = "UTF-7"
+    elif(prefp == binascii.unhexlify("2b2f762b")):
+        file_encoding = "UTF-7"
+    elif(prefp == binascii.unhexlify("2b2f762f")):
+        file_encoding = "UTF-7"
+    fp.seek(0, 0)
+    if(closefp):
+        fp.close()
+    return file_encoding
+
+
+def GetFileEncodingFromString(instring, closefp=True):
+    try:
+        instringsfile = BytesIO(instring)
+    except TypeError:
+        instringsfile = BytesIO(instring.encode("UTF-8"))
+    return GetFileEncoding(instringsfile, closefp)
 
 
 def CheckCompressionType(infile, formatspecs=__file_format_multi_dict__, closefp=True):
@@ -4829,6 +4882,7 @@ def PackArchiveFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", comp
         if ftype in data_types:
             with open(fname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
+                fencoding = GetFileEncoding(fcontents, True)
                 if(not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
@@ -5169,6 +5223,7 @@ def PackArchiveFileFromTarFile(infile, outfile, fmttype="auto", compression="aut
         if ftype in data_types:
             fpc = tarfp.extractfile(member)
             shutil.copyfileobj(fpc, fcontents)
+            fencoding = GetFileEncoding(fcontents, True)
             if(not compresswholefile):
                 fcontents.seek(0, 2)
                 ucfsize = fcontents.tell()
@@ -5461,6 +5516,7 @@ def PackArchiveFileFromZipFile(infile, outfile, fmttype="auto", compression="aut
         fcontents = BytesIO()
         if(ftype == 0):
             fcontents.write(zipfp.read(member.filename))
+            fencoding = GetFileEncoding(fcontents, True)
             if(not compresswholefile):
                 fcontents.seek(0, 2)
                 ucfsize = fcontents.tell()
@@ -5771,6 +5827,7 @@ if(rarfile_support):
             fcontents = BytesIO()
             if(ftype == 0):
                 fcontents.write(rarfp.read(member.filename))
+                fencoding = GetFileEncoding(fcontents, True)
                 if(not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
@@ -6018,6 +6075,7 @@ if(py7zr_support):
             fcontents = BytesIO()
             if(ftype == 0):
                 fcontents.write(file_content[member.filename].read())
+                fencoding = GetFileEncoding(fcontents, True)
                 fsize = format(fcontents.tell(), 'x').lower()
                 file_content[member.filename].close()
                 if(not compresswholefile):
@@ -7739,6 +7797,7 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, fmttype=__file_format_defau
             with open(fname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
             fcsize = fcontents.tell()
+            fencoding = GetFileEncoding(fcontents, True)
         if(followlink and (ftype == 1 or ftype == 2)):
             flstatinfo = os.stat(flinkname)
             with open(flinkname, "rb") as fpc:
@@ -8030,6 +8089,7 @@ def TarFileToArrayAlt(infile, fmttype=__file_format_default__, listonly=False, c
             fpc = tarfp.extractfile(member)
             shutil.copyfileobj(fpc, fcontents)
             fcsize = fcontents.tell()
+            fencoding = GetFileEncoding(fcontents, True)
         fcontents.seek(0, 0)
         ftypehex = format(ftype, 'x').lower()
         extrafields = len(extradata)
@@ -8311,6 +8371,7 @@ def ZipFileToArrayAlt(infile, fmttype=__file_format_default__, listonly=False, c
         if(ftype == 0):
             fcontents.write(zipfp.read(member.filename))
             fcsize = fcontents.tell()
+            fencoding = GetFileEncoding(fcontents, True)
         fcontents.seek(0, 0)
         ftypehex = format(ftype, 'x').lower()
         extrafields = len(extradata)
@@ -8603,6 +8664,7 @@ if(rarfile_support):
             if(ftype == 0):
                 fcontents.write(rarfp.read(member.filename))
                 fcsize = fcontents.tell()
+                fencoding = GetFileEncoding(fcontents, True)
             fcontents.seek(0, 0)
             ftypehex = format(ftype, 'x').lower()
             extrafields = len(extradata)
@@ -8840,6 +8902,7 @@ if(py7zr_support):
                 fsize = format(fcontents.tell(), 'x').lower()
                 fileop.close()
                 fcsize = fcontents.tell()
+                fencoding = GetFileEncoding(fcontents, True)
             fcontents.seek(0, 0)
             ftypehex = format(ftype, 'x').lower()
             extrafields = len(extradata)
@@ -9126,6 +9189,7 @@ def RePackArchiveFile(infile, outfile, fmttype="auto", compression="auto", compr
         fcontents = listcatfiles['ffilelist'][reallcfi]['fcontents']
         if(not listcatfiles['ffilelist'][reallcfi]['fcontentasfile']):
             fcontents = BytesIO(fcontents)
+        fencoding = GetFileEncoding(fcontents, True)
         fcompression = ""
         fcsize = format(int(0), 'x').lower()
         if(not compresswholefile):
