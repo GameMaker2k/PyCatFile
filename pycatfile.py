@@ -319,7 +319,7 @@ if(__include_defaults__):
     if("NekoFile" not in __file_format_multi_dict__):
         __file_format_multi_dict__.update( { 'NekoFile': {'format_name': "NekoFile", 'format_magic': "NekoFile", 'format_lower': "nekofile", 'format_len': 8, 'format_hex': "4e656b6f46696c65", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".neko" } } )
     if("ねこファイル" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { 'ねこファイル': {'format_name': "NekoFairu", 'format_magic': "ねこファイル", 'format_lower': "nekofairu", 'format_len': 21, 'format_hex': "e381ade38193e38395e382a1e382a4e383ab", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".ねこ" } } )
+        __file_format_multi_dict__.update( { 'ねこファイル': {'format_name': "NekoFairu", 'format_magic': "ねこファイル", 'format_lower': "nekofairu", 'format_len': 18, 'format_hex': "e381ade38193e38395e382a1e382a4e383ab", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".ねこ" } } )
     if("네코파일" not in __file_format_multi_dict__):
         __file_format_multi_dict__.update( { '네코파일': {'format_name': "NekoPa-il", 'format_magic': "네코파일", 'format_lower': "nekopa-il", 'format_len': 12, 'format_hex': "eb84a4ecbd94ed8c8cec9dbc", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".네코" } } )
     if("고양이파일" not in __file_format_multi_dict__):
