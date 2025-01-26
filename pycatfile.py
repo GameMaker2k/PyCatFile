@@ -325,9 +325,9 @@ if(__include_defaults__):
     if("고양이파일" not in __file_format_multi_dict__):
         __file_format_multi_dict__.update( { '고양이파일': {'format_name': "GoyangiPa-il", 'format_magic': "고양이파일", 'format_lower': "goyangipa-il", 'format_len': 15, 'format_hex': "eab3a0ec9691ec9db4ed8c8cec9dbc", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".고양이" } } )
     if("内酷法伊鲁" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { '内酷法伊鲁': {'format_name': "NèiKùFǎYīLǔ", 'format_magic': "内酷法伊鲁", 'format_lower': "nèikùfǎyīlǔ", 'format_len': 15, 'format_hex': "518591776cd54f0a9c81", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".内酷" } } )
+        __file_format_multi_dict__.update( { '内酷法伊鲁': {'format_name': "NèiKùFǎYīLǔ", 'format_magic': "内酷法伊鲁", 'format_lower': "nèikùfǎyīlǔ", 'format_len': 15, 'format_hex': "e58685e985b7e6b395e4bc8ae9b281", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".内酷" } } )
     if("猫文件" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { '猫文件': {'format_name': "MāoWénjiàn", 'format_magic': "猫文件", 'format_lower': "māowénjiàn", 'format_len': 9, 'format_hex': "732b65874ef6", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".猫" } } )
+        __file_format_multi_dict__.update( { '猫文件': {'format_name': "MāoWénjiàn", 'format_magic': "猫文件", 'format_lower': "māowénjiàn", 'format_len': 9, 'format_hex': "e78cabe69687e4bbb6", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".猫" } } )
 if(__file_format_default__ not in __file_format_multi_dict__):
     __file_format_default__ = next(iter(__file_format_multi_dict__))
 __file_format_name__ = __file_format_multi_dict__[__file_format_default__]['format_name']
