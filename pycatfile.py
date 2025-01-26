@@ -6348,6 +6348,19 @@ def ArchiveFileSeekToFileNum(infile, fmttype="auto", seekto=0, listonly=False, c
     fp.seek(curloc, 0)
     if(curloc > 0):
         fp.seek(0, 0)
+    if(IsNestedDict(formatspecs)):
+        compresschecking = CheckCompressionType(fp, formatspecs, False)
+        if(compresschecking not in formatspecs):
+            fp.seek(0, 0)
+            compresschecking = CheckCompressionSubType(fp, formatspecs, True)
+            if(compresschecking not in formatspecs):
+                return False
+            else:
+                formatspecs = formatspecs[compresschecking]
+                fp.seek(0, 0)
+        else:
+            formatspecs = formatspecs[compresschecking]
+            fp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
     catstring = fp.read(formatspecs['format_len'] + len(catheaderver)).decode("UTF-8")
     catdelszie = len(formatspecs['format_delimiter'])
@@ -6637,6 +6650,19 @@ def ArchiveFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=Fa
     fp.seek(curloc, 0)
     if(curloc > 0):
         fp.seek(0, 0)
+    if(IsNestedDict(formatspecs)):
+        compresschecking = CheckCompressionType(fp, formatspecs, False)
+        if(compresschecking not in formatspecs):
+            fp.seek(0, 0)
+            compresschecking = CheckCompressionSubType(fp, formatspecs, True)
+            if(compresschecking not in formatspecs):
+                return False
+            else:
+                formatspecs = formatspecs[compresschecking]
+                fp.seek(0, 0)
+        else:
+            formatspecs = formatspecs[compresschecking]
+            fp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
     catstring = fp.read(formatspecs['format_len'] + len(catheaderver)).decode("UTF-8")
     catdelszie = len(formatspecs['format_delimiter'])
@@ -6933,6 +6959,19 @@ def ArchiveFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_
     fp.seek(curloc, 0)
     if(curloc > 0):
         fp.seek(0, 0)
+    if(IsNestedDict(formatspecs)):
+        compresschecking = CheckCompressionType(fp, formatspecs, False)
+        if(compresschecking not in formatspecs):
+            fp.seek(0, 0)
+            compresschecking = CheckCompressionSubType(fp, formatspecs, True)
+            if(compresschecking not in formatspecs):
+                return False
+            else:
+                formatspecs = formatspecs[compresschecking]
+                fp.seek(0, 0)
+        else:
+            formatspecs = formatspecs[compresschecking]
+            fp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
     catstring = fp.read(formatspecs['format_len'] + len(catheaderver)).decode("UTF-8")
     catdelszie = len(formatspecs['format_delimiter'])
@@ -7261,6 +7300,19 @@ def ArchiveFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=
     fp.seek(curloc, 0)
     if(curloc > 0):
         fp.seek(0, 0)
+    if(IsNestedDict(formatspecs)):
+        compresschecking = CheckCompressionType(fp, formatspecs, False)
+        if(compresschecking not in formatspecs):
+            fp.seek(0, 0)
+            compresschecking = CheckCompressionSubType(fp, formatspecs, True)
+            if(compresschecking not in formatspecs):
+                return False
+            else:
+                formatspecs = formatspecs[compresschecking]
+                fp.seek(0, 0)
+        else:
+            formatspecs = formatspecs[compresschecking]
+            fp.seek(0, 0)
     catheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
     catstring = fp.read(formatspecs['format_len'] + len(catheaderver)).decode("UTF-8")
     catdelszie = len(formatspecs['format_delimiter'])
