@@ -1530,6 +1530,13 @@ class LzopFile(object):
         self.close()
 
 
+def ConvertEncoding(text, from_encoding, to_encoding):
+    """Converts a string from one encoding to another."""
+    decoded_text = text.decode(from_encoding)
+    encoded_text = decoded_text.encode(to_encoding)
+    return encoded_text
+
+
 def TarFileCheck(infile):
     try:
         if is_tarfile(infile):
