@@ -175,27 +175,27 @@ if active_action:
             checkcompressfile = pycatfile.CheckCompressionSubType(
                 input_file, fnamedict, True)
             if((IsNestedDict(fnamedict) and compresscheck in fnamedict) or (IsSingleDict(fnamedict) and compresscheck==fnamedict['format_magic'])):
-                tmpout = pycatfile.RePackArchiveFile(input_file, getargs.output, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, False, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], fnamedict, getargs.verbose, False)
+                tmpout = pycatfile.RePackCatFile(input_file, getargs.output, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, False, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], fnamedict, getargs.verbose, False)
             else:
-                tmpout = pycatfile.PackArchiveFileFromInFile(
+                tmpout = pycatfile.PackCatFileFromInFile(
                     input_file, getargs.output, __file_format_default__, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, [getargs.checksum, getargs.checksum, getargs.checksum], [], fnamedict, getargs.verbose, False)
             if(not tmpout):
                 sys.exit(1)
         else:
-            pycatfile.PackArchiveFile(getargs.input, getargs.output, getargs.text, __file_format_default__, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, False, [getargs.checksum, getargs.checksum, getargs.checksum], [], fnamedict, getargs.verbose, False)
+            pycatfile.PackCatFile(getargs.input, getargs.output, getargs.text, __file_format_default__, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, False, [getargs.checksum, getargs.checksum, getargs.checksum], [], fnamedict, getargs.verbose, False)
     elif active_action == 'repack':
         if getargs.convert:
             checkcompressfile = pycatfile.CheckCompressionSubType(
                 input_file, fnamedict, True)
             if((IsNestedDict(fnamedict) and compresscheck in fnamedict) or (IsSingleDict(fnamedict) and compresscheck==fnamedict['format_magic'])):
-                pycatfile.RePackArchiveFile(input_file, getargs.output, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt,
+                pycatfile.RePackCatFile(input_file, getargs.output, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt,
                                             False, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], fnamedict, getargs.verbose, False)
             else:
-                pycatfile.PackArchiveFileFromInFile(input_file, getargs.output, __file_format_default__, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, [getargs.checksum, getargs.checksum, getargs.checksum], [], fnamedict, getargs.verbose, False)
+                pycatfile.PackCatFileFromInFile(input_file, getargs.output, __file_format_default__, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, [getargs.checksum, getargs.checksum, getargs.checksum], [], fnamedict, getargs.verbose, False)
             if(not tmpout):
                 sys.exit(1)
         else:
-            pycatfile.RePackArchiveFile(input_file, getargs.output, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt,
+            pycatfile.RePackCatFile(input_file, getargs.output, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt,
                                         False, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], fnamedict, getargs.verbose, False)
     elif active_action == 'extract':
         if getargs.convert:
@@ -203,41 +203,41 @@ if active_action:
                 input_file, fnamedict, True)
             tempout = BytesIO()
             if((IsNestedDict(fnamedict) and compresscheck in fnamedict) or (IsSingleDict(fnamedict) and compresscheck==fnamedict['format_magic'])):
-                tmpout = pycatfile.RePackArchiveFile(input_file, tempout, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, False, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], fnamedict, False, False)
+                tmpout = pycatfile.RePackCatFile(input_file, tempout, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, False, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], fnamedict, False, False)
             else:
-                tmpout = pycatfile.PackArchiveFileFromInFile(
+                tmpout = pycatfile.PackCatFileFromInFile(
                     input_file, tempout, __file_format_default__, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, [getargs.checksum, getargs.checksum, getargs.checksum], [], fnamedict, False, False)
             if(not tmpout):
                 sys.exit(1)
             input_file = tempout
-        pycatfile.UnPackArchiveFile(input_file, getargs.output, False, 0, 0, getargs.skipchecksum,
+        pycatfile.UnPackCatFile(input_file, getargs.output, False, 0, 0, getargs.skipchecksum,
                                     fnamedict, getargs.verbose, getargs.preserve, getargs.preserve, False)
     elif active_action == 'list':
         if getargs.convert:
             checkcompressfile = pycatfile.CheckCompressionSubType(
                 input_file, fnamedict, True)
             if((IsNestedDict(fnamedict) and compresscheck in fnamedict) or (IsSingleDict(fnamedict) and compresscheck==fnamedict['format_magic'])):
-                tmpout = pycatfile.ArchiveFileListFiles(input_file, "auto", 0, 0, getargs.skipchecksum, fnamedict, getargs.verbose, False)
+                tmpout = pycatfile.CatFileListFiles(input_file, "auto", 0, 0, getargs.skipchecksum, fnamedict, getargs.verbose, False)
             else:
                 tmpout = pycatfile.InFileListFiles(input_file, getargs.verbose, fnamedict, False)
             if(not tmpout):
                 sys.exit(1)
         else:
-            pycatfile.ArchiveFileListFiles(input_file, "auto", 0, 0, getargs.skipchecksum, fnamedict, getargs.verbose, False)
+            pycatfile.CatFileListFiles(input_file, "auto", 0, 0, getargs.skipchecksum, fnamedict, getargs.verbose, False)
     elif active_action == 'validate':
         if getargs.convert:
             checkcompressfile = pycatfile.CheckCompressionSubType(
                 input_file, fnamedict, True)
             tempout = BytesIO()
             if((IsNestedDict(fnamedict) and compresscheck in fnamedict) or (IsSingleDict(fnamedict) and compresscheck==fnamedict['format_magic'])):
-                tmpout = pycatfile.RePackArchiveFile(input_file, tempout, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, False, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], fnamedict, False, False)
+                tmpout = pycatfile.RePackCatFile(input_file, tempout, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, False, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], fnamedict, False, False)
             else:
-                tmpout = pycatfile.PackArchiveFileFromInFile(
+                tmpout = pycatfile.PackCatFileFromInFile(
                     input_file, tempout, __file_format_default__, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, [getargs.checksum, getargs.checksum, getargs.checksum], [], fnamedict, False, False)
             input_file = tempout
             if(not tmpout):
                 sys.exit(1)
-        fvalid = pycatfile.ArchiveFileValidate(
+        fvalid = pycatfile.CatFileValidate(
             input_file, "auto", fnamedict, getargs.verbose, False)
         if(not getargs.verbose):
             import sys

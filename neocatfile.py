@@ -99,25 +99,25 @@ input_file = args.input[0]
 # Functionality mappings
 if primary_action == 'create':
     if args.convert == 'tar':
-        pycatfile.PackArchiveFileFromTarFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], [
+        pycatfile.PackCatFileFromTarFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], [
         ], pycatfile.__file_format_dict__, args.verbose, False)
     elif args.convert == 'zip':
-        pycatfile.PackArchiveFileFromZipFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], [
+        pycatfile.PackCatFileFromZipFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], [
         ], pycatfile.__file_format_dict__, args.verbose, False)
     elif py7zr_support and args.convert == '7zip':
-        pycatfile.PackArchiveFileFromSevenZipFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], [
+        pycatfile.PackCatFileFromSevenZipFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], [
         ], pycatfile.__file_format_dict__, args.verbose, False)
     elif rarfile_support and args.convert == 'rar':
-        pycatfile.PackArchiveFileFromRarFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], [
+        pycatfile.PackCatFileFromRarFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], [
         ], pycatfile.__file_format_dict__, args.verbose, False)
     else:
-        pycatfile.PackArchiveFile(args.input, args.output, args.verbose, args.compression, args.level, pycatfile.compressionlistalt,
+        pycatfile.PackCatFile(args.input, args.output, args.verbose, args.compression, args.level, pycatfile.compressionlistalt,
                                   False, [args.checksum, args.checksum, args.checksum], [], pycatfile.__file_format_dict__, args.verbose, False)
 elif primary_action == 'repack':
-    pycatfile.RePackArchiveFile(
+    pycatfile.RePackCatFile(
         input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], args.verbose)
 elif primary_action == 'extract':
-    pycatfile.UnPackArchiveFile(
+    pycatfile.UnPackCatFile(
         input_file, args.output, args.verbose, args.preserve)
 elif primary_action == 'list':
     if args.convert == 'tar':
@@ -129,9 +129,9 @@ elif primary_action == 'list':
     elif rarfile_support and args.convert == 'rar':
         pycatfile.RarFileListFiles(input_file, verbose=args.verbose)
     else:
-        pycatfile.ArchiveFileListFiles(input_file, verbose=args.verbose)
+        pycatfile.CatFileListFiles(input_file, verbose=args.verbose)
 elif primary_action == 'validate':
-    is_valid = pycatfile.ArchiveFileValidate(input_file, verbose=args.verbose)
+    is_valid = pycatfile.CatFileValidate(input_file, verbose=args.verbose)
     result_msg = "Validation result for {0}: {1}".format(
         input_file, 'Valid' if is_valid else 'Invalid')
     print(result_msg)

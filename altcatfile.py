@@ -132,15 +132,15 @@ def main():
 
     # Determine operation
     if args.create:
-        pycatfile.PackArchiveFile(args.input, args.output, False, __file_format_default__, args.compression, args.level, pycatfile.compressionlistalt, False, [args.checksum, args.checksum, args.checksum], [], format_dict, args.verbose, False)
+        pycatfile.PackCatFile(args.input, args.output, False, __file_format_default__, args.compression, args.level, pycatfile.compressionlistalt, False, [args.checksum, args.checksum, args.checksum], [], format_dict, args.verbose, False)
     elif args.repack:
-        pycatfile.RePackArchiveFile( input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], args.verbose)
+        pycatfile.RePackCatFile( input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], args.verbose)
     elif args.extract:
-        pycatfile.UnPackArchiveFile(input_file, args.output, args.verbose, args.preserve)
+        pycatfile.UnPackCatFile(input_file, args.output, args.verbose, args.preserve)
     elif args.list:
-        pycatfile.ArchiveFileListFiles(input_file, verbose=args.verbose)
+        pycatfile.CatFileListFiles(input_file, verbose=args.verbose)
     elif args.validate:
-        is_valid = pycatfile.ArchiveFileValidate(input_file, verbose=args.verbose)
+        is_valid = pycatfile.CatFileValidate(input_file, verbose=args.verbose)
         result_msg = "Validation result for {}: {}".format(input_file, 'Valid' if is_valid else 'Invalid')
         print(result_msg)
     else:
