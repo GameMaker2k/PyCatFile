@@ -744,23 +744,69 @@ def GetTotalSize(file_list):
     return total_size
 
 
-def create_alias_function_alt(prefix, base_name, suffix, target_function):
+def create_alias_function_alt(prefix, base_name, suffix, target_function, positional_overrides=None):
+    """
+    Creates a new function in the global namespace that wraps 'target_function',
+    allowing optional overrides of specific positional arguments via 'positional_overrides'.
+
+    :param prefix: String prefix for the new function's name
+    :param base_name: Base string to use in the new function's name
+    :param suffix: String suffix for the new function's name
+    :param target_function: The function to be wrapped/aliased
+    :param positional_overrides: Optional dict {index: new_value} for overriding specific positional arguments
+    """
     # Define a new function that wraps the target function
     def alias_function(*args, **kwargs):
-        return target_function(*args, **kwargs)
+        # Convert args to a list so we can modify specific positions
+        args_list = list(args)
+
+        # If there are positional overrides, apply them
+        if positional_overrides:
+            for index, value in positional_overrides.items():
+                # Only apply if the index is within the bounds of the original arguments
+                if 0 <= index < len(args_list):
+                    args_list[index] = value
+
+        # Call the target function with possibly modified arguments
+        return target_function(*args_list, **kwargs)
+
     # Create the function name by combining the prefix, base name, and the suffix
     function_name = "{}{}{}".format(prefix, base_name, suffix)
+
     # Add the new function to the global namespace
     globals()[function_name] = alias_function
 
 
-def create_alias_function(prefix, base_name, suffix, target_function):
-    # Create the function name by combining the prefix, base name, and the suffix
-    # Use the format method for string formatting, compatible with Python 2 and 3
+def create_alias_function(prefix, base_name, suffix, target_function, positional_overrides=None):
+    """
+    Creates a new function in the global namespace that wraps 'target_function',
+    allowing optional overrides of specific positional arguments via 'positional_overrides'.
+
+    :param prefix: String prefix for the new function's name
+    :param base_name: Base string to use in the new function's name
+    :param suffix: String suffix for the new function's name
+    :param target_function: The function to be wrapped/aliased
+    :param positional_overrides: Optional dict {index: new_value} for overriding specific positional arguments
+    """
+    # Define a new function that wraps the target function
+    def alias_function(*args, **kwargs):
+        # Convert args to a list so we can modify specific positions
+        args_list = list(args)
+
+        # If there are positional overrides, apply them
+        if positional_overrides:
+            for index, value in positional_overrides.items():
+                if 0 <= index < len(args_list):
+                    args_list[index] = value
+
+        # Call the target function with possibly modified arguments
+        return target_function(*args_list, **kwargs)
+
+    # Create the function name by combining the prefix, base_name, and suffix
     function_name = "{}{}{}".format(prefix, base_name, suffix)
-    # Add the new function (alias of the target_function) to the global namespace
-    # This line is compatible as-is with both Python 2 and 3
-    globals()[function_name] = target_function
+
+    # Add the new function to the global namespace
+    globals()[function_name] = alias_function
 
 
 class ZlibFile:
