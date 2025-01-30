@@ -73,7 +73,6 @@ else:
 __project__ = pycatfile.__project__
 __program_name__ = pycatfile.__program_name__
 __file_format_name__ = pycatfile.__file_format_name__
-__file_format_lower__ = pycatfile.__file_format_lower__
 __file_format_magic__ = pycatfile.__file_format_magic__
 __file_format_len__ = pycatfile.__file_format_len__
 __file_format_hex__ = pycatfile.__file_format_hex__
@@ -147,7 +146,6 @@ argparser.add_argument("-T", "--text", action="store_true",
 getargs = argparser.parse_args()
 
 fname = getargs.format
-fnamelower = fname.lower()
 if(getargs.format=="auto"):
     fnamedict = __file_format_multi_dict__
     __file_format_default__ = getargs.format
@@ -159,7 +157,7 @@ else:
     fnamesty = __use_new_style__
     fnamelst = __use_advanced_list__
     fnameino = __use_alt_inode__
-    fnamedict = {'format_name': fname, 'format_magic': fnamemagic, 'format_lower': fnamelower, 'format_len': fnamelen, 'format_hex': fnamehex,
+    fnamedict = {'format_name': fname, 'format_magic': fnamemagic, 'format_len': fnamelen, 'format_hex': fnamehex,
                  'format_delimiter': getargs.delimiter, 'format_ver': getargs.formatver, 'new_style': fnamesty, 'use_advanced_list': fnamelst, 'use_alt_inode': fnameino}
 
 # Determine the primary action based on user input

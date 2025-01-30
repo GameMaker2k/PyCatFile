@@ -304,15 +304,15 @@ if __use_ini_file__ and os.path.exists(__config_file__):
     # Loop through all sections
     for section in config.sections():
         required_keys = [
-            "len", "hex", "ver", "name", "lower", 
+            "len", "hex", "ver", "name", 
             "magic", "delimiter", "extension",
             "newstyle", "advancedlist", "altinode"
         ]
-        if all(key in config[section] for key in required_keys):
+        if section != "config" and all(key in config[section] for key in required_keys):
             delim = decode_unicode_escape(config.get(section, 'delimiter'))
             if(not is_only_nonprintable(delim)):
                 delim = "\x00" * len("\x00")
-            __file_format_multi_dict__.update( { decode_unicode_escape(config.get(section, 'magic')): {'format_name': decode_unicode_escape(config.get(section, 'name')), 'format_magic': decode_unicode_escape(config.get(section, 'magic')), 'format_lower': decode_unicode_escape(config.get(section, 'lower')), 'format_len': config.getint(section, 'len'), 'format_hex': config.get(section, 'hex'), 'format_delimiter': delim, 'format_ver': config.get(section, 'ver'), 'new_style': config.getboolean(section, 'newstyle'), 'use_advanced_list': config.getboolean(section, 'advancedlist'), 'use_alt_inode': config.getboolean(section, 'altinode'), 'format_extension': decode_unicode_escape(config.get(section, 'extension')) } } )
+            __file_format_multi_dict__.update( { decode_unicode_escape(config.get(section, 'magic')): {'format_name': decode_unicode_escape(config.get(section, 'name')), 'format_magic': decode_unicode_escape(config.get(section, 'magic')), 'format_len': config.getint(section, 'len'), 'format_hex': config.get(section, 'hex'), 'format_delimiter': delim, 'format_ver': config.get(section, 'ver'), 'new_style': config.getboolean(section, 'newstyle'), 'use_advanced_list': config.getboolean(section, 'advancedlist'), 'use_alt_inode': config.getboolean(section, 'altinode'), 'format_extension': decode_unicode_escape(config.get(section, 'extension')) } } )
         if not __file_format_multi_dict__ and not __include_defaults__:
             __include_defaults__ = True
 elif __use_ini_file__ and not os.path.exists(__config_file__):
@@ -322,23 +322,22 @@ if not __use_ini_file__ and not __include_defaults__:
     __include_defaults__ = True
 if(__include_defaults__):
     if("CatFile" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { 'CatFile': {'format_name': "CatFile", 'format_magic': "CatFile", 'format_lower': "outfile", 'format_len': 7, 'format_hex': "43617446696c65", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".cat" } } )
+        __file_format_multi_dict__.update( { 'CatFile': {'format_name': "CatFile", 'format_magic': "CatFile", 'format_len': 7, 'format_hex': "43617446696c65", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".cat" } } )
     if("NekoFile" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { 'NekoFile': {'format_name': "NekoFile", 'format_magic': "NekoFile", 'format_lower': "nekofile", 'format_len': 8, 'format_hex': "4e656b6f46696c65", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".neko" } } )
+        __file_format_multi_dict__.update( { 'NekoFile': {'format_name': "NekoFile", 'format_magic': "NekoFile", 'format_len': 8, 'format_hex': "4e656b6f46696c65", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".neko" } } )
     if("ねこファイル" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { 'ねこファイル': {'format_name': "NekoFairu", 'format_magic': "ねこファイル", 'format_lower': "nekofairu", 'format_len': 18, 'format_hex': "e381ade38193e38395e382a1e382a4e383ab", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".ねこ" } } )
+        __file_format_multi_dict__.update( { 'ねこファイル': {'format_name': "NekoFairu", 'format_magic': "ねこファイル", 'format_len': 18, 'format_hex': "e381ade38193e38395e382a1e382a4e383ab", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".ねこ" } } )
     if("네코파일" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { '네코파일': {'format_name': "NekoPa-il", 'format_magic': "네코파일", 'format_lower': "nekopa-il", 'format_len': 12, 'format_hex': "eb84a4ecbd94ed8c8cec9dbc", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".네코" } } )
+        __file_format_multi_dict__.update( { '네코파일': {'format_name': "NekoPa-il", 'format_magic': "네코파일", 'format_len': 12, 'format_hex': "eb84a4ecbd94ed8c8cec9dbc", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".네코" } } )
     if("고양이파일" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { '고양이파일': {'format_name': "GoyangiPa-il", 'format_magic': "고양이파일", 'format_lower': "goyangipa-il", 'format_len': 15, 'format_hex': "eab3a0ec9691ec9db4ed8c8cec9dbc", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".고양이" } } )
+        __file_format_multi_dict__.update( { '고양이파일': {'format_name': "GoyangiPa-il", 'format_magic': "고양이파일", 'format_len': 15, 'format_hex': "eab3a0ec9691ec9db4ed8c8cec9dbc", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".고양이" } } )
     if("内酷法伊鲁" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { '内酷法伊鲁': {'format_name': "NèiKùFǎYīLǔ", 'format_magic': "内酷法伊鲁", 'format_lower': "nèikùfǎyīlǔ", 'format_len': 15, 'format_hex': "e58685e985b7e6b395e4bc8ae9b281", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".内酷" } } )
+        __file_format_multi_dict__.update( { '内酷法伊鲁': {'format_name': "NèiKùFǎYīLǔ", 'format_magic': "内酷法伊鲁", 'format_len': 15, 'format_hex': "e58685e985b7e6b395e4bc8ae9b281", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".内酷" } } )
     if("猫文件" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { '猫文件': {'format_name': "MāoWénjiàn", 'format_magic': "猫文件", 'format_lower': "māowénjiàn", 'format_len': 9, 'format_hex': "e78cabe69687e4bbb6", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".猫" } } )
+        __file_format_multi_dict__.update( { '猫文件': {'format_name': "MāoWénjiàn", 'format_magic': "猫文件", 'format_len': 9, 'format_hex': "e78cabe69687e4bbb6", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".猫" } } )
 if(__file_format_default__ not in __file_format_multi_dict__):
     __file_format_default__ = next(iter(__file_format_multi_dict__))
 __file_format_name__ = __file_format_multi_dict__[__file_format_default__]['format_name']
-__file_format_lower__ = __file_format_multi_dict__[__file_format_default__]['format_lower']
 __file_format_magic__ = __file_format_multi_dict__[__file_format_default__]['format_magic']
 __file_format_len__ = __file_format_multi_dict__[__file_format_default__]['format_len']
 __file_format_hex__ = __file_format_multi_dict__[__file_format_default__]['format_hex']
