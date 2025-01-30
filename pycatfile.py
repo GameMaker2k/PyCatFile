@@ -282,6 +282,10 @@ if(__use_http_lib__ == "requests" and havehttpx and not haverequests):
     __use_http_lib__ = "httpx"
 if((__use_http_lib__ == "httpx" or __use_http_lib__ == "requests") and not havehttpx and not haverequests):
     __use_http_lib__ = "urllib"
+# Define a function to check if var contains only non-printable chars
+all_np_chars = [chr(i) for i in range(128)]
+def is_only_nonprintable(var):
+    return all(not c.isprintable() for c in var)
 __file_format_multi_dict__ = {}
 __file_format_default__ = "CatFile"
 __include_defaults__ = True
@@ -305,7 +309,10 @@ if __use_ini_file__ and os.path.exists(__config_file__):
             "newstyle", "advancedlist", "altinode"
         ]
         if all(key in config[section] for key in required_keys):
-            __file_format_multi_dict__.update( { decode_unicode_escape(config.get(section, 'magic')): {'format_name': decode_unicode_escape(config.get(section, 'name')), 'format_magic': decode_unicode_escape(config.get(section, 'magic')), 'format_lower': decode_unicode_escape(config.get(section, 'lower')), 'format_len': config.getint(section, 'len'), 'format_hex': config.get(section, 'hex'), 'format_delimiter': decode_unicode_escape(config.get(section, 'delimiter')), 'format_ver': config.get(section, 'ver'), 'new_style': config.getboolean(section, 'newstyle'), 'use_advanced_list': config.getboolean(section, 'advancedlist'), 'use_alt_inode': config.getboolean(section, 'altinode'), 'format_extension': decode_unicode_escape(config.get(section, 'extension')) } } )
+            delim = decode_unicode_escape(config.get(section, 'delimiter'))
+            if(not is_only_nonprintable(delim)):
+                delim = "\x00" * len("\x00")
+            __file_format_multi_dict__.update( { decode_unicode_escape(config.get(section, 'magic')): {'format_name': decode_unicode_escape(config.get(section, 'name')), 'format_magic': decode_unicode_escape(config.get(section, 'magic')), 'format_lower': decode_unicode_escape(config.get(section, 'lower')), 'format_len': config.getint(section, 'len'), 'format_hex': config.get(section, 'hex'), 'format_delimiter': delim, 'format_ver': config.get(section, 'ver'), 'new_style': config.getboolean(section, 'newstyle'), 'use_advanced_list': config.getboolean(section, 'advancedlist'), 'use_alt_inode': config.getboolean(section, 'altinode'), 'format_extension': decode_unicode_escape(config.get(section, 'extension')) } } )
         if not __file_format_multi_dict__ and not __include_defaults__:
             __include_defaults__ = True
 elif __use_ini_file__ and not os.path.exists(__config_file__):
