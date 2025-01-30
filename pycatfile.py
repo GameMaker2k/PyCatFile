@@ -5124,7 +5124,7 @@ def PackCatFileFromDirList(infiles, outfile, dirlistfromtxt=False, fmttype="auto
 
 
 def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-   if(IsNestedDict(formatspecs) and fmttype=="auto" and 
+    if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
         tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
@@ -6028,7 +6028,7 @@ if(not py7zr_support):
 
 if(py7zr_support):
     def PackCatFileFromSevenZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-         if(IsNestedDict(formatspecs) and fmttype=="auto" and 
+        if(IsNestedDict(formatspecs) and fmttype=="auto" and 
             (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
             get_in_ext = os.path.splitext(outfile)
             tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
@@ -8912,7 +8912,7 @@ if(not py7zr_support):
 
 if(py7zr_support):
     def SevenZipFileToArrayAlt(infile, fmttype=__file_format_default__, listonly=False, contentasfile=True, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False):
-         if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        if(IsNestedDict(formatspecs) and fmttype in formatspecs):
             formatspecs = formatspecs[fmttype]
         elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
             fmttype = __file_format_default__
