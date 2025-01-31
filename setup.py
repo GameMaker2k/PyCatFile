@@ -130,7 +130,7 @@ if(len(sys.argv) > 1 and (sys.argv[1] == "buildcfg" or sys.argv[1] == "makecfg")
     outcfgvar = """[project]
     name = "{}"
     version = "{}"
-    readme = "README.md
+    readme = "README.md"
     license = "BSD-3-Clause"
     keywords = []
     description = "{}"
