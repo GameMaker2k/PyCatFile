@@ -3248,7 +3248,10 @@ def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile
         fextname = os.path.splitext(outfile)[1]
         if(not compresswholefile and fextname in outextlistwd):
             compresswholefile = True
-        fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+        try:
+            fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+        except PermissionError:
+            return False
     AppendFileHeader(fp, 0, "UTF-8", [], checksumtype, formatspecs)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressCatFile(
@@ -3762,7 +3765,10 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmtt
         fextname = os.path.splitext(outfile)[1]
         if(not compresswholefile and fextname in outextlistwd):
             compresswholefile = True
-        fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+        try:
+            fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+        except PermissionError:
+            return False
     AppendFilesWithContent(infiles, fp, dirlistfromtxt, filevalues, extradata, compression,
                                    compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, formatspecs, verbose)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -3839,7 +3845,10 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmtty
         fextname = os.path.splitext(outfile)[1]
         if(not compresswholefile and fextname in outextlistwd):
             compresswholefile = True
-        fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+        try:
+            fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+        except PermissionError:
+            return False
     AppendListsWithContent(inlist, fp, dirlistfromtxt, filevalues, extradata, compression,
                                    compresswholefile, compressionlevel, followlink, checksumtype, formatspecs, verbose)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
@@ -4792,7 +4801,10 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
         fextname = os.path.splitext(outfile)[1]
         if(not compresswholefile and fextname in outextlistwd):
             compresswholefile = True
-        fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+        try:
+            fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+        except PermissionError:
+            return False
     formver = formatspecs['format_ver']
     fileheaderver = str(int(formver.replace(".", "")))
     infilelist = []
@@ -5167,7 +5179,10 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
         fextname = os.path.splitext(outfile)[1]
         if(not compresswholefile and fextname in outextlistwd):
             compresswholefile = True
-        fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+        try:
+            fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+        except PermissionError:
+            return False
     formver = formatspecs['format_ver']
     fileheaderver = str(int(formver.replace(".", "")))
     curinode = 0
@@ -5460,7 +5475,10 @@ def PackCatFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", 
         fextname = os.path.splitext(outfile)[1]
         if(not compresswholefile and fextname in outextlistwd):
             compresswholefile = True
-        fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+        try:
+            fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+        except PermissionError:
+            return False
     formver = formatspecs['format_ver']
     fileheaderver = str(int(formver.replace(".", "")))
     curinode = 0
@@ -5753,8 +5771,10 @@ if(rarfile_support):
             fextname = os.path.splitext(outfile)[1]
             if(not compresswholefile and fextname in outextlistwd):
                 compresswholefile = True
-            fp = CompressOpenFile(
-                outfile, compresswholefile, compressionlevel)
+            try:
+                fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+            except PermissionError:
+                return False
         formver = formatspecs['format_ver']
         fileheaderver = str(int(formver.replace(".", "")))
         curinode = 0
@@ -6071,8 +6091,10 @@ if(py7zr_support):
             fextname = os.path.splitext(outfile)[1]
             if(not compresswholefile and fextname in outextlistwd):
                 compresswholefile = True
-            fp = CompressOpenFile(
-                outfile, compresswholefile, compressionlevel)
+            try:
+                fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+            except PermissionError:
+                return False
         formver = formatspecs['format_ver']
         fileheaderver = str(int(formver.replace(".", "")))
         curinode = 0
@@ -9281,7 +9303,10 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
         fextname = os.path.splitext(outfile)[1]
         if(not compresswholefile and fextname in outextlistwd):
             compresswholefile = True
-        fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+        try:
+            fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+        except PermissionError:
+            return False
     formver = formatspecs['format_ver']
     fileheaderver = str(int(formver.replace(".", "")))
     lenlist = len(listarchivefiles['ffilelist'])
