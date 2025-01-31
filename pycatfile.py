@@ -10738,7 +10738,7 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
     return httpfile
 
 
-def download_file_from_http_string(url, headers=geturls_headers_pyarchivefile_python_alt, usehttp=__use_http_lib__):
+def download_file_from_http_string(url, headers=geturls_headers_pycatfile_python_alt, usehttp=__use_http_lib__):
     httpfile = download_file_from_http_file(url, headers, usehttp)
     return httpfile.read()
 
@@ -10976,7 +10976,7 @@ else:
         return False
 
 
-def download_file_from_internet_file(url, headers=geturls_headers_pyarchivefile_python_alt, usehttp=__use_http_lib__):
+def download_file_from_internet_file(url, headers=geturls_headers_pycatfile_python_alt, usehttp=__use_http_lib__):
     urlparts = urlparse(url)
     if(urlparts.scheme == "http" or urlparts.scheme == "https"):
         return download_file_from_http_file(url, headers, usehttp)
@@ -10992,7 +10992,7 @@ def download_file_from_internet_file(url, headers=geturls_headers_pyarchivefile_
     return False
 
 
-def download_file_from_internet_uncompress_file(url, headers=geturls_headers_pyarchivefile_python_alt, formatspecs=__file_format_dict__):
+def download_file_from_internet_uncompress_file(url, headers=geturls_headers_pycatfile_python_alt, formatspecs=__file_format_dict__):
     fp = download_file_from_internet_file(url)
     fp = UncompressCatFile(fp, formatspecs)
     fp.seek(0, 0)
@@ -11001,7 +11001,7 @@ def download_file_from_internet_uncompress_file(url, headers=geturls_headers_pya
     return fp
 
 
-def download_file_from_internet_string(url, headers=geturls_headers_pyarchivefile_python_alt):
+def download_file_from_internet_string(url, headers=geturls_headers_pycatfile_python_alt):
     urlparts = urlparse(url)
     if(urlparts.scheme == "http" or urlparts.scheme == "https"):
         return download_file_from_http_string(url, headers)
@@ -11017,7 +11017,7 @@ def download_file_from_internet_string(url, headers=geturls_headers_pyarchivefil
     return False
 
 
-def download_file_from_internet_uncompress_string(url, headers=geturls_headers_pyarchivefile_python_alt, formatspecs=__file_format_dict__):
+def download_file_from_internet_uncompress_string(url, headers=geturls_headers_pycatfile_python_alt, formatspecs=__file_format_dict__):
     fp = download_file_from_internet_string(url)
     fp = UncompressCatFile(fp, formatspecs)
     fp.seek(0, 0)
