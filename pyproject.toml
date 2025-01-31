@@ -2,7 +2,7 @@
     name = "PyCatFile"
     version = "0.18.0"
     readme = "README.md"
-    license = "BSD-3-Clause"
+    license = { text = "BSD-3-Clause" }
     keywords = []
     description = "A tar like file format name catfile after unix cat command (concatenate files) ."
     authors = [
