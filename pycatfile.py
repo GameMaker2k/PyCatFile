@@ -2207,7 +2207,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     fextrafieldslist = []
     extrastart = 29
     extraend = extrastart + fextrafields
-    if(extrastart < extraend):
+    while(extrastart < extraend):
         fextrafieldslist.append(HeaderOut[extrastart])
         extrastart = extrastart + 1
     if(fextrafields==1):
@@ -2338,7 +2338,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     fextrafieldslist = []
     extrastart = 29
     extraend = extrastart + fextrafields
-    if(extrastart < extraend):
+    while(extrastart < extraend):
         fextrafieldslist.append(HeaderOut[extrastart])
         extrastart = extrastart + 1
     if(fextrafields==1):
@@ -2510,7 +2510,7 @@ def ReadFileDataWithContentToArray(fp, seekstart=0, seekend=0, listonly=False, c
     fextrafieldslist = []
     extrastart = 7
     extraend = extrastart + fnumextrafields
-    if(extrastart < extraend):
+    while(extrastart < extraend):
         fextrafieldslist.append(inheader[extrastart])
         extrastart = extrastart + 1
     if(fnumextrafields==1):
@@ -2651,7 +2651,7 @@ def ReadFileDataWithContentToList(fp, seekstart=0, seekend=0, listonly=False, co
     fextrafieldslist = []
     extrastart = 7
     extraend = extrastart + fnumextrafields
-    if(extrastart < extraend):
+    while(extrastart < extraend):
         fextrafieldslist.append(inheader[extrastart])
         extrastart = extrastart + 1
     if(fnumextrafields==1):
@@ -6509,7 +6509,7 @@ def CatFileSeekToFileNum(infile, fmttype="auto", seekto=0, listonly=False, conte
     fextrafieldslist = []
     extrastart = 7
     extraend = extrastart + fnumextrafields
-    if(extrastart < extraend):
+    while(extrastart < extraend):
         fextrafieldslist.append(inheader[extrastart])
         extrastart = extrastart + 1
     if(fnumextrafields==1):
@@ -6806,7 +6806,7 @@ def CatFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=False,
     fextrafieldslist = []
     extrastart = 7
     extraend = extrastart + fnumextrafields
-    if(extrastart < extraend):
+    while(extrastart < extraend):
         fextrafieldslist.append(inheader[extrastart])
         extrastart = extrastart + 1
     if(fnumextrafields==1):
@@ -7436,7 +7436,7 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
     fextrafieldslist = []
     extrastart = 7
     extraend = extrastart + fnumextrafields
-    if(extrastart < extraend):
+    while(extrastart < extraend):
         fextrafieldslist.append(inheader[extrastart])
         extrastart = extrastart + 1
     if(fnumextrafields==1):
@@ -7600,7 +7600,7 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
         extrafieldslist = []
         extrastart = 29
         extraend = extrastart + outfextrafields
-        if(extrastart < extraend):
+        while(extrastart < extraend):
             extrafieldslist.append(inheaderdata[extrastart])
             extrastart = extrastart + 1
         if(outfextrafields==1):
