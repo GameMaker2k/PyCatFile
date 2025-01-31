@@ -131,7 +131,7 @@ if(len(sys.argv) > 1 and (sys.argv[1] == "buildcfg" or sys.argv[1] == "makecfg")
     name = "{}"
     version = "{}"
     readme = "README.md"
-    license = "BSD-3-Clause"
+    license = { text = "BSD-3-Clause" }
     keywords = []
     description = "{}"
     authors = [
