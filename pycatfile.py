@@ -3415,6 +3415,8 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
             fname = curfname
         else:
             fname = "./"+curfname
+        if(not os.path.exists(fname)):
+            return False
         if(verbose):
             VerbosePrintOut(fname)
         if(not followlink or followlink is None):
@@ -3485,6 +3487,8 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         curfid = curfid + 1
         if(ftype == 2):
             flinkname = os.readlink(fname)
+            if(not os.path.exists(flinkname)):
+                return False
         try:
             fdev = fstatinfo.st_rdev
         except AttributeError:
@@ -3595,6 +3599,8 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                         fcontents.close()
                         fcontents = cfcontents
         if(followlink and (ftype == 1 or ftype == 2)):
+            if(not os.path.exists(flinkname)):
+                return False
             flstatinfo = os.stat(flinkname)
             with open(flinkname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
@@ -3682,6 +3688,8 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
             fname = curfname[3]
         else:
             fname = "./"+curfname[3]
+        if(not os.path.exists(fname)):
+            return False
         fbasedir = os.path.dirname(fname)
         flinkname = curfname[4]
         fsize = format(curfname[5], 'x').lower()
@@ -4855,6 +4863,8 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
             fname = curfname
         else:
             fname = "./"+curfname
+        if(not os.path.exists(fname)):
+            return False
         if(verbose):
             VerbosePrintOut(fname)
         if(not followlink or followlink is None):
@@ -4925,6 +4935,8 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
         curfid = curfid + 1
         if(ftype == 2):
             flinkname = os.readlink(fname)
+            if(not os.path.exists(flinkname)):
+                return False
         try:
             fdev = fstatinfo.st_rdev
         except AttributeError:
@@ -5036,6 +5048,8 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
         if(fcompression == "none"):
             fcompression = ""
         if(followlink and (ftype == 1 or ftype == 2)):
+            if(not os.path.exists(flinkname)):
+                return False
             flstatinfo = os.stat(flinkname)
             with open(flinkname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
@@ -7852,6 +7866,8 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, fmttype=__file_format_defau
             fname = curfname
         else:
             fname = "./"+curfname
+        if(not os.path.exists(fname)):
+            return False
         if(verbose):
             VerbosePrintOut(fname)
         if(not followlink or followlink is None):
@@ -7923,6 +7939,8 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, fmttype=__file_format_defau
         curfid = curfid + 1
         if(ftype == 2):
             flinkname = os.readlink(fname)
+            if(not os.path.exists(flinkname)):
+                return False
         try:
             fdev = fstatinfo.st_rdev
         except AttributeError:
@@ -7986,6 +8004,8 @@ def ListDirToArrayAlt(infiles, dirlistfromtxt=False, fmttype=__file_format_defau
             fcsize = fcontents.tell()
             fcencoding = GetFileEncoding(fcontents, False)
         if(followlink and (ftype == 1 or ftype == 2)):
+            if(not os.path.exists(flinkname)):
+                return False
             flstatinfo = os.stat(flinkname)
             with open(flinkname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
