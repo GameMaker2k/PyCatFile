@@ -4167,6 +4167,8 @@ def CheckCompressionType(infile, formatspecs=__file_format_multi_dict__, closefp
         filetype = "zlib"
     elif(prefp == binascii.unhexlify("78da")):
         filetype = "zlib"
+    elif(prefp == binascii.unhexlify("1f9d")):
+        filetype = "compress"
     fp.seek(0, 0)
     prefp = fp.read(3)
     if(prefp == binascii.unhexlify("425a68")):
