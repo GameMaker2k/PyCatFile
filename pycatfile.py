@@ -2299,7 +2299,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
             fcontents.seek(0, 0)
             fccs = GetFileChecksum(
                 fcontents.read(), HeaderOut[-3].lower(), False, formatspecs)
-    fcontentend = fp.tell() - 1
+    fcontentend = fp.tell()
     if(re.findall("^\\+([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile.replace("+", ""))
         if(abs(fseeknextasnum) == 0):
@@ -2449,7 +2449,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
             fcontents.seek(0, 0)
             fccs = GetFileChecksum(
                 fcontents.read(), HeaderOut[-3].lower(), False, formatspecs)
-    fcontentend = fp.tell() - 1
+    fcontentend = fp.tell()
     if(re.findall("^\\+([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile.replace("+", ""))
         if(abs(fseeknextasnum) == 0):
