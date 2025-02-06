@@ -7311,7 +7311,7 @@ def CatFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_dict
         outfcs = inheaderdata[-2].lower()
         outfccs = inheaderdata[-1].lower()
         infcs = GetHeaderChecksum(
-            inheaderdata[:-2] + [outfprejsoncontent.encode()], inheaderdata[-4].lower(), True, formatspecs)
+            inheaderdata[:-2] + [outfprejsoncontent], inheaderdata[-4].lower(), True, formatspecs)
         if(verbose):
             VerbosePrintOut(outfname)
             VerbosePrintOut("Record Number " + str(il) + "; File ID " +
@@ -7616,7 +7616,7 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
             prefjsonsize = int(preheaderdata[27], 16)
             prefjoutfprejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
             if(prefjsonsize <= 0):
-                prefjoutfprejsoncontent = "".encode()
+                prefjoutfprejsoncontent = ""
             fp.seek(len(formatspecs['format_delimiter']), 1)
             prefextrasize = int(preheaderdata[28], 16)
             prefextrafields = int(preheaderdata[29], 16)
