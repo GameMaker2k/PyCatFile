@@ -2113,9 +2113,9 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
         fprejsoncontent = ""
         fjsoncontent = {}
     fp.seek(len(delimiter), 1)
-    HeaderOut.append(fjsoncontent)
     newfcs = GetHeaderChecksum(
         HeaderOut[:-2] + [fprejsoncontent], HeaderOut[-4].lower(), True, formatspecs)
+    HeaderOut.append(fjsoncontent)
     if(fcs != newfcs and not skipchecksum):
         VerbosePrintOut("File Header Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
