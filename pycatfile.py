@@ -2101,9 +2101,17 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
     fjsoncontent = {}
     fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
     if(len(fjsoncontent) > 0):
-        fjsoncontent = json.loads(fprejsoncontent.decode("UTF-8"))
+        try:
+            fjsoncontent = json.loads(base64.b64decode(fprejsoncontent).decode("UTF-8"))
+        except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+            try:
+                fjsoncontent = json.loads(fprejsoncontent.decode("UTF-8"))
+            except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+                fprejsoncontent = ""
+                fjsoncontent = {}
     else:
         fprejsoncontent = ""
+        fjsoncontent = {}
     fp.seek(len(delimiter), 1)
     HeaderOut.append(fjsoncontent)
     newfcs = GetHeaderChecksum(
@@ -2232,9 +2240,17 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     fjsoncontent = {}
     fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
     if(len(fjsoncontent) > 0):
-        fjsoncontent = json.loads(fprejsoncontent.decode("UTF-8"))
+        try:
+            fjsoncontent = json.loads(base64.b64decode(fprejsoncontent).decode("UTF-8"))
+        except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+            try:
+                fjsoncontent = json.loads(fprejsoncontent.decode("UTF-8"))
+            except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+                fprejsoncontent = ""
+                fjsoncontent = {}
     else:
         fprejsoncontent = ""
+        fjsoncontent = {}
     fp.seek(len(delimiter), 1)
     fcs = HeaderOut[-2].lower()
     fccs = HeaderOut[-1].lower()
@@ -2305,7 +2321,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     if(not contentasfile):
         fcontents = fcontents.read()
     outlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fencoding': fencoding, 'fcencoding': fcencoding, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
-               'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextralist': fextrafieldslist, 'fheaderchecksum': fcs, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
+               'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextralist': fextrafieldslist, 'jsondata': fjsoncontent, 'fheaderchecksum': fcs, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
     return outlist
 
 
@@ -2374,9 +2390,17 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     fjsoncontent = {}
     fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
     if(len(fjsoncontent) > 0):
-        fjsoncontent = json.loads(fprejsoncontent.decode("UTF-8"))
+        try:
+            fjsoncontent = json.loads(base64.b64decode(fprejsoncontent).decode("UTF-8"))
+        except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+            try:
+                fjsoncontent = json.loads(fprejsoncontent.decode("UTF-8"))
+            except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+                fprejsoncontent = ""
+                fjsoncontent = ""
     else:
         fprejsoncontent = ""
+        fjsoncontent = ""
     fp.seek(len(delimiter), 1)
     fcs = HeaderOut[-2].lower()
     fccs = HeaderOut[-1].lower()
@@ -3373,9 +3397,15 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
     tmpoutlist = filevalues
     fprejsoncontent = {'testing': "test"}
     if(len(fprejsoncontent) > 0):
-        fjsoncontent = json.dumps(fprejsoncontent, separators=(',', ':'))
+        try:
+            fjsoncontent = base64.b64encode(json.dumps(fprejsoncontent).encode("UTF-8"))
+        except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+            try:
+                fjsoncontent = json.dumps(fprejsoncontent.decode("UTF-8"))
+            except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+                fjsoncontent = "".encode("UTF-8")
     else:
-        fjsoncontent = ""
+        fjsoncontent = "".encode("UTF-8")
     fjsonsize = format(len(fjsoncontent), 'x').lower()
     tmpoutlist.insert(0, tmpoutlenhex)
     tmpoutlist.append(fjsonsize)
@@ -3394,7 +3424,7 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
         AppendNullBytes(checksumlist, formatspecs['format_delimiter'])
     nullstrecd = formatspecs['format_delimiter'].encode('UTF-8')
     outfileheadercshex = GetFileChecksum(
-        outfileoutstr + fjsoncontent.encode('UTF-8') + nullstrecd, checksumtype[0], True, formatspecs)
+        outfileoutstr + fjsoncontent + nullstrecd, checksumtype[0], True, formatspecs)
     if(len(filecontent) == 0):
         outfilecontentcshex = GetFileChecksum(
             filecontent, "none", False, formatspecs)
@@ -3413,7 +3443,7 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
         AppendNullBytes([outfileheadercshex, outfilecontentcshex],
                         formatspecs['format_delimiter'])
     outfileoutstrecd = outfileoutstr
-    outfileout = outfileoutstrecd + fjsoncontent.encode('UTF-8') + nullstrecd +  filecontent + nullstrecd
+    outfileout = outfileoutstrecd + fjsoncontent + nullstrecd +  filecontent + nullstrecd
     try:
         fp.write(outfileout)
     except OSError:
