@@ -2097,8 +2097,17 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
     fcompression = HeaderOut[12]
     fcsize = int(HeaderOut[13], 16)
     fseeknextfile = HeaderOut[25]
+    fjsonsize = int(HeaderOut[27], 16)
+    fjsoncontent = {}
+    fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+    if(len(fjsoncontent) > 0):
+        fjsoncontent = json.loads(fprejsoncontent.decode("UTF-8"))
+    else:
+        fprejsoncontent = ""
+    fp.seek(len(delimiter), 1)
+    HeaderOut.append(fjsoncontent)
     newfcs = GetHeaderChecksum(
-        HeaderOut[:-2], HeaderOut[-4].lower(), True, formatspecs)
+        HeaderOut[:-2] + [fprejsoncontent], HeaderOut[-4].lower(), True, formatspecs)
     if(fcs != newfcs and not skipchecksum):
         VerbosePrintOut("File Header Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
@@ -2130,7 +2139,7 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
     else:
         fcontents.seek(0, 0)
         if(uncompress):
-            cfcontents = UncompressCatFile(fcontents, formatspecs)
+            cfcontents = UncompressArchiveFile(fcontents, formatspecs)
             cfcontents.seek(0, 0)
             cfcontents.seek(0, 0)
             shutil.copyfileobj(cfcontents, fcontents)
@@ -2202,10 +2211,11 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     fdev_minor = int(HeaderOut[24], 16)
     fdev_major = int(HeaderOut[25], 16)
     fseeknextfile = HeaderOut[26]
-    fextrasize = int(HeaderOut[27], 16)
-    fextrafields = int(HeaderOut[28], 16)
+    fjsonsize = int(HeaderOut[27], 16)
+    fextrasize = int(HeaderOut[28], 16)
+    fextrafields = int(HeaderOut[29], 16)
     fextrafieldslist = []
-    extrastart = 29
+    extrastart = 30
     extraend = extrastart + fextrafields
     while(extrastart < extraend):
         fextrafieldslist.append(HeaderOut[extrastart])
@@ -2216,10 +2226,17 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
             fextrafields = len(fextrafieldslist)
         except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
             pass
+    fjsoncontent = {}
+    fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+    if(len(fjsoncontent) > 0):
+        fjsoncontent = json.loads(fprejsoncontent.decode("UTF-8"))
+    else:
+        fprejsoncontent = ""
+    fp.seek(len(delimiter), 1)
     fcs = HeaderOut[-2].lower()
     fccs = HeaderOut[-1].lower()
     newfcs = GetHeaderChecksum(
-        HeaderOut[:-2], HeaderOut[-4].lower(), True, formatspecs)
+        HeaderOut[:-2] + [fprejsoncontent], HeaderOut[-4].lower(), True, formatspecs)
     if(fcs != newfcs and not skipchecksum):
         VerbosePrintOut("File Header Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
@@ -2333,10 +2350,11 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     fdev_minor = int(HeaderOut[24], 16)
     fdev_major = int(HeaderOut[25], 16)
     fseeknextfile = HeaderOut[26]
-    fextrasize = int(HeaderOut[27], 16)
-    fextrafields = int(HeaderOut[28], 16)
+    fjsonsize = int(HeaderOut[27], 16)
+    fextrasize = int(HeaderOut[28], 16)
+    fextrafields = int(HeaderOut[29], 16)
     fextrafieldslist = []
-    extrastart = 29
+    extrastart = 30
     extraend = extrastart + fextrafields
     while(extrastart < extraend):
         fextrafieldslist.append(HeaderOut[extrastart])
@@ -2347,10 +2365,17 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
             fextrafields = len(fextrafieldslist)
         except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
             pass
+    fjsoncontent = {}
+    fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+    if(len(fjsoncontent) > 0):
+        fjsoncontent = json.loads(fprejsoncontent.decode("UTF-8"))
+    else:
+        fprejsoncontent = ""
+    fp.seek(len(delimiter), 1)
     fcs = HeaderOut[-2].lower()
     fccs = HeaderOut[-1].lower()
     newfcs = GetHeaderChecksum(
-        HeaderOut[:-2], HeaderOut[-4].lower(), True, formatspecs)
+        HeaderOut[:-2] + [fprejsoncontent], HeaderOut[-4].lower(), True, formatspecs)
     if(fcs != newfcs and not skipchecksum):
         VerbosePrintOut("File Header Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
@@ -2416,7 +2441,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     if(not contentasfile):
         fcontents = fcontents.read()
     outlist = [ftype, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fid,
-               finode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile, fextrafieldslist, HeaderOut[-4], HeaderOut[-3], fcontents]
+               finode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile, fjsoncontent, fextrafieldslist, HeaderOut[-4], HeaderOut[-3], fcontents]
     return outlist
 
 
@@ -3331,10 +3356,17 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
         extrasizestr = extrasizestr + \
             AppendNullBytes(extradata, formatspecs['format_delimiter'])
     extrasizelen = format(len(extrasizestr), 'x').lower()
-    tmpoutlen = len(filevalues) + len(extradata) + 6
+    tmpoutlen = len(filevalues) + len(extradata) + 7
     tmpoutlenhex = format(tmpoutlen, 'x').lower()
     tmpoutlist = filevalues
+    fprejsoncontent = {'testing': "test"}
+    if(len(fprejsoncontent) > 0):
+        fjsoncontent = json.dumps(fprejsoncontent, separators=(',', ':'))
+    else:
+        fjsoncontent = ""
+    fjsonsize = format(len(fjsoncontent), 'x').lower()
     tmpoutlist.insert(0, tmpoutlenhex)
+    tmpoutlist.append(fjsonsize)
     tmpoutlist.append(extrasizelen)
     tmpoutlist.append(extrafields)
     outfileoutstr = AppendNullBytes(
@@ -3348,8 +3380,9 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
         checksumlist = checksumtype
     outfileoutstr = outfileoutstr + \
         AppendNullBytes(checksumlist, formatspecs['format_delimiter'])
+    nullstrecd = formatspecs['format_delimiter'].encode('UTF-8')
     outfileheadercshex = GetFileChecksum(
-        outfileoutstr, checksumtype[0], True, formatspecs)
+        outfileoutstr + fjsoncontent.encode('UTF-8') + nullstrecd, checksumtype[0], True, formatspecs)
     if(len(filecontent) == 0):
         outfilecontentcshex = GetFileChecksum(
             filecontent, "none", False, formatspecs)
@@ -3368,8 +3401,7 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
         AppendNullBytes([outfileheadercshex, outfilecontentcshex],
                         formatspecs['format_delimiter'])
     outfileoutstrecd = outfileoutstr
-    nullstrecd = formatspecs['format_delimiter'].encode('UTF-8')
-    outfileout = outfileoutstrecd + filecontent + nullstrecd
+    outfileout = outfileoutstrecd + fjsoncontent.encode('UTF-8') + nullstrecd +  filecontent + nullstrecd
     try:
         fp.write(outfileout)
     except OSError:
