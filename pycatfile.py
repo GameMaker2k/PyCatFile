@@ -3438,7 +3438,7 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], filecontent="",
     outfileoutstr = AppendNullByte(
         formheaersize, formatspecs['format_delimiter']) + outfileoutstr
     outfileheadercshex = GetFileChecksum(
-        outfileoutstr, checksumtype[0], True, formatspecs)
+        outfileoutstr + fjsoncontent + nullstrecd, checksumtype[0], True, formatspecs)
     outfileoutstr = outfileoutstr + \
         AppendNullBytes([outfileheadercshex, outfilecontentcshex],
                         formatspecs['format_delimiter'])
@@ -7751,7 +7751,7 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
         outfcs = inheaderdata[-2].lower()
         outfccs = inheaderdata[-1].lower()
         infcs = GetHeaderChecksum(
-            inheaderdata[:-2], inheaderdata[-4].lower(), True, formatspecs)
+            inheaderdata[:-2] + [outfprejsoncontent], inheaderdata[-4].lower(), True, formatspecs)
         if(outfcs != infcs and not skipchecksum):
             VerbosePrintOut("File Header Checksum Error with file " +
                             outfname + " at offset " + str(outfhstart))
