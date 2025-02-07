@@ -5215,7 +5215,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
         tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
         AppendFileHeaderWithContent(
-            fp, tmpoutlist, extradata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
+            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
         fcontents.close()
     if(numfiles > 0):
         try:
