@@ -112,7 +112,7 @@ if primary_action == 'create':
         ], pycatfile.__file_format_dict__, args.verbose, False)
     else:
         pycatfile.PackCatFile(args.input, args.output, args.verbose, args.compression, args.level, pycatfile.compressionlistalt,
-                                  False, [args.checksum, args.checksum, args.checksum], [], pycatfile.__file_format_dict__, args.verbose, False)
+                                  False, [args.checksum, args.checksum, args.checksum], [], {}, pycatfile.__file_format_dict__, args.verbose, False)
 elif primary_action == 'repack':
     pycatfile.RePackCatFile(
         input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], args.verbose)
