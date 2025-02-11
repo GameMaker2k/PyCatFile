@@ -2097,7 +2097,7 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
     fcompression = HeaderOut[12]
     fcsize = int(HeaderOut[13], 16)
     fseeknextfile = HeaderOut[25]
-    fjsonsize = int(HeaderOut[27], 16)
+    fjsonsize = int(HeaderOut[29], 16)
     fjsoncontent = {}
     fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
     if(fjsonsize > 0):
@@ -2219,11 +2219,13 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     fdev_minor = int(HeaderOut[24], 16)
     fdev_major = int(HeaderOut[25], 16)
     fseeknextfile = HeaderOut[26]
-    fjsonsize = int(HeaderOut[27], 16)
-    fextrasize = int(HeaderOut[28], 16)
-    fextrafields = int(HeaderOut[29], 16)
+    fjsontype = HeaderOut[27]
+    fjsonlen = int(HeaderOut[28], 16)
+    fjsonsize = int(HeaderOut[29], 16)
+    fextrasize = int(HeaderOut[30], 16)
+    fextrafields = int(HeaderOut[31], 16)
     fextrafieldslist = []
-    extrastart = 30
+    extrastart = 32
     extraend = extrastart + fextrafields
     while(extrastart < extraend):
         fextrafieldslist.append(HeaderOut[extrastart])
@@ -2321,7 +2323,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     if(not contentasfile):
         fcontents = fcontents.read()
     outlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fencoding': fencoding, 'fcencoding': fcencoding, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
-               'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextradata': fextrafieldslist, 'fjsondata': fjsoncontent, 'fheaderchecksum': fcs, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
+               'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextradata': fextrafieldslist, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsondata': fjsoncontent, 'fheaderchecksum': fcs, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
     return outlist
 
 
@@ -2369,11 +2371,13 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     fdev_minor = int(HeaderOut[24], 16)
     fdev_major = int(HeaderOut[25], 16)
     fseeknextfile = HeaderOut[26]
-    fjsonsize = int(HeaderOut[27], 16)
-    fextrasize = int(HeaderOut[28], 16)
-    fextrafields = int(HeaderOut[29], 16)
+    fjsontype = HeaderOut[27]
+    fjsonlen = int(HeaderOut[28], 16)
+    fjsonsize = int(HeaderOut[29], 16)
+    fextrasize = int(HeaderOut[30], 16)
+    fextrafields = int(HeaderOut[31], 16)
     fextrafieldslist = []
-    extrastart = 30
+    extrastart = 32
     extraend = extrastart + fextrafields
     while(extrastart < extraend):
         fextrafieldslist.append(HeaderOut[extrastart])
@@ -3392,9 +3396,10 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, fi
         extrasizestr = extrasizestr + \
             AppendNullBytes(extradata, formatspecs['format_delimiter'])
     extrasizelen = format(len(extrasizestr), 'x').lower()
-    tmpoutlen = len(filevalues) + len(extradata) + 7
+    tmpoutlen = len(filevalues) + len(extradata) + 9
     tmpoutlenhex = format(tmpoutlen, 'x').lower()
     tmpoutlist = filevalues
+    fjsontype = "json"
     if(len(jsondata) > 0):
         try:
             fjsoncontent = base64.b64encode(json.dumps(jsondata, separators=(',', ':')).encode("UTF-8"))
@@ -3406,7 +3411,10 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, fi
     else:
         fjsoncontent = "".encode("UTF-8")
     fjsonsize = format(len(fjsoncontent), 'x').lower()
+    fjsonlen = format(len(jsondata), 'x').lower()
     tmpoutlist.insert(0, tmpoutlenhex)
+    tmpoutlist.append(fjsontype)
+    tmpoutlist.append(fjsonlen)
     tmpoutlist.append(fjsonsize)
     tmpoutlist.append(extrasizelen)
     tmpoutlist.append(extrafields)
@@ -6974,14 +6982,16 @@ def CatFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=False,
             prefcompression = preheaderdata[14]
             prefcsize = int(preheaderdata[15], 16)
             prefseeknextfile = preheaderdata[26]
-            prefjsonsize = int(HeaderOut[27], 16)
+            prefjsontype = preheaderdata[27]
+            prefjsonlen = int(preheaderdata[28], 16)
+            prefjsonsize = int(preheaderdata[29], 16)
             prefjoutfprejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
             if(prefjsonsize <= 0):
                 prefjoutfprejsoncontent = "".encode()
             fp.seek(len(formatspecs['format_delimiter']), 1)
-            prefextrasize = int(preheaderdata[28], 16)
-            prefextrafields = int(preheaderdata[29], 16)
-            extrastart = 30
+            prefextrasize = int(preheaderdata[30], 16)
+            prefextrafields = int(preheaderdata[31], 16)
+            extrastart = 32
             extraend = extrastart + prefextrafields
             prefcs = preheaderdata[-2].lower()
             prenewfcs = preheaderdata[-1].lower()
@@ -7286,7 +7296,9 @@ def CatFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_dict
         outfdev_minor = int(inheaderdata[24], 16)
         outfdev_major = int(inheaderdata[25], 16)
         outfseeknextfile = inheaderdata[26]
-        outfjsonsize = int(inheaderdata[27], 16)
+        outfjsontype = inheaderdata[27]
+        outfjsonlen = int(inheaderdata[28], 16)
+        outfjsonsize = int(inheaderdata[29], 16)
         outfjsoncontent = {}
         outfprejsoncontent = fp.read(outfjsonsize).decode("UTF-8")
         if(outfjsonsize > 0):
@@ -7302,10 +7314,10 @@ def CatFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_dict
             outfprejsoncontent = ""
             outfjsoncontent = {}
         fp.seek(len(formatspecs['format_delimiter']), 1)
-        outfextrasize = int(inheaderdata[28], 16)
-        outfextrafields = int(inheaderdata[29], 16)
+        outfextrasize = int(inheaderdata[30], 16)
+        outfextrafields = int(inheaderdata[31], 16)
         extrafieldslist = []
-        extrastart = 30
+        extrastart = 32
         extraend = extrastart + outfextrafields
         outfcs = inheaderdata[-2].lower()
         outfccs = inheaderdata[-1].lower()
@@ -7612,14 +7624,16 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
             prefcompression = preheaderdata[14]
             prefcsize = int(preheaderdata[15], 16)
             prefseeknextfile = preheaderdata[26]
-            prefjsonsize = int(preheaderdata[27], 16)
+            prefjsontype = preheaderdata[27]
+            prefjsonlen = int(preheaderdata[28], 16)
+            prefjsonsize = int(preheaderdata[29], 16)
             prefjoutfprejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
             if(prefjsonsize <= 0):
-                prefjoutfprejsoncontent = ""
+                prefjoutfprejsoncontent = "".encode()
             fp.seek(len(formatspecs['format_delimiter']), 1)
-            prefextrasize = int(preheaderdata[28], 16)
-            prefextrafields = int(preheaderdata[29], 16)
-            extrastart = 30
+            prefextrasize = int(preheaderdata[30], 16)
+            prefextrafields = int(preheaderdata[31], 16)
+            extrastart = 32
             extraend = extrastart + prefextrafields
             prefcs = preheaderdata[-2].lower()
             prenewfcs = preheaderdata[-1].lower()
@@ -7714,7 +7728,9 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
         outfdev_minor = int(inheaderdata[24], 16)
         outfdev_major = int(inheaderdata[25], 16)
         outfseeknextfile = inheaderdata[26]
-        outfjsonsize = int(inheaderdata[27], 16)
+        outfjsontype = inheaderdata[27]
+        outfjsonlen = int(inheaderdata[28], 16)
+        outfjsonsize = int(inheaderdata[29], 16)
         outfjsoncontent = {}
         outfprejsoncontent = fp.read(outfjsonsize).decode("UTF-8")
         if(outfjsonsize > 0):
@@ -7730,10 +7746,10 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
             outfprejsoncontent = ""
             outfjsoncontent = {}
         fp.seek(len(formatspecs['format_delimiter']), 1)
-        outfextrasize = int(inheaderdata[28], 16)
-        outfextrafields = int(inheaderdata[29], 16)
+        outfextrasize = int(inheaderdata[30], 16)
+        outfextrafields = int(inheaderdata[31], 16)
         extrafieldslist = []
-        extrastart = 30
+        extrastart = 32
         extraend = extrastart + outfextrafields
         while(extrastart < extraend):
             extrafieldslist.append(inheaderdata[extrastart])
@@ -7817,7 +7833,7 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
         outfcontents.seek(0, 0)
         if(not contentasfile):
             outfcontents = outfcontents.read()
-        outlist['ffilelist'].append({'fid': realidnum, 'fidalt': fileidnum, 'fheadersize': outfheadsize, 'fhstart': outfhstart, 'fhend': outfhend, 'ftype': outftype, 'fencoding': outfencoding, 'fcencoding': outfcencoding, 'fname': outfname, 'fbasedir': outfbasedir, 'flinkname': outflinkname, 'fsize': outfsize, 'fatime': outfatime, 'fmtime': outfmtime, 'fctime': outfctime, 'fbtime': outfbtime, 'fmode': outfmode, 'fchmode': outfchmode, 'ftypemod': outftypemod, 'fwinattributes': outfwinattributes, 'fcompression': outfcompression, 'fcsize': outfcsize, 'fuid': outfuid, 'funame': outfuname, 'fgid': outfgid, 'fgname': outfgname, 'finode': outfinode, 'flinkcount': outflinkcount, 'fdev': outfdev, 'fminor': outfdev_minor, 'fmajor': outfdev_major, 'fseeknextfile': outfseeknextfile, 'fheaderchecksumtype': inheaderdata[-4], 'fcontentchecksumtype': inheaderdata[-3], 'fnumfields': outfnumfields + 2, 'frawheader': inheaderdata, 'fextrafields': outfextrafields, 'fextrafieldsize': outfextrasize, 'fextradata': extrafieldslist, 'fjsondata': outfjsoncontent, 'fheaderchecksum': outfcs, 'fcontentchecksum': outfccs, 'fhascontents': pyhascontents, 'fcontentstart': outfcontentstart, 'fcontentend': outfcontentend, 'fcontentasfile': contentasfile, 'fcontents': outfcontents})
+        outlist['ffilelist'].append({'fid': realidnum, 'fidalt': fileidnum, 'fheadersize': outfheadsize, 'fhstart': outfhstart, 'fhend': outfhend, 'ftype': outftype, 'fencoding': outfencoding, 'fcencoding': outfcencoding, 'fname': outfname, 'fbasedir': outfbasedir, 'flinkname': outflinkname, 'fsize': outfsize, 'fatime': outfatime, 'fmtime': outfmtime, 'fctime': outfctime, 'fbtime': outfbtime, 'fmode': outfmode, 'fchmode': outfchmode, 'ftypemod': outftypemod, 'fwinattributes': outfwinattributes, 'fcompression': outfcompression, 'fcsize': outfcsize, 'fuid': outfuid, 'funame': outfuname, 'fgid': outfgid, 'fgname': outfgname, 'finode': outfinode, 'flinkcount': outflinkcount, 'fdev': outfdev, 'fminor': outfdev_minor, 'fmajor': outfdev_major, 'fseeknextfile': outfseeknextfile, 'fheaderchecksumtype': inheaderdata[-4], 'fcontentchecksumtype': inheaderdata[-3], 'fnumfields': outfnumfields + 2, 'frawheader': inheaderdata, 'fextrafields': outfextrafields, 'fextrafieldsize': outfextrasize, 'fextradata': extrafieldslist, 'fjsontype': outfjsontype, 'fjsonlen': outfjsonlen, 'fjsonsize': outfjsonsize, 'fjsondata': outfjsoncontent, 'fheaderchecksum': outfcs, 'fcontentchecksum': outfccs, 'fhascontents': pyhascontents, 'fcontentstart': outfcontentstart, 'fcontentend': outfcontentend, 'fcontentasfile': contentasfile, 'fcontents': outfcontents})
         fileidnum = fileidnum + 1
         realidnum = realidnum + 1
     if(returnfp):
