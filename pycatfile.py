@@ -4319,7 +4319,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmtt
         outvar = fp.read()
         fp.close()
         return outvar
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
+    elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, formatspecs)
         fp.seek(0, 0)
@@ -4399,7 +4399,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmtty
         outvar = fp.read()
         fp.close()
         return outvar
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
+    elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, formatspecs)
         fp.seek(0, 0)
@@ -5681,7 +5681,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
         outvar = fp.read()
         fp.close()
         return outvar
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
+    elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, formatspecs)
         fp.seek(0, 0)
@@ -5987,7 +5987,7 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
         outvar = fp.read()
         fp.close()
         return outvar
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
+    elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, formatspecs)
         fp.seek(0, 0)
@@ -6278,7 +6278,7 @@ def PackCatFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", 
         outvar = fp.read()
         fp.close()
         return outvar
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
+    elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, formatspecs)
         fp.seek(0, 0)
@@ -6598,7 +6598,7 @@ if(rarfile_support):
             outvar = fp.read()
             fp.close()
             return outvar
-        elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
+        elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
             fp = CompressOpenFileAlt(
                 fp, compression, compressionlevel, formatspecs)
             fp.seek(0, 0)
@@ -6851,7 +6851,7 @@ if(py7zr_support):
             outvar = fp.read()
             fp.close()
             return outvar
-        elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
+        elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
             fp = CompressOpenFileAlt(
                 fp, compression, compressionlevel, formatspecs)
             fp.seek(0, 0)
@@ -8711,7 +8711,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
         outvar = fp.read()
         fp.close()
         return outvar
-    elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
+    elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, formatspecs)
         fp.seek(0, 0)
