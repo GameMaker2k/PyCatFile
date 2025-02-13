@@ -2055,20 +2055,21 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
                 fextrafieldslist = json.loads(fextrafieldslist[0])
             except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                 pass
-    fjsoncontent = {}
-    fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
-    if(fjsonsize > 0):
-        try:
-            fjsoncontent = json.loads(base64.b64decode(fprejsoncontent).decode("UTF-8"))
-        except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
-            try:
-                fjsoncontent = json.loads(fprejsoncontent.decode("UTF-8"))
-            except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
-                fprejsoncontent = ""
-                fjsoncontent = {}
-    else:
-        fprejsoncontent = ""
+    if(fjsontype=="json"):
         fjsoncontent = {}
+        fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+        if(fjsonsize > 0):
+            try:
+                fjsoncontent = json.loads(base64.b64decode(fprejsoncontent).decode("UTF-8"))
+            except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+                try:
+                    fjsoncontent = json.loads(fprejsoncontent.decode("UTF-8"))
+                except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+                    fprejsoncontent = ""
+                    fjsoncontent = {}
+        else:
+            fprejsoncontent = ""
+            fjsoncontent = {}
     fp.seek(len(delimiter), 1)
     fcs = HeaderOut[-2].lower()
     fccs = HeaderOut[-1].lower()
@@ -2207,20 +2208,21 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
                 fextrafieldslist = json.loads(fextrafieldslist[0])
             except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                 pass
-    fjsoncontent = {}
-    fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
-    if(fjsonsize > 0):
-        try:
-            fjsoncontent = json.loads(base64.b64decode(fprejsoncontent).decode("UTF-8"))
-        except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+    if(fjsontype=="json"):
+        fjsoncontent = {}
+        fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+        if(fjsonsize > 0):
             try:
-                fjsoncontent = json.loads(fprejsoncontent.decode("UTF-8"))
+                fjsoncontent = json.loads(base64.b64decode(fprejsoncontent).decode("UTF-8"))
             except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
-                fprejsoncontent = ""
-                fjsoncontent = ""
-    else:
-        fprejsoncontent = ""
-        fjsoncontent = ""
+                try:
+                    fjsoncontent = json.loads(fprejsoncontent.decode("UTF-8"))
+                except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+                    fprejsoncontent = ""
+                    fjsoncontent = {}
+        else:
+            fprejsoncontent = ""
+            fjsoncontent = {}
     fp.seek(len(delimiter), 1)
     fcs = HeaderOut[-2].lower()
     fccs = HeaderOut[-1].lower()
@@ -6803,7 +6805,7 @@ def CatFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=False,
             prefjsonsize = int(preheaderdata[29], 16)
             prefjoutfprejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
             if(prefjsonsize <= 0):
-                prefjoutfprejsoncontent = "".encode()
+                prefjoutfprejsoncontent = ""
             fp.seek(len(formatspecs['format_delimiter']), 1)
             prefextrasize = int(preheaderdata[30], 16)
             prefextrafields = int(preheaderdata[31], 16)
@@ -7445,7 +7447,7 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
             prefjsonsize = int(preheaderdata[29], 16)
             prefjoutfprejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
             if(prefjsonsize <= 0):
-                prefjoutfprejsoncontent = "".encode()
+                prefjoutfprejsoncontent = ""
             fp.seek(len(formatspecs['format_delimiter']), 1)
             prefextrasize = int(preheaderdata[30], 16)
             prefextrafields = int(preheaderdata[31], 16)
