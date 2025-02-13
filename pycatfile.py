@@ -1196,589 +1196,6 @@ class GzipFile(object):
         self.close()
 
 
-# Detect Python 2 vs Python 3
-PY2 = (sys.version_info[0] == 2)
-
-
-# A small helper to produce a bytes-like single-character string from an integer.
-# In Python 3, bytes([x]) is a single byte; in Python 2, we can just do chr(x).
-def single_byte(x):
-    if PY2:
-        return chr(x)  # 'chr' returns a one-character string
-    else:
-        return bytes([x])
-
-
-# ====================================================
-# Core LZW functions that work directly on bytes data
-# ====================================================
-
-def lzw_compress_bytes_core(data, max_table_size=4096):
-    """
-    Compress a bytes/str object into a list of integer codes using LZW.
-    This version works on raw bytes (each value is 0-255).
-    
-    :param data: The input bytes to compress (str in Py2, bytes in Py3).
-    :param max_table_size: Maximum allowed size of the dictionary (default 4096).
-    :return: A list of integer codes.
-    """
-    if not data:
-        return []
-    
-    # Initialize dictionary with single-byte entries: {b'\x00':0, b'\x01':1, ...}
-    dict_size = 256
-    dictionary = {}
-    for i in range(dict_size):
-        dictionary[single_byte(i)] = i
-
-    w = b"" if not PY2 else ""  # empty bytes (Py3) or empty str (Py2)
-    result = []
-
-    # Iterate over data as a sequence of ints (0..255), uniformly in Py2/3
-    for b in bytearray(data):
-        c = single_byte(b)
-        wc = w + c  # string/bytes concatenation works fine in both Py2/3
-        if wc in dictionary:
-            w = wc
-        else:
-            result.append(dictionary[w])
-            if dict_size < max_table_size:
-                dictionary[wc] = dict_size
-                dict_size += 1
-            w = c
-
-    if w:
-        result.append(dictionary[w])
-    
-    return result
-
-
-def lzw_decompress_bytes_core(codes, max_table_size=4096):
-    """
-    Decompress a list of integer codes (produced by lzw_compress_bytes_core) back into bytes.
-    
-    :param codes: List of integer codes.
-    :param max_table_size: Maximum allowed size of the dictionary (default 4096).
-    :return: The decompressed bytes (as str in Py2, bytes in Py3).
-    """
-    if not codes:
-        return b"" if not PY2 else ""
-    
-    dict_size = 256
-    dictionary = []
-    # Initialize dictionary: index -> single-byte
-    for i in range(dict_size):
-        dictionary.append(single_byte(i))
-
-    result = []
-    w = dictionary[codes[0]]
-    result.append(w)
-
-    for k in codes[1:]:
-        if k < len(dictionary):
-            entry = dictionary[k]
-        elif k == dict_size:
-            # Special case: code refers to new entry "w + w[:1]"
-            entry = w + w[:1]
-        else:
-            raise ValueError("Bad compressed code: {}".format(k))
-        
-        result.append(entry)
-        
-        if dict_size < max_table_size:
-            dictionary.append(w + entry[:1])
-            dict_size += 1
-        w = entry
-    
-    # In Py2, join is on str; in Py3, join is on bytes
-    return b"".join(result) if not PY2 else "".join(result)
-
-
-def lzw_compress_bytes(data, max_table_size=4096):
-    """
-    Compress a bytes/str object using LZW and pack the resulting integer codes into a bytes object.
-    
-    Each code is stored as an unsigned 16-bit (2 bytes) integer in big-endian order.
-    
-    :param data: Input bytes/str to compress (str in Py2, bytes in Py3).
-    :param max_table_size: Maximum allowed size of the dictionary.
-    :return: A bytes object (str in Py2) containing the packed codes.
-    """
-    codes = lzw_compress_bytes_core(data, max_table_size=max_table_size)
-    # 'H' is the format for an unsigned short (16 bits), big-endian.
-    return struct.pack('>' + 'H' * len(codes), *codes)
-
-
-def lzw_decompress_bytes(data, max_table_size=4096):
-    """
-    Unpack a bytes/str object (produced by lzw_compress_bytes) into integer codes
-    and decompress them using LZW.
-    
-    :param data: The packed compressed data (str in Py2, bytes in Py3).
-    :param max_table_size: Maximum allowed size of the dictionary.
-    :return: The decompressed data as bytes/str.
-    """
-    if not data:
-        return b"" if not PY2 else ""
-    
-    # Each code is 2 bytes
-    num_codes = len(data) // 2
-    codes = list(struct.unpack('>' + 'H' * num_codes, data))
-    return lzw_decompress_bytes_core(codes, max_table_size=max_table_size)
-
-
-LZW_MAGIC = b"\x1f\x9d"
-
-def lzw_compress_bytes_with_magic(data, max_table_size=4096):
-    # do the normal compression
-    raw_lzw = lzw_compress_bytes(data, max_table_size)
-    return LZW_MAGIC + raw_lzw
-
-def lzw_decompress_bytes_with_magic(data, max_table_size=4096):
-    if not data.startswith(LZW_MAGIC):
-        raise ValueError("Missing magic 0x1f9d")
-    raw_lzw = data[len(LZW_MAGIC):]
-    return lzw_decompress_bytes(raw_lzw, max_table_size)
-
-
-# ====================================================
-# Wrapper functions for Unicode strings (with magic header)
-# ====================================================
-
-def lzw_compress_str_to_bytes(uncompressed, max_table_size=4096):
-    """
-    Compress a (Unicode) string using LZW.
-    
-    1. Encodes the string to UTF-8.
-    2. Compresses the resulting bytes.
-    3. Prepends the magic header (0x1f, 0x9d) to the compressed data.
-    
-    :param uncompressed: The input (Unicode) string in Py2 or Py3.
-    :param max_table_size: Maximum dictionary size for LZW.
-    :return: A bytes/str object containing the magic header + the compressed data.
-    """
-    # Encode the string to UTF-8 bytes (str in Py2, bytes in Py3)
-    data = uncompressed.encode('utf-8')
-    compressed_data = lzw_compress_bytes(data, max_table_size=max_table_size)
-    return MAGIC_BYTES + compressed_data
-
-
-def lzw_decompress_bytes_to_bytes(compressed, max_table_size=4096):
-    """
-    Decompress a bytes/str object (with the magic header) produced by compress_str_to_bytes.
-    
-    :param compressed: The data to decompress (with the leading magic header).
-    :param max_table_size: Maximum dictionary size for LZW.
-    :return: Raw decompressed bytes/str.
-    :raises ValueError: If the magic header is missing.
-    """
-    if not compressed.startswith(MAGIC_BYTES):
-        raise ValueError("Compressed data is missing the magic header 0x1f9d")
-    
-    data_without_magic = compressed[len(MAGIC_BYTES):]
-    return lzw_decompress_bytes(data_without_magic, max_table_size=max_table_size)
-
-
-def lzw_decompress_bytes_to_str(compressed, max_table_size=4096):
-    """
-    Decompress a bytes/str object (with the magic header) into a Unicode string.
-    
-    1. Strips the magic header.
-    2. LZW decompresses the remaining bytes.
-    3. Decodes from UTF-8 to get a Python (Unicode) string.
-    
-    :param compressed: The data to decompress (with magic header).
-    :param max_table_size: Maximum dictionary size for LZW.
-    :return: The decompressed Unicode string.
-    """
-    raw_bytes = decompress_bytes_to_bytes(compressed, max_table_size=max_table_size)
-    return raw_bytes.decode('utf-8')
-
-
-class LzwFile(object):
-    """
-    A file-like object that uses LZW compression/decompression instead of gzip.
-    It reads/writes the entire file in one shot for simplicity, storing
-    decompressed data (read mode) or uncompressed data (write mode) in memory.
-    
-    - If reading ('r'), loads entire file, checks for LZW magic, and decompresses.
-    - If writing ('w'), buffers uncompressed data; on close(), compresses and writes the LZW file.
-    - 'level' is accepted but currently unused (LZW does not have a direct "level" parameter).
-    - Supports text mode ('t') vs binary mode ('b').
-    """
-    LZW_MAGIC = b'\x1f\x9d'
-
-    def __init__(self, file_path=None, fileobj=None, mode='rb',
-                 level=9, encoding=None, errors=None, newline=None):
-        """
-        :param file_path:  Path to a file on disk (optional).
-        :param fileobj:    An existing file-like object (optional).
-        :param mode:       e.g. 'rb', 'wb', 'rt', 'wt', etc.
-        :param level:      Compression level (not used for LZW, kept for signature).
-        :param encoding:   If 't' in mode, text encoding to use.
-        :param errors:     Error handling for text encode/decode.
-        :param newline:    Placeholder for signature compatibility.
-        """
-        if file_path is None and fileobj is None:
-            raise ValueError("Either file_path or fileobj must be provided")
-        if file_path is not None and fileobj is not None:
-            raise ValueError("Only one of file_path or fileobj should be provided")
-
-        self.file_path = file_path
-        self.fileobj = fileobj
-        self.mode = mode
-        self.level = level
-        self.encoding = encoding
-        self.errors = errors
-        self.newline = newline
-
-        # Buffers
-        self._decompressed_data = b''  # for read mode
-        self._write_buffer = b''       # for write mode
-        self._position = 0            # read pointer in decompressed data
-
-        self._text_mode = ('t' in mode)
-        internal_mode = mode.replace('t', 'b')  # force binary I/O
-
-        # Open file or use provided file object
-        if any(m in mode for m in ('w', 'a', 'x')):
-            # Write/append
-            if file_path:
-                self.file = open(file_path, internal_mode)
-            else:
-                self.file = fileobj
-        elif 'r' in mode:
-            # Read
-            if file_path:
-                if os.path.exists(file_path):
-                    self.file = open(file_path, internal_mode)
-                    self._load_file()
-                else:
-                    raise FileNotFoundError("No such file: '{}'".format(file_path))
-            else:
-                self.file = fileobj
-                self._load_file()
-        else:
-            raise ValueError("Mode should be 'rb'/'rt' or 'wb'/'wt'")
-
-    def _load_file(self):
-        """
-        Read the entire compressed file from the underlying file,
-        check the LZW magic header, decompress, store in memory.
-        """
-        self.file.seek(0)
-        compressed_data = self.file.read()
-
-        if not compressed_data.startswith(self.LZW_MAGIC):
-            raise ValueError("Invalid LZW header (magic bytes missing)")
-
-        # Strip off the magic header:
-        data_without_magic = compressed_data[len(self.LZW_MAGIC):]
-
-        # Decompress in one shot:
-        self._decompressed_data = lzw_decompress_bytes(data_without_magic)
-
-        if self._text_mode:
-            # Decode to text (Unicode string in Py3, or unicode in Py2)
-            enc = self.encoding or 'utf-8'
-            err = self.errors or 'strict'
-            self._decompressed_data = self._decompressed_data.decode(enc, err)
-
-    def write(self, data):
-        """
-        Write data into our in-memory buffer (uncompressed).
-        Actual compression occurs when close() is called.
-        """
-        if 'r' in self.mode:
-            raise IOError("File not open for writing")
-
-        if self._text_mode:
-            # Encode to bytes
-            enc = self.encoding or 'utf-8'
-            err = self.errors or 'strict'
-            data = data.encode(enc, err)
-
-        self._write_buffer += data
-
-    def read(self, size=-1):
-        """
-        Read from the in-memory decompressed buffer.
-        """
-        if 'r' not in self.mode:
-            raise IOError("File not open for reading")
-
-        if size < 0:
-            size = len(self._decompressed_data) - self._position
-        data = self._decompressed_data[self._position : self._position + size]
-        self._position += size
-        return data
-
-    def seek(self, offset, whence=0):
-        """
-        Seek within the decompressed data buffer.
-        """
-        if 'r' not in self.mode:
-            raise IOError("File not open for reading")
-
-        if whence == 0:   # absolute
-            new_pos = offset
-        elif whence == 1: # relative
-            new_pos = self._position + offset
-        elif whence == 2: # from end
-            new_pos = len(self._decompressed_data) + offset
-        else:
-            raise ValueError("Invalid 'whence' value")
-
-        self._position = max(0, min(new_pos, len(self._decompressed_data)))
-
-    def tell(self):
-        """
-        Return the current read position.
-        """
-        return self._position
-
-    def flush(self):
-        """
-        Flush the underlying file if possible.
-        (No partial compression flush is done here.)
-        """
-        if hasattr(self.file, 'flush'):
-            self.file.flush()
-
-    def fileno(self):
-        """
-        Return the underlying file descriptor if available.
-        """
-        if hasattr(self.file, 'fileno'):
-            return self.file.fileno()
-        raise OSError("The underlying file object does not support fileno()")
-
-    def isatty(self):
-        """
-        Return whether the underlying file is a TTY.
-        """
-        if hasattr(self.file, 'isatty'):
-            return self.file.isatty()
-        return False
-
-    def truncate(self, size=None):
-        """
-        Truncate the underlying file if possible.
-        """
-        if hasattr(self.file, 'truncate'):
-            return self.file.truncate(size)
-        raise OSError("The underlying file object does not support truncate()")
-
-    def close(self):
-        """
-        If in write mode, compress the entire buffer, prepend the LZW magic
-        header, and write to the underlying file. Then close it if we opened it.
-        """
-        if any(m in self.mode for m in ('w', 'a', 'x')):
-            # Compress
-            compressed = lzw_compress_bytes(self._write_buffer)
-            # Prepend magic header
-            final_data = self.LZW_MAGIC + compressed
-            self.file.write(final_data)
-
-        # Close underlying file if we opened it by path
-        if self.file_path:
-            self.file.close()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
-
-
-class ZstdFile(object):
-    ZSTD_MAGIC = b'\x28\xb5\x2f\xfd'  # Zstandard magic bytes
-
-    def __init__(self, file_path=None, fileobj=None, mode='rb', level=9,
-                 encoding=None, errors=None, newline=None):
-        """
-        A file-like wrapper around Zstandard compression/decompression,
-        supporting both Python 2 and 3.
-        """
-        if file_path is None and fileobj is None:
-            raise ValueError("Either file_path or fileobj must be provided")
-        if file_path is not None and fileobj is not None:
-            raise ValueError("Only one of file_path or fileobj should be provided")
-
-        self.file_path = file_path
-        self.fileobj = fileobj
-        self.mode = mode
-        self.level = level
-        self.encoding = encoding
-        self.errors = errors
-        self.newline = newline
-        self._compressed_data = b''
-        self._decompressed_data = b''
-        self._position = 0
-
-        # Track whether we're doing text mode
-        self._text_mode = 't' in mode
-
-        # Force binary mode internally for reading/writing bytes
-        internal_mode = mode.replace('t', 'b')
-
-        if 'w' in mode or 'a' in mode or 'x' in mode:
-            # Open the file if a path was specified; otherwise, use fileobj
-            if file_path:
-                self.file = open(file_path, internal_mode)
-            else:
-                self.file = fileobj
-
-            # Create a ZstdCompressor, then obtain a compressobj for flushing
-            zctx = zstandard.ZstdCompressor(level=self.level)
-            self._compressor = zctx.compressobj()
-
-        elif 'r' in mode:
-            if file_path:
-                if os.path.exists(file_path):
-                    self.file = open(file_path, internal_mode)
-                    self._load_file()
-                else:
-                    raise FileNotFoundError("No such file: '{}'".format(file_path))
-            else:
-                # fileobj provided
-                self.file = fileobj
-                self._load_file()
-
-        else:
-            raise ValueError("Mode should be 'rb'/'rt' or 'wb'/'wt'")
-
-    def _load_file(self):
-        """
-        Reads the entire compressed file into memory and uses streaming
-        decompression to handle multiple frames or frames with unknown size.
-        """
-        self.file.seek(0)
-        self._compressed_data = self.file.read()
-
-        # Validate Zstd magic bytes at the start
-        if not self._compressed_data.startswith(self.ZSTD_MAGIC):
-            raise ValueError("Invalid Zstandard file header (magic bytes missing)")
-
-        # Use streaming decompression (stream_reader)
-        decompressor = zstandard.ZstdDecompressor()
-        reader = decompressor.stream_reader(io.BytesIO(self._compressed_data))
-
-        chunks = []
-        while True:
-            chunk = reader.read(16384)  # 16 KB at a time
-            if not chunk:
-                break
-            chunks.append(chunk)
-
-        self._decompressed_data = b"".join(chunks)
-
-        # If in text mode, decode the bytes
-        if self._text_mode:
-            enc = self.encoding or 'UTF-8'
-            err = self.errors or 'strict'
-            self._decompressed_data = self._decompressed_data.decode(enc, err)
-
-    def write(self, data):
-        """
-        Write data to the ZstdFile. In text mode, data is encoded;
-        in binary mode, data is written as bytes. Each call to `write()`
-        produces compressed chunks.
-        """
-        if self._text_mode:
-            # Encode data from str (Py3) or unicode (Py2) to bytes
-            data = data.encode(self.encoding or 'UTF-8', self.errors or 'strict')
-
-        # Compress the chunk with the compressobj
-        compressed_chunk = self._compressor.compress(data)
-        if compressed_chunk:
-            self.file.write(compressed_chunk)
-
-    def read(self, size=-1):
-        """
-        Read from the decompressed data buffer.
-        """
-        if size < 0:
-            size = len(self._decompressed_data) - self._position
-        data = self._decompressed_data[self._position:self._position + size]
-        self._position += size
-        return data
-
-    def seek(self, offset, whence=0):
-        """
-        Adjust the current read position in the decompressed data buffer.
-        """
-        if whence == 0:  # absolute
-            new_pos = offset
-        elif whence == 1:  # relative
-            new_pos = self._position + offset
-        elif whence == 2:  # relative to end
-            new_pos = len(self._decompressed_data) + offset
-        else:
-            raise ValueError("Invalid value for whence")
-
-        self._position = max(0, min(new_pos, len(self._decompressed_data)))
-
-    def tell(self):
-        """
-        Return the current read position in the decompressed data buffer.
-        """
-        return self._position
-
-    def flush(self):
-        """
-        Flush the underlying file object. This doesn't force the Zstd
-        compressor to flush partial data like zlib, but we can at least
-        flush the OS buffer.
-        """
-        self.file.flush()
-
-    def fileno(self):
-        """
-        Return the file descriptor if available.
-        """
-        if hasattr(self.file, 'fileno'):
-            return self.file.fileno()
-        raise OSError("The underlying file object does not support fileno()")
-
-    def isatty(self):
-        """
-        Return whether the underlying file is a TTY.
-        """
-        if hasattr(self.file, 'isatty'):
-            return self.file.isatty()
-        return False
-
-    def truncate(self, size=None):
-        """
-        Truncate the underlying file if possible.
-        """
-        if hasattr(self.file, 'truncate'):
-            return self.file.truncate(size)
-        raise OSError("The underlying file object does not support truncate()")
-
-    def close(self):
-        """
-        If in write mode, finalize by flushing any remaining compressed data
-        in the compressobj. Then close the file if we opened it.
-        """
-        if any(x in self.mode for x in ('w', 'a', 'x')):
-            # flush() returns any remaining compressed data in the compressobj
-            final_chunk = self._compressor.flush()
-            if final_chunk:
-                self.file.write(final_chunk)
-
-        if self.file_path:
-            self.file.close()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
-
-
 class LzopFile(object):
     """
     A file-like wrapper around LZO compression/decompression using python-lzo.
@@ -4834,8 +4251,6 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, clos
                     fp = pyzstd.zstdfile.ZstdFile(infile, mode="rb")
                 else:
                     return Flase
-            elif(compresscheck == "zcompress" and compresscheck in compressionsupport):
-                fp = LzwFile(infile, mode="rb")
             elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
                 fp = LzopFile(infile, mode="rb")
             elif((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
@@ -4924,8 +4339,6 @@ def UncompressCatFile(fp, formatspecs=__file_format_multi_dict__):
             fp = pyzstd.zstdfile.ZstdFile(fileobj=fp, mode="rb")
         else:
             return Flase
-    elif(compresscheck == "zcompress" and compresscheck in compressionsupport):
-        fp = LzwFile(fileobj=fp, mode="rb")
     elif(compresscheck == "lz4" and compresscheck in compressionsupport):
         fp = lz4.frame.LZ4FrameFile(fp, mode='rb')
     elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
@@ -4970,8 +4383,6 @@ def UncompressFile(infile, formatspecs=__file_format_multi_dict__, mode="rb"):
                 filefp = pyzstd.zstdfile.ZstdFile(infile, mode=mode)
             else:
                 return Flase
-        elif(compresscheck == "zcompress" and compresscheck in compressionsupport):
-            filefp = LzwFile(infile, mode=mode)
         elif(compresscheck == "lz4" and compresscheck in compressionsupport):
             filefp = lz4.frame.open(infile, mode)
         elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
@@ -5012,8 +4423,6 @@ def UncompressString(infile, formatspecs=__file_format_multi_dict__):
         fileuz = lzo.decompress(infile)
     elif((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
         fileuz = lzma.decompress(infile)
-    elif((compresscheck == "zcompress" or compresscheck == "xz") and compresscheck in compressionsupport):
-        fileuz = lzw_decompress_bytes_with_magic(infile)
     elif(compresscheck == "zlib" and compresscheck in compressionsupport):
         fileuz = zlib.decompress(infile)
     elif(not compresscheck):
@@ -5066,8 +4475,6 @@ def UncompressBytes(infile, formatspecs=__file_format_multi_dict__):
         fileuz = lzo.decompress(infile)
     elif((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
         fileuz = lzma.decompress(infile)
-    elif((compresscheck == "zcompress" or compresscheck == "xz") and compresscheck in compressionsupport):
-        fileuz = lzw_decompress_bytes_with_magic(infile)
     elif(compresscheck == "zlib" and compresscheck in compressionsupport):
         fileuz = zlib.decompress(infile)
     elif(not compresscheck):
@@ -5159,13 +4566,6 @@ def CompressOpenFileAlt(fp, compression="auto", compressionlevel=None, formatspe
             bytesfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}]))
         except (NotImplementedError, lzma.LZMAError):
             bytesfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE))
-    elif(compression == "zcompress" and compression in compressionsupport):
-        bytesfp = BytesIO()
-        if(compressionlevel is None):
-            compressionlevel = 9
-        else:
-            compressionlevel = int(compressionlevel)
-        bytesfp.write(lzw_compress_bytes_with_magic(fp.read()))
     elif(compression == "xz" and compression in compressionsupport):
         bytesfp = BytesIO()
         if(compressionlevel is None):
@@ -5221,8 +4621,6 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
                 outfp = pyzstd.zstdfile.ZstdFile(outfile, mode=mode, level=compressionlevel)
             else:
                 return Flase
-        elif((fextname == ".Z" or fextname == ".z") and "zcompress" in compressionsupport):
-            outfp = LzwFile(outfile, mode=mode, level=compressionlevel)
         elif(fextname == ".xz" and "xz" in compressionsupport):
             try:
                 outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}])
@@ -5798,9 +5196,6 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
                 elif 'pyzstd' in sys.modules:
                     fp = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
                 tarfp = tarfile.open(fileobj=infile, mode="r")
-            elif(compresscheck=="zcompress"):
-                infile = LzwFile(fileobj=infile, mode="rb")
-                tarfp = tarfile.open(fileobj=infile, mode="r")
             else:
                 tarfp = tarfile.open(fileobj=infile, mode="r")
         else:
@@ -5812,9 +5207,6 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
                     infile = ZstdFile(fileobj=infile, mode="rb")
                 elif 'pyzstd' in sys.modules:
                     fp = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
-                tarfp = tarfile.open(fileobj=infile, mode="r")
-            elif(compresscheck=="zcompress"):
-                infile = LzwFile(fileobj=infile, mode="rb")
                 tarfp = tarfile.open(fileobj=infile, mode="r")
             else:
                 tarfp = tarfile.open(infile, "r")
@@ -9106,9 +8498,6 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
                 elif 'pyzstd' in sys.modules:
                     fp = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
                 tarfp = tarfile.open(fileobj=infile, mode="r")
-            elif(compresscheck=="zcompress"):
-                infile = LzwFile(fileobj=infile, mode="rb")
-                tarfp = tarfile.open(fileobj=infile, mode="r")
             else:
                 tarfp = tarfile.open(fileobj=infile, mode="r")
         else:
@@ -9120,9 +8509,6 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
                     infile = ZstdFile(fileobj=infile, mode="rb")
                 elif 'pyzstd' in sys.modules:
                     fp = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
-                tarfp = tarfile.open(fileobj=infile, mode="r")
-            elif(compresscheck=="zcompress"):
-                infile = LzwFile(fileobj=infile, mode="rb")
                 tarfp = tarfile.open(fileobj=infile, mode="r")
             else:
                 tarfp = tarfile.open(infile, "r")
