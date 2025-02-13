@@ -448,7 +448,6 @@ except ImportError:
 compressionsupport.append("zlib")
 compressionsupport.append("zl")
 compressionsupport.append("zz")
-compressionsupport.append("zcompress")
 compressionsupport.append("Z")
 compressionsupport.append("z")
 
@@ -505,13 +504,6 @@ if('zlib' in compressionsupport):
     outextlistwd.append('.zl')
     outextlist.append('zlib')
     outextlistwd.append('.zlib')
-if('zcompress' in compressionsupport):
-    compressionlist.append('zcompress')
-    compressionlistalt.append('zcompress')
-    outextlist.append('Z')
-    outextlistwd.append('.Z')
-    outextlist.append('z')
-    outextlistwd.append('.z')
 
 
 if __name__ == "__main__":
