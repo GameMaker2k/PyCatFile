@@ -3220,12 +3220,9 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, fi
     fjsontype = "json"
     if(len(jsondata) > 0):
         try:
-            fjsoncontent = base64.b64encode(json.dumps(jsondata, separators=(',', ':')).encode("UTF-8"))
+            fjsoncontent = json.dumps(jsondata, separators=(',', ':')).encode("UTF-8")
         except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
-            try:
-                fjsoncontent = json.dumps(jsondata.decode("UTF-8"))
-            except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
-                fjsoncontent = "".encode("UTF-8")
+            fjsoncontent = "".encode("UTF-8")
     else:
         fjsoncontent = "".encode("UTF-8")
     fjsonsize = format(len(fjsoncontent), 'x').lower()
@@ -7121,10 +7118,10 @@ def CatFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_dict
         outfprejsoncontent = fp.read(outfjsonsize).decode("UTF-8")
         if(outfjsonsize > 0):
             try:
-                outfjsoncontent = json.loads(base64.b64decode(outfprejsoncontent).decode("UTF-8"))
+                outfjsoncontent = json.loads(base64.b64decode(outfprejsoncontent.encode("UTF-8")).decode("UTF-8"))
             except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                 try:
-                    outfjsoncontent = json.loads(outfprejsoncontent.decode("UTF-8"))
+                    outfjsoncontent = json.loads(outfprejsoncontent)
                 except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                     outfprejsoncontent = ""
                     outfjsoncontent = {}
@@ -7553,10 +7550,10 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
         outfprejsoncontent = fp.read(outfjsonsize).decode("UTF-8")
         if(outfjsonsize > 0):
             try:
-                outfjsoncontent = json.loads(base64.b64decode(outfprejsoncontent).decode("UTF-8"))
+                outfjsoncontent = json.loads(base64.b64decode(outfprejsoncontent.encode("UTF-8")).decode("UTF-8"))
             except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                 try:
-                    outfjsoncontent = json.loads(outfprejsoncontent.decode("UTF-8"))
+                    outfjsoncontent = json.loads(outfprejsoncontent)
                 except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                     outfprejsoncontent = ""
                     outfjsoncontent = {}
