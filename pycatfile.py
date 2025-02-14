@@ -1496,6 +1496,17 @@ def SevenZipFileCheck(infile):
 # initial_value can be 0xFFFF or 0x0000
 
 
+def crc_calculate(msg, poly, initial_value, bit_length):
+    """Generic CRC calculation function."""
+    crc = initial_value
+    for byte in msg:
+        crc ^= byte << (bit_length - 8)
+        for _ in range(8):
+            crc = (crc << 1) ^ poly if crc & (1 << (bit_length - 1)) else crc << 1
+            crc &= (1 << bit_length) - 1
+    return crc
+
+
 def crc16_ansi(msg, initial_value=0xFFFF):
     # CRC-16-IBM / CRC-16-ANSI polynomial and initial value
     poly = 0x8005  # Polynomial for CRC-16-IBM / CRC-16-ANSI
