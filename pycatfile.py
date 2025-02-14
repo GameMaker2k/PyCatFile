@@ -261,7 +261,7 @@ __use_pysftp__ = False
 __use_alt_format__ = False
 __use_env_file__ = True
 __use_ini_file__ = True
-__use_ini_name__ = "outfile.ini"
+__use_ini_name__ = "catfile.ini"
 if('PYCATFILE_CONFIG_FILE' in os.environ and os.path.exists(os.environ['PYCATFILE_CONFIG_FILE']) and __use_env_file__):
     scriptconf = os.environ['PYCATFILE_CONFIG_FILE']
 else:
@@ -514,7 +514,7 @@ if __name__ == "__main__":
     if(os.sep == "\\"):
         curscrpath = curscrpath.replace(os.sep, "/")
     curscrpath = curscrpath + "/"
-    scrfile = curscrpath + "outfile.py"
+    scrfile = curscrpath + "catfile.py"
     if(os.path.exists(scrfile) and os.path.isfile(scrfile)):
         scrcmd = subprocess.Popen([sys.executable, scrfile] + sys.argv[1:])
         scrcmd.wait()
@@ -1963,7 +1963,7 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
     else:
         fcontents.seek(0, 0)
         if(uncompress):
-            cfcontents = UncompressArchiveFile(fcontents, formatspecs)
+            cfcontents = UncompressFileAlt(fcontents, formatspecs)
             cfcontents.seek(0, 0)
             cfcontents.seek(0, 0)
             shutil.copyfileobj(cfcontents, fcontents)
