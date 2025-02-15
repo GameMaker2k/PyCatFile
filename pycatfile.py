@@ -2409,7 +2409,7 @@ def ReadFileDataWithContent(fp, listonly=False, uncompress=True, skipchecksum=Fa
     return flist
 
 
-def ReadFileDataWithContentToArray(fp, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadFileDataWithContentToArray(fp, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False):
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
@@ -2541,7 +2541,7 @@ def ReadFileDataWithContentToArray(fp, seekstart=0, seekend=0, listonly=False, c
             il = il + 1
     realidnum = 0
     countnum = seekstart
-    while(countnum < seekend):
+    while (fp.tell() < CatSizeEnd) if seektoend else (countnum < seekend):
         HeaderOut = ReadFileHeaderDataWithContentToArray(
             fp, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
         if(len(HeaderOut) == 0):
@@ -2553,7 +2553,7 @@ def ReadFileDataWithContentToArray(fp, seekstart=0, seekend=0, listonly=False, c
     return outlist
 
 
-def ReadFileDataWithContentToList(fp, seekstart=0, seekend=0, listonly=False, contentasfile=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadFileDataWithContentToList(fp, seekstart=0, seekend=0, listonly=False, contentasfile=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False):
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
@@ -2692,7 +2692,7 @@ def ReadFileDataWithContentToList(fp, seekstart=0, seekend=0, listonly=False, co
             il = il + 1
     realidnum = 0
     countnum = seekstart
-    while(countnum < seekend):
+    while (fp.tell() < CatSizeEnd) if seektoend else (countnum < seekend):
         HeaderOut = ReadFileHeaderDataWithContentToList(
             fp, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
         if(len(HeaderOut) == 0):
@@ -2703,7 +2703,7 @@ def ReadFileDataWithContentToList(fp, seekstart=0, seekend=0, listonly=False, co
     return outlist
 
 
-def ReadInFileWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
+def ReadInFileWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
     if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
         formatspecs = formatspecs[fmttype]
     elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
@@ -2723,13 +2723,13 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0,
         fp = UncompressCatFile(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return TarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return ZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return RarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
@@ -2839,13 +2839,13 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0,
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+            return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, seektoend, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+            return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, seektoend, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+            return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, seektoend, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, seektoend, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
@@ -2874,24 +2874,24 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0,
         if(not compresscheck):
             return False
         fp = UncompressFile(infile, formatspecs, "rb")
-    return ReadFileDataWithContentToArray(fp, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
+    return ReadFileDataWithContentToArray(fp, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend)
 
 
-def ReadInMultipleFileWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
+def ReadInMultipleFileWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
     if(isinstance(infile, (list, tuple, ))):
         pass
     else:
         infile = [infile]
     outretval = {}
     for curfname in infile:
-        curretfile = outretval.update({curfname: ReadInFileWithContentToArray(curfname, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)})
+        curretfile = outretval.update({curfname: ReadInFileWithContentToArray(curfname, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend)})
     return outretval
 
-def ReadInMultipleFilesWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
-    return ReadInMultipleFileWithContentToArray(infile, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
+def ReadInMultipleFilesWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
+    return ReadInMultipleFileWithContentToArray(infile, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend)
 
 
-def ReadInFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
+def ReadInFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
     if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
         formatspecs = formatspecs[fmttype]
     elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
@@ -2911,13 +2911,13 @@ def ReadInFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, 
         fp = UncompressCatFile(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return TarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return ZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return RarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
@@ -3027,13 +3027,13 @@ def ReadInFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, 
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+            return TarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, seektoend, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+            return ZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, seektoend, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+            return RarFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, seektoend, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, seekstart, seekend, listonly, skipchecksum, formatspecs, seektoend, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
@@ -3062,21 +3062,21 @@ def ReadInFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, 
         if(not compresscheck):
             return False
         fp = UncompressFile(infile, formatspecs, "rb")
-    return ReadFileDataWithContentToList(fp, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
+    return ReadFileDataWithContentToList(fp, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend)
 
 
-def ReadInMultipleFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
+def ReadInMultipleFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
     if(isinstance(infile, (list, tuple, ))):
         pass
     else:
         infile = [infile]
     outretval = {}
     for curfname in infile:
-        curretfile = outretval.update({curfname: ReadInFileWithContentToList(curfname, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)})
+        curretfile = outretval.update({curfname: ReadInFileWithContentToList(curfname, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend)})
     return outretval
 
-def ReadInMultipleFilesWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__):
-    return ReadInMultipleFileWithContentToList(infile, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
+def ReadInMultipleFilesWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
+    return ReadInMultipleFileWithContentToList(infile, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend)
 
 
 def AppendNullByte(indata, delimiter=__file_format_dict__['format_delimiter']):
@@ -6325,7 +6325,7 @@ def PackCatFileFromInFile(infile, outfile, fmttype="auto", compression="auto", c
     return False
 
 
-def CatFileSeekToFileNum(infile, fmttype="auto", seekto=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
+def CatFileSeekToFileNum(infile, fmttype="auto", seekto=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
         formatspecs = formatspecs[fmttype]
     elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
@@ -6340,13 +6340,13 @@ def CatFileSeekToFileNum(infile, fmttype="auto", seekto=0, listonly=False, conte
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
@@ -6395,13 +6395,13 @@ def CatFileSeekToFileNum(infile, fmttype="auto", seekto=0, listonly=False, conte
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
@@ -6509,7 +6509,7 @@ def CatFileSeekToFileNum(infile, fmttype="auto", seekto=0, listonly=False, conte
         seekto = 0
     if(seekto >= 0):
         il = -1
-        while(il < seekto):
+        while (fp.tell() < CatSizeEnd) if seektoend else (il < seekto):
             prefhstart = fp.tell()
             if(formatspecs['new_style']):
                 preheaderdata = ReadFileHeaderDataBySize(
@@ -6626,7 +6626,7 @@ def CatFileSeekToFileNum(infile, fmttype="auto", seekto=0, listonly=False, conte
     return outlist
 
 
-def CatFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
+def CatFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
         formatspecs = formatspecs[fmttype]
     elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
@@ -6641,13 +6641,13 @@ def CatFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=False,
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
@@ -6696,13 +6696,13 @@ def CatFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=False,
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
@@ -6807,7 +6807,7 @@ def CatFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=False,
     filefound = False
     if(seekto >= 0):
         il = -1
-        while(il < seekto):
+        while (fp.tell() < CatSizeEnd) if seektoend else (il < seekto):
             prefhstart = fp.tell()
             if(formatspecs['new_style']):
                 preheaderdata = ReadFileHeaderDataBySize(
@@ -6942,7 +6942,7 @@ def CatFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=False,
     return outlist
 
 
-def CatFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def CatFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
     if(verbose):
         logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
@@ -6959,13 +6959,13 @@ def CatFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_dict
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
@@ -7014,13 +7014,13 @@ def CatFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_dict
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
@@ -7125,7 +7125,7 @@ def CatFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_dict
             invalid_archive = True
     if(verbose):
         VerbosePrintOut("")
-    while(il < fnumfiles):
+    while (fp.tell() < CatSizeEnd) if seektoend else (il < fnumfiles):
         outfhstart = fp.tell()
         if(formatspecs['new_style']):
             inheaderdata = ReadFileHeaderDataBySize(
@@ -7280,7 +7280,7 @@ def CatFileValidateMultiple(infile, fmttype="auto", formatspecs=__file_format_mu
 def CatFileValidateMultipleFiles(infile, fmttype="auto", formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     return CatFileValidateMultiple(infile, fmttype, formatspecs, verbose, returnfp)
 
-def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
+def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
         formatspecs = formatspecs[fmttype]
     elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
@@ -7295,13 +7295,13 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
@@ -7350,13 +7350,13 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
@@ -7548,7 +7548,7 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
             il = il + 1
     fileidnum = seekstart
     realidnum = 0
-    while(fileidnum < seekend):
+    while (fp.tell() < CatSizeEnd) if seektoend else (fileidnum < seekend):
         outfhstart = fp.tell()
         if(formatspecs['new_style']):
             inheaderdata = ReadFileHeaderDataBySize(
@@ -7730,110 +7730,110 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
     return outlist
 
 
-def MultipleCatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
+def MultipleCatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
     if(isinstance(infile, (list, tuple, ))):
         pass
     else:
         infile = [infile]
     outretval = {}
     for curfname in infile:
-        curretfile = outretval.update({curfname: CatFileToArray(curfname, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, returnfp)})
+        curretfile = outretval.update({curfname: CatFileToArray(curfname, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend, returnfp)})
     return outretval
 
-def MultipleCatFilesToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
-    return MultipleCatFileToArray(infile, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, returnfp)
+def MultipleCatFilesToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
+    return MultipleCatFileToArray(infile, fmttype, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend, returnfp)
 
 
-def CatFileStringToArray(instr, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
+def CatFileStringToArray(instr, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         formatspecs = formatspecs[checkcompressfile]
     fp = BytesIO(instr)
-    listarchivefiles = CatFileToArray(fp, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
+    listarchivefiles = CatFileToArray(fp, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, seektoend, returnfp)
     return listarchivefiles
 
 
-def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
+def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         formatspecs = formatspecs[checkcompressfile]
     fp = BytesIO()
     fp = PackCatFileFromTarFile(
         infile, fp, "auto", True, None, compressionlistalt, "crc32", [], formatspecs, False, True)
-    listarchivefiles = CatFileToArray(fp, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
+    listarchivefiles = CatFileToArray(fp, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, seektoend, returnfp)
     return listarchivefiles
 
 
-def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
+def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         formatspecs = formatspecs[checkcompressfile]
     fp = BytesIO()
     fp = PackCatFileFromZipFile(
         infile, fp, "auto", True, None, compressionlistalt, "crc32", [], formatspecs, False, True)
-    listarchivefiles = CatFileToArray(fp, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
+    listarchivefiles = CatFileToArray(fp, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, seektoend, returnfp)
     return listarchivefiles
 
 
 if(not rarfile_support):
-    def RarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
+    def RarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
         return False
 
 if(rarfile_support):
-    def RarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
+    def RarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
         checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         fp = BytesIO()
         fp = PackCatFileFromRarFile(
             infile, fp, "auto", True, None, compressionlistalt, "crc32", [], formatspecs, False, True)
-        listarchivefiles = CatFileToArray(fp, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
+        listarchivefiles = CatFileToArray(fp, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, seektoend, returnfp)
         return listarchivefiles
 
 if(not py7zr_support):
-    def SevenZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
+    def SevenZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
         return False
 
 if(py7zr_support):
-    def SevenZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, returnfp=False):
+    def SevenZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
         checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         fp = BytesIO()
         fp = PackCatFileFromSevenZipFile(
             infile, fp, "auto", True, None, compressionlistalt, "crc32", [], formatspecs, False, True)
-        listarchivefiles = CatFileToArray(fp, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
+        listarchivefiles = CatFileToArray(fp, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, seektoend, returnfp)
         return listarchivefiles
 
 
-def InFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, returnfp=False):
+def InFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         formatspecs = formatspecs[checkcompressfile]
     if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-        return TarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+        return TarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
     elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-        return ZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+        return ZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
     elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-        return RarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+        return RarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
     elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-        return SevenZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, returnfp)
+        return SevenZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
     elif(checkcompressfile == formatspecs['format_magic']):
-        return CatFileToArray(infile, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, returnfp)
+        return CatFileToArray(infile, "auto", seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, seektoend, returnfp)
     else:
         return False
     return False
 
 
-def ListDirToArray(infiles, dirlistfromtxt=False, fmttype=__file_format_default__, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def ListDirToArray(infiles, dirlistfromtxt=False, fmttype=__file_format_default__, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, seektoend=False, returnfp=False):
     outarray = BytesIO()
     packform = PackCatFile(infiles, outarray, dirlistfromtxt, fmttype, compression, compresswholefile,
                               compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, True)
-    listarchivefiles = CatFileToArray(outarray, "auto", seekstart, seekend, listonly, True, skipchecksum, formatspecs, returnfp)
+    listarchivefiles = CatFileToArray(outarray, "auto", seekstart, seekend, listonly, True, skipchecksum, formatspecs, seektoend, returnfp)
     return listarchivefiles
 
 
-def CatFileArrayToArrayIndex(inarray, seekstart=0, seekend=0, listonly=False, uncompress=True, skipchecksum=False, returnfp=False):
+def CatFileArrayToArrayIndex(inarray, returnfp=False):
     if(isinstance(inarray, dict)):
         listarchivefiles = inarray
     else:
@@ -7899,13 +7899,13 @@ def CatFileArrayToArrayIndex(inarray, seekstart=0, seekend=0, listonly=False, un
     return outarray
 
 
-def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, seekstart=0, seekend=0, checksumtype=["crc32", "crc32", "crc32"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, seekstart=0, seekend=0, checksumtype=["crc32", "crc32", "crc32"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=__file_format_dict__, seektoend=False, verbose=False, returnfp=False):
     if(isinstance(infile, dict)):
         listarchivefiles = infile
     else:
         if(infile != "-" and not isinstance(infile, bytes) and not hasattr(infile, "read") and not hasattr(infile, "write")):
             infile = RemoveWindowsPath(infile)
-        listarchivefiles = CatFileToArray(infile, "auto", seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp)
+        listarchivefiles = CatFileToArray(infile, "auto", seekstart, seekend, False, True, skipchecksum, formatspecs, seektoend, returnfp)
     if(IsNestedDict(formatspecs) and fmttype in formatspecs):
         formatspecs = formatspecs[fmttype]
     elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
@@ -8195,7 +8195,7 @@ def PackCatFileFromListDir(infiles, outfile, dirlistfromtxt=False, fmttype="auto
     return listarchivefiles
 
 
-def UnPackCatFile(infile, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, preservepermissions=True, preservetime=True, verbose=False, returnfp=False):
+def UnPackCatFile(infile, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, preservepermissions=True, preservetime=True, seektoend=False, verbose=False, returnfp=False):
     if(outdir is not None):
         outdir = RemoveWindowsPath(outdir)
     if(verbose):
@@ -8205,7 +8205,7 @@ def UnPackCatFile(infile, outdir=None, followlink=False, seekstart=0, seekend=0,
     else:
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
             infile = RemoveWindowsPath(infile)
-        listarchivefiles = CatFileToArray(infile, "auto", seekstart, seekend, False, True, skipchecksum, formatspecs, returnfp)
+        listarchivefiles = CatFileToArray(infile, "auto", seekstart, seekend, False, True, skipchecksum, formatspecs, seektoend, returnfp)
     if(not listarchivefiles):
         return False
     lenlist = len(listarchivefiles['ffilelist'])
@@ -8453,13 +8453,13 @@ def UnPackCatFile(infile, outdir=None, followlink=False, seekstart=0, seekend=0,
         return True
 
 
-def UnPackCatFileString(instr, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def UnPackCatFileString(instr, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
     fp = BytesIO(instr)
-    listarchivefiles = UnPackCatFile(fp, outdir, followlink, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp)
+    listarchivefiles = UnPackCatFile(fp, outdir, followlink, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, returnfp)
     return listarchivefiles
 
 
-def CatFileListFiles(infile, fmttype="auto", seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def CatFileListFiles(infile, fmttype="auto", seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
     if(verbose):
         logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     if(isinstance(infile, dict)):
@@ -8467,7 +8467,7 @@ def CatFileListFiles(infile, fmttype="auto", seekstart=0, seekend=0, skipchecksu
     else:
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
             infile = RemoveWindowsPath(infile)
-        listarchivefiles = CatFileToArray(infile, fmttype, seekstart, seekend, True, False, False, skipchecksum, formatspecs, returnfp)
+        listarchivefiles = CatFileToArray(infile, fmttype, seekstart, seekend, True, False, False, skipchecksum, formatspecs, seektoend, returnfp)
     if(not listarchivefiles):
         return False
     lenlist = len(listarchivefiles['ffilelist'])
@@ -8508,10 +8508,10 @@ def CatFileListFiles(infile, fmttype="auto", seekstart=0, seekend=0, skipchecksu
         return True
 
 
-def CatFileStringListFiles(instr, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def CatFileStringListFiles(instr, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
     fp = BytesIO(instr)
     listarchivefiles = CatFileListFiles(
-        instr, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp)
+        instr, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, returnfp)
     return listarchivefiles
 
 
@@ -9018,7 +9018,7 @@ if(py7zr_support):
             return True
 
 
-def InFileListFiles(infile, verbose=False, formatspecs=__file_format_multi_dict__, returnfp=False):
+def InFileListFiles(infile, verbose=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
     if(verbose):
         logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
@@ -9033,18 +9033,18 @@ def InFileListFiles(infile, verbose=False, formatspecs=__file_format_multi_dict_
     elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
         return SevenZipFileListFiles(infile, verbose, returnfp)
     elif(checkcompressfile == formatspecs['format_magic']):
-        return CatFileListFiles(infile, 0, 0, False, formatspecs, verbose, returnfp)
+        return CatFileListFiles(infile, 0, 0, False, formatspecs, seektoend, verbose, returnfp)
     else:
         return False
     return False
 
 
-def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, seektoend=False, verbose=False, returnfp=False):
     outarray = BytesIO()
     packform = PackCatFile(infiles, outarray, dirlistfromtxt, compression, compresswholefile,
                               compressionlevel, followlink, checksumtype, formatspecs, False, True)
     listarchivefiles = CatFileListFiles(
-        outarray, seekstart, seekend, skipchecksum, formatspecs, verbose, returnfp)
+        outarray, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, returnfp)
     return listarchivefiles
 
 

@@ -115,10 +115,10 @@ if primary_action == 'create':
                                   False, [args.checksum, args.checksum, args.checksum], [], {}, pycatfile.__file_format_dict__, args.verbose, False)
 elif primary_action == 'repack':
     pycatfile.RePackCatFile(
-        input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], args.verbose)
+        input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], False, args.verbose)
 elif primary_action == 'extract':
     pycatfile.UnPackCatFile(
-        input_file, args.output, args.verbose, args.preserve)
+        input_file, args.output, args.verbose, False, args.preserve)
 elif primary_action == 'list':
     if args.convert == 'tar':
         pycatfile.TarFileListFiles(input_file, verbose=args.verbose)
