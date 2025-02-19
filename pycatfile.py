@@ -377,19 +377,19 @@ elif(PyBitness == "64bit" or PyBitness == "64"):
 else:
     PyBitness = "32"
 
-geturls_ua_pycatfile_python = "Mozilla/5.0 (compatible; {proname}/{prover}; +{prourl})".format(
+geturls_ua_pyfile_python = "Mozilla/5.0 (compatible; {proname}/{prover}; +{prourl})".format(
     proname=__project__, prover=__version__, prourl=__project_url__)
 if(platform.python_implementation() != ""):
     py_implementation = platform.python_implementation()
 if(platform.python_implementation() == ""):
     py_implementation = "Python"
-geturls_ua_pycatfile_python_alt = "Mozilla/5.0 ({osver}; {archtype}; +{prourl}) {pyimp}/{pyver} (KHTML, like Gecko) {proname}/{prover}".format(osver=platform.system(
+geturls_ua_pyfile_python_alt = "Mozilla/5.0 ({osver}; {archtype}; +{prourl}) {pyimp}/{pyver} (KHTML, like Gecko) {proname}/{prover}".format(osver=platform.system(
 )+" "+platform.release(), archtype=platform.machine(), prourl=__project_url__, pyimp=py_implementation, pyver=platform.python_version(), proname=__project__, prover=__version__)
 geturls_ua_googlebot_google = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
 geturls_ua_googlebot_google_old = "Googlebot/2.1 (+http://www.google.com/bot.html)"
-geturls_headers_pycatfile_python = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pycatfile_python, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,UTF-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
+geturls_headers_pyfile_python = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pyfile_python, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,UTF-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
                                     'SEC-CH-UA': "\""+__project__+"\";v=\""+str(__version__)+"\", \"Not;A=Brand\";v=\"8\", \""+py_implementation+"\";v=\""+str(platform.release())+"\"", 'SEC-CH-UA-FULL-VERSION': str(__version__), 'SEC-CH-UA-PLATFORM': ""+py_implementation+"", 'SEC-CH-UA-ARCH': ""+platform.machine()+"", 'SEC-CH-UA-PLATFORM': str(__version__), 'SEC-CH-UA-BITNESS': str(PyBitness)}
-geturls_headers_pycatfile_python_alt = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pycatfile_python_alt, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,UTF-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
+geturls_headers_pyfile_python_alt = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pyfile_python_alt, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,UTF-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
                                         'SEC-CH-UA': "\""+__project__+"\";v=\""+str(__version__)+"\", \"Not;A=Brand\";v=\"8\", \""+py_implementation+"\";v=\""+str(platform.release())+"\"", 'SEC-CH-UA-FULL-VERSION': str(__version__), 'SEC-CH-UA-PLATFORM': ""+py_implementation+"", 'SEC-CH-UA-ARCH': ""+platform.machine()+"", 'SEC-CH-UA-PLATFORM': str(__version__), 'SEC-CH-UA-BITNESS': str(PyBitness)}
 geturls_headers_googlebot_google = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6",
                                     'Accept-Charset': "ISO-8859-1,ISO-8859-15,UTF-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"}
@@ -1923,8 +1923,12 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
     fsize = int(HeaderOut[5], 16)
     fcompression = HeaderOut[12]
     fcsize = int(HeaderOut[13], 16)
-    fseeknextfile = HeaderOut[25]
+    fseeknextfile = HeaderOut[26]
+    fjsontype = HeaderOut[27]
+    fjsonlen = int(HeaderOut[28], 16)
     fjsonsize = int(HeaderOut[29], 16)
+    fjsonchecksumtype = HeaderOut[30]
+    fjsonchecksum = HeaderOut[31]
     fjsoncontent = {}
     fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
     if(fjsonsize > 0):
@@ -1939,6 +1943,13 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
     else:
         fprejsoncontent = ""
         fjsoncontent = {}
+    fp.seek(len(delimiter), 1)
+    jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs)
+    if(jsonfcs != fjsonchecksum and not skipchecksum):
+        VerbosePrintOut("File JSON Data Checksum Error with file " +
+                        fname + " at offset " + str(fheaderstart))
+        VerbosePrintOut("'" + fjsonchecksum + "' != " + "'" + jsonfcs + "'")
+        return False
     fp.seek(len(delimiter), 1)
     newfcs = GetHeaderChecksum(
         HeaderOut[:-2] + [fprejsoncontent], HeaderOut[-4].lower(), True, formatspecs)
@@ -2049,10 +2060,12 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     fjsontype = HeaderOut[27]
     fjsonlen = int(HeaderOut[28], 16)
     fjsonsize = int(HeaderOut[29], 16)
-    fextrasize = int(HeaderOut[30], 16)
-    fextrafields = int(HeaderOut[31], 16)
+    fjsonchecksumtype = HeaderOut[30]
+    fjsonchecksum = HeaderOut[31]
+    fextrasize = int(HeaderOut[32], 16)
+    fextrafields = int(HeaderOut[33], 16)
     fextrafieldslist = []
-    extrastart = 32
+    extrastart = 34
     extraend = extrastart + fextrafields
     while(extrastart < extraend):
         fextrafieldslist.append(HeaderOut[extrastart])
@@ -2093,11 +2106,11 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
         fjsoncontent = ReadFileHeaderData(flisttmp, fjsonlen, delimiter)
         flisttmp.close()
         fjsonrawcontent = fjsoncontent
-        if(fjsonlen==1):
+        if(outfjsonlen==1):
             try:
                 fjsonrawcontent = base64.b64decode(fjsoncontent[0]).decode("UTF-8")
                 fjsoncontent = json.loads(base64.b64decode(fjsoncontent[0]).decode("UTF-8"))
-                fjsonlen = len(fjsoncontent)
+                outfjsonlen = len(fjsoncontent)
             except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                 try:
                     fjsonrawcontent = fjsoncontent[0]
@@ -2105,6 +2118,12 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
                 except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                     pass
     fp.seek(len(delimiter), 1)
+    jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs)
+    if(jsonfcs != fjsonchecksum and not skipchecksum):
+        VerbosePrintOut("File JSON Data Checksum Error with file " +
+                        fname + " at offset " + str(fheaderstart))
+        VerbosePrintOut("'" + fjsonchecksum + "' != " + "'" + jsonfcs + "'")
+        return False
     fcs = HeaderOut[-2].lower()
     fccs = HeaderOut[-1].lower()
     newfcs = GetHeaderChecksum(
@@ -2143,7 +2162,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     else:
         fcontents.seek(0, 0)
         if(uncompress):
-            cfcontents = UncompressCatFile(
+            cfcontents = UncompressFileAlt(
                 fcontents, formatspecs)
             cfcontents.seek(0, 0)
             fcontents = BytesIO()
@@ -2174,7 +2193,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     if(not contentasfile):
         fcontents = fcontents.read()
     outlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fencoding': fencoding, 'fcencoding': fcencoding, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
-               'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextradata': fextrafieldslist, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fheaderchecksum': fcs, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
+               'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fjsonchecksumtype': outfjsonchecksumtype, 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextradata': fextrafieldslist, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fjstart': outfjstart, 'fjend': outfjend, 'fheaderchecksum': fcs, 'fjsonchecksum': outfjsonchecksum, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
     return outlist
 
 
@@ -2225,10 +2244,12 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     fjsontype = HeaderOut[27]
     fjsonlen = int(HeaderOut[28], 16)
     fjsonsize = int(HeaderOut[29], 16)
-    fextrasize = int(HeaderOut[30], 16)
-    fextrafields = int(HeaderOut[31], 16)
+    fjsonchecksumtype = HeaderOut[30]
+    fjsonchecksum = HeaderOut[31]
+    fextrasize = int(HeaderOut[32], 16)
+    fextrafields = int(HeaderOut[33], 16)
     fextrafieldslist = []
-    extrastart = 32
+    extrastart = 34
     extraend = extrastart + fextrafields
     while(extrastart < extraend):
         fextrafieldslist.append(HeaderOut[extrastart])
@@ -2281,6 +2302,12 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
                 except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                     pass
     fp.seek(len(delimiter), 1)
+    jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs)
+    if(jsonfcs != fjsonchecksum and not skipchecksum):
+        VerbosePrintOut("File JSON Data Checksum Error with file " +
+                        fname + " at offset " + str(fheaderstart))
+        VerbosePrintOut("'" + fjsonchecksum + "' != " + "'" + jsonfcs + "'")
+        return False
     fcs = HeaderOut[-2].lower()
     fccs = HeaderOut[-1].lower()
     newfcs = GetHeaderChecksum(
@@ -2319,7 +2346,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     else:
         fcontents.seek(0, 0)
         if(uncompress):
-            cfcontents = UncompressCatFile(
+            cfcontents = UncompressFileAlt(
                 fcontents, formatspecs)
             cfcontents.seek(0, 0)
             fcontents = BytesIO()
@@ -2492,9 +2519,21 @@ def ReadFileDataWithContentToArray(fp, seekstart=0, seekend=0, listonly=False, c
             if(len(preheaderdata) == 0):
                 break
             prefsize = int(preheaderdata[5], 16)
-            prefseeknextfile = preheaderdata[25]
+            prefseeknextfile = preheaderdata[26]
+            prefjsonlen = int(preheaderdata[28], 16)
+            prefjsonsize = int(preheaderdata[29], 16)
+            prefjsonchecksumtype = preheaderdata[30]
+            prefjsonchecksum = preheaderdata[31]
+            prefprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+            fp.seek(len(delimiter), 1)
+            prejsonfcs = GetFileChecksum(fprejsoncontent, prefjsonchecksumtype, True, formatspecs)
+            if(prejsonfcs != prefjsonchecksum and not skipchecksum):
+                VerbosePrintOut("File JSON Data Checksum Error with file " +
+                                prefname + " at offset " + str(prefhstart))
+                VerbosePrintOut("'" + prefjsonchecksum + "' != " + "'" + prejsonfcs + "'")
+                return False
             prenewfcs = GetHeaderChecksum(
-                preheaderdata[:-2], preheaderdata[-4].lower(), True, formatspecs)
+                preheaderdata[:-2] + prefprejsoncontent, preheaderdata[-4].lower(), True, formatspecs)
             prefcs = preheaderdata[-2]
             if(prefcs != prenewfcs and not skipchecksum):
                 VVerbosePrintOut("File Header Checksum Error with file " +
@@ -2641,7 +2680,19 @@ def ReadFileDataWithContentToList(fp, seekstart=0, seekend=0, listonly=False, co
             prefsize = int(preheaderdata[5], 16)
             prefcompression = preheaderdata[12]
             prefcsize = int(preheaderdata[13], 16)
-            prefseeknextfile = HeaderOut[25]
+            prefseeknextfile = HeaderOut[26]
+            prefjsonlen = int(preheaderdata[28], 16)
+            prefjsonsize = int(preheaderdata[29], 16)
+            prefjsonchecksumtype = preheaderdata[30]
+            prefjsonchecksum = preheaderdata[31]
+            prefprejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
+            fp.seek(len(delimiter), 1)
+            prejsonfcs = GetFileChecksum(fprejsoncontent, prefjsonchecksumtype, True, formatspecs)
+            if(prejsonfcs != prefjsonchecksum and not skipchecksum):
+                VerbosePrintOut("File JSON Data Checksum Error with file " +
+                                prefname + " at offset " + str(prefhstart))
+                VerbosePrintOut("'" + prefjsonchecksum + "' != " + "'" + prejsonfcs + "'")
+                return False
             prenewfcs = GetHeaderChecksum(
                 preheaderdata[:-2], preheaderdata[-4].lower(), True, formatspecs)
             prefcs = preheaderdata[-2]
@@ -2720,7 +2771,7 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0,
             if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
                 formatspecs = formatspecs[checkcompressfile]
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
             return TarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
@@ -2764,7 +2815,7 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0,
         else:
             shutil.copyfileobj(sys.stdin, fp)
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         fp.seek(0, 0)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
@@ -2782,7 +2833,7 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0,
         fp = BytesIO()
         fp.write(infile)
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         fp.seek(0, 0)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
@@ -2829,7 +2880,7 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", seekstart=0, seekend=0,
             else:
                 return False
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         if(not fp):
             return False
         fp.seek(0, 0)
@@ -2908,7 +2959,7 @@ def ReadInFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, 
             if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
                 formatspecs = formatspecs[checkcompressfile]
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
             return TarFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
@@ -2952,7 +3003,7 @@ def ReadInFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, 
         else:
             shutil.copyfileobj(sys.stdin, fp)
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         fp.seek(0, 0)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
@@ -2970,7 +3021,7 @@ def ReadInFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, 
         fp = BytesIO()
         fp.write(infile)
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         fp.seek(0, 0)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
@@ -3017,7 +3068,7 @@ def ReadInFileWithContentToList(infile, fmttype="auto", seekstart=0, seekend=0, 
             else:
                 return False
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         if(not fp):
             return False
         fp.seek(0, 0)
@@ -3258,7 +3309,7 @@ def MakeEmptyCatFile(outfile, compression="auto", compresswholefile=True, compre
     return MakeEmptyFile(outfile, compression, compresswholefile, compressionlevel, checksumtype, formatspecs, returnfp)
 
 
-def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, filecontent="", checksumtype=["crc32", "crc32"], formatspecs=__file_format_dict__):
+def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, filecontent="", checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__):
     if(not hasattr(fp, "write")):
         return False
     if (isinstance(extradata, dict) or IsNestedDictAlt(extradata)) and len(extradata) > 0:
@@ -3271,7 +3322,7 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, fi
         extrasizestr = extrasizestr + \
             AppendNullBytes(extradata, formatspecs['format_delimiter'])
     extrasizelen = format(len(extrasizestr), 'x').lower()
-    tmpoutlen = len(filevalues) + len(extradata) + 9
+    tmpoutlen = len(filevalues) + len(extradata) + 12
     tmpoutlenhex = format(tmpoutlen, 'x').lower()
     tmpoutlist = filevalues
     fjsontype = "json"
@@ -3288,6 +3339,11 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, fi
     tmpoutlist.append(fjsontype)
     tmpoutlist.append(fjsonlen)
     tmpoutlist.append(fjsonsize)
+    if(len(jsondata) > 0):
+        tmpoutlist.append(checksumtype[2])
+    else:
+        tmpoutlist.append("none")
+    tmpoutlist.append(GetFileChecksum(fjsoncontent, checksumtype[2], True, formatspecs))
     tmpoutlist.append(extrasizelen)
     tmpoutlist.append(extrafields)
     outfileoutstr = AppendNullBytes(
@@ -3340,7 +3396,7 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, fi
     return fp
 
 
-def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
+def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
     if(not hasattr(fp, "write")):
         return False
     advancedlist = formatspecs['use_advanced_list']
@@ -3633,7 +3689,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
         AppendFileHeaderWithContent(
-            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
+            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
     if(numfiles > 0):
         try:
             fp.write(AppendNullBytes(
@@ -3644,7 +3700,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
     return fp
 
 
-def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
+def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
     if(not hasattr(fp, "write")):
         return False
     if(verbose):
@@ -3702,7 +3758,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
                       fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile]
         fcontents.seek(0, 0)
         AppendFileHeaderWithContent(
-            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
+            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
     if(numfiles > 0):
         try:
             fp.write(AppendNullBytes(
@@ -3712,12 +3768,12 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
     return fp
 
 
-def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
+def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
     inlist = ReadInFileWithContentToList(infile, "auto", 0, 0, False, False, True, False, formatspecs)
     return AppendListsWithContent(inlist, fp, dirlistfromtxt, filevalues, extradata, jsondata, followlink, checksumtype, formatspecs, verbose)
 
 
-def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
@@ -3797,7 +3853,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmtt
         return True
 
 
-def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
@@ -3877,7 +3933,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmtty
         return True
 
 
-def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     inlist = ReadInFileWithContentToList(infile, "auto", 0, 0, False, False, True, False, formatspecs)
     return AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, filevalues, extradata, jsondata, followlink, checksumtype, formatspecs, verbose, returnfp)
 
@@ -4280,7 +4336,7 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, clos
     elif(py7zr_support and compresscheck == "7zipfile" and py7zr.is_7zfile(infile)):
         return "7zipfile"
     if(hasattr(infile, "read") or hasattr(infile, "write")):
-        fp = UncompressCatFile(infile, formatspecs)
+        fp = UncompressFileAlt(infile, formatspecs)
     else:
         try:
             if(compresscheck == "gzip" and compresscheck in compressionsupport):
@@ -4370,7 +4426,7 @@ def CheckCompressionTypeFromBytes(instring, formatspecs=__file_format_multi_dict
     return CheckCompressionType(instringsfile, formatspecs, closefp)
 
 
-def UncompressCatFile(fp, formatspecs=__file_format_multi_dict__):
+def UncompressFileAlt(fp, formatspecs=__file_format_multi_dict__):
     if(not hasattr(fp, "read")):
         return False
     compresscheck = CheckCompressionType(fp, formatspecs, False)
@@ -4497,7 +4553,7 @@ def UncompressStringAltFP(fp, formatspecs=__file_format_multi_dict__):
         formatspecs = formatspecs[prechck]
     fp.seek(0, 0)
     if(prechck!="zstd"):
-        return UncompressCatFile(fp, formatspecs)
+        return UncompressFileAlt(fp, formatspecs)
     filefp = StringIO()
     fp.seek(0, 0)
     outstring = UncompressString(fp.read(), formatspecs)
@@ -4548,7 +4604,7 @@ def UncompressBytesAltFP(fp, formatspecs=__file_format_multi_dict__):
         formatspecs = formatspecs[prechck]
     fp.seek(0, 0)
     if(prechck!="zstd"):
-        return UncompressCatFile(fp, formatspecs)
+        return UncompressFileAlt(fp, formatspecs)
     filefp = BytesIO()
     fp.seek(0, 0)
     outstring = UncompressBytes(fp.read(), formatspecs)
@@ -4757,7 +4813,7 @@ def CheckSumSupportAlt(checkfor, guaranteed=True):
         return False
 
 
-def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
@@ -5095,7 +5151,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
         tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
         AppendFileHeaderWithContent(
-            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
+            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
         fcontents.close()
     if(numfiles > 0):
         try:
@@ -5144,7 +5200,7 @@ def PackCatFileFromDirList(infiles, outfile, dirlistfromtxt=False, fmttype="auto
     return PackCatFile(infiles, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, extradata, formatspecs, verbose, returnfp)
 
 
-def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
@@ -5395,7 +5451,7 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
         tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
         AppendFileHeaderWithContent(
-            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
+            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
         fcontents.close()
     if(numfiles > 0):
         try:
@@ -5440,7 +5496,7 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
         return True
 
 
-def PackCatFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackCatFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
@@ -5686,7 +5742,7 @@ def PackCatFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", 
         tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
         AppendFileHeaderWithContent(
-            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
+            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
         fcontents.close()
     if(numfiles > 0):
         try:
@@ -5736,7 +5792,7 @@ if(not rarfile_support):
         return False
 
 if(rarfile_support):
-    def PackCatFileFromRarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackCatFileFromRarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         if(IsNestedDict(formatspecs) and fmttype=="auto" and 
             (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
             get_in_ext = os.path.splitext(outfile)
@@ -6006,7 +6062,7 @@ if(rarfile_support):
             tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
             AppendFileHeaderWithContent(
-                fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
+                fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
             fcontents.close()
         if(numfiles > 0):
             try:
@@ -6056,7 +6112,7 @@ if(not py7zr_support):
         return False
 
 if(py7zr_support):
-    def PackCatFileFromSevenZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackCatFileFromSevenZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
         if(IsNestedDict(formatspecs) and fmttype=="auto" and 
             (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
             get_in_ext = os.path.splitext(outfile)
@@ -6259,7 +6315,7 @@ if(py7zr_support):
             tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
             AppendFileHeaderWithContent(
-                fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
+                fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
             fcontents.close()
         if(numfiles > 0):
             try:
@@ -6335,7 +6391,7 @@ def CatFileSeekToFileNum(infile, fmttype="auto", seekto=0, listonly=False, conte
         curloc = infile.tell()
         fp = infile
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
@@ -6361,7 +6417,7 @@ def CatFileSeekToFileNum(infile, fmttype="auto", seekto=0, listonly=False, conte
         else:
             shutil.copyfileobj(sys.stdin, fp)
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
@@ -6372,7 +6428,7 @@ def CatFileSeekToFileNum(infile, fmttype="auto", seekto=0, listonly=False, conte
         fp = BytesIO()
         fp.write(infile)
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
@@ -6381,7 +6437,7 @@ def CatFileSeekToFileNum(infile, fmttype="auto", seekto=0, listonly=False, conte
         fp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         fp = download_file_from_internet_file(infile)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
@@ -6552,23 +6608,37 @@ def CatFileSeekToFileNum(infile, fmttype="auto", seekto=0, listonly=False, conte
             prefdev_minor = int(preheaderdata[24], 16)
             prefdev_major = int(preheaderdata[25], 16)
             prefseeknextfile = preheaderdata[26]
-            prefextrasize = int(preheaderdata[27], 16)
-            prefextrafields = int(preheaderdata[28], 16)
-            extrastart = 29
+            prefjsontype = preheaderdata[27]
+            prefjsonlen = int(preheaderdata[28], 16)
+            prefjsonsize = int(preheaderdata[29], 16)
+            prefjsonchecksumtype = preheaderdata[30]
+            prefjsonchecksum = preheaderdata[31]
+            prefhend = fp.tell() - 1
+            prefjstart = fp.tell()
+            prefjoutfprejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
+            prefjend = fp.tell()
+            fp.seek(len(formatspecs['format_delimiter']), 1)
+            prejsonfcs = GetFileChecksum(prefjoutfprejsoncontent, prefjsonchecksumtype, True, formatspecs)
+            prefextrasize = int(preheaderdata[32], 16)
+            prefextrafields = int(preheaderdata[33], 16)
+            extrastart = 34
             extraend = extrastart + prefextrafields
             prefcs = preheaderdata[-2].lower()
             prenewfcs = preheaderdata[-1].lower()
             prenewfcs = GetHeaderChecksum(
-                preheaderdata[:-2], preheaderdata[-4].lower(), True, formatspecs)
+                preheaderdata[:-2] + [prefjoutfprejsoncontent], preheaderdata[-4].lower(), True, formatspecs)
             if(prefcs != prenewfcs and not skipchecksum):
                 VerbosePrintOut("File Header Checksum Error with file " +
                                 prefname + " at offset " + str(prefhstart))
                 VerbosePrintOut("'" + prefcs + "' != " +
                                 "'" + prenewfcs + "'")
                 return False
-                valid_archive = False
-                invalid_archive = True
-            prefhend = fp.tell() - 1
+            if(prefjsonsize > 0):
+                if(prejsonfcs != prefjsonchecksum and not skipchecksum):
+                    VerbosePrintOut("File JSON Data Checksum Error with file " +
+                                    prefname + " at offset " + str(prefjstart))
+                    VerbosePrintOut("'" + prefjsonchecksum + "' != " + "'" + prejsonfcs + "'")
+                    return False
             prefcontentstart = fp.tell()
             prefcontents = ""
             pyhascontents = False
@@ -6636,7 +6706,7 @@ def CatFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=False,
         curloc = infile.tell()
         fp = infile
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
@@ -6662,7 +6732,7 @@ def CatFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=False,
         else:
             shutil.copyfileobj(sys.stdin, fp)
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
@@ -6673,7 +6743,7 @@ def CatFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=False,
         fp = BytesIO()
         fp.write(infile)
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
@@ -6682,7 +6752,7 @@ def CatFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=False,
         fp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         fp = download_file_from_internet_file(infile)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
@@ -6850,20 +6920,20 @@ def CatFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=False,
             prefdev_minor = int(preheaderdata[24], 16)
             prefdev_major = int(preheaderdata[25], 16)
             prefseeknextfile = preheaderdata[26]
-            prefsize = int(preheaderdata[7], 16)
-            prefcompression = preheaderdata[14]
-            prefcsize = int(preheaderdata[15], 16)
-            prefseeknextfile = preheaderdata[26]
             prefjsontype = preheaderdata[27]
             prefjsonlen = int(preheaderdata[28], 16)
             prefjsonsize = int(preheaderdata[29], 16)
+            prefjsonchecksumtype = preheaderdata[30]
+            prefjsonchecksum = preheaderdata[31]
+            prefhend = fp.tell() - 1
+            prefjstart = fp.tell()
             prefjoutfprejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
-            if(prefjsonsize <= 0):
-                prefjoutfprejsoncontent = ""
+            prefjend = fp.tell()
             fp.seek(len(formatspecs['format_delimiter']), 1)
-            prefextrasize = int(preheaderdata[30], 16)
-            prefextrafields = int(preheaderdata[31], 16)
-            extrastart = 32
+            prejsonfcs = GetFileChecksum(prefjoutfprejsoncontent, prefjsonchecksumtype, True, formatspecs)
+            prefextrasize = int(preheaderdata[32], 16)
+            prefextrafields = int(preheaderdata[33], 16)
+            extrastart = 34
             extraend = extrastart + prefextrafields
             prefcs = preheaderdata[-2].lower()
             prenewfcs = preheaderdata[-1].lower()
@@ -6875,9 +6945,12 @@ def CatFileSeekToFileName(infile, fmttype="auto", seekfile=None, listonly=False,
                 VerbosePrintOut("'" + prefcs + "' != " +
                                 "'" + prenewfcs + "'")
                 return False
-                valid_archive = False
-                invalid_archive = True
-            prefhend = fp.tell() - 1
+            if(prefjsonsize > 0):
+                if(prejsonfcs != prefjsonchecksum and not skipchecksum):
+                    VerbosePrintOut("File JSON Data Checksum Error with file " +
+                                    prefname + " at offset " + str(prefjstart))
+                    VerbosePrintOut("'" + prefjsonchecksum + "' != " + "'" + prejsonfcs + "'")
+                    return False
             prefcontentstart = fp.tell()
             prefcontents = ""
             pyhascontents = False
@@ -6954,7 +7027,7 @@ def CatFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_dict
         curloc = infile.tell()
         fp = infile
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
@@ -6980,7 +7053,7 @@ def CatFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_dict
         else:
             shutil.copyfileobj(sys.stdin, fp)
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
@@ -6991,7 +7064,7 @@ def CatFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_dict
         fp = BytesIO()
         fp.write(infile)
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
@@ -7000,7 +7073,7 @@ def CatFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_dict
         fp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         fp = download_file_from_internet_file(infile)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
@@ -7171,16 +7244,18 @@ def CatFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_dict
         outfjsontype = inheaderdata[27]
         outfjsonlen = int(inheaderdata[28], 16)
         outfjsonsize = int(inheaderdata[29], 16)
+        outfjsonchecksumtype = inheaderdata[30]
+        outfjsonchecksum = inheaderdata[31]
+        outfhend = fp.tell() - 1
+        outfjstart = fp.tell()
         outfprejsoncontent = fp.read(outfjsonsize).decode("UTF-8")
-        if(outfjsonsize > 0):
-            pass
-        else:
-            outfprejsoncontent = ""
+        outfjend = fp.tell()
         fp.seek(len(formatspecs['format_delimiter']), 1)
-        outfextrasize = int(inheaderdata[30], 16)
-        outfextrafields = int(inheaderdata[31], 16)
+        injsonfcs = GetFileChecksum(outfprejsoncontent, outfjsonchecksumtype, True, formatspecs)
+        outfextrasize = int(inheaderdata[32], 16)
+        outfextrafields = int(inheaderdata[33], 16)
         extrafieldslist = []
-        extrastart = 32
+        extrastart = 34
         extraend = extrastart + outfextrafields
         outfcs = inheaderdata[-2].lower()
         outfccs = inheaderdata[-1].lower()
@@ -7204,7 +7279,21 @@ def CatFileValidate(infile, fmttype="auto", formatspecs=__file_format_multi_dict
                                 "'" + infcs + "'")
             valid_archive = False
             invalid_archive = True
-        outfhend = fp.tell() - 1
+        if(outfjsonsize > 0):
+            if(outfcs == infcs):
+                if(verbose):
+                    VerbosePrintOut(
+                        "File JSON Data Checksum Passed at offset " + str(outfjstart))
+                    VerbosePrintOut("'" + outfcs + "' == " +
+                                    "'" + infcs + "'")
+            else:
+                if(verbose):
+                    VerbosePrintOut(
+                        "File JSON Data Checksum Error at offset " + str(outfjstart))
+                    VerbosePrintOut("'" + outfcs + "' != " +
+                                    "'" + infcs + "'")
+                valid_archive = False
+                invalid_archive = True
         outfcontentstart = fp.tell()
         outfcontents = ""
         pyhascontents = False
@@ -7290,7 +7379,7 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
         curloc = infile.tell()
         fp = infile
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
@@ -7316,7 +7405,7 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
         else:
             shutil.copyfileobj(sys.stdin, fp)
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, True)
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
@@ -7327,7 +7416,7 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
         fp = BytesIO()
         fp.write(infile)
         fp.seek(0, 0)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
@@ -7336,7 +7425,7 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
         fp.seek(0, 0)
     elif(re.findall("^(http|https|ftp|ftps|sftp):\\/\\/", infile)):
         fp = download_file_from_internet_file(infile)
-        fp = UncompressCatFile(fp, formatspecs)
+        fp = UncompressFileAlt(fp, formatspecs)
         compresscheck = CheckCompressionType(fp, formatspecs, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             formatspecs = formatspecs[compresscheck]
@@ -7490,13 +7579,17 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
             prefjsontype = preheaderdata[27]
             prefjsonlen = int(preheaderdata[28], 16)
             prefjsonsize = int(preheaderdata[29], 16)
+            prefjsonchecksumtype = preheaderdata[30]
+            prefjsonchecksum = preheaderdata[31]
+            prefhend = fp.tell() - 1
+            prefjstart = fp.tell()
             prefjoutfprejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
-            if(prefjsonsize <= 0):
-                prefjoutfprejsoncontent = ""
+            prefjend = fp.tell()
             fp.seek(len(formatspecs['format_delimiter']), 1)
-            prefextrasize = int(preheaderdata[30], 16)
-            prefextrafields = int(preheaderdata[31], 16)
-            extrastart = 32
+            prejsonfcs = GetFileChecksum(prefjoutfprejsoncontent, prefjsonchecksumtype, True, formatspecs)
+            prefextrasize = int(preheaderdata[32], 16)
+            prefextrafields = int(preheaderdata[33], 16)
+            extrastart = 34
             extraend = extrastart + prefextrafields
             prefcs = preheaderdata[-2].lower()
             prenewfcs = preheaderdata[-1].lower()
@@ -7508,9 +7601,12 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
                 VerbosePrintOut("'" + prefcs + "' != " +
                                 "'" + prenewfcs + "'")
                 return False
-                valid_archive = False
-                invalid_archive = True
-            prefhend = fp.tell() - 1
+            if(prefjsonsize > 0):
+                if(prejsonfcs != prefjsonchecksum and not skipchecksum):
+                    VerbosePrintOut("File JSON Data Checksum Error with file " +
+                                    prefname + " at offset " + str(prefjstart))
+                    VerbosePrintOut("'" + prefjsonchecksum + "' != " + "'" + prejsonfcs + "'")
+                    return False
             prefcontentstart = fp.tell()
             prefcontents = ""
             pyhascontents = False
@@ -7594,6 +7690,10 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
         outfjsontype = inheaderdata[27]
         outfjsonlen = int(inheaderdata[28], 16)
         outfjsonsize = int(inheaderdata[29], 16)
+        outfjsonchecksumtype = inheaderdata[30]
+        outfjsonchecksum = inheaderdata[31]
+        outfhend = fp.tell() - 1
+        outfjstart = fp.tell()
         if(outfjsontype=="json"):
             outfjsoncontent = {}
             outfprejsoncontent = fp.read(outfjsonsize).decode("UTF-8")
@@ -7606,11 +7706,9 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
                         outfjsonrawcontent = outfprejsoncontent
                         outfjsoncontent = json.loads(outfprejsoncontent)
                     except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
-                        outfprejsoncontent = ""
                         outfjsonrawcontent = outfprejsoncontent 
                         outfjsoncontent = {}
             else:
-                outfprejsoncontent = ""
                 outfjsonrawcontent = outfprejsoncontent 
                 outfjsoncontent = {}
         elif(outfjsontype=="list"):
@@ -7632,11 +7730,13 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
                         outfjsoncontent = json.loads(outfjsoncontent[0])
                     except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                         pass
+        outfjend = fp.tell()
         fp.seek(len(formatspecs['format_delimiter']), 1)
-        outfextrasize = int(inheaderdata[30], 16)
-        outfextrafields = int(inheaderdata[31], 16)
+        injsonfcs = GetFileChecksum(outfprejsoncontent, outfjsonchecksumtype, True, formatspecs)
+        outfextrasize = int(inheaderdata[32], 16)
+        outfextrafields = int(inheaderdata[33], 16)
         extrafieldslist = []
-        extrastart = 32
+        extrastart = 34
         extraend = extrastart + outfextrafields
         while(extrastart < extraend):
             extrafieldslist.append(inheaderdata[extrastart])
@@ -7660,7 +7760,11 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
             VerbosePrintOut("'" + outfcs + "' != " +
                             "'" + infcs + "'")
             return False
-        outfhend = fp.tell() - 1
+        if(outfjsonsize > 0):
+            if(injsonfcs != outfjsonchecksum and not skipchecksum):
+                VerbosePrintOut("File JSON Data Checksum Error  at offset " + str(outfjstart))
+                VerbosePrintOut("'" + outfjsonchecksum + "' != " + "'" + injsonfcs + "'")
+                return False
         outfcontentstart = fp.tell()
         outfcontents = BytesIO()
         pyhascontents = False
@@ -7684,7 +7788,7 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
             else:
                 outfcontents.seek(0, 0)
                 if(uncompress):
-                    cfcontents = UncompressCatFile(
+                    cfcontents = UncompressFileAlt(
                         outfcontents, formatspecs)
                     cfcontents.seek(0, 0)
                     outfcontents = BytesIO()
@@ -7720,7 +7824,7 @@ def CatFileToArray(infile, fmttype="auto", seekstart=0, seekend=0, listonly=Fals
         outfcontents.seek(0, 0)
         if(not contentasfile):
             outfcontents = outfcontents.read()
-        outlist['ffilelist'].append({'fid': realidnum, 'fidalt': fileidnum, 'fheadersize': outfheadsize, 'fhstart': outfhstart, 'fhend': outfhend, 'ftype': outftype, 'fencoding': outfencoding, 'fcencoding': outfcencoding, 'fname': outfname, 'fbasedir': outfbasedir, 'flinkname': outflinkname, 'fsize': outfsize, 'fatime': outfatime, 'fmtime': outfmtime, 'fctime': outfctime, 'fbtime': outfbtime, 'fmode': outfmode, 'fchmode': outfchmode, 'ftypemod': outftypemod, 'fwinattributes': outfwinattributes, 'fcompression': outfcompression, 'fcsize': outfcsize, 'fuid': outfuid, 'funame': outfuname, 'fgid': outfgid, 'fgname': outfgname, 'finode': outfinode, 'flinkcount': outflinkcount, 'fdev': outfdev, 'fminor': outfdev_minor, 'fmajor': outfdev_major, 'fseeknextfile': outfseeknextfile, 'fheaderchecksumtype': inheaderdata[-4], 'fcontentchecksumtype': inheaderdata[-3], 'fnumfields': outfnumfields + 2, 'frawheader': inheaderdata, 'fextrafields': outfextrafields, 'fextrafieldsize': outfextrasize, 'fextradata': extrafieldslist, 'fjsontype': outfjsontype, 'fjsonlen': outfjsonlen, 'fjsonsize': outfjsonsize, 'fjsonrawdata': outfjsonrawcontent, 'fjsondata': outfjsoncontent, 'fheaderchecksum': outfcs, 'fcontentchecksum': outfccs, 'fhascontents': pyhascontents, 'fcontentstart': outfcontentstart, 'fcontentend': outfcontentend, 'fcontentasfile': contentasfile, 'fcontents': outfcontents})
+        outlist['ffilelist'].append({'fid': realidnum, 'fidalt': fileidnum, 'fheadersize': outfheadsize, 'fhstart': outfhstart, 'fhend': outfhend, 'ftype': outftype, 'fencoding': outfencoding, 'fcencoding': outfcencoding, 'fname': outfname, 'fbasedir': outfbasedir, 'flinkname': outflinkname, 'fsize': outfsize, 'fatime': outfatime, 'fmtime': outfmtime, 'fctime': outfctime, 'fbtime': outfbtime, 'fmode': outfmode, 'fchmode': outfchmode, 'ftypemod': outftypemod, 'fwinattributes': outfwinattributes, 'fcompression': outfcompression, 'fcsize': outfcsize, 'fuid': outfuid, 'funame': outfuname, 'fgid': outfgid, 'fgname': outfgname, 'finode': outfinode, 'flinkcount': outflinkcount, 'fdev': outfdev, 'fminor': outfdev_minor, 'fmajor': outfdev_major, 'fseeknextfile': outfseeknextfile, 'fheaderchecksumtype': inheaderdata[-4], 'fjsonchecksumtype': outfjsonchecksumtype, 'fcontentchecksumtype': inheaderdata[-3], 'fnumfields': outfnumfields + 2, 'frawheader': inheaderdata, 'fextrafields': outfextrafields, 'fextrafieldsize': outfextrasize, 'fextradata': extrafieldslist, 'fjsontype': outfjsontype, 'fjsonlen': outfjsonlen, 'fjsonsize': outfjsonsize, 'fjsonrawdata': outfjsonrawcontent, 'fjsondata': outfjsoncontent, 'fjstart': outfjstart, 'fjend': outfjend, 'fheaderchecksum': outfcs, 'fjsonchecksum': outfjsonchecksum, 'fcontentchecksum': outfccs, 'fhascontents': pyhascontents, 'fcontentstart': outfcontentstart, 'fcontentend': outfcontentend, 'fcontentasfile': contentasfile, 'fcontents': outfcontents})
         fileidnum = fileidnum + 1
         realidnum = realidnum + 1
     if(returnfp):
@@ -7899,7 +8003,7 @@ def CatFileArrayToArrayIndex(inarray, returnfp=False):
     return outarray
 
 
-def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, seekstart=0, seekend=0, checksumtype=["crc32", "crc32", "crc32"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=__file_format_dict__, seektoend=False, verbose=False, returnfp=False):
+def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, seekstart=0, seekend=0, checksumtype=["crc32", "crc32", "crc32", "crc32"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=__file_format_dict__, seektoend=False, verbose=False, returnfp=False):
     if(isinstance(infile, dict)):
         listarchivefiles = infile
     else:
@@ -8132,7 +8236,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
         tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize,
                       fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile]
         AppendFileHeaderWithContent(
-            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2]], formatspecs)
+            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
         fcontents.close()
         lcfi = lcfi + 1
         reallcfi = reallcfi + 1
@@ -9264,7 +9368,7 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
     return httpfile
 
 
-def download_file_from_http_string(url, headers=geturls_headers_pycatfile_python_alt, usehttp=__use_http_lib__):
+def download_file_from_http_string(url, headers=geturls_headers_pyfile_python_alt, usehttp=__use_http_lib__):
     httpfile = download_file_from_http_file(url, headers, usehttp)
     return httpfile.read()
 
@@ -9502,7 +9606,7 @@ else:
         return False
 
 
-def download_file_from_internet_file(url, headers=geturls_headers_pycatfile_python_alt, usehttp=__use_http_lib__):
+def download_file_from_internet_file(url, headers=geturls_headers_pyfile_python_alt, usehttp=__use_http_lib__):
     urlparts = urlparse(url)
     if(urlparts.scheme == "http" or urlparts.scheme == "https"):
         return download_file_from_http_file(url, headers, usehttp)
@@ -9518,16 +9622,16 @@ def download_file_from_internet_file(url, headers=geturls_headers_pycatfile_pyth
     return False
 
 
-def download_file_from_internet_uncompress_file(url, headers=geturls_headers_pycatfile_python_alt, formatspecs=__file_format_dict__):
+def download_file_from_internet_uncompress_file(url, headers=geturls_headers_pyfile_python_alt, formatspecs=__file_format_dict__):
     fp = download_file_from_internet_file(url)
-    fp = UncompressCatFile(fp, formatspecs)
+    fp = UncompressFileAlt(fp, formatspecs)
     fp.seek(0, 0)
     if(not fp):
         return False
     return fp
 
 
-def download_file_from_internet_string(url, headers=geturls_headers_pycatfile_python_alt):
+def download_file_from_internet_string(url, headers=geturls_headers_pyfile_python_alt):
     urlparts = urlparse(url)
     if(urlparts.scheme == "http" or urlparts.scheme == "https"):
         return download_file_from_http_string(url, headers)
@@ -9543,9 +9647,9 @@ def download_file_from_internet_string(url, headers=geturls_headers_pycatfile_py
     return False
 
 
-def download_file_from_internet_uncompress_string(url, headers=geturls_headers_pycatfile_python_alt, formatspecs=__file_format_dict__):
+def download_file_from_internet_uncompress_string(url, headers=geturls_headers_pyfile_python_alt, formatspecs=__file_format_dict__):
     fp = download_file_from_internet_string(url)
-    fp = UncompressCatFile(fp, formatspecs)
+    fp = UncompressFileAlt(fp, formatspecs)
     fp.seek(0, 0)
     if(not fp):
         return False
