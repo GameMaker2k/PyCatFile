@@ -14,7 +14,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: altcatfile.py - Last Update: 2/7/2025 Ver. 0.18.2 RC 1 - Author: cooldude2k $
+    $FileInfo: altcatfile.py - Last Update: 2/20/2025 Ver. 0.18.6 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals, generators, with_statement, nested_scopes
@@ -27,7 +27,6 @@ from io import BytesIO
 __project__ = pycatfile.__project__
 __program_name__ = pycatfile.__program_name__
 __file_format_name__ = pycatfile.__file_format_name__
-__file_format_lower__ = pycatfile.__file_format_lower__
 __file_format_magic__ = pycatfile.__file_format_magic__
 __file_format_len__ = pycatfile.__file_format_len__
 __file_format_hex__ = pycatfile.__file_format_hex__
@@ -132,9 +131,9 @@ def main():
 
     # Determine operation
     if args.create:
-        pycatfile.PackCatFile(args.input, args.output, False, __file_format_default__, args.compression, args.level, pycatfile.compressionlistalt, False, [args.checksum, args.checksum, args.checksum], [], {}, format_dict, args.verbose, False)
+        pycatfile.PackCatFile(args.input, args.output, False, __file_format_default__, args.compression, args.level, pycatfile.compressionlistalt, False, [args.checksum, args.checksum, args.checksum, args.checksum], [], {}, format_dict, args.verbose, False)
     elif args.repack:
-        pycatfile.RePackCatFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], False, args.verbose)
+        pycatfile.RePackCatFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum, args.checksum], False, args.verbose)
     elif args.extract:
         pycatfile.UnPackCatFile(input_file, args.output, args.verbose, args.preserve)
     elif args.list:

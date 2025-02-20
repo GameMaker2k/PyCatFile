@@ -14,7 +14,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: neocatfile.py - Last Update: 2/7/2025 Ver. 0.18.2 RC 1 - Author: cooldude2k $
+    $FileInfo: neocatfile.py - Last Update: 2/20/2025 Ver. 0.18.6 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals, generators, with_statement, nested_scopes
@@ -24,7 +24,6 @@ import pycatfile
 __project__ = pycatfile.__project__
 __program_name__ = pycatfile.__program_name__
 __file_format_name__ = pycatfile.__file_format_name__
-__file_format_lower__ = pycatfile.__file_format_lower__
 __file_format_magic__ = pycatfile.__file_format_magic__
 __file_format_len__ = pycatfile.__file_format_len__
 __file_format_hex__ = pycatfile.__file_format_hex__
@@ -99,23 +98,23 @@ input_file = args.input[0]
 # Functionality mappings
 if primary_action == 'create':
     if args.convert == 'tar':
-        pycatfile.PackCatFileFromTarFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], [
+        pycatfile.PackCatFileFromTarFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum, args.checksum], [
         ], pycatfile.__file_format_dict__, args.verbose, False)
     elif args.convert == 'zip':
-        pycatfile.PackCatFileFromZipFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], [
+        pycatfile.PackCatFileFromZipFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum, args.checksum], [
         ], pycatfile.__file_format_dict__, args.verbose, False)
     elif py7zr_support and args.convert == '7zip':
-        pycatfile.PackCatFileFromSevenZipFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], [
+        pycatfile.PackCatFileFromSevenZipFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum, args.checksum], [
         ], pycatfile.__file_format_dict__, args.verbose, False)
     elif rarfile_support and args.convert == 'rar':
-        pycatfile.PackCatFileFromRarFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], [
+        pycatfile.PackCatFileFromRarFile(input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum, args.checksum], [
         ], pycatfile.__file_format_dict__, args.verbose, False)
     else:
         pycatfile.PackCatFile(args.input, args.output, args.verbose, args.compression, args.level, pycatfile.compressionlistalt,
-                                  False, [args.checksum, args.checksum, args.checksum], [], {}, pycatfile.__file_format_dict__, args.verbose, False)
+                                  False, [args.checksum, args.checksum, args.checksum, args.checksum], [], {}, pycatfile.__file_format_dict__, args.verbose, False)
 elif primary_action == 'repack':
     pycatfile.RePackCatFile(
-        input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum], False, args.verbose)
+        input_file, args.output, args.compression, args.level, pycatfile.compressionlistalt, [args.checksum, args.checksum, args.checksum, args.checksum], False, args.verbose)
 elif primary_action == 'extract':
     pycatfile.UnPackCatFile(
         input_file, args.output, args.verbose, False, args.preserve)
