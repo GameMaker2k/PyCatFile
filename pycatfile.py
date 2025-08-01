@@ -353,7 +353,7 @@ __file_format_extension__ = __file_format_multi_dict__[__file_format_default__][
 __file_format_dict__ = __file_format_multi_dict__[__file_format_default__]
 __project__ = __program_name__
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile"
-__version_info__ = (0, 19, 0, "RC 1", 1)
+__version_info__ = (0, 19, 2, "RC 1", 1)
 __version_date_info__ = (2025, 3, 7, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
