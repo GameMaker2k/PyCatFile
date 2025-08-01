@@ -14,7 +14,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: catfile.py - Last Update: 3/7/2025 Ver. 0.19.0 RC 1 - Author: cooldude2k $
+    $FileInfo: catfile.py - Last Update: 3/7/2025 Ver. 0.19.4 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals, generators, with_statement, nested_scopes
@@ -27,12 +27,12 @@ import binascii
 # Conditional import and signal handling for Unix-like systems
 if os.name != 'nt':  # Not Windows
     import signal
-
-    def handler(signum, frame):
-        pycatfile.VerbosePrintOut(
-            "Received SIGPIPE, exiting gracefully.", "info")
-        sys.exit(0)
-signal.signal(signal.SIGPIPE, handler)
+    if hasattr(signal, 'SIGPIPE'):
+        def handler(signum, frame):
+            pycatfile.VerbosePrintOut(
+                "Received SIGPIPE, exiting gracefully.", "info")
+            sys.exit(0)
+        signal.signal(signal.SIGPIPE, handler)
 
 rarfile_support = pycatfile.rarfile_support
 py7zr_support = pycatfile.py7zr_support
