@@ -91,16 +91,19 @@ except ImportError:
     from urlparse import urlparse, urlunparse
 
 # Windows-specific setup
-if os.name == 'nt':
-    if sys.version_info[0] == 2:
-        import codecs
-        sys.stdout = codecs.getwriter('UTF-8')(sys.stdout)
-        sys.stderr = codecs.getwriter('UTF-8')(sys.stderr)
-    else:
-        sys.stdout = io.TextIOWrapper(
-            sys.stdout.buffer, encoding='UTF-8', errors='replace', line_buffering=True)
-        sys.stderr = io.TextIOWrapper(
-            sys.stderr.buffer, encoding='UTF-8', errors='replace', line_buffering=True)
+if os.name == "nt":
+    import io
+    def _wrap(stream):
+        buf = getattr(stream, "buffer", None)
+        is_tty = getattr(stream, "isatty", lambda: False)()
+        if buf is not None and is_tty:
+            try:
+                return io.TextIOWrapper(buf, encoding="UTF-8", errors="replace", line_buffering=True)
+            except Exception:
+                return stream
+        return stream
+    sys.stdout = _wrap(sys.stdout)
+    sys.stderr = _wrap(sys.stderr)
 
 hashlib_guaranteed = False
 # Environment setup
@@ -286,7 +289,28 @@ if((__use_http_lib__ == "httpx" or __use_http_lib__ == "requests") and not haveh
 # Define a function to check if var contains only non-printable chars
 all_np_chars = [chr(i) for i in range(128)]
 def is_only_nonprintable(var):
-    return all(not c.isprintable() for c in var)
+    """True if every character is non-printable (Py2/3-safe, handles bytes)."""
+    if var is None:
+        return True
+    s = to_text(var)
+    # In Py2, some unicode categories behave differently; isprintable is Py3-only.
+    # We'll implement a portable check: letters, numbers, punctuation, and common whitespace are printable.
+    try:
+        # Py3 fast path
+        return all(not ch.isprintable() for ch in s)
+    except AttributeError:
+        # Py2 path
+        import unicodedata
+        def _is_printable(ch):
+            cat = unicodedata.category(ch)
+            # Categories starting with 'C' are control/non-assigned/surrogates
+            if cat.startswith('C'):
+                return False
+            # treat space and common whitespace as printable
+            if ch in u"\t\n\r\x0b\x0c ":
+                return True
+            return True
+        return all(not _is_printable(ch) for ch in s)
 __file_format_multi_dict__ = {}
 __file_format_default__ = "CatFile"
 __include_defaults__ = True
@@ -370,13 +394,15 @@ if(__version_info__[3] is not None):
 if(__version_info__[3] is None):
     __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2])
 
-PyBitness = platform.architecture()
-if(PyBitness == "32bit" or PyBitness == "32"):
-    PyBitness = "32"
-elif(PyBitness == "64bit" or PyBitness == "64"):
-    PyBitness = "64"
-else:
-    PyBitness = "32"
+# Robust bitness detection
+# Works on Py2 & Py3, all platforms
+try:
+    import struct
+    PyBitness = "64" if struct.calcsize("P") * 8 == 64 else "32"
+except Exception:
+    # conservative fallback
+    m = platform.machine() or ""
+    PyBitness = "64" if m.endswith("64") else "32"
 
 geturls_ua_pyfile_python = "Mozilla/5.0 (compatible; {proname}/{prover}; +{prourl})".format(
     proname=__project__, prover=__version__, prourl=__project_url__)
@@ -389,9 +415,9 @@ geturls_ua_pyfile_python_alt = "Mozilla/5.0 ({osver}; {archtype}; +{prourl}) {py
 geturls_ua_googlebot_google = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
 geturls_ua_googlebot_google_old = "Googlebot/2.1 (+http://www.google.com/bot.html)"
 geturls_headers_pyfile_python = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pyfile_python, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,UTF-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
-                                    'SEC-CH-UA': "\""+__project__+"\";v=\""+str(__version__)+"\", \"Not;A=Brand\";v=\"8\", \""+py_implementation+"\";v=\""+str(platform.release())+"\"", 'SEC-CH-UA-FULL-VERSION': str(__version__), 'SEC-CH-UA-PLATFORM': ""+py_implementation+"", 'SEC-CH-UA-ARCH': ""+platform.machine()+"", 'SEC-CH-UA-PLATFORM': str(__version__), 'SEC-CH-UA-BITNESS': str(PyBitness)}
+                                    'SEC-CH-UA': "\""+__project__+"\";v=\""+str(__version__)+"\", \"Not;A=Brand\";v=\"8\", \""+py_implementation+"\";v=\""+str(platform.release())+"\"", 'SEC-CH-UA-FULL-VERSION': str(__version__), 'SEC-CH-UA-PLATFORM': ""+py_implementation+"", 'SEC-CH-UA-ARCH': ""+platform.machine()+"", 'SEC-CH-UA-PLATFORM-VERSION: str(__version__), 'SEC-CH-UA-BITNESS': str(PyBitness)}
 geturls_headers_pyfile_python_alt = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pyfile_python_alt, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,UTF-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
-                                        'SEC-CH-UA': "\""+__project__+"\";v=\""+str(__version__)+"\", \"Not;A=Brand\";v=\"8\", \""+py_implementation+"\";v=\""+str(platform.release())+"\"", 'SEC-CH-UA-FULL-VERSION': str(__version__), 'SEC-CH-UA-PLATFORM': ""+py_implementation+"", 'SEC-CH-UA-ARCH': ""+platform.machine()+"", 'SEC-CH-UA-PLATFORM': str(__version__), 'SEC-CH-UA-BITNESS': str(PyBitness)}
+                                        'SEC-CH-UA': "\""+__project__+"\";v=\""+str(__version__)+"\", \"Not;A=Brand\";v=\"8\", \""+py_implementation+"\";v=\""+str(platform.release())+"\"", 'SEC-CH-UA-FULL-VERSION': str(__version__), 'SEC-CH-UA-PLATFORM': ""+py_implementation+"", 'SEC-CH-UA-ARCH': ""+platform.machine()+"", 'SEC-CH-UA-PLATFORM-VERSION: str(__version__), 'SEC-CH-UA-BITNESS': str(PyBitness)}
 geturls_headers_googlebot_google = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6",
                                     'Accept-Charset': "ISO-8859-1,ISO-8859-15,UTF-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"}
 geturls_headers_googlebot_google_old = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google_old, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6",
@@ -548,16 +574,20 @@ def VerbosePrintOutReturn(dbgtxt, outtype="log", dbgenable=True, dgblevel=20):
 
 def RemoveWindowsPath(dpath):
     """
-    Normalizes a path by converting Windows-style separators to Unix-style and stripping trailing slashes.
+    Normalize a path by converting backslashes to forward slashes
+    and stripping a trailing slash.
     """
-    if dpath is None:
-        dpath = ""
-    if os.sep != "/":
-        dpath = dpath.replace(os.path.sep, "/")
-    dpath = dpath.rstrip("/")
-    if dpath in [".", ".."]:
-        dpath = dpath + "/"
-    return dpath
+    if not dpath:
+        return ""
+    # Accept bytes and decode safely
+    if isinstance(dpath, (bytes, bytearray)):
+        dpath = dpath.decode("utf-8", "ignore")
+    dpath = dpath.replace("\\", "/")
+    # Collapse multiple slashes except for protocol prefixes like "s3://"
+    if "://" not in dpath:
+        while "//" in dpath:
+            dpath = dpath.replace("//", "/")
+    return dpath.rstrip("/")
 
 
 def NormalizeRelativePath(inpath):
