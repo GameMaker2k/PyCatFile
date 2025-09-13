@@ -215,13 +215,13 @@ if active_action:
             checkcompressfile = pycatfile.CheckCompressionSubType(
                 input_file, fnamedict, True)
             if((IsNestedDict(fnamedict) and checkcompressfile in fnamedict) or (IsSingleDict(fnamedict) and checkcompressfile==fnamedict['format_magic'])):
-                tmpout = pycatfile.CatFileListFiles(input_file, "auto", 0, 0, getargs.skipchecksum, fnamedict, False, getargs.verbose, False)
+                tmpout = pycatfile.CatFileListFiles(input_file, "auto", 0, 0, getargs.skipchecksum, fnamedict, False, getargs.verbose, False, False)
             else:
-                tmpout = pycatfile.InFileListFiles(input_file, getargs.verbose, fnamedict, False, False)
+                tmpout = pycatfile.InFileListFiles(input_file, getargs.verbose, fnamedict, False, False, False)
             if(not tmpout):
                 sys.exit(1)
         else:
-            pycatfile.CatFileListFiles(input_file, "auto", 0, 0, getargs.skipchecksum, fnamedict, False, getargs.verbose, False)
+            pycatfile.CatFileListFiles(input_file, "auto", 0, 0, getargs.skipchecksum, fnamedict, False, getargs.verbose, False, False)
     elif active_action == 'validate':
         if getargs.convert:
             checkcompressfile = pycatfile.CheckCompressionSubType(

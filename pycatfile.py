@@ -76,6 +76,20 @@ try:
 except NameError:
     basestring = str
 
+try:
+    unicode  # Py2
+except NameError:  # Py3
+    unicode = str
+
+def to_text(s, encoding="utf-8", errors="ignore"):
+    if s is None:
+        return u""
+    if isinstance(s, unicode):
+        return s
+    if isinstance(s, (bytes, bytearray)):
+        return s.decode(encoding, errors)
+    return unicode(s)
+
 baseint = []
 try:
     baseint.append(long)
@@ -8594,8 +8608,22 @@ def UnPackCatFileString(instr, outdir=None, followlink=False, seekstart=0, seeke
     listarchivefiles = UnPackCatFile(fp, outdir, followlink, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, returnfp)
     return listarchivefiles
 
+def ftype_to_str(ftype):
+    mapping = {
+        0: "file",
+        1: "link",
+        2: "symlink",
+        3: "char device",
+        4: "block device",
+        5: "directory",
+        6: "fifo",
+        12: "sparse",
+        14: "device",
+    }
+    # Default to "file" if unknown
+    return mapping.get(ftype, "file")
 
-def CatFileListFiles(infile, fmttype="auto", seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
+def CatFileListFiles(infile, fmttype="auto", seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, newstyle=False, returnfp=False):
     if(verbose):
         logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     if(isinstance(infile, dict)):
@@ -8603,7 +8631,7 @@ def CatFileListFiles(infile, fmttype="auto", seekstart=0, seekend=0, skipchecksu
     else:
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
             infile = RemoveWindowsPath(infile)
-        listarchivefiles = CatFileToArray(infile, fmttype, seekstart, seekend, True, False, False, skipchecksum, formatspecs, seektoend, returnfp)
+        listarchivefiles = ArchiveFileToArray(infile, fmttype, seekstart, seekend, True, False, False, skipchecksum, formatspecs, seektoend, returnfp)
     if(not listarchivefiles):
         return False
     lenlist = len(listarchivefiles['ffilelist'])
@@ -8635,7 +8663,11 @@ def CatFileListFiles(infile, fmttype="auto", seekstart=0, seekend=0, skipchecksu
             fgprint = listarchivefiles['ffilelist'][lcfi]['fgname']
             if(len(fgprint) <= 0):
                 fgprint = listarchivefiles['ffilelist'][lcfi]['fgid']
-            VerbosePrintOut(PrintPermissionString(listarchivefiles['ffilelist'][lcfi]['fmode'], listarchivefiles['ffilelist'][lcfi]['ftype']) + " " + str(fuprint) + "/" + str(fgprint) + " " + str(
+            if(newstyle):
+                VerbosePrintOut(ftype_to_str(listarchivefiles['ffilelist'][lcfi]['ftype']) + "\t" + listarchivefiles['ffilelist'][lcfi]['fcompression'] + "\t" + str(
+                listarchivefiles['ffilelist'][lcfi]['fsize']).rjust(15) + "\t" + printfname)
+            else:
+                VerbosePrintOut(PrintPermissionString(listarchivefiles['ffilelist'][lcfi]['fmode'], listarchivefiles['ffilelist'][lcfi]['ftype']) + " " + str(fuprint) + "/" + str(fgprint) + " " + str(
                 listarchivefiles['ffilelist'][lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listarchivefiles['ffilelist'][lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname)
         lcfi = lcfi + 1
     if(returnfp):
@@ -8644,10 +8676,10 @@ def CatFileListFiles(infile, fmttype="auto", seekstart=0, seekend=0, skipchecksu
         return True
 
 
-def CatFileStringListFiles(instr, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
+def CatFileStringListFiles(instr, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, newstyle=False, returnfp=False):
     fp = BytesIO(instr)
     listarchivefiles = CatFileListFiles(
-        instr, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, returnfp)
+        instr, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, newstyle, returnfp)
     return listarchivefiles
 
 
@@ -9154,7 +9186,7 @@ if(py7zr_support):
             return True
 
 
-def InFileListFiles(infile, verbose=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
+def InFileListFiles(infile, verbose=False, formatspecs=__file_format_multi_dict__, seektoend=False, newstyle=False, returnfp=False):
     if(verbose):
         logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, True)
@@ -9169,7 +9201,7 @@ def InFileListFiles(infile, verbose=False, formatspecs=__file_format_multi_dict_
     elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
         return SevenZipFileListFiles(infile, verbose, returnfp)
     elif(checkcompressfile == formatspecs['format_magic']):
-        return CatFileListFiles(infile, 0, 0, False, formatspecs, seektoend, verbose, returnfp)
+        return CatFileListFiles(infile, 0, 0, False, formatspecs, seektoend, verbose, newstyle, returnfp)
     else:
         return False
     return False
