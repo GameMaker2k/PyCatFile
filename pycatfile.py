@@ -14,7 +14,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 9/12/2025 Ver. 0.20.4 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 9/15/2025 Ver. 0.20.6 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals, generators, with_statement, nested_scopes
@@ -391,8 +391,8 @@ __file_format_extension__ = __file_format_multi_dict__[__file_format_default__][
 __file_format_dict__ = __file_format_multi_dict__[__file_format_default__]
 __project__ = __program_name__
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile"
-__version_info__ = (0, 20, 4, "RC 1", 1)
-__version_date_info__ = (2025, 9, 12, "RC 1", 1)
+__version_info__ = (0, 20, 6, "RC 1", 1)
+__version_date_info__ = (2025, 9, 15, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
@@ -8610,15 +8610,15 @@ def UnPackCatFileString(instr, outdir=None, followlink=False, seekstart=0, seeke
 
 def ftype_to_str(ftype):
     mapping = {
-        0: "file",
-        1: "link",
-        2: "symlink",
-        3: "char device",
-        4: "block device",
-        5: "directory",
-        6: "fifo",
-        12: "sparse",
-        14: "device",
+        0: "file",   # file
+        1: "link",   # link
+        2: "sym",    # symlink
+        3: "cdev",   # char device
+        4: "bdev",   # block device
+        5: "dir",    # directory
+        6: "fifo",   # fifo
+        12: "spar",  # sparse
+        14: "dev",   # generic device
     }
     # Default to "file" if unknown
     return mapping.get(ftype, "file")
