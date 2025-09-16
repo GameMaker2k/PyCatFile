@@ -1,0 +1,103 @@
+{
+    "config": {
+        "default": "CatFile",
+        "proname": "PyCatFile",
+        "includedef": "true"
+    },
+    "CatFile": {
+        "len": "7",
+        "hex": "43617446696c65",
+        "ver": "001",
+        "name": "CatFile",
+        "magic": "CatFile",
+        "delimiter": "\x00",
+        "extension": ".cat",
+        "newstyle": "true",
+        "advancedlist": "true",
+        "altinode": "true"
+    },
+    "NekoFile": {
+        "len": "8",
+        "hex": "4e656b6f46696c65",
+        "ver": "001",
+        "name": "NekoFile",
+        "magic": "NekoFile",
+        "delimiter": "\x00",
+        "extension": ".neko",
+        "newstyle": "true",
+        "advancedlist": "true",
+        "altinode": "true"
+    },
+    "ねこファイル": {
+        "len": "18",
+        "hex": "e381ade38193e38395e382a1e382a4e383ab",
+        "ver": "001",
+        "name": "NekoFairu",
+        "magic": "ねこファイル",
+        "delimiter": "\x00",
+        "extension": ".ねこ",
+        "newstyle": "true",
+        "advancedlist": "true",
+        "altinode": "true"
+    },
+    "ネコファイル": {
+        "len": "18",
+        "hex": "e3838de382b3e38395e382a1e382a4e383ab",
+        "ver": "001",
+        "name": "NekoFairu",
+        "magic": "ネコファイル",
+        "delimiter": "\x00",
+        "extension": ".ネコ",
+        "newstyle": "true",
+        "advancedlist": "true",
+        "altinode": "true"
+    },
+    "네코파일": {
+        "len": "12",
+        "hex": "eb84a4ecbd94ed8c8cec9dbc",
+        "ver": "001",
+        "name": "NekoPa-il",
+        "magic": "네코파일",
+        "delimiter": "\x00",
+        "extension": ".네코",
+        "newstyle": "true",
+        "advancedlist": "true",
+        "altinode": "true"
+    },
+    "고양이파일": {
+        "len": "15",
+        "hex": "eab3a0ec9691ec9db4ed8c8cec9dbc",
+        "ver": "001",
+        "name": "GoyangiPa-il",
+        "magic": "고양이파일",
+        "delimiter": "\x00",
+        "extension": ".고양이",
+        "newstyle": "true",
+        "advancedlist": "true",
+        "altinode": "false"
+    },
+    "内酷法伊鲁": {
+        "len": "15",
+        "hex": "e58685e985b7e6b395e4bc8ae9b281",
+        "ver": "001",
+        "name": "NeiKuFaYiLu",
+        "magic": "内酷法伊鲁",
+        "delimiter": "\x00",
+        "extension": ".内酷",
+        "newstyle": "true",
+        "advancedlist": "true",
+        "altinode": "false"
+    },
+    "猫文件": {
+        "len": "9",
+        "hex": "e78cabe69687e4bbb6",
+        "ver": "001",
+        "name": "MaoWenjian",
+        "magic": "猫文件",
+        "delimiter": "\x00",
+        "extension": ".猫",
+        "newstyle": "true",
+        "advancedlist": "true",
+        "altinode": "false"
+    }
+}
