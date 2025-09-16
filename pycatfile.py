@@ -9219,37 +9219,37 @@ def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compress
 PyNeoFile compatibility layer
 """
 
-def make_empty_file_pointer_neo(fp, fmttype=None, checksumtype='crc32', formatspecs=None, encoding='UTF-8'):
+def make_empty_file_pointer_neo(fp, fmttype=None, checksumtype='crc32', formatspecs=__file_format_dict__, encoding='UTF-8'):
     return MakeEmptyFilePointer(fp, fmttype, checksumtype, formatspecs)
 
-def make_empty_archive_file_pointer_neo(fp, fmttype=None, checksumtype='crc32', formatspecs=None, encoding='UTF-8'):
+def make_empty_archive_file_pointer_neo(fp, fmttype=None, checksumtype='crc32', formatspecs=__file_format_dict__, encoding='UTF-8'):
     return make_empty_file_pointer_neo(fp, fmttype, checksumtype, formatspecs, encoding)
 
-def make_empty_file_neo(outfile=None, fmttype=None, checksumtype='crc32', formatspecs=None, encoding='UTF-8', returnfp=False):
+def make_empty_file_neo(outfile=None, fmttype=None, checksumtype='crc32', formatspecs=__file_format_dict__, encoding='UTF-8', returnfp=False):
     return MakeEmptyFile(outfile, fmttype, "auto", False, None, checksumtype, formatspecs, returnfp)
 
-def make_empty_archive_file_neo(outfile=None, fmttype=None, checksumtype='crc32', formatspecs=None, encoding='UTF-8', returnfp=False):
+def make_empty_archive_file_neo(outfile=None, fmttype=None, checksumtype='crc32', formatspecs=__file_format_dict__, encoding='UTF-8', returnfp=False):
     return make_empty_file_neo(outfile, fmttype, checksumtype, formatspecs, encoding, returnfp)
 
-def pack_neo(infiles, outfile=None, formatspecs=None, checksumtypes=["crc32", "crc32", "crc32", "crc32"], encoding="UTF-8", compression="auto", compression_level=None, returnfp=False):
+def pack_neo(infiles, outfile=None, formatspecs=__file_format_dict__, checksumtypes=["crc32", "crc32", "crc32", "crc32"], encoding="UTF-8", compression="auto", compression_level=None, returnfp=False):
     return PackCatFile(infiles, outfile, False, "auto", compression, False, compression_level, compressionlistalt, False, checksumtypes, [], {}, formatspecs, False, returnfp)
 
-def archive_to_array_neo(infile, formatspecs=None, listonly=False, skipchecksum=False, uncompress=True, returnfp=False):
+def archive_to_array_neo(infile, formatspecs=__file_format_dict__, listonly=False, skipchecksum=False, uncompress=True, returnfp=False):
     return CatFileToArray(infile, "auto", 0, 0, listonly, True, uncompress, skipchecksum, formatspecs, False, returnfp)
 
-def unpack_neo(infile, outdir='.', formatspecs=None, skipchecksum=False, uncompress=True, returnfp=False):
+def unpack_neo(infile, outdir='.', formatspecs=__file_format_dict__, skipchecksum=False, uncompress=True, returnfp=False):
     return UnPackCatFile(infile, outdir, False, 0, 0, skipchecksum, formatspecs, True, True, False, False, returnfp)
 
-def repack_neo(infile, outfile=None, formatspecs=None, checksumtypes=["crc32", "crc32", "crc32", "crc32"], compression="auto", compression_level=None, returnfp=False):
+def repack_neo(infile, outfile=None, formatspecs=__file_format_dict__, checksumtypes=["crc32", "crc32", "crc32", "crc32"], compression="auto", compression_level=None, returnfp=False):
     return RePackCatFile(infile, outfile, "auto", compression, False, compression_level, compressionlistalt, False, 0, 0, checksumtypes, False, [], {}, formatspecs, False, False, returnfp)
 
-def archivefilevalidate_neo(infile, formatspecs=None, verbose=False, return_details=False, returnfp=False):
+def archivefilevalidate_neo(infile, formatspecs=__file_format_dict__, verbose=False, return_details=False, returnfp=False):
     return CatFileValidate(infile, "auto", formatspecs, False, verbose, returnfp)
 
-def archivefilelistfiles_neo(infile, formatspecs=None, advanced=False, include_dirs=True, returnfp=False):
+def archivefilelistfiles_neo(infile, formatspecs=__file_format_dict__, advanced=False, include_dirs=True, returnfp=False):
     return CatFileListFiles(infile, "auto", 0, 0, False, formatspecs, False, True, advanced, returnfp)
 
-def convert_foreign_to_neo(infile, outfile=None, formatspecs=None, checksumtypes=["crc32", "crc32", "crc32", "crc32"], compression="auto", compression_level=None, returnfp=False):
+def convert_foreign_to_neo(infile, outfile=None, formatspecs=__file_format_dict__, checksumtypes=["crc32", "crc32", "crc32", "crc32"], compression="auto", compression_level=None, returnfp=False):
     intmp = InFileToArray(infile, 0, 0, False, True, False, formatspecs, False, False)
     return RePackCatFile(intmp, outfile, "auto", compression, False, compression_level, compressionlistalt, False, 0, 0, checksumtypes, False, [], {}, formatspecs, False, False, returnfp)
 
