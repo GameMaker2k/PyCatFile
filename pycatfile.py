@@ -8631,7 +8631,7 @@ def CatFileListFiles(infile, fmttype="auto", seekstart=0, seekend=0, skipchecksu
     else:
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
             infile = RemoveWindowsPath(infile)
-        listarchivefiles = ArchiveFileToArray(infile, fmttype, seekstart, seekend, True, False, False, skipchecksum, formatspecs, seektoend, returnfp)
+        listarchivefiles = CatFileToArray(infile, fmttype, seekstart, seekend, True, False, False, skipchecksum, formatspecs, seektoend, returnfp)
     if(not listarchivefiles):
         return False
     lenlist = len(listarchivefiles['ffilelist'])
