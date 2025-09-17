@@ -3636,11 +3636,14 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         fcontents = BytesIO()
         chunk_size = 1024
         fcencoding = "UTF-8"
-        if ftype in data_types:
+        curcompression = "none"
+        if not followlink and ftype in data_types:
             with open(fname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
+                typechecktest = CheckCompressionType(fcontents, closefp=False)
+                fcontents.seek(0, 0)
                 fcencoding = GetFileEncoding(fcontents, False)
-                if(not compresswholefile):
+                if(typechecktest is False and not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
                     fcontents.seek(0, 0)
@@ -3661,10 +3664,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                                 ilcsize.append(cfcontents.tell())
                                 cfcontents.close()
                             else:
-                                try:
-                                    ilcsize.append(sys.maxint)
-                                except AttributeError:
-                                    ilcsize.append(sys.maxsize)
+                                ilcsize.append(float("inf"))
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
                         curcompression = compressionuselist[ilcmin]
@@ -3681,13 +3681,16 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                         fcompression = curcompression
                         fcontents.close()
                         fcontents = cfcontents
-        if(followlink and (ftype == 1 or ftype == 2)):
+        elif followlink and (ftype == 1 or ftype == 2):
             if(not os.path.exists(flinkname)):
                 return False
             flstatinfo = os.stat(flinkname)
             with open(flinkname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
-                if(not compresswholefile):
+                typechecktest = CheckCompressionType(fcontents, closefp=False)
+                fcontents.seek(0, 0)
+                fcencoding = GetFileEncoding(fcontents, False)
+                if(typechecktest is False and not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
                     fcontents.seek(0, 0)
@@ -3708,10 +3711,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                                 ilcsize.append(cfcontents.tell())
                                 cfcontents.close()
                             else:
-                                try:
-                                    ilcsize.append(sys.maxint)
-                                except AttributeError:
-                                    ilcsize.append(sys.maxsize)
+                                ilcsize.append(float("inf"))
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
                         curcompression = compressionuselist[ilcmin]
@@ -5098,11 +5098,14 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
         fcsize = format(int(0), 'x').lower()
         fcontents = BytesIO()
         fcencoding = "UTF-8"
-        if ftype in data_types:
+        curcompression = "none"
+        if not followlink and ftype in data_types:
             with open(fname, "rb") as fpc:
                 shutil.copyfileobj(fpc, fcontents)
+                typechecktest = CheckCompressionType(fcontents, closefp=False)
+                fcontents.seek(0, 0)
                 fcencoding = GetFileEncoding(fcontents, False)
-                if(not compresswholefile):
+                if(typechecktest is False and not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
                     fcontents.seek(0, 0)
@@ -5123,10 +5126,54 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
                                 ilcsize.append(cfcontents.tell())
                                 cfcontents.close()
                             else:
-                                try:
-                                    ilcsize.append(sys.maxint)
-                                except AttributeError:
-                                    ilcsize.append(sys.maxsize)
+                                ilcsize.append(float("inf"))
+                            ilmin = ilmin + 1
+                        ilcmin = ilcsize.index(min(ilcsize))
+                        curcompression = compressionuselist[ilcmin]
+                    fcontents.seek(0, 0)
+                    cfcontents = BytesIO()
+                    shutil.copyfileobj(fcontents, cfcontents)
+                    cfcontents.seek(0, 0)
+                    cfcontents = CompressOpenFileAlt(
+                        cfcontents, curcompression, compressionlevel, formatspecs)
+                    cfcontents.seek(0, 2)
+                    cfsize = cfcontents.tell()
+                    if(ucfsize > cfsize):
+                        fcsize = format(int(cfsize), 'x').lower()
+                        fcompression = curcompression
+                        fcontents.close()
+                        fcontents = cfcontents
+        elif followlink and (ftype == 1 or ftype == 2):
+            if(not os.path.exists(flinkname)):
+                return False
+            flstatinfo = os.stat(flinkname)
+            with open(flinkname, "rb") as fpc:
+                shutil.copyfileobj(fpc, fcontents)
+                typechecktest = CheckCompressionType(fcontents, closefp=False)
+                fcontents.seek(0, 0)
+                fcencoding = GetFileEncoding(fcontents, False)
+                if(typechecktest is False and not compresswholefile):
+                    fcontents.seek(0, 2)
+                    ucfsize = fcontents.tell()
+                    fcontents.seek(0, 0)
+                    if(compression == "auto"):
+                        ilsize = len(compressionuselist)
+                        ilmin = 0
+                        ilcsize = []
+                        while(ilmin < ilsize):
+                            cfcontents = BytesIO()
+                            fcontents.seek(0, 0)
+                            shutil.copyfileobj(fcontents, cfcontents)
+                            fcontents.seek(0, 0)
+                            cfcontents.seek(0, 0)
+                            cfcontents = CompressOpenFileAlt(
+                                cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
+                            if(cfcontents):
+                                cfcontents.seek(0, 2)
+                                ilcsize.append(cfcontents.tell())
+                                cfcontents.close()
+                            else:
+                                ilcsize.append(float("inf"))
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
                         curcompression = compressionuselist[ilcmin]
@@ -5145,53 +5192,6 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
                         fcontents = cfcontents
         if(fcompression == "none"):
             fcompression = ""
-        if(followlink and (ftype == 1 or ftype == 2)):
-            if(not os.path.exists(flinkname)):
-                return False
-            flstatinfo = os.stat(flinkname)
-            with open(flinkname, "rb") as fpc:
-                shutil.copyfileobj(fpc, fcontents)
-                if(not compresswholefile):
-                    fcontents.seek(0, 2)
-                    ucfsize = fcontents.tell()
-                    fcontents.seek(0, 0)
-                    if(compression == "auto"):
-                        ilsize = len(compressionuselist)
-                        ilmin = 0
-                        ilcsize = []
-                        while(ilmin < ilsize):
-                            cfcontents = BytesIO()
-                            fcontents.seek(0, 0)
-                            shutil.copyfileobj(fcontents, cfcontents)
-                            fcontents.seek(0, 0)
-                            cfcontents.seek(0, 0)
-                            cfcontents = CompressOpenFileAlt(
-                                cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
-                            if(cfcontents):
-                                cfcontents.seek(0, 2)
-                                ilcsize.append(cfcontents.tell())
-                                cfcontents.close()
-                            else:
-                                try:
-                                    ilcsize.append(sys.maxint)
-                                except AttributeError:
-                                    ilcsize.append(sys.maxsize)
-                            ilmin = ilmin + 1
-                        ilcmin = ilcsize.index(min(ilcsize))
-                        curcompression = compressionuselist[ilcmin]
-                    fcontents.seek(0, 0)
-                    cfcontents = BytesIO()
-                    shutil.copyfileobj(fcontents, cfcontents)
-                    cfcontents.seek(0, 0)
-                    cfcontents = CompressOpenFileAlt(
-                        cfcontents, curcompression, compressionlevel, formatspecs)
-                    cfcontents.seek(0, 2)
-                    cfsize = cfcontents.tell()
-                    if(ucfsize > cfsize):
-                        fcsize = format(int(cfsize), 'x').lower()
-                        fcompression = curcompression
-                        fcontents.close()
-                        fcontents = cfcontents
         fcontents.seek(0, 0)
         ftypehex = format(ftype, 'x').lower()
         tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
@@ -5445,11 +5445,14 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
         fcsize = format(int(0), 'x').lower()
         fcontents = BytesIO()
         fcencoding = "UTF-8"
+        curcompression = "none"
         if ftype in data_types:
             fpc = tarfp.extractfile(member)
             shutil.copyfileobj(fpc, fcontents)
+            typechecktest = CheckCompressionType(fcontents, closefp=False)
+            fcontents.seek(0, 0)
             fcencoding = GetFileEncoding(fcontents, False)
-            if(not compresswholefile):
+            if(typechecktest is False and not compresswholefile):
                 fcontents.seek(0, 2)
                 ucfsize = fcontents.tell()
                 fcontents.seek(0, 0)
@@ -5470,10 +5473,7 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
                             ilcsize.append(cfcontents.tell())
                             cfcontents.close()
                         else:
-                            try:
-                                ilcsize.append(sys.maxint)
-                            except AttributeError:
-                                ilcsize.append(sys.maxsize)
+                            ilcsize.append(float("inf"))
                         ilmin = ilmin + 1
                     ilcmin = ilcsize.index(min(ilcsize))
                     curcompression = compressionuselist[ilcmin]
@@ -5743,10 +5743,13 @@ def PackCatFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", 
             fgname = ""
         fcontents = BytesIO()
         fcencoding = "UTF-8"
-        if(ftype == 0):
+        curcompression = "none"
+        if ftype == 0:
             fcontents.write(zipfp.read(member.filename))
+            typechecktest = CheckCompressionType(fcontents, closefp=False)
+            fcontents.seek(0, 0)
             fcencoding = GetFileEncoding(fcontents, False)
-            if(not compresswholefile):
+            if(typechecktest is False and not compresswholefile):
                 fcontents.seek(0, 2)
                 ucfsize = fcontents.tell()
                 fcontents.seek(0, 0)
@@ -6057,10 +6060,13 @@ if(rarfile_support):
                 fgname = ""
             fcontents = BytesIO()
             fcencoding = "UTF-8"
-            if(ftype == 0):
+            curcompression = "none"
+            if ftype == 0:
                 fcontents.write(rarfp.read(member.filename))
+                typechecktest = CheckCompressionType(fcontents, closefp=False)
+                fcontents.seek(0, 0)
                 fcencoding = GetFileEncoding(fcontents, False)
-                if(not compresswholefile):
+                if(typechecktest is False and not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
                     fcontents.seek(0, 0)
@@ -6081,10 +6087,7 @@ if(rarfile_support):
                                 ilcsize.append(cfcontents.tell())
                                 cfcontents.close()
                             else:
-                                try:
-                                    ilcsize.append(sys.maxint)
-                                except AttributeError:
-                                    ilcsize.append(sys.maxsize)
+                                ilcsize.append(float("inf"))
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
                         curcompression = compressionuselist[ilcmin]
@@ -6308,12 +6311,15 @@ if(py7zr_support):
                 fgname = ""
             fcontents = BytesIO()
             fcencoding = "UTF-8"
-            if(ftype == 0):
+            curcompression = "none"
+            if ftype == 0:
                 fcontents.write(file_content[member.filename].read())
+                typechecktest = CheckCompressionType(fcontents, closefp=False)
+                fcontents.seek(0, 0)
                 fcencoding = GetFileEncoding(fcontents, False)
                 fsize = format(fcontents.tell(), 'x').lower()
                 file_content[member.filename].close()
-                if(not compresswholefile):
+                if(typechecktest is False and not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
                     fcontents.seek(0, 0)
@@ -6334,10 +6340,7 @@ if(py7zr_support):
                                 ilcsize.append(cfcontents.tell())
                                 cfcontents.close()
                             else:
-                                try:
-                                    ilcsize.append(sys.maxint)
-                                except AttributeError:
-                                    ilcsize.append(sys.maxsize)
+                                ilcsize.append(float("inf"))
                             ilmin = ilmin + 1
                         ilcmin = ilcsize.index(min(ilcsize))
                         curcompression = compressionuselist[ilcmin]
@@ -8178,10 +8181,13 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
         fcontents = listarchivefiles['ffilelist'][reallcfi]['fcontents']
         if(not listarchivefiles['ffilelist'][reallcfi]['fcontentasfile']):
             fcontents = BytesIO(fcontents)
+        typechecktest = CheckCompressionType(fcontents, closefp=False)
+        fcontents.seek(0, 0)
         fcencoding = GetFileEncoding(fcontents, False)
         fcompression = ""
         fcsize = format(int(0), 'x').lower()
-        if(not compresswholefile):
+        curcompression = "none"
+        if typechecktest is False and not compresswholefile:
             fcontents.seek(0, 2)
             ucfsize = fcontents.tell()
             fcontents.seek(0, 0)
@@ -8202,10 +8208,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
                         ilcsize.append(cfcontents.tell())
                         cfcontents.close()
                     else:
-                        try:
-                            ilcsize.append(sys.maxint)
-                        except AttributeError:
-                            ilcsize.append(sys.maxsize)
+                        ilcsize.append(float("inf"))
                     ilmin = ilmin + 1
                 ilcmin = ilcsize.index(min(ilcsize))
                 curcompression = compressionuselist[ilcmin]
@@ -8222,7 +8225,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
                 fcompression = curcompression
                 fcontents.close()
                 fcontents = cfcontents
-        if(followlink):
+        if followlink:
             if(listarchivefiles['ffilelist'][reallcfi]['ftype'] == 1 or listarchivefiles['ffilelist'][reallcfi]['ftype'] == 2):
                 getflinkpath = listarchivefiles['ffilelist'][reallcfi]['flinkname']
                 flinkid = prelistarchivefiles['filetoid'][getflinkpath]
