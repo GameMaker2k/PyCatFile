@@ -1,6 +1,6 @@
 [project]
     name = "PyCatFile"
-    version = "0.20.8"
+    version = "0.21.0"
     readme = "README.md"
     license = { text = "BSD-3-Clause" }
     keywords = []
