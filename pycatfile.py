@@ -2569,7 +2569,7 @@ def ReadFileDataWithContentToArray(fp, seekstart=0, seekend=0, listonly=False, c
             prefjsonsize = int(preheaderdata[29], 16)
             prefjsonchecksumtype = preheaderdata[30]
             prefjsonchecksum = preheaderdata[31]
-            prefprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+            prefprejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
             fp.seek(len(delimiter), 1)
             prejsonfcs = GetFileChecksum(fprejsoncontent, prefjsonchecksumtype, True, formatspecs)
             if(prejsonfcs != prefjsonchecksum and not skipchecksum):
@@ -2581,7 +2581,7 @@ def ReadFileDataWithContentToArray(fp, seekstart=0, seekend=0, listonly=False, c
                 preheaderdata[:-2], preheaderdata[-4].lower(), True, formatspecs)
             prefcs = preheaderdata[-2]
             if(prefcs != prenewfcs and not skipchecksum):
-                VVerbosePrintOut("File Header Checksum Error with file " +
+                VerbosePrintOut("File Header Checksum Error with file " +
                                  prefname + " at offset " + str(prefhstart))
                 VerbosePrintOut("'" + prefcs + "' != " +
                                 "'" + prenewfcs + "'")
