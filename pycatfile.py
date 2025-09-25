@@ -3283,7 +3283,7 @@ def MakeEmptyArchiveFilePointer(fp, fmttype=__file_format_default__, checksumtyp
     return MakeEmptyFilePointer(fp, fmttype, checksumtype, formatspecs)
 
 
-def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", formatspecs=__file_format_multi_dict__, returnfp=False):
+def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", formatspecs=__file_format_multi_dict__, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
@@ -3327,7 +3327,7 @@ def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile
     AppendFileHeader(fp, 0, "UTF-8", [], checksumtype, formatspecs)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, formatspecs)
+            fp, compression, compressionlevel, compressionuselist, formatspecs)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
@@ -3351,7 +3351,7 @@ def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile
         return outvar
     elif(re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, formatspecs)
+            fp, compression, compressionlevel, compressionuselist, formatspecs)
         fp.seek(0, 0)
         upload_file_to_internet_file(fp, outfile)
     if(returnfp):
@@ -3362,8 +3362,8 @@ def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile
         return True
 
 
-def MakeEmptyArchiveFile(outfile, compression="auto", compresswholefile=True, compressionlevel=None, checksumtype="crc32", formatspecs=__file_format_dict__, returnfp=False):
-    return MakeEmptyFile(outfile, "auto", compression, compresswholefile, compressionlevel, checksumtype, formatspecs, returnfp)
+def MakeEmptyArchiveFile(outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype="crc32", formatspecs=__file_format_dict__, returnfp=False):
+    return MakeEmptyFile(outfile, "auto", compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, returnfp)
 
 
 def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, filecontent="", checksumtype=["crc32", "crc32", "crc32"], formatspecs=__file_format_dict__):
@@ -3671,7 +3671,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
                             cfcontents = CompressOpenFileAlt(
-                                cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
+                                cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs)
                             if(cfcontents):
                                 cfcontents.seek(0, 2)
                                 ilcsize.append(cfcontents.tell())
@@ -3686,7 +3686,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                     shutil.copyfileobj(fcontents, cfcontents)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressOpenFileAlt(
-                        cfcontents, curcompression, compressionlevel, formatspecs)
+                        cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
                     cfcontents.seek(0, 2)
                     cfsize = cfcontents.tell()
                     if(ucfsize > cfsize):
@@ -3718,7 +3718,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
                             cfcontents = CompressOpenFileAlt(
-                                cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
+                                cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs)
                             if(cfcontents):
                                 cfcontents.seek(0, 2)
                                 ilcsize.append(cfcontents.tell())
@@ -3733,7 +3733,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                     shutil.copyfileobj(fcontents, cfcontents)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressOpenFileAlt(
-                        cfcontents, curcompression, compressionlevel, formatspecs)
+                        cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
                     cfcontents.seek(0, 2)
                     cfsize = cfcontents.tell()
                     if(ucfsize > cfsize):
@@ -3877,7 +3877,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmtt
                                    compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, formatspecs, verbose)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, formatspecs)
+            fp, compression, compressionlevel, compressionuselist, formatspecs)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
@@ -3901,7 +3901,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmtt
         return outvar
     elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, formatspecs)
+            fp, compression, compressionlevel, compressionuselist, formatspecs)
         fp.seek(0, 0)
         upload_file_to_internet_file(fp, outfile)
     if(returnfp):
@@ -3957,7 +3957,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmtty
                                    compresswholefile, compressionlevel, followlink, checksumtype, formatspecs, verbose)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, formatspecs)
+            fp, compression, compressionlevel, compressionuselist, formatspecs)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
@@ -3981,7 +3981,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmtty
         return outvar
     elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, formatspecs)
+            fp, compression, compressionlevel, compressionuselist, formatspecs)
         fp.seek(0, 0)
         upload_file_to_internet_file(fp, outfile)
     if(returnfp):
@@ -4672,13 +4672,13 @@ def UncompressBytesAltFP(fp, formatspecs=__file_format_multi_dict__):
     return filefp
 
 
-def CompressOpenFileAlt(fp, compression="auto", compressionlevel=None, formatspecs=__file_format_dict__):
+def CompressOpenFileAlt(fp, compression="auto", compressionlevel=None, compressionuselist=compressionlistalt, formatspecs=__file_format_dict__):
     if(not hasattr(fp, "read")):
         return False
     fp.seek(0, 0)
     if(not compression or compression == formatspecs['format_magic']):
         compression = "auto"
-    if(compression not in compressionlist and compression is None):
+    if(compression not in compressionuselist and compression is None):
         compression = "auto"
     if(compression == "gzip" and compression in compressionsupport):
         bytesfp = BytesIO()
@@ -4897,7 +4897,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
         outfile = RemoveWindowsPath(outfile)
     if(not compression or compression == formatspecs['format_magic']):
         compression = "auto"
-    if(compression not in compressionlist and compression is None):
+    if(compression not in compressionuselist and compression is None):
         compression = "auto"
     if(verbose):
         logging.basicConfig(format="%(message)s",
@@ -5064,7 +5064,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
         elif ftype in data_types:
             fsize = format(int(fstatinfo.st_size), 'x').lower()
         else:
-            fsize = format(int(fstatinfo.st_size)).lower()
+            fsize = format(int(fstatinfo.st_size), 'x').lower()
         fatime = format(int(fstatinfo.st_atime), 'x').lower()
         fmtime = format(int(fstatinfo.st_mtime), 'x').lower()
         fctime = format(int(fstatinfo.st_ctime), 'x').lower()
@@ -5133,7 +5133,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
                             cfcontents = CompressOpenFileAlt(
-                                cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
+                                cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs)
                             if(cfcontents):
                                 cfcontents.seek(0, 2)
                                 ilcsize.append(cfcontents.tell())
@@ -5148,7 +5148,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
                     shutil.copyfileobj(fcontents, cfcontents)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressOpenFileAlt(
-                        cfcontents, curcompression, compressionlevel, formatspecs)
+                        cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
                     cfcontents.seek(0, 2)
                     cfsize = cfcontents.tell()
                     if(ucfsize > cfsize):
@@ -5180,7 +5180,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
                             cfcontents = CompressOpenFileAlt(
-                                cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
+                                cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs)
                             if(cfcontents):
                                 cfcontents.seek(0, 2)
                                 ilcsize.append(cfcontents.tell())
@@ -5195,7 +5195,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
                     shutil.copyfileobj(fcontents, cfcontents)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressOpenFileAlt(
-                        cfcontents, curcompression, compressionlevel, formatspecs)
+                        cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
                     cfcontents.seek(0, 2)
                     cfsize = cfcontents.tell()
                     if(ucfsize > cfsize):
@@ -5220,7 +5220,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
             return False
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, formatspecs)
+            fp, compression, compressionlevel, compressionuselist, formatspecs)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
@@ -5244,7 +5244,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
         return outvar
     elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, formatspecs)
+            fp, compression, compressionlevel, compressionuselist, formatspecs)
         fp.seek(0, 0)
         upload_file_to_internet_file(fp, outfile)
     if(returnfp):
@@ -5282,7 +5282,7 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
         outfile = RemoveWindowsPath(outfile)
     if(not compression or compression == formatspecs['format_magic']):
         compression = "auto"
-    if(compression not in compressionlist and compression is None):
+    if(compression not in compressionuselist and compression is None):
         compression = "auto"
     if(verbose):
         logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
@@ -5357,7 +5357,7 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
                 if 'zstandard' in sys.modules:
                     infile = ZstdFile(fileobj=infile, mode="rb")
                 elif 'pyzstd' in sys.modules:
-                    fp = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
+                    infile = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
                 tarfp = tarfile.open(fileobj=infile, mode="r")
             else:
                 tarfp = tarfile.open(fileobj=infile, mode="r")
@@ -5369,7 +5369,7 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
                 if 'zstandard' in sys.modules:
                     infile = ZstdFile(fileobj=infile, mode="rb")
                 elif 'pyzstd' in sys.modules:
-                    fp = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
+                    infile = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
                 tarfp = tarfile.open(fileobj=infile, mode="r")
             else:
                 tarfp = tarfile.open(infile, "r")
@@ -5461,6 +5461,7 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
         curcompression = "none"
         if ftype in data_types:
             fpc = tarfp.extractfile(member)
+            fpc.close()
             shutil.copyfileobj(fpc, fcontents)
             typechecktest = CheckCompressionType(fcontents, closefp=False)
             fcontents.seek(0, 0)
@@ -5480,7 +5481,7 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
                         fcontents.seek(0, 0)
                         cfcontents.seek(0, 0)
                         cfcontents = CompressOpenFileAlt(
-                            cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
+                            cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs)
                         if(cfcontents):
                             cfcontents.seek(0, 2)
                             ilcsize.append(cfcontents.tell())
@@ -5495,7 +5496,7 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
                 shutil.copyfileobj(fcontents, cfcontents)
                 cfcontents.seek(0, 0)
                 cfcontents = CompressOpenFileAlt(
-                    cfcontents, curcompression, compressionlevel, formatspecs)
+                    cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
                 cfcontents.seek(0, 2)
                 cfsize = cfcontents.tell()
                 if(ucfsize > cfsize):
@@ -5520,7 +5521,7 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
             return False
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, formatspecs)
+            fp, compression, compressionlevel, compressionuselist, formatspecs)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
@@ -5544,7 +5545,7 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
         return outvar
     elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, formatspecs)
+            fp, compression, compressionlevel, compressionuselist, formatspecs)
         fp.seek(0, 0)
         upload_file_to_internet_file(fp, outfile)
     if(returnfp):
@@ -5578,7 +5579,7 @@ def PackCatFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", 
         outfile = RemoveWindowsPath(outfile)
     if(not compression or compression == formatspecs['format_magic']):
         compression = "auto"
-    if(compression not in compressionlist and compression is None):
+    if(compression not in compressionuselist and compression is None):
         compression = "auto"
     if(verbose):
         logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
@@ -5777,7 +5778,7 @@ def PackCatFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", 
                         fcontents.seek(0, 0)
                         cfcontents.seek(0, 0)
                         cfcontents = CompressOpenFileAlt(
-                            cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
+                            cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs)
                         cfcontents.seek(0, 2)
                         ilcsize.append(cfcontents.tell())
                         cfcontents.close()
@@ -5789,7 +5790,7 @@ def PackCatFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", 
                 shutil.copyfileobj(fcontents, cfcontents)
                 cfcontents.seek(0, 0)
                 cfcontents = CompressOpenFileAlt(
-                    cfcontents, curcompression, compressionlevel, formatspecs)
+                    cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
                 cfcontents.seek(0, 2)
                 cfsize = cfcontents.tell()
                 if(ucfsize > cfsize):
@@ -5814,7 +5815,7 @@ def PackCatFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", 
             return False
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, formatspecs)
+            fp, compression, compressionlevel, compressionuselist, formatspecs)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
@@ -5838,7 +5839,7 @@ def PackCatFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", 
         return outvar
     elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, formatspecs)
+            fp, compression, compressionlevel, compressionuselist, formatspecs)
         fp.seek(0, 0)
         upload_file_to_internet_file(fp, outfile)
     if(returnfp):
@@ -5877,7 +5878,7 @@ if(rarfile_support):
             outfile = RemoveWindowsPath(outfile)
         if(not compression or compression == formatspecs['format_magic']):
             compression = "auto"
-        if(compression not in compressionlist and compression is None):
+        if(compression not in compressionuselist and compression is None):
             compression = "auto"
         if(verbose):
             logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
@@ -6094,7 +6095,7 @@ if(rarfile_support):
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
                             cfcontents = CompressOpenFileAlt(
-                                cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
+                                cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs)
                             if(cfcontents):
                                 cfcontents.seek(0, 2)
                                 ilcsize.append(cfcontents.tell())
@@ -6109,12 +6110,12 @@ if(rarfile_support):
                     shutil.copyfileobj(fcontents, cfcontents)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressOpenFileAlt(
-                        cfcontents, curcompression, compressionlevel, formatspecs)
+                        cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
                     cfcontents.seek(0, 2)
                     cfsize = cfcontents.tell()
                     if(ucfsize > cfsize):
                         fcsize = format(int(cfsize), 'x').lower()
-                        fcompression = compression
+                        fcompression = curcompression
                         fcontents.close()
                         fcontents = cfcontents
             if(fcompression == "none"):
@@ -6134,7 +6135,7 @@ if(rarfile_support):
                 return False
         if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
             fp = CompressOpenFileAlt(
-                fp, compression, compressionlevel, formatspecs)
+                fp, compression, compressionlevel, compressionuselist, formatspecs)
             try:
                 fp.flush()
                 if(hasattr(os, "sync")):
@@ -6158,7 +6159,7 @@ if(rarfile_support):
             return outvar
         elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
             fp = CompressOpenFileAlt(
-                fp, compression, compressionlevel, formatspecs)
+                fp, compression, compressionlevel, compressionuselist, formatspecs)
             fp.seek(0, 0)
             upload_file_to_internet_file(fp, outfile)
         if(returnfp):
@@ -6197,7 +6198,7 @@ if(py7zr_support):
             outfile = RemoveWindowsPath(outfile)
         if(not compression or compression == formatspecs['format_magic']):
             compression = "auto"
-        if(compression not in compressionlist and compression is None):
+        if(compression not in compressionuselist and compression is None):
             compression = "auto"
         if(verbose):
             logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
@@ -6327,10 +6328,11 @@ if(py7zr_support):
             curcompression = "none"
             if ftype == 0:
                 fcontents.write(file_content[member.filename].read())
+                fsize = format(fcontents.tell(), 'x').lower()
+                fcontents.seek(0, 0)
                 typechecktest = CheckCompressionType(fcontents, closefp=False)
                 fcontents.seek(0, 0)
                 fcencoding = GetFileEncoding(fcontents, False)
-                fsize = format(fcontents.tell(), 'x').lower()
                 file_content[member.filename].close()
                 if(typechecktest is False and not compresswholefile):
                     fcontents.seek(0, 2)
@@ -6347,7 +6349,7 @@ if(py7zr_support):
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
                             cfcontents = CompressOpenFileAlt(
-                                cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
+                                cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs)
                             if(cfcontents):
                                 cfcontents.seek(0, 2)
                                 ilcsize.append(cfcontents.tell())
@@ -6362,7 +6364,7 @@ if(py7zr_support):
                     shutil.copyfileobj(fcontents, cfcontents)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressOpenFileAlt(
-                        cfcontents, curcompression, compressionlevel, formatspecs)
+                        cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
                     cfcontents.seek(0, 2)
                     cfsize = cfcontents.tell()
                     if(ucfsize > cfsize):
@@ -6387,7 +6389,7 @@ if(py7zr_support):
                 return False
         if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
             fp = CompressOpenFileAlt(
-                fp, compression, compressionlevel, formatspecs)
+                fp, compression, compressionlevel, compressionuselist, formatspecs)
             try:
                 fp.flush()
                 if(hasattr(os, "sync")):
@@ -6411,7 +6413,7 @@ if(py7zr_support):
             return outvar
         elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
             fp = CompressOpenFileAlt(
-                fp, compression, compressionlevel, formatspecs)
+                fp, compression, compressionlevel, compressionuselist, formatspecs)
             fp.seek(0, 0)
             upload_file_to_internet_file(fp, outfile)
         if(returnfp):
@@ -8087,7 +8089,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
         outfile = RemoveWindowsPath(outfile)
     if(not compression or compression == formatspecs['format_magic']):
         compression = "auto"
-    if(compression not in compressionlist and compression is None):
+    if(compression not in compressionuselist and compression is None):
         compression = "auto"
     if(verbose):
         logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
@@ -8215,7 +8217,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
                     fcontents.seek(0, 0)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressOpenFileAlt(
-                        cfcontents, compressionuselist[ilmin], compressionlevel, formatspecs)
+                        cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs)
                     if(cfcontents):
                         cfcontents.seek(0, 2)
                         ilcsize.append(cfcontents.tell())
@@ -8230,7 +8232,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             shutil.copyfileobj(fcontents, cfcontents)
             cfcontents.seek(0, 0)
             cfcontents = CompressOpenFileAlt(
-                cfcontents, curcompression, compressionlevel, formatspecs)
+                cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
             cfcontents.seek(0, 2)
             cfsize = cfcontents.tell()
             if(ucfsize > cfsize):
@@ -8310,7 +8312,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             return False
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, formatspecs)
+            fp, compression, compressionlevel, compressionuselist, formatspecs)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
@@ -8334,7 +8336,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
         return outvar
     elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall("^(ftp|ftps|sftp):\\/\\/", outfile)):
         fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, formatspecs)
+            fp, compression, compressionlevel, compressionuselist, formatspecs)
         fp.seek(0, 0)
         upload_file_to_internet_file(fp, outfile)
     if(returnfp):
@@ -8743,7 +8745,7 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
                 if 'zstandard' in sys.modules:
                     infile = ZstdFile(fileobj=infile, mode="rb")
                 elif 'pyzstd' in sys.modules:
-                    fp = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
+                    infile = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
                 tarfp = tarfile.open(fileobj=infile, mode="r")
             else:
                 tarfp = tarfile.open(fileobj=infile, mode="r")
@@ -8755,7 +8757,7 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
                 if 'zstandard' in sys.modules:
                     infile = ZstdFile(fileobj=infile, mode="rb")
                 elif 'pyzstd' in sys.modules:
-                    fp = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
+                    infile = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
                 tarfp = tarfile.open(fileobj=infile, mode="r")
             else:
                 tarfp = tarfile.open(infile, "r")
@@ -9789,9 +9791,9 @@ def upload_file_to_internet_file(ifp, url):
     return False
 
 
-def upload_file_to_internet_compress_file(ifp, url, compression="auto", compressionlevel=None, formatspecs=__file_format_dict__):
+def upload_file_to_internet_compress_file(ifp, url, compression="auto", compressionlevel=None, compressionuselist=compressionlistalt, formatspecs=__file_format_dict__):
     fp = CompressOpenFileAlt(
-        fp, compression, compressionlevel, formatspecs)
+        fp, compression, compressionlevel, compressionuselist, formatspecs)
     if(not archivefileout):
         return False
     fp.seek(0, 0)
@@ -9815,9 +9817,9 @@ def upload_file_to_internet_string(ifp, url):
     return False
 
 
-def upload_file_to_internet_compress_string(ifp, url, compression="auto", compressionlevel=None, formatspecs=__file_format_dict__):
+def upload_file_to_internet_compress_string(ifp, url, compression="auto", compressionlevel=None, compressionuselist=compressionlistalt, formatspecs=__file_format_dict__):
     fp = CompressOpenFileAlt(
-        BytesIO(ifp), compression, compressionlevel, formatspecs)
+        BytesIO(ifp), compression, compressionlevel, compressionuselist, formatspecs)
     if(not archivefileout):
         return False
     fp.seek(0, 0)
