@@ -13,7 +13,7 @@
     Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pyshell.py - Last Update: 3/7/2025 Ver. 0.19.0 RC 1 - Author: cooldude2k $
+    $FileInfo: pyshell.py - Last Update: 8/26/2025 Ver. 0.21.4 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals, generators, with_statement, nested_scopes
