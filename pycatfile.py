@@ -45,10 +45,10 @@ except ImportError:
 # FTP Support
 ftpssl = True
 try:
-    from ftplib import FTP, FTP_TLS
+    from ftplib import FTP, FTP_TLS, all_errors
 except ImportError:
     ftpssl = False
-    from ftplib import FTP
+    from ftplib import FTP, all_errors
 
 try:
     import ujson as json
@@ -390,7 +390,7 @@ __version_date_info__ = (2025, 9, 26, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: 4b73b24d1d9cb1fb5011cf0090b2e853058cd6fe $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -9403,19 +9403,39 @@ def download_file_from_ftp_file(url):
         log.info("Error With URL "+url)
         return False
     ftp.login(urlparts.username, urlparts.password)
-    if(urlparts.scheme == "ftps"):
+    if(urlparts.scheme == "ftps" or isinstance(ftp, FTP_TLS)):
         ftp.prot_p()
+    # Try EPSV first, then fall back
+    try:
+        ftp.sendcmd("EPSV")   # request extended passive
+        ftp.retrlines("LIST", callback=lambda line: None)
+    except all_errors:
+        try:
+            ftp.set_pasv(True)
+            ftp.retrlines("LIST", callback=lambda line: None)
+        except all_errors:
+            ftp.set_pasv(False)
+            ftp.retrlines("LIST", callback=lambda line: None)
     ftpfile = MkTempFile()
     ftp.retrbinary("RETR "+urlparts.path, ftpfile.write)
-    #ftp.storbinary("STOR "+urlparts.path, ftpfile.write);
     ftp.close()
     ftpfile.seek(0, 0)
     return ftpfile
 
 
+def download_file_from_ftps_file(url):
+    return download_file_from_ftp_file(url)
+
+
 def download_file_from_ftp_string(url):
     ftpfile = download_file_from_ftp_file(url)
-    return ftpfile.read()
+    ftpout = ftpfile.read()
+    ftpfile.close()
+    return ftpout
+
+
+def download_file_from_ftps_string(url):
+    return download_file_from_ftp_string(url)
 
 
 def upload_file_to_ftp_file(ftpfile, url):
@@ -9457,12 +9477,27 @@ def upload_file_to_ftp_file(ftpfile, url):
         log.info("Error With URL "+url)
         return False
     ftp.login(urlparts.username, urlparts.password)
-    if(urlparts.scheme == "ftps"):
+    if(urlparts.scheme == "ftps" or isinstance(ftp, FTP_TLS)):
         ftp.prot_p()
+    # Try EPSV first, then fall back
+    try:
+        ftp.sendcmd("EPSV")   # request extended passive
+        ftp.retrlines("LIST", callback=lambda line: None)
+    except all_errors:
+        try:
+            ftp.set_pasv(True)
+            ftp.retrlines("LIST", callback=lambda line: None)
+        except all_errors:
+            ftp.set_pasv(False)
+            ftp.retrlines("LIST", callback=lambda line: None)
     ftp.storbinary("STOR "+urlparts.path, ftpfile)
     ftp.close()
     ftpfile.seek(0, 0)
     return ftpfile
+
+
+def upload_file_to_ftps_file(ftpfile, url):
+    return upload_file_to_ftp_file(ftpfile, url)
 
 
 def upload_file_to_ftp_string(ftpstring, url):
@@ -9470,6 +9505,10 @@ def upload_file_to_ftp_string(ftpstring, url):
     ftpfile = upload_file_to_ftp_file(ftpfileo, url)
     ftpfileo.close()
     return ftpfile
+
+
+def upload_file_to_ftps_string(ftpstring, url):
+    return upload_file_to_ftp_string(ftpstring, url)
 
 
 class RawIteratorWrapper:
@@ -9582,7 +9621,9 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
 
 def download_file_from_http_string(url, headers=geturls_headers_pyfile_python_alt, usehttp=__use_http_lib__):
     httpfile = download_file_from_http_file(url, headers, usehttp)
-    return httpfile.read()
+    httpout = httpfile.read()
+    httpfile.close()
+    return httpout
 
 
 if(haveparamiko):
@@ -9639,7 +9680,9 @@ else:
 if(haveparamiko):
     def download_file_from_sftp_string(url):
         sftpfile = download_file_from_sftp_file(url)
-        return sftpfile.read()
+        sftpout = sftpfile.read()
+        sftpfile.close()
+        return sftpout
 else:
     def download_file_from_sftp_string(url):
         return False
@@ -9755,7 +9798,9 @@ else:
 if(havepysftp):
     def download_file_from_pysftp_string(url):
         sftpfile = download_file_from_pysftp_file(url)
-        return sftpfile.read()
+        sftpout = sftpfile.read()
+        sftpfile.close()
+        return sftpout
 else:
     def download_file_from_pysftp_string(url):
         return False
@@ -9862,10 +9907,12 @@ def download_file_from_internet_string(url, headers=geturls_headers_pyfile_pytho
 def download_file_from_internet_uncompress_string(url, headers=geturls_headers_pyfile_python_alt, formatspecs=__file_format_dict__):
     fp = download_file_from_internet_string(url)
     fp = UncompressFileAlt(fp, formatspecs)
-    fp.seek(0, 0)
     if(not fp):
         return False
-    return fp
+    fp.seek(0, 0)
+    fpout = fp.read()
+    fp.close
+    return fpout
 
 
 def upload_file_to_internet_file(ifp, url):
@@ -9887,11 +9934,10 @@ def upload_file_to_internet_file(ifp, url):
 def upload_file_to_internet_compress_file(ifp, url, compression="auto", compressionlevel=None, compressionuselist=compressionlistalt, formatspecs=__file_format_dict__):
     fp = CompressOpenFileAlt(
         fp, compression, compressionlevel, compressionuselist, formatspecs)
-    if(not catfileout):
+    if(not archivefileout):
         return False
     fp.seek(0, 0)
-    upload_file_to_internet_file(fp, outfile)
-    return True
+    return upload_file_to_internet_file(fp, outfile)
 
 
 def upload_file_to_internet_string(ifp, url):
@@ -9914,8 +9960,7 @@ def upload_file_to_internet_compress_string(ifp, url, compression="auto", compre
     internetfileo = MkTempFile(ifp)
     fp = CompressOpenFileAlt(
         internetfileo, compression, compressionlevel, compressionuselist, formatspecs)
-    if(not catfileout):
+    if(not archivefileout):
         return False
     fp.seek(0, 0)
-    upload_file_to_internet_file(fp, outfile)
-    return True
+    return upload_file_to_internet_file(fp, outfile)
