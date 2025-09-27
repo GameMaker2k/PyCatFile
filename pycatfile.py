@@ -102,9 +102,9 @@ baseint = tuple(baseint)
 
 # URL Parsing
 try:
-    from urllib.parse import urlparse, urlunparse
+    from urllib.parse import urlparse, urlunparse, unquote
 except ImportError:
-    from urlparse import urlparse, urlunparse
+    from urlparse import urlparse, urlunparse, unquote
 
 # Windows-specific setup
 if os.name == "nt":
@@ -9379,8 +9379,8 @@ def detect_cwd(ftp, file_dir):
 
 def download_file_from_ftp_file(url):
     urlparts = urlparse(url)
-    file_name = os.path.basename(urlparts.path)
-    file_dir = os.path.dirname(urlparts.path)
+    file_name = os.path.basename(unquote(urlparts.path))
+    file_dir = os.path.dirname(unquote(urlparts.path))
     if(urlparts.username is not None):
         ftp_username = urlparts.username
     else:
@@ -9420,7 +9420,7 @@ def download_file_from_ftp_file(url):
             ftp.auth()
         except all_errors:
             pass
-    ftp.login(urlparts.username, urlparts.password)
+    ftp.login(ftp_username, ftp_password)
     if(urlparts.scheme == "ftps" or isinstance(ftp, FTP_TLS)):
         try:
             ftp.prot_p()
@@ -9441,20 +9441,20 @@ def download_file_from_ftp_file(url):
         if(is_cwd_allowed):
             ftp.retrbinary("RETR "+file_name, ftpfile.write)
         else:
-            ftp.retrbinary("RETR "+urlparts.path, ftpfile.write)
+            ftp.retrbinary("RETR "+unquote(urlparts.path), ftpfile.write)
     except all_errors:
         try:
             ftp.set_pasv(True)
             if(is_cwd_allowed):
                 ftp.retrbinary("RETR "+file_name, ftpfile.write)
             else:
-                ftp.retrbinary("RETR "+urlparts.path, ftpfile.write)
+                ftp.retrbinary("RETR "+unquote(urlparts.path), ftpfile.write)
         except all_errors:
             ftp.set_pasv(False)
             if(is_cwd_allowed):
                 ftp.retrbinary("RETR "+file_name, ftpfile.write)
             else:
-                ftp.retrbinary("RETR "+urlparts.path, ftpfile.write)
+                ftp.retrbinary("RETR "+unquote(urlparts.path), ftpfile.write)
     ftp.close()
     ftpfile.seek(0, 0)
     return ftpfile
@@ -9477,8 +9477,8 @@ def download_file_from_ftps_string(url):
 
 def upload_file_to_ftp_file(ftpfile, url):
     urlparts = urlparse(url)
-    file_name = os.path.basename(urlparts.path)
-    file_dir = os.path.dirname(urlparts.path)
+    file_name = os.path.basename(unquote(urlparts.path))
+    file_dir = os.path.dirname(unquote(urlparts.path))
     if(urlparts.username is not None):
         ftp_username = urlparts.username
     else:
@@ -9518,7 +9518,7 @@ def upload_file_to_ftp_file(ftpfile, url):
             ftp.auth()
         except all_errors:
             pass
-    ftp.login(urlparts.username, urlparts.password)
+    ftp.login(ftp_username, ftp_password)
     if(urlparts.scheme == "ftps" or isinstance(ftp, FTP_TLS)):
         try:
             ftp.prot_p()
@@ -9539,20 +9539,20 @@ def upload_file_to_ftp_file(ftpfile, url):
         if(is_cwd_allowed):
             ftp.storbinary("STOR "+file_name, ftpfile)
         else:
-            ftp.storbinary("STOR "+urlparts.path, ftpfile)
+            ftp.storbinary("STOR "+unquote(urlparts.path), ftpfile)
     except all_errors:
         try:
             ftp.set_pasv(True)
             if(is_cwd_allowed):
                 ftp.storbinary("STOR "+file_name, ftpfile)
             else:
-                ftp.storbinary("STOR "+urlparts.path, ftpfile)
+                ftp.storbinary("STOR "+unquote(urlparts.path), ftpfile)
         except all_errors:
             ftp.set_pasv(False)
             if(is_cwd_allowed):
                 ftp.storbinary("STOR "+file_name, ftpfile)
             else:
-                ftp.storbinary("STOR "+urlparts.path, ftpfile)
+                ftp.storbinary("STOR "+unquote(urlparts.path), ftpfile)
     ftp.close()
     ftpfile.seek(0, 0)
     return ftpfile
@@ -9691,8 +9691,8 @@ def download_file_from_http_string(url, headers=geturls_headers_pyfile_python_al
 if(haveparamiko):
     def download_file_from_sftp_file(url):
         urlparts = urlparse(url)
-        file_name = os.path.basename(urlparts.path)
-        file_dir = os.path.dirname(urlparts.path)
+        file_name = os.path.basename(unquote(urlparts.path))
+        file_dir = os.path.dirname(unquote(urlparts.path))
         sftp_port = urlparts.port
         if(urlparts.port is None):
             sftp_port = 22
@@ -9719,7 +9719,7 @@ if(haveparamiko):
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
             ssh.connect(urlparts.hostname, port=sftp_port,
-                        username=urlparts.username, password=urlparts.password)
+                        username=sftp_username, password=urlparts.password)
         except paramiko.ssh_exception.SSHException:
             return False
         except socket.gaierror:
@@ -9730,7 +9730,7 @@ if(haveparamiko):
             return False
         sftp = ssh.open_sftp()
         sftpfile = MkTempFile()
-        sftp.getfo(urlparts.path, sftpfile)
+        sftp.getfo(unquote(urlparts.path), sftpfile)
         sftp.close()
         ssh.close()
         sftpfile.seek(0, 0)
@@ -9752,8 +9752,8 @@ else:
 if(haveparamiko):
     def upload_file_to_sftp_file(sftpfile, url):
         urlparts = urlparse(url)
-        file_name = os.path.basename(urlparts.path)
-        file_dir = os.path.dirname(urlparts.path)
+        file_name = os.path.basename(unquote(urlparts.path))
+        file_dir = os.path.dirname(unquote(urlparts.path))
         sftp_port = urlparts.port
         if(urlparts.port is None):
             sftp_port = 22
@@ -9770,7 +9770,7 @@ if(haveparamiko):
         else:
             sftp_password = ""
         if(urlparts.scheme == "ftp"):
-            return upload_file_to_ftp_file(url)
+            return upload_file_to_ftp_file(sftpfile, url)
         elif(urlparts.scheme == "http" or urlparts.scheme == "https"):
             return False
         if(urlparts.scheme != "sftp"):
@@ -9780,7 +9780,7 @@ if(haveparamiko):
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
             ssh.connect(urlparts.hostname, port=sftp_port,
-                        username=urlparts.username, password=urlparts.password)
+                        username=sftp_username, password=sftp_password)
         except paramiko.ssh_exception.SSHException:
             return False
         except socket.gaierror:
@@ -9790,7 +9790,8 @@ if(haveparamiko):
             log.info("Error With URL "+url)
             return False
         sftp = ssh.open_sftp()
-        sftp.putfo(sftpfile, urlparts.path)
+        sftpfile.seek(0, 0)
+        sftp.putfo(sftpfile, unquote(urlparts.path))
         sftp.close()
         ssh.close()
         sftpfile.seek(0, 0)
@@ -9812,8 +9813,8 @@ else:
 if(havepysftp):
     def download_file_from_pysftp_file(url):
         urlparts = urlparse(url)
-        file_name = os.path.basename(urlparts.path)
-        file_dir = os.path.dirname(urlparts.path)
+        file_name = os.path.basename(unquote(urlparts.path))
+        file_dir = os.path.dirname(unquote(urlparts.path))
         sftp_port = urlparts.port
         if(urlparts.port is None):
             sftp_port = 22
@@ -9836,8 +9837,8 @@ if(havepysftp):
         if(urlparts.scheme != "sftp"):
             return False
         try:
-            pysftp.Connection(urlparts.hostname, port=sftp_port,
-                              username=urlparts.username, password=urlparts.password)
+            sftp = pysftp.Connection(urlparts.hostname, port=sftp_port,
+                              username=sftp_username, password=sftp_password)
         except paramiko.ssh_exception.SSHException:
             return False
         except socket.gaierror:
@@ -9846,9 +9847,8 @@ if(havepysftp):
         except socket.timeout:
             log.info("Error With URL "+url)
             return False
-        sftp = ssh.open_sftp()
         sftpfile = MkTempFile()
-        sftp.getfo(urlparts.path, sftpfile)
+        sftp.getfo(unquote(urlparts.path), sftpfile)
         sftp.close()
         ssh.close()
         sftpfile.seek(0, 0)
@@ -9870,8 +9870,8 @@ else:
 if(havepysftp):
     def upload_file_to_pysftp_file(sftpfile, url):
         urlparts = urlparse(url)
-        file_name = os.path.basename(urlparts.path)
-        file_dir = os.path.dirname(urlparts.path)
+        file_name = os.path.basename(unquote(urlparts.path))
+        file_dir = os.path.dirname(unquote(urlparts.path))
         sftp_port = urlparts.port
         if(urlparts.port is None):
             sftp_port = 22
@@ -9888,14 +9888,14 @@ if(havepysftp):
         else:
             sftp_password = ""
         if(urlparts.scheme == "ftp"):
-            return upload_file_to_ftp_file(url)
+            return upload_file_to_ftp_file(sftpfile, url)
         elif(urlparts.scheme == "http" or urlparts.scheme == "https"):
             return False
         if(urlparts.scheme != "sftp"):
             return False
         try:
-            pysftp.Connection(urlparts.hostname, port=sftp_port,
-                              username=urlparts.username, password=urlparts.password)
+            sftp = pysftp.Connection(urlparts.hostname, port=sftp_port,
+                              username=sftp_username, password=sftp_password)
         except paramiko.ssh_exception.SSHException:
             return False
         except socket.gaierror:
@@ -9904,8 +9904,8 @@ if(havepysftp):
         except socket.timeout:
             log.info("Error With URL "+url)
             return False
-        sftp = ssh.open_sftp()
-        sftp.putfo(sftpfile, urlparts.path)
+        sftpfile.seek(0, 0)
+        sftp.putfo(sftpfile, unquote(urlparts.path))
         sftp.close()
         ssh.close()
         sftpfile.seek(0, 0)
