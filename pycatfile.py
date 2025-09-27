@@ -9364,6 +9364,19 @@ def convert_foreign_to_neo(infile, outfile=None, formatspecs=__file_format_multi
     intmp = InFileToArray(infile, 0, 0, False, True, False, formatspecs, False, False)
     return RePackArchiveFile(intmp, outfile, "auto", compression, False, compression_level, compressionlistalt, False, 0, 0, checksumtypes, False, [], {}, formatspecs, False, False, returnfp)
 
+def detect_cwd(ftp, file_dir):
+    """
+    Test whether cwd into file_dir works. Returns True if it does,
+    False if not (so absolute paths should be used).
+    """
+    if not file_dir or file_dir in ("/", ""):
+        return False  # nothing to cwd into
+    try:
+        ftp.cwd(file_dir)
+        return True
+    except all_errors:
+        return False
+
 def download_file_from_ftp_file(url):
     urlparts = urlparse(url)
     file_name = os.path.basename(urlparts.path)
@@ -9402,26 +9415,46 @@ def download_file_from_ftp_file(url):
     except socket.timeout:
         log.info("Error With URL "+url)
         return False
+    if(urlparts.scheme == "ftps" or isinstance(ftp, FTP_TLS)):
+        try:
+            ftp.auth()
+        except all_errors:
+            pass
     ftp.login(urlparts.username, urlparts.password)
     if(urlparts.scheme == "ftps" or isinstance(ftp, FTP_TLS)):
-        ftp.prot_p()
+        try:
+            ftp.prot_p()
+        except all_errors:
+            ftp.prot_c()
+    # UTF-8 filenames if supported
+    try:
+        ftp.sendcmd("OPTS UTF8 ON")
+        ftp.encoding = "utf-8"
+    except all_errors:
+        pass
+    is_cwd_allowed = detect_cwd(ftp, file_dir)
+    ftpfile = MkTempFile()
     # Try EPSV first, then fall back
     try:
         ftp.force_epsv = True
         ftp.sendcmd("EPSV")   # request extended passive
-        ftp.retrlines("LIST", callback=lambda line: None)
+        if(is_cwd_allowed):
+            ftp.retrbinary("RETR "+file_name, ftpfile.write)
+        else:
+            ftp.retrbinary("RETR "+urlparts.path, ftpfile.write)
     except all_errors:
         try:
             ftp.set_pasv(True)
-            ftp.retrlines("LIST", callback=lambda line: None)
+            if(is_cwd_allowed):
+                ftp.retrbinary("RETR "+file_name, ftpfile.write)
+            else:
+                ftp.retrbinary("RETR "+urlparts.path, ftpfile.write)
         except all_errors:
             ftp.set_pasv(False)
-            ftp.retrlines("LIST", callback=lambda line: None)
-    ftpfile = MkTempFile()
-    if file_dir and file_dir not in ("/", ""):
-        ftp.cwd(file_dir)
-    ftp.retrbinary("RETR "+file_name, ftpfile.write)
-    #ftp.retrbinary("RETR "+urlparts.path, ftpfile.write)
+            if(is_cwd_allowed):
+                ftp.retrbinary("RETR "+file_name, ftpfile.write)
+            else:
+                ftp.retrbinary("RETR "+urlparts.path, ftpfile.write)
     ftp.close()
     ftpfile.seek(0, 0)
     return ftpfile
@@ -9480,25 +9513,46 @@ def upload_file_to_ftp_file(ftpfile, url):
     except socket.timeout:
         log.info("Error With URL "+url)
         return False
+    if(urlparts.scheme == "ftps" or isinstance(ftp, FTP_TLS)):
+        try:
+            ftp.auth()
+        except all_errors:
+            pass
     ftp.login(urlparts.username, urlparts.password)
     if(urlparts.scheme == "ftps" or isinstance(ftp, FTP_TLS)):
-        ftp.prot_p()
+        try:
+            ftp.prot_p()
+        except all_errors:
+            ftp.prot_c()
+    # UTF-8 filenames if supported
+    try:
+        ftp.sendcmd("OPTS UTF8 ON")
+        ftp.encoding = "utf-8"
+    except all_errors:
+        pass
+    is_cwd_allowed = detect_cwd(ftp, file_dir)
+    ftpfile.seek(0, 0)
     # Try EPSV first, then fall back
     try:
         ftp.force_epsv = True
         ftp.sendcmd("EPSV")   # request extended passive
-        ftp.retrlines("LIST", callback=lambda line: None)
+        if(is_cwd_allowed):
+            ftp.storbinary("STOR "+file_name, ftpfile)
+        else:
+            ftp.storbinary("STOR "+urlparts.path, ftpfile)
     except all_errors:
         try:
             ftp.set_pasv(True)
-            ftp.retrlines("LIST", callback=lambda line: None)
+            if(is_cwd_allowed):
+                ftp.storbinary("STOR "+file_name, ftpfile)
+            else:
+                ftp.storbinary("STOR "+urlparts.path, ftpfile)
         except all_errors:
             ftp.set_pasv(False)
-            ftp.retrlines("LIST", callback=lambda line: None)
-    if file_dir and file_dir not in ("/", ""):
-        ftp.cwd(file_dir)
-    ftp.storbinary("STOR "+file_name, ftpfile)
-    #ftp.storbinary("STOR "+urlparts.path, ftpfile)
+            if(is_cwd_allowed):
+                ftp.storbinary("STOR "+file_name, ftpfile)
+            else:
+                ftp.storbinary("STOR "+urlparts.path, ftpfile)
     ftp.close()
     ftpfile.seek(0, 0)
     return ftpfile
