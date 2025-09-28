@@ -38,6 +38,7 @@ import zipfile
 import binascii
 import platform
 from io import StringIO, BytesIO
+import posixpath as pp  # POSIX-safe joins/normpaths
 try:
     from backports import tempfile
 except ImportError:
@@ -392,7 +393,7 @@ __version_date_info__ = (2025, 9, 26, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id: 4b73b24d1d9cb1fb5011cf0090b2e853058cd6fe $"
+__revision_id__ = "$Id$"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -620,6 +621,182 @@ def _normalize_initial_data(data, isbytes, encoding):
             if isinstance(data, bytes):
                 return data.decode(encoding)
             return str(data)
+
+
+def _split_posix(path_text):
+    """Split POSIX paths regardless of OS; return list of components."""
+    # Normalize leading './'
+    if path_text.startswith(u'./'):
+        path_text = path_text[2:]
+    # Strip redundant slashes
+    path_text = re.sub(u'/+', u'/', path_text)
+    # Drop trailing '/' so 'dir/' -> ['dir']
+    if path_text.endswith(u'/'):
+        path_text = path_text[:-1]
+    return path_text.split(u'/') if path_text else []
+
+def _is_abs_like(s):
+    """Absolute targets (POSIX or Windows-drive style)."""
+    return s.startswith(u'/') or s.startswith(u'\\') or re.match(u'^[A-Za-z]:[/\\\\]', s)
+
+def _resolves_outside(base_rel, target_rel):
+    """
+    Given a base directory (relative, POSIX) and a target (relative),
+    return True if base/target resolves outside of base.
+    We anchor under '/' so normpath is root-anchored and portable.
+    """
+    base_clean = u'/'.join(_split_posix(base_rel))
+    target_clean = u'/'.join(_split_posix(target_rel))
+    base_abs = u'/' + base_clean if base_clean else u'/'
+    combined = pp.normpath(pp.join(base_abs, target_clean))
+    if combined == base_abs or combined.startswith(base_abs + u'/'):
+        return False
+    return True
+
+def DetectTarbombCatfileArray(listarchivefiles,
+                                 top_file_ratio_threshold=0.6,
+                                 min_members_for_ratio=4,
+                                 symlink_policy="escape-only",  # 'escape-only' | 'deny' | 'single-folder-only'
+                                 to_text=to_text):
+    """
+    Detect 'tarbomb-like' archives from ArchiveFileToArray/TarFileToArray dicts.
+
+    Parameters:
+      listarchivefiles: dict with key 'ffilelist' -> list of entries (requires 'fname')
+      top_file_ratio_threshold: float, fraction of root files considered tarbomb
+      min_members_for_ratio: int, minimum members before ratio heuristic applies
+      symlink_policy:
+        - 'escape-only': only symlinks that escape parent/are absolute are unsafe
+        - 'deny': any symlink is unsafe
+        - 'single-folder-only': symlinks allowed only if archive has a single top-level folder
+      to_text: normalization function (your provided to_text)
+
+    Returns dict with:
+      - is_tarbomb, reasons, total_members, top_level_entries, top_level_files_count,
+        has_absolute_paths, has_parent_traversal,
+        symlink_escapes_root (bool), symlink_issues (list[{entry,target,reason}])
+    """
+    files = listarchivefiles or {}
+    members = files.get('ffilelist') or []
+
+    names = []
+    has_abs = False
+    has_parent = False
+
+    # Symlink tracking
+    has_any_symlink = False
+    symlink_issues = []
+    any_symlink_escape = False
+
+    for m in members:
+        m = m or {}
+        name = to_text(m.get('fname', u""))
+
+        if _is_abs_like(name):
+            has_abs = True
+
+        parts = _split_posix(name)
+        if u'..' in parts:
+            has_parent = True
+
+        if not parts:
+            continue
+
+        norm_name = u'/'.join(parts)
+        names.append(norm_name)
+
+        # ---- Symlink detection ----
+        ftype = m.get('ftype')
+        is_symlink = (ftype == 2) or (to_text(ftype).lower() == u'symlink' if ftype is not None else False)
+        if is_symlink:
+            has_any_symlink = True
+            target = to_text(m.get('flinkname', u""))
+            # Absolute symlink target is unsafe
+            if _is_abs_like(target):
+                any_symlink_escape = True
+                symlink_issues.append({'entry': norm_name, 'target': target, 'reason': 'absolute symlink target'})
+            else:
+                parent = u'/'.join(parts[:-1])  # may be ''
+                if _resolves_outside(parent, target):
+                    any_symlink_escape = True
+                    symlink_issues.append({'entry': norm_name, 'target': target, 'reason': 'symlink escapes parent directory'})
+
+    total = len(names)
+    reasons = []
+    if total == 0:
+        return {
+            "is_tarbomb": False,
+            "reasons": ["archive contains no members"],
+            "total_members": 0,
+            "top_level_entries": [],
+            "top_level_files_count": 0,
+            "has_absolute_paths": has_abs,
+            "has_parent_traversal": has_parent,
+            "symlink_escapes_root": any_symlink_escape,
+            "symlink_issues": symlink_issues,
+        }
+
+    # Layout counts
+    top_counts = {}
+    top_level_files_count = 0
+    for name in names:
+        parts = name.split(u'/')
+        first = parts[0]
+        top_counts[first] = top_counts.get(first, 0) + 1
+        if len(parts) == 1:  # directly at archive root
+            top_level_files_count += 1
+
+    top_keys = sorted(top_counts.keys())
+    is_tarbomb = False
+
+    # Path-based dangers
+    if has_abs:
+        is_tarbomb = True
+        reasons.append("contains absolute paths (dangerous)")
+    if has_parent:
+        is_tarbomb = True
+        reasons.append("contains parent-traversal ('..') entries (dangerous)")
+    if any_symlink_escape:
+        is_tarbomb = True
+        reasons.append("contains symlinks that escape their parent directory")
+
+    # Symlink policy enforcement
+    if symlink_policy == "deny" and has_any_symlink:
+        is_tarbomb = True
+        reasons.append("symlinks present and policy is 'deny'")
+    elif symlink_policy == "single-folder-only" and has_any_symlink and len(top_keys) != 1:
+        is_tarbomb = True
+        reasons.append("symlinks present but archive lacks a single top-level folder")
+
+    # Tarbomb layout heuristics
+    if len(top_keys) == 1:
+        reasons.append("single top-level entry '{0}'".format(top_keys[0]))
+    else:
+        ratio = float(top_level_files_count) / float(total)
+        if total >= min_members_for_ratio and ratio > float(top_file_ratio_threshold):
+            is_tarbomb = True
+            reasons.append("high fraction of members ({0:.0%}) at archive root".format(ratio))
+        else:
+            max_bucket = max(top_counts.values()) if top_counts else 0
+            if max_bucket < total * 0.9:
+                is_tarbomb = True
+                reasons.append("multiple top-level entries with no dominant folder: {0}".format(
+                    u", ".join(top_keys[:10])))
+            else:
+                reasons.append("multiple top-level entries but one dominates")
+
+    return {
+        "is_tarbomb": bool(is_tarbomb),
+        "reasons": reasons,
+        "total_members": total,
+        "top_level_entries": top_keys,
+        "top_level_files_count": top_level_files_count,
+        "has_absolute_paths": has_abs,
+        "has_parent_traversal": has_parent,
+        "symlink_escapes_root": any_symlink_escape,
+        "symlink_issues": symlink_issues,
+    }
+
 
 
 def MkTempFile(data=None, inmem=__use_inmemfile__, isbytes=True, prefix=__project__,
