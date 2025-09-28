@@ -639,6 +639,7 @@ def _is_abs_like(s):
     """Absolute targets (POSIX or Windows-drive style)."""
     return s.startswith(u'/') or s.startswith(u'\\') or re.match(u'^[A-Za-z]:[/\\\\]', s)
 
+
 def _resolves_outside(base_rel, target_rel):
     """
     Given a base directory (relative, POSIX) and a target (relative),
@@ -796,7 +797,6 @@ def DetectTarbombCatfileArray(listarchivefiles,
         "symlink_escapes_root": any_symlink_escape,
         "symlink_issues": symlink_issues,
     }
-
 
 
 def MkTempFile(data=None, inmem=__use_inmemfile__, isbytes=True, prefix=__project__,
