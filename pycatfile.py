@@ -4158,7 +4158,8 @@ def GzipCompressData(data, compresslevel=9):
         out = MkTempFile()
         with gzip.GzipFile(fileobj=out, mode="wb", compresslevel=compresslevel) as f:
             f.write(data)
-        compressed_data = out.getvalue()
+        out.seek(0, 0)
+        compressed_data = out.read()
     return compressed_data
 
 
