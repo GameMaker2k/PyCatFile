@@ -658,13 +658,13 @@ def _resolves_outside(base_rel, target_rel):
         return False
     return True
 
-def DetectTarbombCatfileArray(listarchivefiles,
+def DetectTarBombCatFileArray(listarchivefiles,
                                  top_file_ratio_threshold=0.6,
                                  min_members_for_ratio=4,
                                  symlink_policy="escape-only",  # 'escape-only' | 'deny' | 'single-folder-only'
                                  to_text=to_text):
     """
-    Detect 'tarbomb-like' archives from ArchiveFileToArray/TarFileToArray dicts.
+    Detect 'tarbomb-like' archives from CatFileToArray/TarFileToArray dicts.
 
     Parameters:
       listarchivefiles: dict with key 'ffilelist' -> list of entries (requires 'fname')
