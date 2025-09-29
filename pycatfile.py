@@ -103,9 +103,13 @@ baseint = tuple(baseint)
 
 # URL Parsing
 try:
+    # Python 3
     from urllib.parse import urlparse, urlunparse, unquote
+    from urllib.request import url2pathname
 except ImportError:
-    from urlparse import urlparse, urlunparse, unquote
+    # Python 2
+    from urlparse import urlparse, urlunparse
+    from urllib import unquote, url2pathname
 
 # Windows-specific setup
 if os.name == "nt":
@@ -267,8 +271,8 @@ def get_default_threads():
 
 
 __use_pysftp__ = False
-__upload_proto_support__ = "^(ftp|ftps|sftp|scp):\\/\\/"
-__download_proto_support__ = "^(http|https|ftp|ftps|sftp|scp):\\/\\/"
+__upload_proto_support__ = "^(ftp|ftps|sftp|scp)://"
+__download_proto_support__ = "^(http|https|ftp|ftps|sftp|scp)://"
 if(not havepysftp):
     __use_pysftp__ = False
 __use_http_lib__ = "httpx"
@@ -865,6 +869,9 @@ def RemoveWindowsPath(dpath):
     """
     if not dpath:
         return ""
+    if(re.findall("^(file):///", dpath)):
+        dparsed = urlparse(dpath)
+        dpath = url2pathname(dparsed.path)
     # Accept bytes and decode safely
     if isinstance(dpath, (bytes, bytearray)):
         dpath = dpath.decode("utf-8", "ignore")
@@ -880,6 +887,9 @@ def NormalizeRelativePath(inpath):
     """
     Ensures the path is relative unless it is absolute. Prepares consistent relative paths.
     """
+    if(re.findall("^(file):///", inpath)):
+        dparsed = urlparse(inpath)
+        inpath = url2pathname(dparsed.path)
     inpath = RemoveWindowsPath(inpath)
     if os.path.isabs(inpath):
         outpath = inpath
@@ -922,6 +932,9 @@ def ListDir(dirpath, followlink=False, duplicates=False, include_regex=None, exc
     Returns:
         list: A list of files and directories matching the criteria.
     """
+    if(re.findall("^(file):///", dirpath)):
+        dparsed = urlparse(dirpath)
+        dirpath = url2pathname(dparsed.path)
     try:
         if os.stat not in os.supports_follow_symlinks and followlink:
             followlink = False
@@ -992,6 +1005,9 @@ def ListDirAdvanced(dirpath, followlink=False, duplicates=False, include_regex=N
     Returns:
         list: A list of files and directories matching the criteria.
     """
+    if(re.findall("^(file):///", dirpath)):
+        dparsed = urlparse(dirpath)
+        dirpath = url2pathname(dparsed.path)
     try:
         if os.stat not in os.supports_follow_symlinks and followlink:
             followlink = False
