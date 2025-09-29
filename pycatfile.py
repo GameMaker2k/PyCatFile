@@ -869,7 +869,11 @@ def RemoveWindowsPath(dpath):
     """
     if not dpath:
         return ""
-    if(re.findall("^file:/{2,3}", dpath)):
+    if re.match("^file://", dpath, re.IGNORECASE):
+        # Normalize to file:/// if it's a local path (no host)
+        if dpath.lower().startswith("file://") and not dpath.lower().startswith("file:///"):
+            # insert the extra slash
+            dpath = "file:///" + dpath[7:]
         dparsed = urlparse(dpath)
         dpath = url2pathname(dparsed.path)
     # Accept bytes and decode safely
@@ -887,7 +891,11 @@ def NormalizeRelativePath(inpath):
     """
     Ensures the path is relative unless it is absolute. Prepares consistent relative paths.
     """
-    if(re.findall("^file:/{2,3}", inpath)):
+    if re.match("^file://", inpath, re.IGNORECASE):
+        # Normalize to file:/// if it's a local path (no host)
+        if inpath.lower().startswith("file://") and not inpath.lower().startswith("file:///"):
+            # insert the extra slash
+            inpath = "file:///" + inpath[7:]
         dparsed = urlparse(inpath)
         inpath = url2pathname(dparsed.path)
     inpath = RemoveWindowsPath(inpath)
