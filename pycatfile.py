@@ -954,6 +954,13 @@ def ListDir(dirpath, followlink=False, duplicates=False, include_regex=None, exc
     include_pattern = re.compile(include_regex) if include_regex else None
     exclude_pattern = re.compile(exclude_regex) if exclude_regex else None
     for mydirfile in dirpath:
+        if re.match("^file://", mydirfile, re.IGNORECASE):
+            # Normalize to file:/// if it's a local path (no host)
+            if mydirfile.lower().startswith("file://") and not mydirfile.lower().startswith("file:///"):
+                # insert the extra slash
+                mydirfile = "file:///" + mydirfile[7:]
+            dparsed = urlparse(mydirfile)
+            mydirfile = url2pathname(dparsed.path)
         if not os.path.exists(mydirfile):
             return False
         mydirfile = NormalizeRelativePath(mydirfile)
@@ -1024,6 +1031,13 @@ def ListDirAdvanced(dirpath, followlink=False, duplicates=False, include_regex=N
     include_pattern = re.compile(include_regex) if include_regex else None
     exclude_pattern = re.compile(exclude_regex) if exclude_regex else None
     for mydirfile in dirpath:
+        if re.match("^file://", mydirfile, re.IGNORECASE):
+            # Normalize to file:/// if it's a local path (no host)
+            if mydirfile.lower().startswith("file://") and not mydirfile.lower().startswith("file:///"):
+                # insert the extra slash
+                mydirfile = "file:///" + mydirfile[7:]
+            dparsed = urlparse(mydirfile)
+            mydirfile = url2pathname(dparsed.path)
         if not os.path.exists(mydirfile):
             return False
         mydirfile = NormalizeRelativePath(mydirfile)
