@@ -932,9 +932,6 @@ def ListDir(dirpath, followlink=False, duplicates=False, include_regex=None, exc
     Returns:
         list: A list of files and directories matching the criteria.
     """
-    if(re.findall("^(file):///", dirpath)):
-        dparsed = urlparse(dirpath)
-        dirpath = url2pathname(dparsed.path)
     try:
         if os.stat not in os.supports_follow_symlinks and followlink:
             followlink = False
@@ -1005,9 +1002,6 @@ def ListDirAdvanced(dirpath, followlink=False, duplicates=False, include_regex=N
     Returns:
         list: A list of files and directories matching the criteria.
     """
-    if(re.findall("^(file):///", dirpath)):
-        dparsed = urlparse(dirpath)
-        dirpath = url2pathname(dparsed.path)
     try:
         if os.stat not in os.supports_follow_symlinks and followlink:
             followlink = False
