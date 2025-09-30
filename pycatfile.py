@@ -3308,6 +3308,10 @@ def ReadInStackedFileWithContentToArray(infile, fmttype="auto", filestart=0, see
     return outretval
 
 
+def ReadInStackedFilesWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
+    return ReadInStackedFileWithContentToArray(infile, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend)
+
+
 def ReadInMultipleStackedFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
     if(isinstance(infile, (list, tuple, ))):
         pass
