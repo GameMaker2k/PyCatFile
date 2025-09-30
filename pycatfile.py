@@ -3303,7 +3303,6 @@ def ReadInStackedFileWithContentToArray(infile, fmttype="auto", filestart=0, see
         if outarray is False:   # stop when function signals False
             break
         infile = outarray['fp']
-        print(infile.tell())
         outretval.append(outarray)
     return outretval
 
@@ -7567,7 +7566,6 @@ def StackedCatFileToArray(infile, fmttype="auto", filestart=0, seekstart=0, seek
         if outarray is False:   # stop when function signals False
             break
         infile = outarray['fp']
-        print(infile.tell())
         outretval.append(outarray)
     return outretval
 
