@@ -410,7 +410,7 @@ if(__version_info__[3] is None):
     __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2])
 
 # Robust bitness detection
-# Works on Py2 & Py3, all platform
+# Works on Py2 & Py3, all platforms
 
 # Python interpreter bitness
 PyBitness = "64" if struct.calcsize("P") * 8 == 64 else ("64" if sys.maxsize > 2**32 else "32")
