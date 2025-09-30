@@ -3299,7 +3299,7 @@ def ReadInStackedFileWithContentToArray(infile, fmttype="auto", filestart=0, see
     outretval = []
     outstartfile = filestart
     while True:
-        outarray = ReadInFileWithContentToArray(infile, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend)
+        outarray = ReadInFileWithContentToArray(infile, fmttype, outstartfile, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend)
         if outarray is False:   # stop when function signals False
             break
         infile = outarray['fp']
