@@ -27,7 +27,6 @@ import stat
 import zlib
 import base64
 import shutil
-import struct
 import socket
 import struct
 import hashlib
@@ -412,7 +411,6 @@ if(__version_info__[3] is None):
 
 # Robust bitness detection
 # Works on Py2 & Py3, all platforms
-import struct, sys
 PyBitness = "64" if struct.calcsize("P") * 8 == 64 else ("64" if sys.maxsize > 2**32 else "32")
 
 geturls_ua_pyfile_python = "Mozilla/5.0 (compatible; {proname}/{prover}; +{prourl})".format(
