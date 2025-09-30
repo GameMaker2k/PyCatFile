@@ -2848,7 +2848,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
         return False
     formversions = re.search('(.*?)(\\d+)', formstring).groups()
     fcompresstype = ""
-    outlist = {'fnumfiles': fnumfiles, 'fformat': formversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': formversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fsize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [formstring] + inheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextradata': fextrafieldslist, 'ffilelist': []}
+    outlist = {'fnumfiles': fnumfiles, 'ffilestart': filestart, 'fformat': formversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': formversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fsize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [formstring] + inheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextradata': fextrafieldslist, 'ffilelist': []}
     if (seekstart < 0) or (seekstart > fnumfiles):
         seekstart = 0
     if (seekend == 0) or (seekend > fnumfiles) or (seekend < seekstart):
@@ -7263,7 +7263,7 @@ def CatFileToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, 
     fcompresstype = compresscheck
     if(fcompresstype==formatspecs['format_magic']):
         fcompresstype = ""
-    outlist = {'fnumfiles': fnumfiles, 'fformat': formversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': formversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fsize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [formstring] + inheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextradata': fextrafieldslist, 'ffilelist': []}
+    outlist = {'fnumfiles': fnumfiles, 'ffilestart': filestart, 'fformat': formversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': formversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fsize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [formstring] + inheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextradata': fextrafieldslist, 'ffilelist': []}
     if (seekstart < 0) or (seekstart > fnumfiles):
         seekstart = 0
     if (seekend == 0) or (seekend > fnumfiles) or (seekend < seekstart):
