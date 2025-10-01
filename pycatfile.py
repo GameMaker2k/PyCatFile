@@ -419,28 +419,29 @@ FT = {
     "BLOCK": 4,
     "DIR": 5,
     "FIFO": 6,
-    "FILE_ALT": 7,   # treated like regular file
+    "CONTAGIOUS": 7,   # treated like regular file
     "SOCK": 8,
     "DOOR": 9,
     "PORT": 10,
     "WHT": 11,
+    "SPARSE": 12,
     "JUNCTION": 13,
 }
 
-# Base category for each concrete ftype (no unions here).
 BASE_CATEGORY_BY_CODE = {
     0:  "files",
-    7:  "files",
     1:  "hardlinks",
     2:  "symlinks",
-    3:  "character",
-    4:  "block",
+    3:  "characters",
+    4:  "blocks",
     5:  "directories",
-    6:  "fifo",
+    6:  "fifos",
+    7:  "files",         # contagious treated as file
     8:  "sockets",
     9:  "doors",
     10: "ports",
     11: "whiteouts",
+    12: "sparsefiles",
     13: "junctions",
 }
 
@@ -454,7 +455,7 @@ UNION_RULES = [
 CATEGORY_ORDER = [
     "files", "hardlinks", "symlinks", "character", "block",
     "directories", "fifo", "sockets", "doors", "ports",
-    "whiteouts", "junctions", "links", "devices"
+    "whiteouts", "sparsefiles", "junctions", "links", "devices"
 ]
 
 # Robust bitness detection
