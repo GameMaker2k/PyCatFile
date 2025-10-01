@@ -1000,6 +1000,27 @@ def _guess_filename(url, filename):
     base = os.path.basename(path)
     return base or 'OutFile.'+__file_format_extension__
 
+# ---- progress + rate limiting helpers ----
+try:
+    monotonic = time.monotonic  # Py3
+except Exception:
+    # Py2 fallback: time.time() is good enough for coarse throttling
+    monotonic = time.time
+
+def _progress_tick(now_bytes, total_bytes, last_ts, last_bytes, rate_limit_bps, min_interval=0.1):
+    """
+    Returns (sleep_seconds, new_last_ts, new_last_bytes).
+    - If rate_limit_bps is set, computes how long to sleep to keep average <= limit.
+    - Also enforces a minimum interval between progress callbacks (handled by caller).
+    """
+    now = monotonic()
+    elapsed = max(1e-9, now - last_ts)
+    # Desired time to have elapsed for the given rate:
+    desired = (now_bytes - last_bytes) / float(rate_limit_bps) if rate_limit_bps else 0.0
+    extra = desired - elapsed
+    return (max(0.0, extra), now, now_bytes)
+
+
 def DetectTarBombCatFileArray(listarrayfiles,
                                  top_file_ratio_threshold=0.6,
                                  min_members_for_ratio=4,
@@ -10270,10 +10291,14 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
                       chunk_size=65536,
                       use_ssl=False, ssl_verify=True, ssl_ca_file=None,
                       ssl_certfile=None, ssl_keyfile=None, server_hostname=None,
-                      auth_user=None, auth_pass=None, auth_scope=u""):
+                      auth_user=None, auth_pass=None, auth_scope=u"",
+                      on_progress=None, rate_limit_bps=None):
     """
     Send fileobj contents to (host, port) via TCP or UDP.
     Optional TLS (TCP only) and optional auth preface.
+    Progress callback: on_progress(bytes_sent, total_bytes or None)
+    Throttling: rate_limit_bps (bytes/sec), average rate cap.
+    Returns: total bytes sent.
     """
     proto = (proto or "tcp").lower()
     total = 0
@@ -10288,7 +10313,8 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
         try:
             if timeout is not None:
                 sock.settimeout(timeout)
-            # Optional connect (sets default peer)
+
+            # Try "connected" UDP (sets default peer)
             connected = False
             try:
                 sock.connect((host, port))
@@ -10296,7 +10322,7 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
             except Exception:
                 connected = False
 
-            # Auth (AF1 first, then legacy)
+            # Auth (AF1 preferred; legacy fallback)
             if auth_user is not None or auth_pass is not None:
                 try:
                     blob = build_auth_blob_v1(auth_user or u"", auth_pass or u"", scope=auth_scope)
@@ -10304,26 +10330,64 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
                     blob = _build_auth_blob_legacy(auth_user or b"", auth_pass or b"")
                 if connected:
                     sock.send(blob)
-                    try: resp = sock.recv(16)
+                    try:
+                        resp = sock.recv(16)
                     except socket.timeout:
                         raise RuntimeError("UDP auth: timeout waiting for server OK/NO")
                 else:
                     sock.sendto(blob, (host, port))
-                    try: resp, _ = sock.recvfrom(16)
+                    try:
+                        resp, _ = sock.recvfrom(16)
                     except socket.timeout:
                         raise RuntimeError("UDP auth: timeout waiting for server OK/NO")
                 if resp != _OK:
                     raise RuntimeError("UDP auth failed")
 
+            # Best-effort total size (for progress)
+            total_bytes = None
+            try:
+                pos = fileobj.tell()
+                fileobj.seek(0, os.SEEK_END)
+                total_bytes = fileobj.tell() - pos
+                fileobj.seek(pos)
+            except Exception:
+                pass
+
+            sent_so_far = 0
+            last_cb_ts = monotonic()
+            last_rate_ts = last_cb_ts
+            last_rate_bytes = 0
+
             # Stream
             while True:
                 chunk = fileobj.read(chunk_size)
-                if not chunk: break
+                if not chunk:
+                    break
                 b = _to_bytes(chunk)
-                total += (sock.send(b) if connected else sock.sendto(b, (host, port)))
+                n = (sock.send(b) if connected else sock.sendto(b, (host, port)))
+                total += n
+                sent_so_far += n
+
+                # Throttle
+                if rate_limit_bps:
+                    sleep_s, last_rate_ts, last_rate_bytes = _progress_tick(
+                        sent_so_far, total_bytes, last_rate_ts, last_rate_bytes, rate_limit_bps
+                    )
+                    if sleep_s > 0.0:
+                        time.sleep(min(sleep_s, 0.25))
+
+                # Progress (every ~100ms)
+                if on_progress and (monotonic() - last_cb_ts) >= 0.1:
+                    try:
+                        on_progress(sent_so_far, total_bytes)
+                    except Exception:
+                        pass
+                    last_cb_ts = monotonic()
         finally:
-            try: sock.close()
-            except Exception: pass
+            try:
+                sock.close()
+            except Exception:
+                pass
         return total
 
     # ---- TCP ----
@@ -10337,7 +10401,7 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
                                     verify=ssl_verify, ca_file=ssl_ca_file,
                                     certfile=ssl_certfile, keyfile=ssl_keyfile)
 
-        # Auth (AF1 preferred)
+        # Auth (AF1 preferred; legacy fallback)
         if auth_user is not None or auth_pass is not None:
             try:
                 blob = build_auth_blob_v1(auth_user or u"", auth_pass or u"", scope=auth_scope)
@@ -10348,39 +10412,98 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
             if resp != _OK:
                 raise RuntimeError("TCP auth failed")
 
-        # sendfile fast-path (Py3), else loop
+        # Best-effort total size (for progress)
+        total_bytes = None
+        try:
+            cur = fileobj.tell()
+            fileobj.seek(0, os.SEEK_END)
+            total_bytes = fileobj.tell() - cur
+            fileobj.seek(cur)
+        except Exception:
+            pass
+
+        sent_so_far = 0
+        last_cb_ts = monotonic()
+        last_rate_ts = last_cb_ts
+        last_rate_bytes = 0
+
+        # sendfile fast-path (Py3); else chunk loop
         use_sendfile = hasattr(sock, "sendfile") and hasattr(fileobj, "read")
         if use_sendfile:
             try:
                 sent = sock.sendfile(fileobj)
                 if isinstance(sent, int):
                     total += sent
+                    sent_so_far += sent
+                    if on_progress:
+                        try:
+                            on_progress(sent_so_far, total_bytes)
+                        except Exception:
+                            pass
                 else:
-                    while True:
-                        chunk = fileobj.read(chunk_size)
-                        if not chunk: break
-                        view = memoryview(_to_bytes(chunk))
-                        while view:
-                            n = sock.send(view); total += n; view = view[n:]
+                    # Unexpected return type -> fall back to chunk loop
+                    raise RuntimeError("sendfile returned unexpected type")
             except Exception:
+                # Chunked send with throttling/progress
                 while True:
                     chunk = fileobj.read(chunk_size)
-                    if not chunk: break
+                    if not chunk:
+                        break
                     view = memoryview(_to_bytes(chunk))
                     while view:
-                        n = sock.send(view); total += n; view = view[n:]
+                        n = sock.send(view)
+                        total += n
+                        sent_so_far += n
+                        view = view[n:]
+
+                        if rate_limit_bps:
+                            sleep_s, last_rate_ts, last_rate_bytes = _progress_tick(
+                                sent_so_far, total_bytes, last_rate_ts, last_rate_bytes, rate_limit_bps
+                            )
+                            if sleep_s > 0.0:
+                                time.sleep(min(sleep_s, 0.25))
+
+                    if on_progress and (monotonic() - last_cb_ts) >= 0.1:
+                        try:
+                            on_progress(sent_so_far, total_bytes)
+                        except Exception:
+                            pass
+                        last_cb_ts = monotonic()
         else:
+            # Chunk loop
             while True:
                 chunk = fileobj.read(chunk_size)
-                if not chunk: break
+                if not chunk:
+                    break
                 view = memoryview(_to_bytes(chunk))
                 while view:
-                    n = sock.send(view); total += n; view = view[n:]
+                    n = sock.send(view)
+                    total += n
+                    sent_so_far += n
+                    view = view[n:]
+
+                    if rate_limit_bps:
+                        sleep_s, last_rate_ts, last_rate_bytes = _progress_tick(
+                            sent_so_far, total_bytes, last_rate_ts, last_rate_bytes, rate_limit_bps
+                        )
+                        if sleep_s > 0.0:
+                            time.sleep(min(sleep_s, 0.25))
+
+                if on_progress and (monotonic() - last_cb_ts) >= 0.1:
+                    try:
+                        on_progress(sent_so_far, total_bytes)
+                    except Exception:
+                        pass
+                    last_cb_ts = monotonic()
     finally:
-        try: sock.shutdown(socket.SHUT_WR)
-        except Exception: pass
-        try: sock.close()
-        except Exception: pass
+        try:
+            sock.shutdown(socket.SHUT_WR)
+        except Exception:
+            pass
+        try:
+            sock.close()
+        except Exception:
+            pass
     return total
 
 def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
@@ -10388,11 +10511,15 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                     use_ssl=False, ssl_verify=True, ssl_ca_file=None,
                     ssl_certfile=None, ssl_keyfile=None,
                     require_auth=False, expected_user=None, expected_pass=None,
-                    total_timeout=None, expect_scope=None):
+                    total_timeout=None, expect_scope=None,
+                    on_progress=None, rate_limit_bps=None):
     """
     Receive bytes into fileobj over TCP/UDP.
     - timeout: per-operation timeout (seconds)
-    - total_timeout: overall runtime cap (seconds) (server loops)
+    - total_timeout: overall runtime cap (seconds)
+    - Progress callback: on_progress(bytes_received, total_or_None)
+    - Throttling: rate_limit_bps (bytes/sec), average cap
+    Returns: total bytes received.
     """
     proto = (proto or "tcp").lower()
     port = int(port)
@@ -10401,18 +10528,22 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
     # total-time helpers
     start_ts = time.time()
     def _time_left():
-        if total_timeout is None: return None
+        if total_timeout is None:
+            return None
         left = total_timeout - (time.time() - start_ts)
         return 0.0 if left <= 0 else left
     def _set_effective_timeout(socklike, base_timeout):
         left = _time_left()
-        if left == 0.0: return False
+        if left == 0.0:
+            return False
         eff = base_timeout
         if left is not None:
             eff = left if eff is None else min(eff, left)
         if eff is not None:
-            try: socklike.settimeout(eff)
-            except Exception: pass
+            try:
+                socklike.settimeout(eff)
+            except Exception:
+                pass
         return True
 
     if proto not in ("tcp", "udp"):
@@ -10424,20 +10555,31 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
         authed_addr = None
         try:
             sock.bind((host or "", port))
+
+            recvd_so_far = 0
+            last_cb_ts = monotonic()
+            last_rate_ts = last_cb_ts
+            last_rate_bytes = 0
+
             while True:
-                if _time_left() == 0.0: break
-                if (max_bytes is not None) and (total >= max_bytes): break
-                if not _set_effective_timeout(sock, timeout): break
+                if _time_left() == 0.0:
+                    break
+                if (max_bytes is not None) and (total >= max_bytes):
+                    break
+
+                if not _set_effective_timeout(sock, timeout):
+                    break
 
                 try:
                     data, addr = sock.recvfrom(chunk_size)
                 except socket.timeout:
                     break
+
                 if not data:
                     continue
 
                 if require_auth and authed_addr is None:
-                    # Try AF1 first, then legacy
+                    # Try AF1 first, fallback to legacy
                     ok = False
                     v_ok, v_user, v_scope, _r = verify_auth_blob_v1(
                         data, expected_user=expected_user, secret=expected_pass,
@@ -10456,22 +10598,46 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                     continue
 
                 if require_auth and addr != authed_addr:
+                    # Ignore packets from others once one client is authenticated
                     continue
 
                 fileobj.write(data)
-                try: fileobj.flush()
-                except Exception: pass
+                try:
+                    fileobj.flush()
+                except Exception:
+                    pass
                 total += len(data)
+                recvd_so_far += len(data)
+
+                # Throttle (server-side)
+                if rate_limit_bps:
+                    sleep_s, last_rate_ts, last_rate_bytes = _progress_tick(
+                        recvd_so_far, max_bytes, last_rate_ts, last_rate_bytes, rate_limit_bps
+                    )
+                    if sleep_s > 0.0:
+                        time.sleep(min(sleep_s, 0.25))
+
+                # Progress (every ~100ms)
+                if on_progress and (monotonic() - last_cb_ts) >= 0.1:
+                    try:
+                        on_progress(recvd_so_far, max_bytes)
+                    except Exception:
+                        pass
+                    last_cb_ts = monotonic()
         finally:
-            try: sock.close()
-            except Exception: pass
+            try:
+                sock.close()
+            except Exception:
+                pass
         return total
 
     # ---- TCP server ----
     srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        try: srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        except Exception: pass
+        try:
+            srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        except Exception:
+            pass
         srv.bind((host or "", port))
         srv.listen(int(backlog) if backlog else 1)
 
@@ -10482,19 +10648,28 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
         except socket.timeout:
             return 0
 
-        # TLS server
+        # TLS
         if use_ssl:
             if not _ssl_available():
-                try: conn.close()
-                except Exception: pass
+                try:
+                    conn.close()
+                except Exception:
+                    pass
                 raise RuntimeError("SSL requested but 'ssl' module unavailable.")
             if not ssl_certfile:
-                try: conn.close()
-                except Exception: pass
+                try:
+                    conn.close()
+                except Exception:
+                    pass
                 raise ValueError("TLS server requires ssl_certfile (and usually ssl_keyfile).")
             conn = _ssl_wrap_socket(conn, server_side=True, server_hostname=None,
                                     verify=ssl_verify, ca_file=ssl_ca_file,
                                     certfile=ssl_certfile, keyfile=ssl_keyfile)
+
+        recvd_so_far = 0
+        last_cb_ts = monotonic()
+        last_rate_ts = last_cb_ts
+        last_rate_bytes = 0
 
         try:
             # Auth preface
@@ -10504,8 +10679,10 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                 try:
                     preface = conn.recv(1024)
                 except socket.timeout:
-                    try: conn.sendall(_NO)
-                    except Exception: pass
+                    try:
+                        conn.sendall(_NO)
+                    except Exception:
+                        pass
                     return 0
 
                 ok = False
@@ -10521,34 +10698,66 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                           (expected_user is None or user == _to_bytes(expected_user)) and
                           (expected_pass is None or pw == _to_bytes(expected_pass)))
 
-                try: conn.sendall(_OK if ok else _NO)
-                except Exception: pass
+                try:
+                    conn.sendall(_OK if ok else _NO)
+                except Exception:
+                    pass
                 if not ok:
                     return 0
 
-            # Receive loop
+            # Main receive loop
             while True:
-                if _time_left() == 0.0: break
-                if (max_bytes is not None) and (total >= max_bytes): break
-                if not _set_effective_timeout(conn, timeout): break
+                if _time_left() == 0.0:
+                    break
+                if (max_bytes is not None) and (total >= max_bytes):
+                    break
+
+                if not _set_effective_timeout(conn, timeout):
+                    break
                 try:
                     data = conn.recv(chunk_size)
                 except socket.timeout:
                     break
                 if not data:
                     break
+
                 fileobj.write(data)
-                try: fileobj.flush()
-                except Exception: pass
+                try:
+                    fileobj.flush()
+                except Exception:
+                    pass
                 total += len(data)
+                recvd_so_far += len(data)
+
+                # Throttle (server-side)
+                if rate_limit_bps:
+                    sleep_s, last_rate_ts, last_rate_bytes = _progress_tick(
+                        recvd_so_far, max_bytes, last_rate_ts, last_rate_bytes, rate_limit_bps
+                    )
+                    if sleep_s > 0.0:
+                        time.sleep(min(sleep_s, 0.25))
+
+                # Progress (every ~100ms)
+                if on_progress and (monotonic() - last_cb_ts) >= 0.1:
+                    try:
+                        on_progress(recvd_so_far, max_bytes)
+                    except Exception:
+                        pass
+                    last_cb_ts = monotonic()
         finally:
-            try: conn.shutdown(socket.SHUT_RD)
-            except Exception: pass
-            try: conn.close()
-            except Exception: pass
+            try:
+                conn.shutdown(socket.SHUT_RD)
+            except Exception:
+                pass
+            try:
+                conn.close()
+            except Exception:
+                pass
     finally:
-        try: srv.close()
-        except Exception: pass
+        try:
+            srv.close()
+        except Exception:
+            pass
 
     return total
 
