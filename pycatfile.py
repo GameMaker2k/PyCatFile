@@ -3302,7 +3302,7 @@ def ReadInStackedFileWithContentToArray(infile, fmttype="auto", filestart=0, see
     while True:
         if outstartfile >= outfsize:   # stop when function signals False
             break
-        outarray = ArchiveFileToArray(infile, fmttype, outstartfile, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend, True)
+        outarray = CatFileToArray(infile, fmttype, outstartfile, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend, True)
         outfsize = outarray['fsize']
         if outarray is False:   # stop when function signals False
             break
@@ -7069,24 +7069,69 @@ def CatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_form
         return False
 
 
-def CatFileValidateFile(infile, fmttype="auto", formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
-    return CatFileValidate(infile, fmttype, formatspecs, verbose, returnfp)
+def CatFileValidateFile(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
+    return CatFileValidate(infile, fmttype, filestart, formatspecs, seektoend, verbose, returnfp)
 
 
-def CatFileValidateMultiple(infile, fmttype="auto", formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def CatFileValidateMultiple(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
     if(isinstance(infile, (list, tuple, ))):
         pass
     else:
         infile = [infile]
     outretval = True
     for curfname in infile:
-        curretfile = CatFileValidate(curfname, fmttype, formatspecs, verbose, returnfp)
+        curretfile = CatFileValidate(curfname, fmttype, filestart, formatspecs, seektoend, verbose, returnfp)
         if(not curretfile):
             outretval = False
     return outretval
 
-def CatFileValidateMultipleFiles(infile, fmttype="auto", formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
-    return CatFileValidateMultiple(infile, fmttype, formatspecs, verbose, returnfp)
+def CatFileValidateMultipleFiles(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
+    return CatFileValidateMultiple(infile, fmttype, filestart, formatspecs, seektoend, verbose, returnfp)
+
+
+def StackedCatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
+    outretval = []
+    outstartfile = filestart
+    outfsize = float('inf')
+    while True:
+        if outstartfile >= outfsize:   # stop when function signals False
+            break
+        is_valid_file = CatFileValidate(infile, fmttype, filestart, formatspecs, seektoend, verbose, True)
+        if is_valid_file is False:   # stop when function signals False
+            outretval.append(is_valid_file)
+        else:
+            outretval.append(True)
+        infile = is_valid_file
+        outstartfile = infile.tell()
+        try:
+            infile.seek(0, 2)
+        except OSError:
+            SeekToEndOfFile(infile)
+        except ValueError:
+            SeekToEndOfFile(infile)
+        outfsize = infile.tell()
+        infile.seek(outstartfile, 0)
+    return outretval
+
+
+def StackedCatFileValidateFile(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
+    return StackedCatFileValidate(infile, fmttype, filestart, formatspecs, seektoend, verbose, returnfp)
+
+
+def StackedCatFileValidateMultiple(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
+    if(isinstance(infile, (list, tuple, ))):
+        pass
+    else:
+        infile = [infile]
+    outretval = True
+    for curfname in infile:
+        curretfile = StackedCatFileValidate(curfname, fmttype, filestart, formatspecs, seektoend, verbose, returnfp)
+        if(not curretfile):
+            outretval = False
+    return outretval
+
+def StackedCatFileValidateMultipleFiles(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
+    return StackedCatFileValidateMultiple(infile, fmttype, filestart, formatspecs, seektoend, verbose, returnfp)
 
 def CatFileToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
@@ -7570,7 +7615,7 @@ def StackedCatFileToArray(infile, fmttype="auto", filestart=0, seekstart=0, seek
     while True:
         if outstartfile >= outfsize:   # stop when function signals False
             break
-        outarray = ArchiveFileToArray(infile, fmttype, outstartfile, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend, True)
+        outarray = CatFileToArray(infile, fmttype, outstartfile, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend, True)
         outfsize = outarray['fsize']
         if outarray is False:   # stop when function signals False
             break
