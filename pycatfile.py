@@ -79,6 +79,7 @@ try:
 except NameError:
     basestring = str
 
+PY2 = (sys.version_info[0] == 2)
 try:
     unicode  # Py2
 except NameError:  # Py3
@@ -720,9 +721,14 @@ def _to_bytes(data):
     try:
         return bytes(data)
     except Exception:
-        return b"%s" % (data,)
+        return (u"%s" % data).encode("utf-8")
 
-# ---------- Optional TLS helpers (TCP only) ----------
+def _to_text(b):
+    if isinstance(b, bytes):
+        return b.decode("utf-8", "replace")
+    return b
+
+# ---------- TLS helpers (TCP only) ----------
 def _ssl_available():
     try:
         import ssl  # noqa
@@ -734,34 +740,35 @@ def _build_ssl_context(server_side=False, verify=True, ca_file=None, certfile=No
     import ssl
     create_ctx = getattr(ssl, "create_default_context", None)
     SSLContext = getattr(ssl, "SSLContext", None)
-    purpose = getattr(ssl, "Purpose", None)
-    if create_ctx and purpose:
+    Purpose    = getattr(ssl, "Purpose", None)
+    if create_ctx and Purpose:
         ctx = create_ctx(ssl.Purpose.CLIENT_AUTH if server_side else ssl.Purpose.SERVER_AUTH)
     elif SSLContext:
         ctx = SSLContext(getattr(ssl, "PROTOCOL_TLS", getattr(ssl, "PROTOCOL_SSLv23")))
     else:
         return None
+
     if hasattr(ctx, "check_hostname") and not server_side:
         ctx.check_hostname = bool(verify)
+
     if verify:
         if hasattr(ctx, "verify_mode"):
-            ctx.verify_mode = ssl.CERT_REQUIRED
+            ctx.verify_mode = getattr(ssl, "CERT_REQUIRED", 2)
         if ca_file:
-            try:
-                ctx.load_verify_locations(cafile=ca_file)
-            except Exception:
-                pass
+            try: ctx.load_verify_locations(cafile=ca_file)
+            except Exception: pass
         else:
             load_default_certs = getattr(ctx, "load_default_certs", None)
-            if load_default_certs:
-                load_default_certs()
+            if load_default_certs: load_default_certs()
     else:
         if hasattr(ctx, "verify_mode"):
-            ctx.verify_mode = ssl.CERT_NONE
+            ctx.verify_mode = getattr(ssl, "CERT_NONE", 0)
         if hasattr(ctx, "check_hostname"):
             ctx.check_hostname = False
+
     if certfile:
         ctx.load_cert_chain(certfile=certfile, keyfile=keyfile or None)
+
     try:
         ctx.set_ciphers("HIGH:!aNULL:!MD5:!RC4")
     except Exception:
@@ -777,64 +784,169 @@ def _ssl_wrap_socket(sock, server_side=False, server_hostname=None,
         if not server_side and getattr(ssl, "HAS_SNI", False) and server_hostname:
             kwargs["server_hostname"] = server_hostname
         return ctx.wrap_socket(sock, server_side=server_side, **kwargs)
-    # Fallback for very old Pythons
+    # Very old Python fallback
     kwargs = {
         "ssl_version": getattr(ssl, "PROTOCOL_TLS", getattr(ssl, "PROTOCOL_SSLv23")),
         "certfile": certfile or None,
-        "keyfile": keyfile or None,
+        "keyfile":  keyfile  or None,
         "cert_reqs": (getattr(ssl, "CERT_REQUIRED", 2) if (verify and ca_file) else getattr(ssl, "CERT_NONE", 0)),
     }
     if verify and ca_file:
         kwargs["ca_certs"] = ca_file
     return ssl.wrap_socket(sock, **kwargs)
 
-# ---------- Tiny auth protocol ----------
-_MAGIC = b"AUTH\0"  # magic prefix
-_OK = b"OK"
-_NO = b"NO"
+# ---------- IPv6 / multi-A dialer + keepalive ----------
+def _enable_keepalive(s, idle=60, intvl=15, cnt=4):
+    try:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        if hasattr(socket, 'TCP_KEEPIDLE'):
+            s.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, idle)
+        if hasattr(socket, 'TCP_KEEPINTVL'):
+            s.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, intvl)
+        if hasattr(socket, 'TCP_KEEPCNT'):
+            s.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, cnt)
+    except Exception:
+        pass
 
-def _build_auth_blob(user, pw):
+def _connect_stream(host, port, timeout):
+    err = None
+    for fam, st, proto, _, sa in socket.getaddrinfo(host, int(port), 0, socket.SOCK_STREAM):
+        try:
+            s = socket.socket(fam, st, proto)
+            if timeout is not None:
+                s.settimeout(timeout)
+            try: s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            except Exception: pass
+            s.connect(sa)
+            _enable_keepalive(s)
+            return s
+        except Exception as e:
+            err = e
+            try: s.close()
+            except Exception: pass
+    if err: raise err
+    raise RuntimeError("no usable address")
+
+# ---------- Auth: AF1 (HMAC) + legacy fallback ----------
+# AF1: single ASCII line ending with '\n':
+#   AF1 ts=<unix> user=<b64url> nonce=<b64url_12B> scope=<b64url> alg=sha256 mac=<hex>\n
+def _b64url_encode(b):
+    s = base64.urlsafe_b64encode(b)
+    return _to_text(s.rstrip(b'='))
+
+def _b64url_decode(s):
+    s = _to_bytes(s)
+    pad = b'=' * ((4 - (len(s) % 4)) % 4)
+    return base64.urlsafe_b64decode(s + pad)
+
+def _auth_msg(ts_int, user_utf8, nonce_bytes, scope_utf8):
+    return _to_bytes("v1|%d|%s|%s|%s" % (
+        ts_int, _to_text(user_utf8), _b64url_encode(nonce_bytes), _to_text(scope_utf8)
+    ))
+
+def build_auth_blob_v1(user, secret, scope=u"", now=None):
+    ts = int(time.time() if now is None else now)
+    user_b  = _to_bytes(user or u"")
+    scope_b = _to_bytes(scope or u"")
+    key_b   = _to_bytes(secret or u"")
+    nonce   = os.urandom(12)
+    mac     = hmac.new(key_b, _auth_msg(ts, user_b, nonce, scope_b), hashlib.sha256).hexdigest()
+    line = "AF1 ts=%d user=%s nonce=%s scope=%s alg=sha256 mac=%s\n" % (
+        ts, _b64url_encode(user_b), _b64url_encode(nonce), _b64url_encode(scope_b), mac
+    )
+    return _to_bytes(line)
+
+from collections import deque
+class _NonceCache(object):
+    def __init__(self, max_items=10000, ttl_seconds=600):
+        self.max_items = int(max_items); self.ttl = int(ttl_seconds)
+        self.q = deque(); self.s = set()
+    def seen(self, nonce_b64, now_ts):
+        # evict old / over-capacity
+        while self.q and (now_ts - self.q[0][0] > self.ttl or len(self.q) > self.max_items):
+            _, n = self.q.popleft(); self.s.discard(n)
+        if nonce_b64 in self.s: return True
+        self.s.add(nonce_b64); self.q.append((now_ts, nonce_b64))
+        return False
+
+_NONCES = _NonceCache()
+
+def verify_auth_blob_v1(blob_bytes, expected_user=None, secret=None,
+                        max_skew=600, expect_scope=None):
+    try:
+        line = _to_text(blob_bytes).strip()
+        if not line.startswith("AF1 "):
+            return (False, None, None, "bad magic")
+        kv = {}
+        for tok in line.split()[1:]:
+            if '=' in tok:
+                k, v = tok.split('=', 1); kv[k] = v
+        for req in ("ts","user","nonce","mac","alg"):
+            if req not in kv: return (False, None, None, "missing %s" % req)
+        if kv["alg"].lower() != "sha256": return (False, None, None, "alg")
+
+        ts    = int(kv["ts"])
+        userb = _b64url_decode(kv["user"])
+        nonce_b64 = kv["nonce"]; nonce = _b64url_decode(nonce_b64)
+        scopeb = _b64url_decode(kv.get("scope","")) if kv.get("scope") else b""
+        mac   = kv["mac"]
+
+        now = int(time.time())
+        if abs(now - ts) > int(max_skew): return (False, None, None, "skew")
+        if _NONCES.seen(nonce_b64, now):  return (False, None, None, "replay")
+        if expected_user is not None and _to_bytes(expected_user) != userb:
+            return (False, None, None, "user")
+
+        key_b = _to_bytes(secret or u"")
+        calc  = hmac.new(key_b, _auth_msg(ts, userb, nonce, scopeb), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(calc, mac):
+            return (False, None, None, "mac")
+
+        if expect_scope is not None and _to_bytes(expect_scope) != scopeb:
+            return (False, None, None, "scope")
+
+        return (True, _to_text(userb), _to_text(scopeb), "ok")
+    except Exception as e:
+        return (False, None, None, "exc:%s" % e)
+
+# Legacy blob (kept for backward compatibility)
+_MAGIC = b"AUTH\0"; _OK = b"OK"; _NO = b"NO"
+
+def _build_auth_blob_legacy(user, pw):
     return _MAGIC + _to_bytes(user) + b"\0" + _to_bytes(pw) + b"\0"
 
-def _parse_auth_blob(data):
-    # returns (user, pass) or (None, None)
+def _parse_auth_blob_legacy(data):
     if not data.startswith(_MAGIC):
         return (None, None)
     rest = data[len(_MAGIC):]
     try:
         user, rest = rest.split(b"\0", 1)
-        pw, _tail = rest.split(b"\0", 1)
+        pw, _tail  = rest.split(b"\0", 1)
         return (user, pw)
     except Exception:
         return (None, None)
 
+# ---------- URL helpers ----------
 def _qflag(qs, key, default=False):
     v = qs.get(key, [None])[0]
-    if v is None:
-        return bool(default)
-    return str(v).lower() in ("1", "true", "yes", "on")
+    if v is None: return bool(default)
+    return _to_text(v).lower() in ("1", "true", "yes", "on")
 
 def _qnum(qs, key, default=None, cast=float):
     v = qs.get(key, [None])[0]
-    if v is None or v == "":
-        return default
-    try:
-        return cast(v)
-    except Exception:
-        return default
+    if v is None or v == "": return default
+    try: return cast(v)
+    except Exception: return default
 
 def _qstr(qs, key, default=None):
     v = qs.get(key, [None])[0]
-    if v is None:
-        return default
+    if v is None: return default
     return v
 
 def _parse_net_url(url):
     """
     Parse tcp:// / udp:// URL and extract transport options.
-    Returns (parts, opts) where:
-      - parts is the parsed urlparse result
-      - opts is a dict you can pass to send_from_fileobj/recv_to_fileobj
+    Returns (parts, opts)
     """
     parts = urlparse(url)
     qs = parse_qs(parts.query or "")
@@ -843,38 +955,31 @@ def _parse_net_url(url):
     if proto not in ("tcp", "udp"):
         raise ValueError("Only tcp:// or udp:// supported here")
 
-    # Auth from URL authority
     user = unquote(parts.username) if parts.username else None
     pw   = unquote(parts.password) if parts.password else None
 
-    # TLS (TCP only)
     use_ssl     = _qflag(qs, "ssl", False) if proto == "tcp" else False
     ssl_verify  = _qflag(qs, "verify", True)
     ssl_ca_file = _qstr(qs, "ca", None)
     ssl_cert    = _qstr(qs, "cert", None)
     ssl_key     = _qstr(qs, "key", None)
 
-    # Timeouts / sizes
     timeout       = _qnum(qs, "timeout", None, float)
-    total_timeout = _qnum(qs, "total_timeout", None, float)  # recv path uses this
-    chunk_size    = int(_qnum(qs, "chunk", 65536, float))     # accept float -> int
+    total_timeout = _qnum(qs, "total_timeout", None, float)
+    chunk_size    = int(_qnum(qs, "chunk", 65536, float))
 
-    # Auth policy
     force_auth = _qflag(qs, "auth", False)
 
     opts = dict(
         proto=proto,
         host=parts.hostname or "127.0.0.1",
         port=int(parts.port or 0),
-        # credentials
         user=user, pw=pw, force_auth=force_auth,
-        # tls
         use_ssl=use_ssl, ssl_verify=ssl_verify,
         ssl_ca_file=ssl_ca_file, ssl_certfile=ssl_cert, ssl_keyfile=ssl_key,
-        # io
         timeout=timeout, total_timeout=total_timeout, chunk_size=chunk_size,
-        # SNI default to host for client side
         server_hostname=parts.hostname or None,
+        path=parts.path or u"",   # expose for optional AF1 scope binding
     )
     return parts, opts
 
@@ -884,7 +989,6 @@ def _rewrite_url_without_auth(url):
     if u.port:
         netloc += ':' + str(u.port)
     rebuilt = urlunparse((u.scheme, netloc, u.path, u.params, u.query, u.fragment))
-    # username/password may be percent-encoded in URL; unquote them
     usr = unquote(u.username) if u.username else ''
     pwd = unquote(u.password) if u.password else ''
     return rebuilt, usr, pwd
@@ -10161,18 +10265,15 @@ def upload_file_to_internet_compress_string(ifp, url, compression="auto", compre
     return upload_file_to_internet_file(fp, outfile)
 
 
+# ---------- Core: send / recv ----------
 def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
                       chunk_size=65536,
                       use_ssl=False, ssl_verify=True, ssl_ca_file=None,
                       ssl_certfile=None, ssl_keyfile=None, server_hostname=None,
-                      auth_user=None, auth_pass=None):
+                      auth_user=None, auth_pass=None, auth_scope=u""):
     """
     Send fileobj contents to (host, port) via TCP or UDP.
-    Optional TLS (TCP only) and optional username/password auth preface.
-
-    If auth_user/auth_pass provided:
-      - TCP: send an auth preface and wait for OK before streaming data.
-      - UDP: first datagram is auth; only after OK reply will data be sent.
+    Optional TLS (TCP only) and optional auth preface.
     """
     proto = (proto or "tcp").lower()
     total = 0
@@ -10181,42 +10282,43 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
     if proto not in ("tcp", "udp"):
         raise ValueError("proto must be 'tcp' or 'udp'")
 
-    # ---- UDP (no TLS) ----
+    # ---- UDP ----
     if proto == "udp":
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
             if timeout is not None:
                 sock.settimeout(timeout)
-            # Optional "connect" to set default peer
+            # Optional connect (sets default peer)
+            connected = False
             try:
                 sock.connect((host, port))
                 connected = True
             except Exception:
                 connected = False
 
-            # If using auth, do an initial handshake (send auth, expect OK)
+            # Auth (AF1 first, then legacy)
             if auth_user is not None or auth_pass is not None:
-                blob = _build_auth_blob(auth_user or b"", auth_pass or b"")
+                try:
+                    blob = build_auth_blob_v1(auth_user or u"", auth_pass or u"", scope=auth_scope)
+                except Exception:
+                    blob = _build_auth_blob_legacy(auth_user or b"", auth_pass or b"")
                 if connected:
                     sock.send(blob)
-                    try:
-                        resp = sock.recv(16)
+                    try: resp = sock.recv(16)
                     except socket.timeout:
                         raise RuntimeError("UDP auth: timeout waiting for server OK/NO")
                 else:
                     sock.sendto(blob, (host, port))
-                    try:
-                        resp, _ = sock.recvfrom(16)
+                    try: resp, _ = sock.recvfrom(16)
                     except socket.timeout:
                         raise RuntimeError("UDP auth: timeout waiting for server OK/NO")
                 if resp != _OK:
                     raise RuntimeError("UDP auth failed")
 
-            # Stream data
+            # Stream
             while True:
                 chunk = fileobj.read(chunk_size)
-                if not chunk:
-                    break
+                if not chunk: break
                 b = _to_bytes(chunk)
                 total += (sock.send(b) if connected else sock.sendto(b, (host, port)))
         finally:
@@ -10224,12 +10326,9 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
             except Exception: pass
         return total
 
-    # ---- TCP (optionally TLS) ----
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # ---- TCP ----
+    sock = _connect_stream(host, port, timeout)
     try:
-        if timeout is not None:
-            sock.settimeout(timeout)
-        sock.connect((host, port))
         if use_ssl:
             if not _ssl_available():
                 raise RuntimeError("SSL requested but 'ssl' module unavailable.")
@@ -10238,15 +10337,18 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
                                     verify=ssl_verify, ca_file=ssl_ca_file,
                                     certfile=ssl_certfile, keyfile=ssl_keyfile)
 
-        # Auth preface (if requested)
+        # Auth (AF1 preferred)
         if auth_user is not None or auth_pass is not None:
-            sock.sendall(_build_auth_blob(auth_user or b"", auth_pass or b""))
-            # Wait for OK before sending data
+            try:
+                blob = build_auth_blob_v1(auth_user or u"", auth_pass or u"", scope=auth_scope)
+            except Exception:
+                blob = _build_auth_blob_legacy(auth_user or b"", auth_pass or b"")
+            sock.sendall(blob)
             resp = sock.recv(16)
             if resp != _OK:
                 raise RuntimeError("TCP auth failed")
 
-        # sendfile if available; else loop
+        # sendfile fast-path (Py3), else loop
         use_sendfile = hasattr(sock, "sendfile") and hasattr(fileobj, "read")
         if use_sendfile:
             try:
@@ -10281,46 +10383,36 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
         except Exception: pass
     return total
 
-
 def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                     max_bytes=None, chunk_size=65536, backlog=1,
                     use_ssl=False, ssl_verify=True, ssl_ca_file=None,
                     ssl_certfile=None, ssl_keyfile=None,
                     require_auth=False, expected_user=None, expected_pass=None,
-                    total_timeout=None):   # <-- NEW
+                    total_timeout=None, expect_scope=None):
     """
-    ... (docstring unchanged) ...
-    Args:
-        ...
-        timeout (float|None): per-operation socket timeout in seconds.
-        total_timeout (float|None): hard cap on total runtime in seconds.  # <-- NEW
+    Receive bytes into fileobj over TCP/UDP.
+    - timeout: per-operation timeout (seconds)
+    - total_timeout: overall runtime cap (seconds) (server loops)
     """
     proto = (proto or "tcp").lower()
     port = int(port)
     total = 0
 
-    # --- total-time helpers ---
+    # total-time helpers
     start_ts = time.time()
-
     def _time_left():
-        if total_timeout is None:
-            return None
+        if total_timeout is None: return None
         left = total_timeout - (time.time() - start_ts)
         return 0.0 if left <= 0 else left
-
     def _set_effective_timeout(socklike, base_timeout):
-        """Set socket timeout to min(base_timeout, time_left). Return False if no time left."""
         left = _time_left()
-        if left == 0.0:
-            return False
+        if left == 0.0: return False
         eff = base_timeout
         if left is not None:
             eff = left if eff is None else min(eff, left)
         if eff is not None:
-            try:
-                socklike.settimeout(eff)
-            except Exception:
-                pass
+            try: socklike.settimeout(eff)
+            except Exception: pass
         return True
 
     if proto not in ("tcp", "udp"):
@@ -10333,29 +10425,31 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
         try:
             sock.bind((host or "", port))
             while True:
-                # total timeout check
-                if _time_left() == 0.0:
-                    break
-                if (max_bytes is not None) and (total >= max_bytes):
-                    break
-
-                # set effective timeout before each recvfrom
-                if not _set_effective_timeout(sock, timeout):
-                    break
+                if _time_left() == 0.0: break
+                if (max_bytes is not None) and (total >= max_bytes): break
+                if not _set_effective_timeout(sock, timeout): break
 
                 try:
                     data, addr = sock.recvfrom(chunk_size)
                 except socket.timeout:
                     break
-
                 if not data:
                     continue
 
                 if require_auth and authed_addr is None:
-                    user, pw = _parse_auth_blob(data)
-                    ok = (user is not None and
-                          (expected_user is None or user == _to_bytes(expected_user)) and
-                          (expected_pass is None or pw == _to_bytes(expected_pass)))
+                    # Try AF1 first, then legacy
+                    ok = False
+                    v_ok, v_user, v_scope, _r = verify_auth_blob_v1(
+                        data, expected_user=expected_user, secret=expected_pass,
+                        max_skew=600, expect_scope=expect_scope
+                    )
+                    if v_ok:
+                        ok = True
+                    else:
+                        user, pw = _parse_auth_blob_legacy(data)
+                        ok = (user is not None and
+                              (expected_user is None or user == _to_bytes(expected_user)) and
+                              (expected_pass is None or pw == _to_bytes(expected_pass)))
                     sock.sendto((_OK if ok else _NO), addr)
                     if ok:
                         authed_addr = addr
@@ -10381,7 +10475,6 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
         srv.bind((host or "", port))
         srv.listen(int(backlog) if backlog else 1)
 
-        # effective timeout for accept
         if not _set_effective_timeout(srv, timeout):
             return 0
         try:
@@ -10389,7 +10482,7 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
         except socket.timeout:
             return 0
 
-        # TLS wrap if requested (unchanged)
+        # TLS server
         if use_ssl:
             if not _ssl_available():
                 try: conn.close()
@@ -10404,34 +10497,40 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                                     certfile=ssl_certfile, keyfile=ssl_keyfile)
 
         try:
-            # If auth is required, read preface under effective timeout
+            # Auth preface
             if require_auth:
                 if not _set_effective_timeout(conn, timeout):
                     return 0
                 try:
-                    preface = conn.recv(4096)
+                    preface = conn.recv(1024)
                 except socket.timeout:
                     try: conn.sendall(_NO)
                     except Exception: pass
                     return 0
-                user, pw = _parse_auth_blob(preface or b"")
-                ok = (user is not None and
-                      (expected_user is None or user == _to_bytes(expected_user)) and
-                      (expected_pass is None or pw == _to_bytes(expected_pass)))
+
+                ok = False
+                v_ok, v_user, v_scope, _r = verify_auth_blob_v1(
+                    preface or b"", expected_user=expected_user, secret=expected_pass,
+                    max_skew=600, expect_scope=expect_scope
+                )
+                if v_ok:
+                    ok = True
+                else:
+                    user, pw = _parse_auth_blob_legacy(preface or b"")
+                    ok = (user is not None and
+                          (expected_user is None or user == _to_bytes(expected_user)) and
+                          (expected_pass is None or pw == _to_bytes(expected_pass)))
+
                 try: conn.sendall(_OK if ok else _NO)
                 except Exception: pass
                 if not ok:
                     return 0
 
-            # Main receive loop with total cap
+            # Receive loop
             while True:
-                if _time_left() == 0.0:
-                    break
-                if (max_bytes is not None) and (total >= max_bytes):
-                    break
-
-                if not _set_effective_timeout(conn, timeout):
-                    break
+                if _time_left() == 0.0: break
+                if (max_bytes is not None) and (total >= max_bytes): break
+                if not _set_effective_timeout(conn, timeout): break
                 try:
                     data = conn.recv(chunk_size)
                 except socket.timeout:
@@ -10453,14 +10552,14 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
 
     return total
 
-def send_via_url(fileobj, url, send_from_fileobj):
+# ---------- URL drivers ----------
+def send_via_url(fileobj, url, send_from_fileobj_func=send_from_fileobj):
     """
     Use URL options to drive the sender. Returns bytes sent.
     """
     parts, o = _parse_net_url(url)
     use_auth = (o["user"] is not None and o["pw"] is not None) or o["force_auth"]
-
-    return send_from_fileobj(
+    return send_from_fileobj_func(
         fileobj,
         o["host"], o["port"], proto=o["proto"],
         timeout=o["timeout"], chunk_size=o["chunk_size"],
@@ -10469,16 +10568,16 @@ def send_via_url(fileobj, url, send_from_fileobj):
         server_hostname=o["server_hostname"],
         auth_user=(o["user"] if use_auth else None),
         auth_pass=(o["pw"]   if use_auth else None),
+        auth_scope=o.get("path", u""),
     )
 
-def recv_via_url(fileobj, url, recv_to_fileobj):
+def recv_via_url(fileobj, url, recv_to_fileobj_func=recv_to_fileobj):
     """
     Use URL options to drive the receiver. Returns bytes received.
     """
     parts, o = _parse_net_url(url)
     require_auth = (o["user"] is not None and o["pw"] is not None) or o["force_auth"]
-
-    return recv_to_fileobj(
+    return recv_to_fileobj_func(
         fileobj,
         o["host"], o["port"], proto=o["proto"],
         timeout=o["timeout"], total_timeout=o["total_timeout"],
@@ -10487,4 +10586,5 @@ def recv_via_url(fileobj, url, recv_to_fileobj):
         ssl_ca_file=o["ssl_ca_file"], ssl_certfile=o["ssl_certfile"], ssl_keyfile=o["ssl_keyfile"],
         require_auth=require_auth,
         expected_user=o["user"], expected_pass=o["pw"],
+        expect_scope=o.get("path", u""),
     )
