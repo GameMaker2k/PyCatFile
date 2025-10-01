@@ -8638,9 +8638,9 @@ def UnPackCatFile(infile, outdir=None, followlink=False, filestart=0, seekstart=
         return True
 
 
-def UnPackCatFileString(instr, outdir=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
+def UnPackCatFileString(instr, outdir=None, followlink=False, filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
     fp = MkTempFile(instr)
-    listarrayfiles = UnPackCatFile(fp, outdir, followlink, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, returnfp)
+    listarrayfiles = UnPackCatFile(fp, outdir, followlink, filestart, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, returnfp)
     return listarrayfiles
 
 def ftype_to_str(ftype):
@@ -8762,26 +8762,9 @@ def MultipleStackedCatFileListFiles(infile, fmttype="auto", filestart=0, seeksta
     return outretval
 
 
-def CatFileStringToArray(instr, filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
-    checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True)
-    if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
-        formatspecs = formatspecs[checkcompressfile]
+def CatFileStringListFiles(instr, filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, newstyle=False, returnfp=False):
     fp = MkTempFile(instr)
-    listarrayfiles = CatFileToArray(fp, "auto", filestart, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, seektoend, returnfp)
-    return listarrayfiles
-
-
-def CatFileStringListFiles(instr, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, newstyle=False, returnfp=False):
-    fp = MkTempFile(instr)
-    listarrayfiles = CatFileListFiles(
-        instr, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, newstyle, returnfp)
-    return listarrayfiles
-
-
-def CatFileStringListFiles(instr, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, newstyle=False, returnfp=False):
-    fp = MkTempFile(instr)
-    listarrayfiles = CatFileListFiles(
-        instr, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, newstyle, returnfp)
+    listarrayfiles = CatFileListFiles(instr, "auto", filestart, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, newstyle, returnfp)
     return listarrayfiles
 
 
