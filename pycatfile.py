@@ -7968,7 +7968,7 @@ def ListDirToArray(infiles, dirlistfromtxt=False, fmttype=__file_format_default_
     outarray = MkTempFile()
     packform = PackCatFile(infiles, outarray, dirlistfromtxt, fmttype, compression, compresswholefile,
                               compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, True)
-    listarrayfiles = CatFileToArray(outarray, "auto", filestart, seekstart, seekend, listonly, True, skipchecksum, formatspecs, seektoend, returnfp)
+    listarrayfiles = CatFileToArray(outarray, "auto", filestart, seekstart, seekend, listonly, True, True, skipchecksum, formatspecs, seektoend, returnfp)
     return listarrayfiles
 
 
@@ -8096,7 +8096,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
     else:
         if(infile != "-" and not isinstance(infile, bytes) and not hasattr(infile, "read") and not hasattr(infile, "write")):
             infile = RemoveWindowsPath(infile)
-        listarrayfiles = CatFileToArray(infile, "auto", filestart, seekstart, seekend, False, True, skipchecksum, formatspecs, seektoend, returnfp)
+        listarrayfiles = CatFileToArray(infile, "auto", filestart, seekstart, seekend, False, True, True, skipchecksum, formatspecs, seektoend, returnfp)
     if(IsNestedDict(formatspecs) and fmttype in formatspecs):
         formatspecs = formatspecs[fmttype]
     elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
@@ -8209,11 +8209,11 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
         fdev_major = format(
             int(listarrayfiles['ffilelist'][reallcfi]['fmajor']), 'x').lower()
         fseeknextfile = listarrayfiles['ffilelist'][reallcfi]['fseeknextfile']
-        if(len(listarrayfiles['ffilelist'][reallcfi]['fextralist']) > listarrayfiles['ffilelist'][reallcfi]['fextrafields'] and len(listarrayfiles['ffilelist'][reallcfi]['fextralist']) > 0):
+        if(len(listarrayfiles['ffilelist'][reallcfi]['fextradata']) > listarrayfiles['ffilelist'][reallcfi]['fextrafields'] and len(listarrayfiles['ffilelist'][reallcfi]['fextradata']) > 0):
             listarrayfiles['ffilelist'][reallcfi]['fextrafields'] = len(
-                listarrayfiles['ffilelist'][reallcfi]['fextralist'])
+                listarrayfiles['ffilelist'][reallcfi]['fextradata'])
         if(not followlink and len(extradata) <= 0):
-            extradata = listarrayfiles['ffilelist'][reallcfi]['fextralist']
+            extradata = listarrayfiles['ffilelist'][reallcfi]['fextradata']
         if(not followlink and len(jsondata) <= 0):
             jsondata = listarrayfiles['ffilelist'][reallcfi]['fjsondata']
         fcontents = listarrayfiles['ffilelist'][reallcfi]['fcontents']
@@ -8292,10 +8292,10 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
                 fdev_minor = format(int(flinkinfo['fminor']), 'x').lower()
                 fdev_major = format(int(flinkinfo['fmajor']), 'x').lower()
                 fseeknextfile = flinkinfo['fseeknextfile']
-                if(len(flinkinfo['fextralist']) > flinkinfo['fextrafields'] and len(flinkinfo['fextralist']) > 0):
-                    flinkinfo['fextrafields'] = len(flinkinfo['fextralist'])
+                if(len(flinkinfo['fextradata']) > flinkinfo['fextrafields'] and len(flinkinfo['fextradata']) > 0):
+                    flinkinfo['fextrafields'] = len(flinkinfo['fextradata'])
                 if(len(extradata) < 0):
-                    extradata = flinkinfo['fextralist']
+                    extradata = flinkinfo['fextradata']
                 if(len(jsondata) < 0):
                     extradata = flinkinfo['fjsondata']
                 fcontents = flinkinfo['fcontents']
@@ -8390,7 +8390,7 @@ def UnPackCatFile(infile, outdir=None, followlink=False, filestart=0, seekstart=
     else:
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
             infile = RemoveWindowsPath(infile)
-        listarrayfiles = CatFileToArray(infile, "auto", filestart, seekstart, seekend, False, True, skipchecksum, formatspecs, seektoend, returnfp)
+        listarrayfiles = CatFileToArray(infile, "auto", filestart, seekstart, seekend, False, True, True, skipchecksum, formatspecs, seektoend, returnfp)
     if(not listarrayfiles):
         return False
     lenlist = len(listarrayfiles['ffilelist'])
