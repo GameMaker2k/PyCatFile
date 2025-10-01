@@ -3298,11 +3298,16 @@ def ReadInMultipleFilesWithContentToArray(infile, fmttype="auto", filestart=0, s
 def ReadInStackedFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
     outretval = []
     outstartfile = filestart
+    outfsize = float('inf')
     while True:
-        outarray = ReadInFileWithContentToArray(infile, fmttype, outstartfile, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend)
+        if outstartfile >= outfsize:   # stop when function signals False
+            break
+        outarray = ArchiveFileToArray(infile, fmttype, outstartfile, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend, True)
+        outfsize = outarray['fsize']
         if outarray is False:   # stop when function signals False
             break
         infile = outarray['fp']
+        outstartfile = infile.tell()
         outretval.append(outarray)
     return outretval
 
@@ -7561,11 +7566,16 @@ def MultipleCatFilesToArray(infile, fmttype="auto", filestart=0, seekstart=0, se
 def StackedCatFileToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
     outretval = []
     outstartfile = filestart
+    outfsize = float('inf')
     while True:
-        outarray = CatFileToArray(infile, fmttype, outstartfile, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend, True)
+        if outstartfile >= outfsize:   # stop when function signals False
+            break
+        outarray = ArchiveFileToArray(infile, fmttype, outstartfile, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend, True)
+        outfsize = outarray['fsize']
         if outarray is False:   # stop when function signals False
             break
         infile = outarray['fp']
+        outstartfile = infile.tell()
         outretval.append(outarray)
     return outretval
 
