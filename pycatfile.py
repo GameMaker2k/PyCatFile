@@ -877,6 +877,24 @@ def _parse_net_url(url):
     )
     return parts, opts
 
+def _rewrite_url_without_auth(url):
+    u = urlparse(url)
+    netloc = u.hostname or ''
+    if u.port:
+        netloc += ':' + str(u.port)
+    rebuilt = urlunparse((u.scheme, netloc, u.path, u.params, u.query, u.fragment))
+    # username/password may be percent-encoded in URL; unquote them
+    usr = unquote(u.username) if u.username else ''
+    pwd = unquote(u.password) if u.password else ''
+    return rebuilt, usr, pwd
+
+def _guess_filename(url, filename):
+    if filename:
+        return filename
+    path = urlparse(url).path or ''
+    base = os.path.basename(path)
+    return base or 'OutFile.'+__file_format_extension__
+
 def DetectTarBombCatFileArray(listarrayfiles,
                                  top_file_ratio_threshold=0.6,
                                  min_members_for_ratio=4,
@@ -9561,6 +9579,184 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
     # Reset file pointer to the start before returning
     httpfile.seek(0, 0)
     return httpfile
+
+
+def upload_file_to_http_file(
+    fileobj,
+    url,
+    method="POST",                 # "POST" or "PUT"
+    headers=None,
+    form=None,                     # dict of extra form fields → triggers multipart/form-data
+    field_name="file",             # form field name for the file content
+    filename=None,                 # defaults to basename of URL path
+    content_type="application/octet-stream",
+    usehttp=__use_http_lib__,      # 'requests' | 'httpx' | 'mechanize' | anything → urllib fallback
+):
+    """
+    Py2+Py3 compatible HTTP/HTTPS upload.
+
+    - If `form` is provided (dict), uses multipart/form-data:
+        * text fields from `form`
+        * file part named by `field_name` with given `filename` and `content_type`
+    - If `form` is None, uploads raw body as POST/PUT with Content-Type.
+    - Returns True on HTTP 2xx, else False.
+    """
+    if headers is None:
+        headers = {}
+    method = (method or "POST").upper()
+
+    rebuilt_url, username, password = _rewrite_url_without_auth(url)
+    filename = _guess_filename(url, filename)
+
+    # rewind if possible
+    try:
+        fileobj.seek(0)
+    except Exception:
+        pass
+
+    # ========== 1) requests (Py2+Py3) ==========
+    if usehttp == 'requests' and haverequests:
+        import requests
+
+        auth = (username, password) if (username or password) else None
+
+        if form is not None:
+            # multipart/form-data
+            files = {field_name: (filename, fileobj, content_type)}
+            data = form or {}
+            resp = requests.request(method, rebuilt_url, headers=headers, auth=auth,
+                                    files=files, data=data, timeout=(5, 120))
+        else:
+            # raw body
+            hdrs = {'Content-Type': content_type}
+            hdrs.update(headers)
+            # best-effort content-length (helps some servers)
+            if hasattr(fileobj, 'seek') and hasattr(fileobj, 'tell'):
+                try:
+                    cur = fileobj.tell()
+                    fileobj.seek(0, io.SEEK_END if hasattr(io, 'SEEK_END') else 2)
+                    size = fileobj.tell() - cur
+                    fileobj.seek(cur)
+                    hdrs.setdefault('Content-Length', str(size))
+                except Exception:
+                    pass
+            resp = requests.request(method, rebuilt_url, headers=hdrs, auth=auth,
+                                    data=fileobj, timeout=(5, 300))
+
+        return (200 <= resp.status_code < 300)
+
+    # ========== 2) httpx (Py3 only) ==========
+    if usehttp == 'httpx' and havehttpx and not PY2:
+        import httpx
+        auth = (username, password) if (username or password) else None
+
+        with httpx.Client(follow_redirects=True, timeout=60) as client:
+            if form is not None:
+                files = {field_name: (filename, fileobj, content_type)}
+                data  = form or {}
+                resp = client.request(method, rebuilt_url, headers=headers, auth=auth,
+                                      files=files, data=data)
+            else:
+                hdrs = {'Content-Type': content_type}
+                hdrs.update(headers)
+                resp = client.request(method, rebuilt_url, headers=hdrs, auth=auth,
+                                      content=fileobj)
+        return (200 <= resp.status_code < 300)
+
+    # ========== 3) mechanize (forms) → prefer requests if available ==========
+    if usehttp == 'mechanize' and havemechanize:
+        # mechanize is great for HTML forms, but file upload requires form discovery.
+        # For a generic upload helper, prefer requests. If not available, fall through.
+        try:
+            import requests  # noqa
+            # delegate to requests path to ensure robust multipart handling
+            return upload_file_to_http_file(
+                fileobj, url, method=method, headers=headers,
+                form=(form or {}), field_name=field_name,
+                filename=filename, content_type=content_type,
+                usehttp='requests'
+            )
+        except Exception:
+            pass  # fall through to urllib
+
+    # ========== 4) urllib fallback (Py2+Py3) ==========
+    # multipart builder (no f-strings)
+    boundary = ('----pyuploader-%s' % uuid.uuid4().hex)
+
+    if form is not None:
+        # Build multipart body to a temp file-like (your MkTempFile())
+        buf = MkTempFile()
+
+        def _w(s):
+            buf.write(_to_bytes(s))
+
+        # text fields
+        if form:
+            for k, v in form.items():
+                _w('--' + boundary + '\r\n')
+                _w('Content-Disposition: form-data; name="%s"\r\n\r\n' % k)
+                _w('' if v is None else (v if isinstance(v, (str, bytes)) else str(v)))
+                _w('\r\n')
+
+        # file field
+        _w('--' + boundary + '\r\n')
+        _w('Content-Disposition: form-data; name="%s"; filename="%s"\r\n' % (field_name, filename))
+        _w('Content-Type: %s\r\n\r\n' % content_type)
+
+        try:
+            fileobj.seek(0)
+        except Exception:
+            pass
+        shutil.copyfileobj(fileobj, buf)
+
+        _w('\r\n')
+        _w('--' + boundary + '--\r\n')
+
+        buf.seek(0)
+        data = buf.read()
+        hdrs = {'Content-Type': 'multipart/form-data; boundary=%s' % boundary}
+        hdrs.update(headers)
+        req = Request(rebuilt_url, data=data)
+        # method override for Py3; Py2 Request ignores 'method' kw
+        if not PY2:
+            req.method = method  # type: ignore[attr-defined]
+    else:
+        # raw body
+        try:
+            fileobj.seek(0)
+        except Exception:
+            pass
+        data = fileobj.read()
+        hdrs = {'Content-Type': content_type}
+        hdrs.update(headers)
+        req = Request(rebuilt_url, data=data)
+        if not PY2:
+            req.method = method  # type: ignore[attr-defined]
+
+    for k, v in hdrs.items():
+        req.add_header(k, v)
+
+    # Basic auth if present
+    if username or password:
+        pwd_mgr = HTTPPasswordMgrWithDefaultRealm()
+        pwd_mgr.add_password(None, rebuilt_url, username, password)
+        opener = build_opener(HTTPBasicAuthHandler(pwd_mgr))
+    else:
+        opener = build_opener()
+
+    # Py2 OpenerDirector.open takes timeout since 2.6; to be safe, avoid passing if it explodes
+    try:
+        resp = opener.open(req, timeout=60)
+    except TypeError:
+        resp = opener.open(req)
+
+    # Status code compat
+    code = getattr(resp, 'status', None) or getattr(resp, 'code', None) or 0
+    try:
+        resp.close()
+    except Exception:
+        pass
+    return (200 <= int(code) < 300)
 
 
 def download_file_from_http_string(url, headers=geturls_headers_pyfile_python_alt, usehttp=__use_http_lib__):
