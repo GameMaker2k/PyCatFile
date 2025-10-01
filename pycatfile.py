@@ -7331,7 +7331,7 @@ def StackedCatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__fi
     while True:
         if outstartfile >= outfsize:   # stop when function signals False
             break
-        is_valid_file = ArchiveFileValidate(infile, fmttype, filestart, formatspecs, seektoend, verbose, True)
+        is_valid_file = CatFileValidate(infile, fmttype, filestart, formatspecs, seektoend, verbose, True)
         if is_valid_file is False:   # stop when function signals False
             outretval.append(is_valid_file)
         else:
@@ -8709,6 +8709,73 @@ def CatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0
         return listarrayfiles['fp']
     else:
         return True
+
+
+def MultipleCatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
+    if(isinstance(infile, (list, tuple, ))):
+        pass
+    else:
+        infile = [infile]
+    outretval = {}
+    for curfname in infile:
+        outretval[curfname] = CatFileListFiles(infile, fmttype, filestart, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, newstyle, returnfp)
+    return outretval
+
+
+def StackedCatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, newstyle=False, returnfp=False):
+    outretval = []
+    outstartfile = filestart
+    outfsize = float('inf')
+    while True:
+        if outstartfile >= outfsize:   # stop when function signals False
+            break
+        list_file_retu = ArchiveFileListFiles(infile, fmttype, outstartfile, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, newstyle, True)
+        if list_file_retu is False:   # stop when function signals False
+            outretval.append(list_file_retu)
+        else:
+            outretval.append(True)
+        infile = list_file_retu
+        outstartfile = infile.tell()
+        try:
+            infile.seek(0, 2)
+        except OSError:
+            SeekToEndOfFile(infile)
+        except ValueError:
+            SeekToEndOfFile(infile)
+        outfsize = infile.tell()
+        infile.seek(outstartfile, 0)
+    if(returnfp):
+        return infile
+    else:
+        infile.close()
+        return outretval
+
+
+def MultipleStackedCatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
+    if(isinstance(infile, (list, tuple, ))):
+        pass
+    else:
+        infile = [infile]
+    outretval = {}
+    for curfname in infile:
+        outretval[curfname] = StackedArchiveListFiles(curfname, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend, returnfp)
+    return outretval
+
+
+def CatFileStringToArray(instr, filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
+    checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True)
+    if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+        formatspecs = formatspecs[checkcompressfile]
+    fp = MkTempFile(instr)
+    listarrayfiles = CatFileToArray(fp, "auto", filestart, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, seektoend, returnfp)
+    return listarrayfiles
+
+
+def CatFileStringListFiles(instr, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, newstyle=False, returnfp=False):
+    fp = MkTempFile(instr)
+    listarrayfiles = CatFileListFiles(
+        instr, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, newstyle, returnfp)
+    return listarrayfiles
 
 
 def CatFileStringListFiles(instr, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, newstyle=False, returnfp=False):
