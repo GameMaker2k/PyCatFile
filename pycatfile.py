@@ -7626,6 +7626,8 @@ def StackedCatFileToArray(infile, fmttype="auto", filestart=0, seekstart=0, seek
             break
         infile = outarray['fp']
         outstartfile = infile.tell()
+        if(not returnfp):
+            outarray.update({"fp": None})
         outretval.append(outarray)
     return outretval
 
