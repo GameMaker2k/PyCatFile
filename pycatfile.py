@@ -409,6 +409,54 @@ if(__version_info__[3] is not None):
 if(__version_info__[3] is None):
     __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2])
 
+# ===== Module-level type code table & helpers (reuse anywhere) =====
+
+FT = {
+    "FILE": 0,
+    "HARDLINK": 1,
+    "SYMLINK": 2,
+    "CHAR": 3,
+    "BLOCK": 4,
+    "DIR": 5,
+    "FIFO": 6,
+    "FILE_ALT": 7,   # treated like regular file
+    "SOCK": 8,
+    "DOOR": 9,
+    "PORT": 10,
+    "WHT": 11,
+    "JUNCTION": 13,
+}
+
+# Base category for each concrete ftype (no unions here).
+BASE_CATEGORY_BY_CODE = {
+    0:  "files",
+    7:  "files",
+    1:  "hardlinks",
+    2:  "symlinks",
+    3:  "character",
+    4:  "block",
+    5:  "directories",
+    6:  "fifo",
+    8:  "sockets",
+    9:  "doors",
+    10: "ports",
+    11: "whiteouts",
+    13: "junctions",
+}
+
+# Union categories defined by which base codes should populate them.
+UNION_RULES = [
+    ("links",   set([FT["HARDLINK"], FT["SYMLINK"]])),
+    ("devices", set([FT["CHAR"], FT["BLOCK"]])),
+]
+
+# Deterministic category order (handy for consistent output/printing).
+CATEGORY_ORDER = [
+    "files", "hardlinks", "symlinks", "character", "block",
+    "directories", "fifo", "sockets", "doors", "ports",
+    "whiteouts", "junctions", "links", "devices"
+]
+
 # Robust bitness detection
 # Works on Py2 & Py3, all platforms
 
@@ -7737,72 +7785,122 @@ def ListDirToArray(infiles, dirlistfromtxt=False, fmttype=__file_format_default_
     return listarrayfiles
 
 
+# ===== Function (keeps inarray schema; returns entries + indexes) =====
+
 def CatFileArrayToArrayIndex(inarray, returnfp=False):
-    if(isinstance(inarray, dict)):
-        listarrayfiles = inarray
-    else:
+    """
+    Build a bidirectional index over an archive listing while preserving the
+    input 'inarray' as-is. Python 2/3 compatible, no external deps.
+
+    Input (unchanged contract):
+      inarray: dict with at least:
+        - 'ffilelist': list of dicts: {'fname': <str>, 'fid': <any>, 'ftype': <int>}
+        - 'fnumfiles': int (expected count)
+        - optional 'fp': any (passed through if returnfp=True)
+
+    Output structure:
+      {
+        'list': inarray,                 # alias to original input (not copied)
+        'fp':   inarray.get('fp') or None,
+        'entries': { fid: {'name': fname, 'type': ftype} },
+        'indexes': {
+          'by_name': { fname: fid },
+          'by_type': {
+            <category>: {
+              'by_name': { fname: fid },
+              'by_id':   { fid: fname },
+              'count':   <int>
+            }, ...
+          }
+        },
+        'counts': {
+          'total': <int>,
+          'by_type': { <category>: <int>, ... }
+        },
+        'unknown_types': { <ftype_int>: [fname, ...] }
+      }
+    """
+    if not isinstance(inarray, dict):
         return False
-    if(not listarrayfiles):
+    if not inarray:
         return False
-    outarray = {'list': listarrayfiles, 'filetoid': {}, 'idtofile': {}, 'filetypes': {'directories': {'filetoid': {}, 'idtofile': {}}, 'files': {'filetoid': {}, 'idtofile': {}}, 'links': {'filetoid': {}, 'idtofile': {}}, 'symlinks': {'filetoid': {
-    }, 'idtofile': {}}, 'hardlinks': {'filetoid': {}, 'idtofile': {}}, 'character': {'filetoid': {}, 'idtofile': {}}, 'block': {'filetoid': {}, 'idtofile': {}}, 'fifo': {'filetoid': {}, 'idtofile': {}}, 'devices': {'filetoid': {}, 'idtofile': {}}}}
-    if(returnfp):
-        outarray.update({'fp': listarrayfiles['fp']})
-    else:
-        outarray.update({'fp': None})
-    lenlist = len(listarrayfiles['ffilelist'])
-    lcfi = 0
-    lcfx = int(listarrayfiles['fnumfiles'])
-    if(lenlist > listarrayfiles['fnumfiles'] or lenlist < listarrayfiles['fnumfiles']):
-        lcfx = int(lenlist)
-    else:
-        lcfx = int(listarrayfiles['fnumfiles'])
-    while(lcfi < lcfx):
-        filetoidarray = {listarrayfiles['ffilelist'][lcfi]
-                         ['fname']: listarrayfiles['ffilelist'][lcfi]['fid']}
-        idtofilearray = {listarrayfiles['ffilelist'][lcfi]
-                         ['fid']: listarrayfiles['ffilelist'][lcfi]['fname']}
-        outarray['filetoid'].update(filetoidarray)
-        outarray['idtofile'].update(idtofilearray)
-        if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 0 or listarrayfiles['ffilelist'][lcfi]['ftype'] == 7):
-            outarray['filetypes']['files']['filetoid'].update(filetoidarray)
-            outarray['filetypes']['files']['idtofile'].update(idtofilearray)
-        if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 1):
-            outarray['filetypes']['hardlinks']['filetoid'].update(
-                filetoidarray)
-            outarray['filetypes']['hardlinks']['idtofile'].update(
-                idtofilearray)
-            outarray['filetypes']['links']['filetoid'].update(filetoidarray)
-            outarray['filetypes']['links']['idtofile'].update(idtofilearray)
-        if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 2):
-            outarray['filetypes']['symlinks']['filetoid'].update(filetoidarray)
-            outarray['filetypes']['symlinks']['idtofile'].update(idtofilearray)
-            outarray['filetypes']['links']['filetoid'].update(filetoidarray)
-            outarray['filetypes']['links']['idtofile'].update(idtofilearray)
-        if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 3):
-            outarray['filetypes']['character']['filetoid'].update(
-                filetoidarray)
-            outarray['filetypes']['character']['idtofile'].update(
-                idtofilearray)
-            outarray['filetypes']['devices']['filetoid'].update(filetoidarray)
-            outarray['filetypes']['devices']['idtofile'].update(idtofilearray)
-        if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 4):
-            outarray['filetypes']['block']['filetoid'].update(filetoidarray)
-            outarray['filetypes']['block']['idtofile'].update(idtofilearray)
-            outarray['filetypes']['devices']['filetoid'].update(filetoidarray)
-            outarray['filetypes']['devices']['idtofile'].update(idtofilearray)
-        if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 5):
-            outarray['filetypes']['directories']['filetoid'].update(
-                filetoidarray)
-            outarray['filetypes']['directories']['idtofile'].update(
-                idtofilearray)
-        if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 6):
-            outarray['filetypes']['symlinks']['filetoid'].update(filetoidarray)
-            outarray['filetypes']['symlinks']['idtofile'].update(idtofilearray)
-            outarray['filetypes']['devices']['filetoid'].update(filetoidarray)
-            outarray['filetypes']['devices']['idtofile'].update(idtofilearray)
-        lcfi = lcfi + 1
-    return outarray
+
+    # Buckets for categories
+    def _bucket():
+        return {"by_name": {}, "by_id": {}, "count": 0}
+
+    by_type = {}
+    for cat in CATEGORY_ORDER:
+        by_type[cat] = _bucket()
+
+    out = {
+        "list": inarray,
+        "fp": inarray.get("fp") if returnfp else None,
+        "entries": {},
+        "indexes": {
+            "by_name": {},
+            "by_type": by_type,
+        },
+        "counts": {"total": 0, "by_type": {}},
+        "unknown_types": {},
+    }
+
+    ffilelist = inarray.get("ffilelist") or []
+    try:
+        fnumfiles = int(inarray.get("fnumfiles", len(ffilelist)))
+    except Exception:
+        fnumfiles = len(ffilelist)
+
+    # Process only what's present
+    total = min(len(ffilelist), fnumfiles)
+
+    def _add(cat, name, fid):
+        b = by_type[cat]
+        b["by_name"][name] = fid
+        b["by_id"][fid] = name
+        # Count is number of unique names in this category
+        b["count"] = len(b["by_name"])
+
+    i = 0
+    while i < total:
+        e = ffilelist[i]
+        name = e.get("fname")
+        fid  = e.get("fid")
+        t    = e.get("ftype")
+
+        if name is None or fid is None or t is None:
+            i += 1
+            continue
+
+        # Store canonical entry once, keyed by fid
+        out["entries"][fid] = {"name": name, "type": t}
+
+        # Global reverse index for fast name -> id
+        out["indexes"]["by_name"][name] = fid
+
+        # Base category
+        base_cat = BASE_CATEGORY_BY_CODE.get(t)
+        if base_cat is not None:
+            _add(base_cat, name, fid)
+        else:
+            # Track unknown codes for visibility/forward-compat
+            lst = out["unknown_types"].setdefault(t, [])
+            if name not in lst:
+                lst.append(name)
+
+        # Union categories
+        for union_name, code_set in UNION_RULES:
+            if t in code_set:
+                _add(union_name, name, fid)
+
+        i += 1
+
+    # Counts
+    out["counts"]["total"] = total
+    for cat in CATEGORY_ORDER:
+        out["counts"]["by_type"][cat] = by_type[cat]["count"]
+
+    return out
 
 
 def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["crc32", "crc32", "crc32", "crc32"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=__file_format_dict__, seektoend=False, verbose=False, returnfp=False):
