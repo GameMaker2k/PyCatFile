@@ -9804,12 +9804,10 @@ def download_file_from_internet_file(url, headers=geturls_headers_pyfile_python_
             return download_file_from_sftp_file(url)
     elif(urlparts.scheme == "tcp" or urlparts.scheme == "udp"):
         outfile = MkTempFile()
-        use_auth = False
-        if(urlparts.username is not None and urlparts.password is not None):
-            use_auth = True
-        returnval = recv_to_fileobj(outfile, urlparts.hostname, urlparts.port, urlparts.scheme, require_auth=use_auth, expected_user=urlparts.username, expected_pass=urlparts.password)
+        returnval = recv_via_url(outfile, url, recv_to_fileobj)
         if(not returnval):
             return False
+        outfile.seek(0, 0)
         return outfile
     else:
         return False
@@ -9864,11 +9862,10 @@ def upload_file_to_internet_file(ifp, url):
         else:
             return upload_file_to_sftp_file(ifp, url)
     elif(urlparts.scheme == "tcp" or urlparts.scheme == "udp"):
-        use_auth = False
-        if(urlparts.username is not None and urlparts.password is not None):
-            use_auth = True
-        sftpfile.seek(0, 0)
-        returnval = send_from_fileobj(ifp, urlparts.hostname, urlparts.port, urlparts.scheme, expected_user=urlparts.username, expected_pass=urlparts.password)
+        ifp.seek(0, 0)
+        returnval = send_via_url(ifp, url, send_from_fileobj)
+        if(not returnval):
+            return False
         return returnval
     else:
         return False
