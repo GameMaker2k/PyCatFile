@@ -7096,7 +7096,7 @@ def StackedCatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__fi
     while True:
         if outstartfile >= outfsize:   # stop when function signals False
             break
-        is_valid_file = CatFileValidate(infile, fmttype, filestart, formatspecs, seektoend, verbose, True)
+        is_valid_file = ArchiveFileValidate(infile, fmttype, filestart, formatspecs, seektoend, verbose, True)
         if is_valid_file is False:   # stop when function signals False
             outretval.append(is_valid_file)
         else:
@@ -7111,7 +7111,11 @@ def StackedCatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__fi
             SeekToEndOfFile(infile)
         outfsize = infile.tell()
         infile.seek(outstartfile, 0)
-    return outretval
+    if(returnfp):
+        return infile
+    else:
+        infile.close()
+        return outretval
 
 
 def StackedCatFileValidateFile(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
