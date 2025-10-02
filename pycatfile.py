@@ -43,6 +43,18 @@ try:
     from backports import tempfile
 except ImportError:
     import tempfile
+
+try:
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    from socketserver import TCPServer
+    from urllib.parse import urlparse as _urlparse, parse_qs as _parse_qs
+    import base64 as _b64
+except ImportError:
+    from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+    from SocketServer import TCPServer
+    from urlparse import urlparse as _urlparse, parse_qs as _parse_qs
+    import base64 as _b64
+
 # FTP Support
 ftpssl = True
 try:
@@ -272,7 +284,7 @@ def get_default_threads():
 
 
 __use_pysftp__ = False
-__upload_proto_support__ = "^(ftp|ftps|sftp|scp|tcp|udp)://"
+__upload_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp)://"
 __download_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp)://"
 if(not havepysftp):
     __use_pysftp__ = False
@@ -1163,6 +1175,235 @@ def _discover_len_and_reset(fobj):
     except Exception:
         pass
     return (None, None)
+
+# ---------- helpers reused from your module ----------
+# expects: _to_bytes, _to_text, _discover_len_and_reset, _qflag, _qnum, _qstr
+# If you don't have _qflag/_qnum/_qstr here, reuse your existing ones.
+
+def _parse_http_url(url):
+    parts = _urlparse(url)
+    qs = _parse_qs(parts.query or "")
+
+    scheme = (parts.scheme or "").lower()
+    if scheme not in ("http", "https"):
+        raise ValueError("Only http:// or https:// supported here")
+
+    host = parts.hostname or "127.0.0.1"
+    port = int(parts.port or (443 if scheme == "https" else 80))
+    user = parts.username
+    pw   = parts.password
+    path = _to_text(parts.path or u"/")
+
+    chunk_size    = int(_qnum(qs, "chunk", 65536, float))
+    want_sha      = _qflag(qs, "sha", True)
+    enforce_path  = _qflag(qs, "enforce_path", True)
+    force_auth    = _qflag(qs, "auth", False)
+    mime          = _qstr(qs, "mime", "application/octet-stream")
+    certfile      = _qstr(qs, "cert", None)
+    keyfile       = _qstr(qs, "key", None)
+    timeout       = _qnum(qs, "timeout", None, float)
+    rate_limit    = _qnum(qs, "rate", None, float)  # bytes/sec (server pacing)
+
+    hdrs = _parse_headers_from_qs(qs)
+
+    return parts, dict(
+        scheme=scheme, host=host, port=port,
+        user=user, pw=pw, path=path,
+        chunk_size=chunk_size, want_sha=want_sha,
+        enforce_path=enforce_path,
+        require_auth=(force_auth or (user is not None or pw is not None)),
+        mime=mime,
+        certfile=certfile, keyfile=keyfile,
+        timeout=timeout,
+        rate_limit_bps=(int(rate_limit) if rate_limit else None),
+        extra_headers=hdrs
+    )
+
+def _basic_ok(auth_header, expect_user, expect_pass):
+    """
+    Check HTTP Basic auth header "Basic base64(user:pass)".
+    return True/False
+    """
+    if not auth_header or not auth_header.strip().lower().startswith("basic "):
+        return False
+    try:
+        b64 = auth_header.strip().split(" ", 1)[1]
+        raw = _b64.b64decode(_to_bytes(b64))
+        # raw may be bytes like b"user:pass"
+        try:
+            raw_txt = raw.decode("utf-8")
+        except Exception:
+            raw_txt = raw.decode("latin-1", "replace")
+        if ":" not in raw_txt:
+            return False
+        u, p = raw_txt.split(":", 1)
+        if expect_user is not None and u != _to_text(expect_user):
+            return False
+        if expect_pass is not None and p != _to_text(expect_pass):
+            return False
+        return True
+    except Exception:
+        return False
+
+_HEX_RE = re.compile(r'^[0-9a-fA-F]{32,}$')  # len>=32 keeps it simple; SHA-256 is 64
+
+def _int_or_none(v):
+    try:
+        return int(v)
+    except Exception:
+        return None
+
+def _strip_quotes(s):
+    if s and len(s) >= 2 and s[0] == s[-1] == '"':
+        return s[1:-1]
+    return s
+
+def _is_hexish(s):
+    return bool(s) and bool(_HEX_RE.match(s))
+
+def _pick_expected_len(headers):
+    # Prefer explicit X-File-Length, then Content-Length
+    xlen = headers.get('X-File-Length') or headers.get('x-file-length')
+    clen = headers.get('Content-Length') or headers.get('content-length')
+    return _int_or_none(xlen) or _int_or_none(clen)
+
+def _pick_expected_sha(headers):
+    # Prefer X-File-SHA256; otherwise, a strong ETag that looks like hex
+    sha = headers.get('X-File-SHA256') or headers.get('x-file-sha256')
+    if sha:
+        return _strip_quotes(sha).lower()
+    etag = headers.get('ETag') or headers.get('etag')
+    if etag:
+        etag = _strip_quotes(etag)
+        if _is_hexish(etag):
+            return etag.lower()
+    return None
+
+def _headers_dict_from_response(resp, lib):
+    """
+    Return a case-sensitive dict-like of headers turned into a plain dict for all libs.
+    lib in {'requests','httpx','mechanize','urllib'}
+    """
+    if lib == 'requests':
+        # Case-insensitive dict; items() yields canonicalized keys
+        return dict(resp.headers or {})
+    if lib == 'httpx':
+        return dict(resp.headers or {})
+    if lib == 'mechanize':
+        # mechanize response.info() returns an email.message.Message-like
+        info = getattr(resp, 'info', lambda: None)()
+        if info:
+            return dict(info.items())
+        return {}
+    if lib == 'urllib':
+        info = getattr(resp, 'info', lambda: None)()
+        if info:
+            return dict(info.items())
+        return {}
+    return {}
+
+def _stream_copy_and_verify(src_iter, dst_fp, expected_len=None, expected_sha=None, chunk_size=65536):
+    """
+    src_iter yields bytes; we copy to dst_fp and (optionally) verify length/SHA-256.
+    Returns total bytes written.
+    """
+    h = hashlib.sha256() if expected_sha else None
+    total = 0
+    for chunk in src_iter:
+        if not chunk:
+            continue
+        b = _to_bytes(chunk)
+        if h is not None:
+            h.update(b)
+        dst_fp.write(b)
+        total += len(b)
+    try:
+        dst_fp.flush()
+    except Exception:
+        pass
+
+    if expected_len is not None and total != expected_len:
+        raise IOError("HTTP length mismatch: got %d bytes, expected %d" % (total, expected_len))
+
+    if expected_sha is not None and h is not None:
+        got = h.hexdigest().lower()
+        if got != expected_sha.lower():
+            raise IOError("HTTP SHA-256 mismatch: got %s expected %s" % (got, expected_sha))
+    return total
+
+def _parse_headers_from_qs(qs):
+    """
+    Supports:
+      h=Name: Value (repeatable) / header=...
+      headers=Name1: Val1|Name2: Val2       (| delimited)
+      hjson={"Name":"Val","X-Any":"Thing"}  (JSON object)
+    Returns a plain dict (last wins on duplicate keys).
+    """
+    hdrs = {}
+
+    def _add_line(line):
+        if not line:
+            return
+        parts = line.split(":", 1)  # only first colon splits
+        if len(parts) != 2:
+            return
+        k = parts[0].strip()
+        v = parts[1].strip()
+        if k:
+            hdrs[_to_text(k)] = _to_text(v)
+
+    # repeatable h= / header=
+    for key in ("h", "header"):
+        for v in qs.get(key, []):
+            _add_line(v)
+
+    # headers=Name1: Val1|Name2: Val2
+    for v in qs.get("headers", []):
+        if not v:
+            continue
+        for seg in v.split("|"):
+            _add_line(seg)
+
+    # hjson=JSON  (uses your global 'json' import: ujson/simplejson/json)
+    for v in qs.get("hjson", []):
+        if not v:
+            continue
+        try:
+            obj = json.loads(v)
+            if isinstance(obj, dict):
+                for k, vv in obj.items():
+                    if k:
+                        hdrs[_to_text(k)] = _to_text(vv)
+        except Exception:
+            # ignore malformed JSON silently
+            pass
+
+    return hdrs
+
+
+def _pace_rate(last_ts, sent_bytes_since_ts, rate_limit_bps, add_bytes):
+    """
+    Simple average-rate pacing. Returns (sleep_seconds, new_last_ts, new_sent_since_ts).
+    """
+    if not rate_limit_bps or rate_limit_bps <= 0:
+        return (0.0, last_ts, sent_bytes_since_ts)
+    now = time.time()
+    # accumulate
+    sent_bytes_since_ts += add_bytes
+    elapsed = max(1e-6, now - last_ts)
+    cur_bps = sent_bytes_since_ts / elapsed
+    sleep_s = 0.0
+    if cur_bps > rate_limit_bps:
+        # how much time needed at least to bring avg down?
+        sleep_s = max(0.0, (sent_bytes_since_ts / float(rate_limit_bps)) - elapsed)
+        # cap sleep to reasonable chunk to avoid long stalls
+        if sleep_s > 0.25:
+            sleep_s = 0.25
+    # roll window occasionally to keep numbers small
+    if elapsed >= 1.0:
+        last_ts = now
+        sent_bytes_since_ts = 0
+    return (sleep_s, last_ts, sent_bytes_since_ts)
 
 
 def DetectTarBombCatFileArray(listarrayfiles,
@@ -10329,6 +10570,182 @@ def download_file_from_internet_file(url, headers=geturls_headers_pyfile_python_
         return False
     return False
 
+def download_file_from_http_file_alt(url, headers=None, usehttp=__use_http_lib__):
+    """
+    Stream a URL to a temp file with optional auth (from URL) and
+    optional integrity checks based on headers.
+
+    Query flags:
+      verify_len=1|0  (default: 1 if length header present)
+      verify_sha=1|0  (default: 1 if X-File-SHA256 or strong ETag present)
+    """
+    if headers is None:
+        headers = {}
+
+    # Parse URL, extract user/pass, and rebuild without auth
+    urlparts = urlparse(url)
+    username = unquote(urlparts.username) if urlparts.username else None
+    password = unquote(urlparts.password) if urlparts.password else None
+
+    # verification controls from query string
+    q = parse_qs(urlparts.query or "")
+    want_verify_len = _qflag(q, "verify_len", None)  # None = auto
+    want_verify_sha = _qflag(q, "verify_sha", None)
+
+    # Rebuild netloc without userinfo
+    netloc = urlparts.hostname or ''
+    if urlparts.port:
+        netloc += ':' + str(urlparts.port)
+    rebuilt_url = urlunparse((urlparts.scheme, netloc, urlparts.path,
+                              urlparts.params, urlparts.query, urlparts.fragment))
+
+    # Allocate destination
+    httpfile = MkTempFile()
+
+    # Common chunk size (safe default even for chunked)
+    CHUNK = 64 * 1024
+
+    # --- Branch 1: requests ---
+    if usehttp == 'requests' and haverequests:
+        # build auth
+        auth = (username, password) if (username and password) else None
+        resp = requests.get(rebuilt_url, headers=headers, auth=auth, timeout=(5, 30), stream=True)
+        resp.raise_for_status()
+
+        # headers & expectations
+        hdrs = _headers_dict_from_response(resp, 'requests')
+        expected_len = _pick_expected_len(hdrs)
+        expected_sha = _pick_expected_sha(hdrs)
+
+        # auto-verify defaults
+        verify_len = want_verify_len if want_verify_len is not None else (expected_len is not None)
+        verify_sha = want_verify_sha if want_verify_sha is not None else (expected_sha is not None)
+
+        # iter bytes
+        resp.raw.decode_content = True  # allow gzip transparently if server used it
+        if verify_len or verify_sha:
+            it = resp.iter_content(chunk_size=CHUNK)
+            _stream_copy_and_verify(
+                it, httpfile,
+                expected_len=(expected_len if verify_len else None),
+                expected_sha=(expected_sha if verify_sha else None),
+                chunk_size=CHUNK
+            )
+        else:
+            # Fast path: no verify; still stream to avoid large memory
+            for chunk in resp.iter_content(chunk_size=CHUNK):
+                if chunk:
+                    httpfile.write(_to_bytes(chunk))
+
+    # --- Branch 2: httpx ---
+    elif usehttp == 'httpx' and havehttpx:
+        auth = (username, password) if (username and password) else None
+        with httpx.Client(follow_redirects=True, timeout=30.0, auth=auth) as client:
+            r = client.get(rebuilt_url)
+            r.raise_for_status()
+            hdrs = _headers_dict_from_response(r, 'httpx')
+            expected_len = _pick_expected_len(hdrs)
+            expected_sha = _pick_expected_sha(hdrs)
+            verify_len = want_verify_len if want_verify_len is not None else (expected_len is not None)
+            verify_sha = want_verify_sha if want_verify_sha is not None else (expected_sha is not None)
+
+            if verify_len or verify_sha:
+                it = r.iter_bytes()
+                _stream_copy_and_verify(
+                    it, httpfile,
+                    expected_len=(expected_len if verify_len else None),
+                    expected_sha=(expected_sha if verify_sha else None),
+                    chunk_size=CHUNK
+                )
+            else:
+                for chunk in r.iter_bytes():
+                    if chunk:
+                        httpfile.write(_to_bytes(chunk))
+
+    # --- Branch 3: mechanize ---
+    elif usehttp == 'mechanize' and havemechanize:
+        br = mechanize.Browser()
+        br.set_handle_robots(False)
+        if headers:
+            br.addheaders = list(headers.items())
+        # mechanize basic-auth: add_password(url, user, pass)
+        if username and password:
+            br.add_password(rebuilt_url, username, password)
+
+        response = br.open(rebuilt_url, timeout=30.0 if hasattr(br, 'timeout') else None)
+        hdrs = _headers_dict_from_response(response, 'mechanize')
+        expected_len = _pick_expected_len(hdrs)
+        expected_sha = _pick_expected_sha(hdrs)
+        verify_len = want_verify_len if want_verify_len is not None else (expected_len is not None)
+        verify_sha = want_verify_sha if want_verify_sha is not None else (expected_sha is not None)
+
+        if verify_len or verify_sha:
+            def _iter_mech(resp, sz):
+                while True:
+                    chunk = resp.read(sz)
+                    if not chunk:
+                        break
+                    yield chunk
+            _stream_copy_and_verify(
+                _iter_mech(response, CHUNK), httpfile,
+                expected_len=(expected_len if verify_len else None),
+                expected_sha=(expected_sha if verify_sha else None),
+                chunk_size=CHUNK
+            )
+        else:
+            # simple stream copy
+            while True:
+                chunk = response.read(CHUNK)
+                if not chunk:
+                    break
+                httpfile.write(_to_bytes(chunk))
+
+    # --- Branch 4: urllib fallback ---
+    else:
+        request = Request(rebuilt_url, headers=headers)
+        opener = None
+        if username and password:
+            password_mgr = HTTPPasswordMgrWithDefaultRealm()
+            password_mgr.add_password(None, rebuilt_url, username, password)
+            auth_handler = HTTPBasicAuthHandler(password_mgr)
+            opener = build_opener(auth_handler)
+        else:
+            opener = build_opener()
+
+        response = opener.open(request, timeout=30)
+        hdrs = _headers_dict_from_response(response, 'urllib')
+        expected_len = _pick_expected_len(hdrs)
+        expected_sha = _pick_expected_sha(hdrs)
+        verify_len = want_verify_len if want_verify_len is not None else (expected_len is not None)
+        verify_sha = want_verify_sha if want_verify_sha is not None else (expected_sha is not None)
+
+        if verify_len or verify_sha:
+            def _iter_urllib(resp, sz):
+                while True:
+                    chunk = resp.read(sz)
+                    if not chunk:
+                        break
+                    yield chunk
+            _stream_copy_and_verify(
+                _iter_urllib(response, CHUNK), httpfile,
+                expected_len=(expected_len if verify_len else None),
+                expected_sha=(expected_sha if verify_sha else None),
+                chunk_size=CHUNK
+            )
+        else:
+            while True:
+                chunk = response.read(CHUNK)
+                if not chunk:
+                    break
+                httpfile.write(_to_bytes(chunk))
+
+    # Rewind before returning
+    try:
+        httpfile.seek(0, 0)
+    except Exception:
+        pass
+    return httpfile
+
 
 def download_file_from_internet_uncompress_file(url, headers=geturls_headers_pyfile_python_alt, filestart=0, formatspecs=__file_format_dict__):
     fp = download_file_from_internet_file(url)
@@ -10380,6 +10797,12 @@ def upload_file_to_internet_file(ifp, url):
     elif(urlparts.scheme == "tcp" or urlparts.scheme == "udp"):
         ifp.seek(0, 0)
         returnval = send_via_url(ifp, url, send_from_fileobj)
+        if(not returnval):
+            return False
+        return returnval
+    elif(urlparts.scheme == "http" or urlparts.scheme == "https"):
+        ifp.seek(0, 0)
+        returnval = send_via_http(ifp, url, run_http_file_server)
         if(not returnval):
             return False
         return returnval
@@ -11012,6 +11435,286 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
 
     return total
 
+class _OneShotHTTPServer(HTTPServer):
+    allow_reuse_address = True
+
+def run_http_file_server(fileobj, url,
+                         on_progress=None,   # callback(bytes_sent, total_or_None)
+                         backlog=5):
+    """
+    Serve 'fileobj' ONCE over HTTP/HTTPS according to URL parameters, then return.
+    URL form:
+      http://[user:pass@]host:port/path?chunk=65536&sha=1&enforce_path=1
+        &mime=application/octet-stream
+        &rate=bytes_per_sec
+        &h=Header-Name: value  (repeatable)
+        &headers=K1: V1|K2: V2
+        &hjson={"K":"V"}
+      https://... requires ?cert=/path/cert.pem[&key=/path/key.pem]
+    """
+    parts, o = _parse_http_url(url)  # your existing parser (now returns extra_headers/rate_limit_bps)
+
+    # Precompute length and optional sha256
+    total_bytes, start_pos = _discover_len_and_reset(fileobj)
+    sha_hex = None
+    if o["want_sha"] and total_bytes is not None:
+        try:
+            import hashlib
+            h = hashlib.sha256()
+            try: cur = fileobj.tell()
+            except Exception: cur = None
+            if start_pos is not None:
+                try: fileobj.seek(start_pos, os.SEEK_SET)
+                except Exception: pass
+            _HSZ = 1024 * 1024
+            while True:
+                blk = fileobj.read(_HSZ)
+                if not blk: break
+                h.update(_to_bytes(blk))
+            sha_hex = h.hexdigest()
+            # restore
+            if start_pos is not None:
+                try: fileobj.seek(start_pos, os.SEEK_SET)
+                except Exception: pass
+            elif cur is not None:
+                try: fileobj.seek(cur, os.SEEK_SET)
+                except Exception: pass
+        except Exception:
+            sha_hex = None
+
+    expected_path = _to_text(o["path"] or u"/")
+    expected_user = o["user"]
+    expected_pass = o["pw"]
+
+    # Shared state for handler
+    state = dict(
+        fileobj=fileobj,
+        total=total_bytes,
+        sha=sha_hex,
+        chunk_size=int(o["chunk_size"] or 65536),
+        mime=_to_text(o["mime"]),
+        enforce_path=bool(o["enforce_path"]),
+        require_auth=bool(o["require_auth"]),
+        expected_path=expected_path,
+        expected_user=expected_user,
+        expected_pass=expected_pass,
+        timeout=o["timeout"],
+        on_progress=on_progress,
+        bytes_sent=0,
+        extra_headers=o.get("extra_headers") or {},     # NEW
+        rate_limit_bps=o.get("rate_limit_bps") or None  # NEW
+    )
+
+    # -------- Request handler --------
+    class Handler(BaseHTTPRequestHandler):
+        # def log_message(self, fmt, *args): pass  # uncomment to silence logs
+
+        def _fail_401(self):
+            self.send_response(401, "Unauthorized")
+            self.send_header("WWW-Authenticate", 'Basic realm="file"')
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.end_headers()
+            try: self.wfile.write(_to_bytes("Unauthorized\n"))
+            except Exception: pass
+
+        def _fail_404(self):
+            self.send_response(404, "Not Found")
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.end_headers()
+            try: self.wfile.write(_to_bytes("Not Found\n"))
+            except Exception: pass
+
+        def _ok_headers(self, length_known):
+            self.send_response(200, "OK")
+            self.send_header("Content-Type", state["mime"])
+            if length_known and state["total"] is not None:
+                self.send_header("Content-Length", str(int(state["total"])))
+            else:
+                self.send_header("Transfer-Encoding", "chunked")
+            # integrity/metadata
+            if state["sha"]:
+                self.send_header("ETag", '"%s"' % state["sha"])
+                self.send_header("X-File-SHA256", state["sha"])
+            if state["total"] is not None:
+                self.send_header("X-File-Length", str(int(state["total"])))
+            # --- custom headers (NEW) ---
+            for k, v in (state["extra_headers"] or {}).items():
+                try:
+                    self.send_header(_to_text(k), _to_text(v))
+                except Exception:
+                    pass
+            self.end_headers()
+
+        def _path_only(self):
+            p = _urlparse(self.path or "/")
+            try:
+                from urllib.parse import unquote
+            except ImportError:
+                from urllib import unquote
+            return _to_text(unquote(p.path or "/"))
+
+        def _check_basic_auth(self):
+            # Only called when auth required
+            ah = self.headers.get("Authorization")
+            if not ah or not ah.strip().lower().startswith("basic "):
+                return False
+            try:
+                import base64
+                b64 = ah.strip().split(" ", 1)[1]
+                raw = base64.b64decode(_to_bytes(b64))
+                try: raw_txt = raw.decode("utf-8")
+                except Exception: raw_txt = raw.decode("latin-1", "replace")
+                if ":" not in raw_txt:
+                    return False
+                u, p = raw_txt.split(":", 1)
+                if state["expected_user"] is not None and u != _to_text(state["expected_user"]):
+                    return False
+                if state["expected_pass"] is not None and p != _to_text(state["expected_pass"]):
+                    return False
+                return True
+            except Exception:
+                return False
+
+        def _serve_body(self, method):
+            # optional per-request socket timeout
+            if state["timeout"] is not None:
+                try: self.connection.settimeout(state["timeout"])
+                except Exception: pass
+
+            # HEAD: headers only
+            if method == "HEAD":
+                self._ok_headers(length_known=(state["total"] is not None))
+                return
+
+            # GET
+            if state["total"] is not None:
+                # Known length path
+                self._ok_headers(length_known=True)
+                if start_pos is not None:
+                    try: state["fileobj"].seek(start_pos, os.SEEK_SET)
+                    except Exception: pass
+
+                sent = 0
+                cs = state["chunk_size"]
+                last_cb_ts = time.time()
+                # pacing state (NEW)
+                rl_ts = time.time()
+                rl_bytes = 0
+
+                while True:
+                    buf = state["fileobj"].read(cs)
+                    if not buf: break
+                    b = _to_bytes(buf)
+                    try:
+                        self.wfile.write(b)
+                    except Exception:
+                        break
+                    sent += len(b)
+                    state["bytes_sent"] += len(b)
+
+                    # progress callback (every ~100ms)
+                    if state["on_progress"] and (time.time() - last_cb_ts) >= 0.1:
+                        try: state["on_progress"](state["bytes_sent"], state["total"])
+                        except Exception: pass
+                        last_cb_ts = time.time()
+
+                    # --- server pacing (NEW) ---
+                    if state["rate_limit_bps"]:
+                        sleep_s, rl_ts, rl_bytes = _pace_rate(
+                            rl_ts, rl_bytes, state["rate_limit_bps"], add_bytes=len(b)
+                        )
+                        if sleep_s > 0.0:
+                            time.sleep(sleep_s)
+
+            else:
+                # Unknown length → chunked
+                self._ok_headers(length_known=False)
+                cs = state["chunk_size"]
+                last_cb_ts = time.time()
+                rl_ts = time.time()
+                rl_bytes = 0
+
+                while True:
+                    buf = state["fileobj"].read(cs)
+                    if not buf:
+                        # terminating chunk
+                        try:
+                            self.wfile.write(b"0\r\n\r\n")
+                        except Exception:
+                            pass
+                        break
+                    b = _to_bytes(buf)
+                    try:
+                        self.wfile.write(("%x\r\n" % len(b)).encode("ascii"))
+                        self.wfile.write(b)
+                        self.wfile.write(b"\r\n")
+                    except Exception:
+                        break
+                    state["bytes_sent"] += len(b)
+
+                    # progress callback
+                    if state["on_progress"] and (time.time() - last_cb_ts) >= 0.1:
+                        try: state["on_progress"](state["bytes_sent"], None)
+                        except Exception: pass
+                        last_cb_ts = time.time()
+
+                    # --- server pacing (NEW) ---
+                    if state["rate_limit_bps"]:
+                        sleep_s, rl_ts, rl_bytes = _pace_rate(
+                            rl_ts, rl_bytes, state["rate_limit_bps"], add_bytes=len(b)
+                        )
+                        if sleep_s > 0.0:
+                            time.sleep(sleep_s)
+
+        def _handle(self, method):
+            # 1) Path enforcement
+            req_path = self._path_only()
+            if state["enforce_path"] and (req_path != state["expected_path"]):
+                return self._fail_404()
+
+            # 2) Auth
+            if state["require_auth"] and not self._check_basic_auth():
+                return self._fail_401()
+
+            # 3) Serve
+            return self._serve_body(method)
+
+        def do_GET(self):
+            return self._handle("GET")
+
+        def do_HEAD(self):
+            return self._handle("HEAD")
+
+    # Bind/listen one-shot
+    server_address = (o["host"], o["port"])
+    httpd = _OneShotHTTPServer(server_address, Handler)
+
+    # TLS wrap if https
+    if o["scheme"] == "https":
+        import ssl
+        if not o["certfile"]:
+            httpd.server_close()
+            raise ValueError("HTTPS requires ?cert=/path/cert.pem (and optionally &key=...)")
+        try:
+            httpd.socket = ssl.wrap_socket(
+                httpd.socket, certfile=o["certfile"], keyfile=o["keyfile"], server_side=True
+            )
+        except Exception:
+            httpd.server_close()
+            raise
+
+    try:
+        if o["timeout"] is not None:
+            try: httpd.socket.settimeout(o["timeout"])
+            except Exception: pass
+        httpd.handle_request()  # one request then return
+    finally:
+        try: httpd.server_close()
+        except Exception: pass
+
+    return state["bytes_sent"]
+
+
 # ---------- URL drivers ----------
 def send_via_url(fileobj, url, send_from_fileobj_func=send_from_fileobj):
     parts, o = _parse_net_url(url)
@@ -11047,3 +11750,73 @@ def recv_via_url(fileobj, url, recv_to_fileobj_func=recv_to_fileobj):
         expect_scope=o["path"],
         enforce_path=o["enforce_path"],
     )
+
+# ------------------------------
+# HTTP/HTTPS URL drivers (server/client)
+# ------------------------------
+
+def send_via_http(fileobj, url, send_server_func=None, on_progress=None, backlog=5):
+    """
+    SERVER SIDE (uploader): serve 'fileobj' once via HTTP/HTTPS according to URL.
+    Equivalent to send_via_url but for http(s)://
+    
+    Args:
+        fileobj: readable file-like object positioned at the start of the data to serve
+        url (str): http(s)://[user:pass@]host:port/path?query...
+        send_server_func: optional override (defaults to run_http_file_server)
+        on_progress: optional callback(bytes_sent, total_or_None)
+        backlog (int): listen backlog (for the one accepted request)
+    Returns:
+        int: total bytes sent to the client (0 if none)
+    """
+    if send_server_func is None:
+        # Provided earlier; tiny HTTP/HTTPS one-shot server with path/auth/sha support
+        send_server_func = run_http_file_server
+    return send_server_func(fileobj, url, on_progress=on_progress, backlog=backlog)
+
+
+def recv_via_http(fileobj, url, http_download_func=None, copy_chunk_size=65536):
+    """
+    CLIENT SIDE (downloader): fetch via HTTP/HTTPS and copy into fileobj.
+    Supports ?h=/headers=…/hjson=… for outbound request headers,
+    and ?rate=… to throttle local write rate (bytes/sec).
+    """
+    if http_download_func is None:
+        http_download_func = download_file_from_http_file
+
+    # Extract client-side extras: headers + optional write rate
+    u = urlparse(url)
+    qs = parse_qs(u.query or "")
+    client_headers = _parse_headers_from_qs(qs)
+    rate_limit_bps = _qnum(qs, "rate", None, float)  # client write pacing
+
+    # Use your downloader (it accepts headers=)
+    tmpfp = http_download_func(url, headers=client_headers)
+    total = 0
+    try:
+        try: tmpfp.seek(0)
+        except Exception: pass
+
+        last_ts = time.time()
+        bytes_since = 0
+
+        while True:
+            chunk = tmpfp.read(copy_chunk_size)
+            if not chunk:
+                break
+            b = _to_bytes(chunk)
+            fileobj.write(b)
+            total += len(b)
+
+            # client-side pacing (write throttling)
+            if rate_limit_bps:
+                sleep_s, last_ts, bytes_since = _pace_rate(last_ts, bytes_since, int(rate_limit_bps), len(b))
+                if sleep_s > 0.0:
+                    time.sleep(sleep_s)
+
+        try: fileobj.flush()
+        except Exception: pass
+    finally:
+        try: tmpfp.close()
+        except Exception: pass
+    return total
