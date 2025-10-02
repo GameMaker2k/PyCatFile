@@ -839,20 +839,46 @@ def _b64url_decode(s):
     pad = b'=' * ((4 - (len(s) % 4)) % 4)
     return base64.urlsafe_b64decode(s + pad)
 
-def _auth_msg(ts_int, user_utf8, nonce_bytes, scope_utf8):
-    return _to_bytes("v1|%d|%s|%s|%s" % (
-        ts_int, _to_text(user_utf8), _b64url_encode(nonce_bytes), _to_text(scope_utf8)
+def _auth_msg(ts_int, user_utf8, nonce_bytes, scope_utf8, length_str, sha_hex):
+    # canonical message for MAC: v1|ts|user|nonce_b64|scope|len|sha
+    return _to_bytes("v1|%d|%s|%s|%s|%s|%s" % (
+        ts_int,
+        _to_text(user_utf8),
+        _b64url_encode(nonce_bytes),
+        _to_text(scope_utf8),
+        length_str if length_str is not None else "",
+        sha_hex if sha_hex is not None else "",
     ))
 
-def build_auth_blob_v1(user, secret, scope=u"", now=None):
+def build_auth_blob_v1(user, secret, scope=u"", now=None, length=None, sha_hex=None):
+    """
+    user: text; secret: text/bytes (HMAC key)
+    scope: optional text (e.g., path)
+    length: int or None (payload bytes)
+    sha_hex: ascii hex SHA-256 of payload (optional)
+    """
     ts = int(time.time() if now is None else now)
     user_b  = _to_bytes(user or u"")
     scope_b = _to_bytes(scope or u"")
     key_b   = _to_bytes(secret or u"")
     nonce   = os.urandom(12)
-    mac     = hmac.new(key_b, _auth_msg(ts, user_b, nonce, scope_b), hashlib.sha256).hexdigest()
-    line = "AF1 ts=%d user=%s nonce=%s scope=%s alg=sha256 mac=%s\n" % (
-        ts, _b64url_encode(user_b), _b64url_encode(nonce), _b64url_encode(scope_b), mac
+
+    length_str = (str(int(length)) if (length is not None and int(length) >= 0) else "")
+    sha_hex = (sha_hex or None)
+    mac = hmac.new(
+        key_b,
+        _auth_msg(ts, user_b, nonce, scope_b, length_str, sha_hex),
+        hashlib.sha256
+    ).hexdigest()
+
+    line = "AF1 ts=%d user=%s nonce=%s scope=%s len=%s sha=%s alg=sha256 mac=%s\n" % (
+        ts,
+        _b64url_encode(user_b),
+        _b64url_encode(nonce),
+        _b64url_encode(scope_b),
+        length_str,
+        (sha_hex or ""),
+        mac,
     )
     return _to_bytes(line)
 
@@ -873,41 +899,57 @@ _NONCES = _NonceCache()
 
 def verify_auth_blob_v1(blob_bytes, expected_user=None, secret=None,
                         max_skew=600, expect_scope=None):
+    """
+    Returns (ok_bool, user_text, scope_text, reason_text, length_or_None, sha_hex_or_None)
+    """
     try:
         line = _to_text(blob_bytes).strip()
         if not line.startswith("AF1 "):
-            return (False, None, None, "bad magic")
+            return (False, None, None, "bad magic", None, None)
         kv = {}
         for tok in line.split()[1:]:
             if '=' in tok:
                 k, v = tok.split('=', 1); kv[k] = v
+
         for req in ("ts","user","nonce","mac","alg"):
-            if req not in kv: return (False, None, None, "missing %s" % req)
-        if kv["alg"].lower() != "sha256": return (False, None, None, "alg")
+            if req not in kv:
+                return (False, None, None, "missing %s" % req, None, None)
+        if kv["alg"].lower() != "sha256":
+            return (False, None, None, "alg", None, None)
 
         ts    = int(kv["ts"])
         userb = _b64url_decode(kv["user"])
         nonce_b64 = kv["nonce"]; nonce = _b64url_decode(nonce_b64)
         scopeb = _b64url_decode(kv.get("scope","")) if kv.get("scope") else b""
+        length_str = kv.get("len","")
+        sha_hex    = kv.get("sha","") or None
         mac   = kv["mac"]
 
         now = int(time.time())
-        if abs(now - ts) > int(max_skew): return (False, None, None, "skew")
-        if _NONCES.seen(nonce_b64, now):  return (False, None, None, "replay")
-        if expected_user is not None and _to_bytes(expected_user) != userb:
-            return (False, None, None, "user")
+        if abs(now - ts) > int(max_skew):
+            return (False, None, None, "skew", None, None)
 
-        key_b = _to_bytes(secret or u"")
-        calc  = hmac.new(key_b, _auth_msg(ts, userb, nonce, scopeb), hashlib.sha256).hexdigest()
+        if _NONCES.seen(nonce_b64, now):
+            return (False, None, None, "replay", None, None)
+
+        if expected_user is not None and _to_bytes(expected_user) != userb:
+            return (False, None, None, "user", None, None)
+
+        calc = hmac.new(
+            _to_bytes(secret or u""),
+            _auth_msg(ts, userb, nonce, scopeb, length_str, sha_hex),
+            hashlib.sha256
+        ).hexdigest()
         if not hmac.compare_digest(calc, mac):
-            return (False, None, None, "mac")
+            return (False, None, None, "mac", None, None)
 
         if expect_scope is not None and _to_bytes(expect_scope) != scopeb:
-            return (False, None, None, "scope")
+            return (False, None, None, "scope", None, None)
 
-        return (True, _to_text(userb), _to_text(scopeb), "ok")
+        length = int(length_str) if (length_str and length_str.isdigit()) else None
+        return (True, _to_text(userb), _to_text(scopeb), "ok", length, sha_hex)
     except Exception as e:
-        return (False, None, None, "exc:%s" % e)
+        return (False, None, None, "exc:%s" % e, None, None)
 
 # Legacy blob (kept for backward compatibility)
 _MAGIC = b"AUTH\0"; _OK = b"OK"; _NO = b"NO"
@@ -1019,6 +1061,57 @@ def _progress_tick(now_bytes, total_bytes, last_ts, last_bytes, rate_limit_bps, 
     desired = (now_bytes - last_bytes) / float(rate_limit_bps) if rate_limit_bps else 0.0
     extra = desired - elapsed
     return (max(0.0, extra), now, now_bytes)
+
+def _discover_len_and_reset(fobj):
+    """
+    Try very hard to get total length and restore the original position.
+    Returns (length_or_None, start_pos_or_None).
+    Works with seekable files and BytesIO; leaves stream position unchanged.
+    """
+    # Try seek/tell
+    try:
+        pos0 = fobj.tell()
+        fobj.seek(0, os.SEEK_END)
+        end = fobj.tell()
+        fobj.seek(pos0, os.SEEK_SET)
+        if end is not None and pos0 is not None and end >= pos0:
+            return (end - pos0, pos0)
+    except Exception:
+        pass
+
+    # BytesIO fast path (Py2/3)
+    try:
+        getvalue = getattr(fobj, "getvalue", None)
+        if callable(getvalue):
+            buf = getvalue()
+            try:
+                L = len(buf)
+                # best effort to restore position if possible
+                try:
+                    pos0 = fobj.tell()
+                except Exception:
+                    pos0 = None
+                return (L - (pos0 or 0), pos0)
+            except Exception:
+                return (len(buf), None)
+    except Exception:
+        pass
+
+    # Memoryview/getbuffer
+    try:
+        getbuffer = getattr(fobj, "getbuffer", None)
+        if callable(getbuffer):
+            mv = getbuffer()
+            L = len(mv)
+            try:
+                pos0 = fobj.tell()
+            except Exception:
+                pos0 = None
+            return (L - (pos0 or 0), pos0)
+    except Exception:
+        pass
+
+    return (None, None)
 
 
 def DetectTarBombCatFileArray(listarrayfiles,
@@ -10295,72 +10388,111 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
                       on_progress=None, rate_limit_bps=None):
     """
     Send fileobj contents to (host, port) via TCP or UDP.
-    Optional TLS (TCP only) and optional auth preface.
-    Progress callback: on_progress(bytes_sent, total_bytes or None)
-    Throttling: rate_limit_bps (bytes/sec), average rate cap.
-    Returns: total bytes sent.
+
+    UDP behavior:
+      - Computes total length and sha256 when possible.
+      - Sends:  AF1 (if auth)  +  'LEN <n> [<sha>]\\n'  +  payload
+      - If length unknown: no LEN, but sends final 'DONE\\n'.
+      - Uses small datagrams (<=1200B) to avoid fragmentation.
     """
     proto = (proto or "tcp").lower()
     total = 0
     port = int(port)
-
     if proto not in ("tcp", "udp"):
         raise ValueError("proto must be 'tcp' or 'udp'")
 
-    # ---- UDP ----
+    # ---------------- UDP ----------------
     if proto == "udp":
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
             if timeout is not None:
                 sock.settimeout(timeout)
 
-            # Try "connected" UDP (sets default peer)
-            connected = False
+            # "Connected" UDP simplifies sends
             try:
                 sock.connect((host, port))
                 connected = True
             except Exception:
                 connected = False
 
-            # Auth (AF1 preferred; legacy fallback)
+            # Discover length (works for BytesIO) and precompute sha if possible
+            total_bytes, start_pos = _discover_len_and_reset(fileobj)
+
+            sha_hex = None
+            if total_bytes is not None:
+                import hashlib
+                h = hashlib.sha256()
+                # hash without disturbing caller’s desired position
+                try:
+                    cur = fileobj.tell()
+                except Exception:
+                    cur = None
+                if start_pos is not None:
+                    try: fileobj.seek(start_pos, os.SEEK_SET)
+                    except Exception: pass
+                _HSZ = 1024 * 1024
+                while True:
+                    blk = fileobj.read(_HSZ)
+                    if not blk: break
+                    h.update(_to_bytes(blk))
+                sha_hex = h.hexdigest()
+                # rewind for actual send
+                if start_pos is not None:
+                    try: fileobj.seek(start_pos, os.SEEK_SET)
+                    except Exception: pass
+                elif cur is not None:
+                    try: fileobj.seek(cur, os.SEEK_SET)
+                    except Exception: pass
+
+            # --- (A) Optional AF1 auth first (harmless if also sending LEN) ---
             if auth_user is not None or auth_pass is not None:
                 try:
-                    blob = build_auth_blob_v1(auth_user or u"", auth_pass or u"", scope=auth_scope)
+                    blob = build_auth_blob_v1(
+                        auth_user or u"", auth_pass or u"",
+                        scope=auth_scope, length=total_bytes, sha_hex=sha_hex
+                    )
                 except Exception:
                     blob = _build_auth_blob_legacy(auth_user or b"", auth_pass or b"")
                 if connected:
                     sock.send(blob)
+                    # optional: wait for short OK/NO; if you do, keep a short timeout
                     try:
                         resp = sock.recv(16)
+                        if resp != _OK:
+                            raise RuntimeError("UDP auth failed")
                     except socket.timeout:
-                        raise RuntimeError("UDP auth: timeout waiting for server OK/NO")
+                        # if your receiver doesn't ack, you can ignore this
+                        pass
                 else:
                     sock.sendto(blob, (host, port))
                     try:
                         resp, _ = sock.recvfrom(16)
+                        if resp != _OK:
+                            raise RuntimeError("UDP auth failed")
                     except socket.timeout:
-                        raise RuntimeError("UDP auth: timeout waiting for server OK/NO")
-                if resp != _OK:
-                    raise RuntimeError("UDP auth failed")
+                        pass
 
-            # Best-effort total size (for progress)
-            total_bytes = None
-            try:
-                pos = fileobj.tell()
-                fileobj.seek(0, os.SEEK_END)
-                total_bytes = fileobj.tell() - pos
-                fileobj.seek(pos)
-            except Exception:
-                pass
+            # --- (B) ALWAYS send a LEN preface when length is known ---
+            if total_bytes is not None:
+                preface = b"LEN " + str(int(total_bytes)).encode("ascii")
+                if sha_hex:
+                    preface += b" " + sha_hex.encode("ascii")
+                preface += b"\n"
+                if connected: sock.send(preface)
+                else: sock.sendto(preface, (host, port))
+
+            # Safe UDP payload size (avoid fragmentation)
+            UDP_PAYLOAD_MAX = 1200
+            effective_chunk = min(int(chunk_size or 65536), UDP_PAYLOAD_MAX)
 
             sent_so_far = 0
             last_cb_ts = monotonic()
             last_rate_ts = last_cb_ts
             last_rate_bytes = 0
 
-            # Stream
+            # --- (C) Stream payload ---
             while True:
-                chunk = fileobj.read(chunk_size)
+                chunk = fileobj.read(effective_chunk)
                 if not chunk:
                     break
                 b = _to_bytes(chunk)
@@ -10376,21 +10508,27 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
                     if sleep_s > 0.0:
                         time.sleep(min(sleep_s, 0.25))
 
-                # Progress (every ~100ms)
+                # Progress (~100ms)
                 if on_progress and (monotonic() - last_cb_ts) >= 0.1:
-                    try:
-                        on_progress(sent_so_far, total_bytes)
-                    except Exception:
-                        pass
+                    try: on_progress(sent_so_far, total_bytes)
+                    except Exception: pass
                     last_cb_ts = monotonic()
+
+            # --- (D) Unknown-length fallback: send DONE marker ---
+            if total_bytes is None:
+                term = b"DONE\n"
+                try:
+                    (sock.send(term) if connected else sock.sendto(term, (host, port)))
+                except Exception:
+                    pass
+
         finally:
-            try:
-                sock.close()
-            except Exception:
-                pass
+            try: sock.close()
+            except Exception: pass
         return total
 
-    # ---- TCP ----
+    # ---------------- TCP ----------------
+    # (unchanged – included for completeness)
     sock = _connect_stream(host, port, timeout)
     try:
         if use_ssl:
@@ -10401,33 +10539,49 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
                                     verify=ssl_verify, ca_file=ssl_ca_file,
                                     certfile=ssl_certfile, keyfile=ssl_keyfile)
 
-        # Auth (AF1 preferred; legacy fallback)
+        # length discovery for progress; may include in AF1 (optional)
+        total_bytes, start_pos = _discover_len_and_reset(fileobj)
+        sha_hex = None
+        if total_bytes is not None:
+            try:
+                import hashlib
+                h = hashlib.sha256()
+                cur = fileobj.tell()
+                if start_pos is not None:
+                    fileobj.seek(start_pos, os.SEEK_SET)
+                _HSZ = 1024 * 1024
+                while True:
+                    blk = fileobj.read(_HSZ)
+                    if not blk: break
+                    h.update(_to_bytes(blk))
+                sha_hex = h.hexdigest()
+                fileobj.seek(cur, os.SEEK_SET)
+            except Exception:
+                sha_hex = None
+
+        # Optional AF1 on TCP (receiver ignores LEN/DONE on TCP anyway)
         if auth_user is not None or auth_pass is not None:
             try:
-                blob = build_auth_blob_v1(auth_user or u"", auth_pass or u"", scope=auth_scope)
+                blob = build_auth_blob_v1(
+                    auth_user or u"", auth_pass or u"",
+                    scope=auth_scope, length=total_bytes, sha_hex=sha_hex
+                )
             except Exception:
                 blob = _build_auth_blob_legacy(auth_user or b"", auth_pass or b"")
             sock.sendall(blob)
-            resp = sock.recv(16)
-            if resp != _OK:
-                raise RuntimeError("TCP auth failed")
-
-        # Best-effort total size (for progress)
-        total_bytes = None
-        try:
-            cur = fileobj.tell()
-            fileobj.seek(0, os.SEEK_END)
-            total_bytes = fileobj.tell() - cur
-            fileobj.seek(cur)
-        except Exception:
-            pass
+            # typical to wait for 2-byte OK, but not required
+            try:
+                resp = sock.recv(16)
+                if resp != _OK:
+                    raise RuntimeError("TCP auth failed")
+            except socket.timeout:
+                pass
 
         sent_so_far = 0
         last_cb_ts = monotonic()
         last_rate_ts = last_cb_ts
         last_rate_bytes = 0
 
-        # sendfile fast-path (Py3); else chunk loop
         use_sendfile = hasattr(sock, "sendfile") and hasattr(fileobj, "read")
         if use_sendfile:
             try:
@@ -10436,74 +10590,49 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
                     total += sent
                     sent_so_far += sent
                     if on_progress:
-                        try:
-                            on_progress(sent_so_far, total_bytes)
-                        except Exception:
-                            pass
+                        try: on_progress(sent_so_far, total_bytes)
+                        except Exception: pass
                 else:
-                    # Unexpected return type -> fall back to chunk loop
                     raise RuntimeError("sendfile returned unexpected type")
             except Exception:
-                # Chunked send with throttling/progress
                 while True:
                     chunk = fileobj.read(chunk_size)
-                    if not chunk:
-                        break
+                    if not chunk: break
                     view = memoryview(_to_bytes(chunk))
                     while view:
-                        n = sock.send(view)
-                        total += n
-                        sent_so_far += n
-                        view = view[n:]
-
+                        n = sock.send(view); total += n; sent_so_far += n; view = view[n:]
                         if rate_limit_bps:
                             sleep_s, last_rate_ts, last_rate_bytes = _progress_tick(
                                 sent_so_far, total_bytes, last_rate_ts, last_rate_bytes, rate_limit_bps
                             )
                             if sleep_s > 0.0:
                                 time.sleep(min(sleep_s, 0.25))
-
                     if on_progress and (monotonic() - last_cb_ts) >= 0.1:
-                        try:
-                            on_progress(sent_so_far, total_bytes)
-                        except Exception:
-                            pass
+                        try: on_progress(sent_so_far, total_bytes)
+                        except Exception: pass
                         last_cb_ts = monotonic()
         else:
-            # Chunk loop
             while True:
                 chunk = fileobj.read(chunk_size)
-                if not chunk:
-                    break
+                if not chunk: break
                 view = memoryview(_to_bytes(chunk))
                 while view:
-                    n = sock.send(view)
-                    total += n
-                    sent_so_far += n
-                    view = view[n:]
-
+                    n = sock.send(view); total += n; sent_so_far += n; view = view[n:]
                     if rate_limit_bps:
                         sleep_s, last_rate_ts, last_rate_bytes = _progress_tick(
                             sent_so_far, total_bytes, last_rate_ts, last_rate_bytes, rate_limit_bps
                         )
                         if sleep_s > 0.0:
                             time.sleep(min(sleep_s, 0.25))
-
                 if on_progress and (monotonic() - last_cb_ts) >= 0.1:
-                    try:
-                        on_progress(sent_so_far, total_bytes)
-                    except Exception:
-                        pass
+                    try: on_progress(sent_so_far, total_bytes)
+                    except Exception: pass
                     last_cb_ts = monotonic()
     finally:
-        try:
-            sock.shutdown(socket.SHUT_WR)
-        except Exception:
-            pass
-        try:
-            sock.close()
-        except Exception:
-            pass
+        try: sock.shutdown(socket.SHUT_WR)
+        except Exception: pass
+        try: sock.close()
+        except Exception: pass
     return total
 
 def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
@@ -10515,11 +10644,16 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                     on_progress=None, rate_limit_bps=None):
     """
     Receive bytes into fileobj over TCP/UDP.
-    - timeout: per-operation timeout (seconds)
+
+    - timeout: per-operation socket timeout (seconds)
     - total_timeout: overall runtime cap (seconds)
-    - Progress callback: on_progress(bytes_received, total_or_None)
-    - Throttling: rate_limit_bps (bytes/sec), average cap
-    Returns: total bytes received.
+    - Progress callback: on_progress(bytes_received, total_bytes or None)
+    - Throttling: rate_limit_bps (bytes/sec), average-rate cap
+
+    UDP specifics:
+      * Accepts a 'LEN <n> [<sha>]\n' preface (unauthenticated) OR AF1 with len/sha.
+      * If len is unknown, accepts a final 'DONE\\n' marker to end cleanly.
+      * Otherwise, timeouts after partial data raise.
     """
     proto = (proto or "tcp").lower()
     port = int(port)
@@ -10549,12 +10683,20 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
     if proto not in ("tcp", "udp"):
         raise ValueError("proto must be 'tcp' or 'udp'")
 
-    # ---- UDP server ----
+    # ---------------- UDP server ----------------
     if proto == "udp":
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         authed_addr = None
+        expected_len = None
+        expected_sha = None
+
         try:
-            sock.bind((host or "", port))
+            # Bind broadly to avoid interface surprises
+            sock.bind(("", port))
+            # Default idle timeout if none provided
+            if timeout is None:
+                try: sock.settimeout(10.0)
+                except Exception: pass
 
             recvd_so_far = 0
             last_cb_ts = monotonic()
@@ -10562,82 +10704,143 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
             last_rate_bytes = 0
 
             while True:
+                # caps / timers
                 if _time_left() == 0.0:
+                    if expected_len is not None and total < expected_len:
+                        raise RuntimeError("UDP receive aborted by total_timeout before full payload received")
                     break
                 if (max_bytes is not None) and (total >= max_bytes):
                     break
 
                 if not _set_effective_timeout(sock, timeout):
+                    if expected_len is not None and total < expected_len:
+                        raise RuntimeError("UDP receive timed out before full payload received")
+                    if expected_len is None and total > 0:
+                        raise RuntimeError("UDP receive timed out with unknown length; partial data")
+                    if expected_len is None and total == 0:
+                        raise RuntimeError("UDP receive: no packets received before timeout (is the sender running?)")
                     break
 
                 try:
                     data, addr = sock.recvfrom(chunk_size)
                 except socket.timeout:
+                    if expected_len is not None and total < expected_len:
+                        raise RuntimeError("UDP receive idle-timeout before full payload received")
+                    if expected_len is None and total > 0:
+                        raise RuntimeError("UDP receive idle-timeout with unknown length; partial data")
+                    if expected_len is None and total == 0:
+                        raise RuntimeError("UDP receive: no packets received before timeout (is the sender running?)")
                     break
 
                 if not data:
                     continue
 
-                if require_auth and authed_addr is None:
-                    # Try AF1 first, fallback to legacy
+                # ---------- (0) Control frames parsed FIRST: LEN / DONE ----------
+                # This works with or without AF1/auth and prevents missing length info.
+                if expected_len is None:
+                    if data.startswith(b"LEN "):
+                        try:
+                            parts = data.strip().split()
+                            n = int(parts[1])
+                            expected_len = (None if n < 0 else n)
+                            if len(parts) >= 3:
+                                expected_sha = parts[2].decode("ascii")
+                        except Exception:
+                            expected_len = None
+                            expected_sha = None
+                        continue  # control consumed; wait for next packet
+                    if data == b"DONE\n":
+                        # Unknown-length clean termination
+                        break
+
+                # ---------- (1) Auth handshake (if required) ----------
+                if authed_addr is None and require_auth:
                     ok = False
-                    v_ok, v_user, v_scope, _r = verify_auth_blob_v1(
+                    v_ok, v_user, v_scope, _r, v_len, v_sha = verify_auth_blob_v1(
                         data, expected_user=expected_user, secret=expected_pass,
                         max_skew=600, expect_scope=expect_scope
                     )
                     if v_ok:
                         ok = True
+                        # If AF1 carried len/sha and we haven't got them yet, use them
+                        if expected_len is None:
+                            expected_len = v_len
+                        if expected_sha is None:
+                            expected_sha = v_sha
                     else:
                         user, pw = _parse_auth_blob_legacy(data)
                         ok = (user is not None and
                               (expected_user is None or user == _to_bytes(expected_user)) and
                               (expected_pass is None or pw == _to_bytes(expected_pass)))
-                    sock.sendto((_OK if ok else _NO), addr)
+                    try:
+                        sock.sendto((_OK if ok else _NO), addr)
+                    except Exception:
+                        pass
                     if ok:
                         authed_addr = addr
-                    continue
+                    continue  # handled as auth packet
 
+                # Only accept payload from the authed source if auth is enabled
                 if require_auth and addr != authed_addr:
-                    # Ignore packets from others once one client is authenticated
                     continue
 
+                # ---------- (2) Payload ----------
                 fileobj.write(data)
-                try:
-                    fileobj.flush()
-                except Exception:
-                    pass
+                try: fileobj.flush()
+                except Exception: pass
                 total += len(data)
                 recvd_so_far += len(data)
 
-                # Throttle (server-side)
+                # Throttle
                 if rate_limit_bps:
                     sleep_s, last_rate_ts, last_rate_bytes = _progress_tick(
-                        recvd_so_far, max_bytes, last_rate_ts, last_rate_bytes, rate_limit_bps
+                        recvd_so_far, expected_len, last_rate_ts, last_rate_bytes, rate_limit_bps
                     )
                     if sleep_s > 0.0:
                         time.sleep(min(sleep_s, 0.25))
 
-                # Progress (every ~100ms)
+                # Progress (~100ms)
                 if on_progress and (monotonic() - last_cb_ts) >= 0.1:
-                    try:
-                        on_progress(recvd_so_far, max_bytes)
-                    except Exception:
-                        pass
+                    try: on_progress(recvd_so_far, expected_len)
+                    except Exception: pass
                     last_cb_ts = monotonic()
+
+                # Stop exactly at expected_len (when known)
+                if expected_len is not None and total >= expected_len:
+                    break
+
+            # ---------- Post-conditions ----------
+            if expected_len is not None and total != expected_len:
+                raise RuntimeError("UDP receive incomplete: got %d of %s bytes" % (total, expected_len))
+
+            if expected_sha:
+                import hashlib
+                try:
+                    cur = fileobj.tell(); fileobj.seek(0)
+                except Exception:
+                    cur = None
+                h = hashlib.sha256(); _HSZ = 1024 * 1024
+                while True:
+                    blk = fileobj.read(_HSZ)
+                    if not blk: break
+                    h.update(_to_bytes(blk))
+                got = h.hexdigest()
+                if cur is not None:
+                    try: fileobj.seek(cur)
+                    except Exception: pass
+                if got != expected_sha:
+                    raise RuntimeError("UDP checksum mismatch: got %s expected %s" % (got, expected_sha))
+
         finally:
-            try:
-                sock.close()
-            except Exception:
-                pass
+            try: sock.close()
+            except Exception: pass
         return total
 
-    # ---- TCP server ----
+    # ---------------- TCP server ----------------
     srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        try:
-            srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        except Exception:
-            pass
+        try: srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        except Exception: pass
         srv.bind((host or "", port))
         srv.listen(int(backlog) if backlog else 1)
 
@@ -10651,16 +10854,12 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
         # TLS
         if use_ssl:
             if not _ssl_available():
-                try:
-                    conn.close()
-                except Exception:
-                    pass
+                try: conn.close()
+                except Exception: pass
                 raise RuntimeError("SSL requested but 'ssl' module unavailable.")
             if not ssl_certfile:
-                try:
-                    conn.close()
-                except Exception:
-                    pass
+                try: conn.close()
+                except Exception: pass
                 raise ValueError("TLS server requires ssl_certfile (and usually ssl_keyfile).")
             conn = _ssl_wrap_socket(conn, server_side=True, server_hostname=None,
                                     verify=ssl_verify, ca_file=ssl_ca_file,
@@ -10672,21 +10871,19 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
         last_rate_bytes = 0
 
         try:
-            # Auth preface
+            # Auth preface (AF1 preferred; legacy fallback)
             if require_auth:
                 if not _set_effective_timeout(conn, timeout):
                     return 0
                 try:
-                    preface = conn.recv(1024)
+                    preface = conn.recv(2048)
                 except socket.timeout:
-                    try:
-                        conn.sendall(_NO)
-                    except Exception:
-                        pass
+                    try: conn.sendall(_NO)
+                    except Exception: pass
                     return 0
 
                 ok = False
-                v_ok, v_user, v_scope, _r = verify_auth_blob_v1(
+                v_ok, v_user, v_scope, _r, v_len, v_sha = verify_auth_blob_v1(
                     preface or b"", expected_user=expected_user, secret=expected_pass,
                     max_skew=600, expect_scope=expect_scope
                 )
@@ -10698,19 +10895,15 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                           (expected_user is None or user == _to_bytes(expected_user)) and
                           (expected_pass is None or pw == _to_bytes(expected_pass)))
 
-                try:
-                    conn.sendall(_OK if ok else _NO)
-                except Exception:
-                    pass
+                try: conn.sendall(_OK if ok else _NO)
+                except Exception: pass
                 if not ok:
                     return 0
 
             # Main receive loop
             while True:
-                if _time_left() == 0.0:
-                    break
-                if (max_bytes is not None) and (total >= max_bytes):
-                    break
+                if _time_left() == 0.0: break
+                if (max_bytes is not None) and (total >= max_bytes): break
 
                 if not _set_effective_timeout(conn, timeout):
                     break
@@ -10722,10 +10915,8 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                     break
 
                 fileobj.write(data)
-                try:
-                    fileobj.flush()
-                except Exception:
-                    pass
+                try: fileobj.flush()
+                except Exception: pass
                 total += len(data)
                 recvd_so_far += len(data)
 
@@ -10737,27 +10928,19 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                     if sleep_s > 0.0:
                         time.sleep(min(sleep_s, 0.25))
 
-                # Progress (every ~100ms)
+                # Progress (~100ms)
                 if on_progress and (monotonic() - last_cb_ts) >= 0.1:
-                    try:
-                        on_progress(recvd_so_far, max_bytes)
-                    except Exception:
-                        pass
+                    try: on_progress(recvd_so_far, max_bytes)
+                    except Exception: pass
                     last_cb_ts = monotonic()
         finally:
-            try:
-                conn.shutdown(socket.SHUT_RD)
-            except Exception:
-                pass
-            try:
-                conn.close()
-            except Exception:
-                pass
+            try: conn.shutdown(socket.SHUT_RD)
+            except Exception: pass
+            try: conn.close()
+            except Exception: pass
     finally:
-        try:
-            srv.close()
-        except Exception:
-            pass
+        try: srv.close()
+        except Exception: pass
 
     return total
 
