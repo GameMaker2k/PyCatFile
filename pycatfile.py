@@ -1011,17 +1011,27 @@ def _parse_net_url(url):
     chunk_size    = int(_qnum(qs, "chunk", 65536, float))
 
     force_auth = _qflag(qs, "auth", False)
+    want_sha   = _qflag(qs, "sha", True)  # <— NEW: default compute sha
 
     opts = dict(
         proto=proto,
         host=parts.hostname or "127.0.0.1",
         port=int(parts.port or 0),
+
         user=user, pw=pw, force_auth=force_auth,
+
         use_ssl=use_ssl, ssl_verify=ssl_verify,
         ssl_ca_file=ssl_ca_file, ssl_certfile=ssl_cert, ssl_keyfile=ssl_key,
+
         timeout=timeout, total_timeout=total_timeout, chunk_size=chunk_size,
+
         server_hostname=parts.hostname or None,
-        path=parts.path or u"",   # expose for optional AF1 scope binding
+
+        # new option
+        want_sha=want_sha,
+
+        # convenience (used as scope in AF1)
+        path=(parts.path or u""),
     )
     return parts, opts
 
@@ -1064,11 +1074,11 @@ def _progress_tick(now_bytes, total_bytes, last_ts, last_bytes, rate_limit_bps, 
 
 def _discover_len_and_reset(fobj):
     """
-    Try very hard to get total length and restore the original position.
+    Try hard to get total length and restore original position.
     Returns (length_or_None, start_pos_or_None).
     Works with seekable files and BytesIO; leaves stream position unchanged.
     """
-    # Try seek/tell
+    # Generic seek/tell
     try:
         pos0 = fobj.tell()
         fobj.seek(0, os.SEEK_END)
@@ -1079,21 +1089,17 @@ def _discover_len_and_reset(fobj):
     except Exception:
         pass
 
-    # BytesIO fast path (Py2/3)
+    # BytesIO fast path
     try:
         getvalue = getattr(fobj, "getvalue", None)
         if callable(getvalue):
             buf = getvalue()
+            L = len(buf)
             try:
-                L = len(buf)
-                # best effort to restore position if possible
-                try:
-                    pos0 = fobj.tell()
-                except Exception:
-                    pos0 = None
-                return (L - (pos0 or 0), pos0)
+                pos0 = fobj.tell()
             except Exception:
-                return (len(buf), None)
+                pos0 = 0
+            return (max(0, L - pos0), pos0)
     except Exception:
         pass
 
@@ -1106,8 +1112,8 @@ def _discover_len_and_reset(fobj):
             try:
                 pos0 = fobj.tell()
             except Exception:
-                pos0 = None
-            return (L - (pos0 or 0), pos0)
+                pos0 = 0
+            return (max(0, L - pos0), pos0)
     except Exception:
         pass
 
@@ -9574,11 +9580,11 @@ def download_file_from_ftp_file(url):
     file_name = os.path.basename(unquote(urlparts.path))
     file_dir = os.path.dirname(unquote(urlparts.path))
     if(urlparts.username is not None):
-        ftp_username = urlparts.username
+        ftp_username = unquote(urlparts.username)
     else:
         ftp_username = "anonymous"
     if(urlparts.password is not None):
-        ftp_password = urlparts.password
+        ftp_password = unquote(urlparts.password)
     elif(urlparts.password is None and urlparts.username == "anonymous"):
         ftp_password = "anonymous"
     else:
@@ -9665,11 +9671,11 @@ def upload_file_to_ftp_file(ftpfile, url):
     file_name = os.path.basename(unquote(urlparts.path))
     file_dir = os.path.dirname(unquote(urlparts.path))
     if(urlparts.username is not None):
-        ftp_username = urlparts.username
+        ftp_username = unquote(urlparts.username)
     else:
         ftp_username = "anonymous"
     if(urlparts.password is not None):
-        ftp_password = urlparts.password
+        ftp_password = unquote(urlparts.password)
     elif(urlparts.password is None and urlparts.username == "anonymous"):
         ftp_password = "anonymous"
     else:
@@ -9777,8 +9783,8 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
     if headers is None:
         headers = {}
     urlparts = urlparse(url)
-    username = urlparts.username
-    password = urlparts.password
+    username = unquote(urlparts.username)
+    password = unquote(urlparts.password)
 
     # Rebuild URL without username and password
     netloc = urlparts.hostname or ''
@@ -10046,11 +10052,11 @@ if(haveparamiko):
         else:
             sftp_port = urlparts.port
         if(urlparts.username is not None):
-            sftp_username = urlparts.username
+            sftp_username = unquote(urlparts.username)
         else:
             sftp_username = "anonymous"
         if(urlparts.password is not None):
-            sftp_password = urlparts.password
+            sftp_password = unquote(urlparts.password)
         elif(urlparts.password is None and urlparts.username == "anonymous"):
             sftp_password = "anonymous"
         else:
@@ -10062,7 +10068,7 @@ if(haveparamiko):
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
             ssh.connect(urlparts.hostname, port=sftp_port,
-                        username=sftp_username, password=urlparts.password)
+                        username=sftp_username, password=sftp_password)
         except paramiko.ssh_exception.SSHException:
             return False
         except socket.gaierror:
@@ -10103,11 +10109,11 @@ if(haveparamiko):
         else:
             sftp_port = urlparts.port
         if(urlparts.username is not None):
-            sftp_username = urlparts.username
+            sftp_username = unquote(urlparts.username)
         else:
             sftp_username = "anonymous"
         if(urlparts.password is not None):
-            sftp_password = urlparts.password
+            sftp_password = unquote(urlparts.password)
         elif(urlparts.password is None and urlparts.username == "anonymous"):
             sftp_password = "anonymous"
         else:
@@ -10160,11 +10166,11 @@ if(havepysftp):
         else:
             sftp_port = urlparts.port
         if(urlparts.username is not None):
-            sftp_username = urlparts.username
+            sftp_username = unquote(urlparts.username)
         else:
             sftp_username = "anonymous"
         if(urlparts.password is not None):
-            sftp_password = urlparts.password
+            sftp_password = unquote(urlparts.password)
         elif(urlparts.password is None and urlparts.username == "anonymous"):
             sftp_password = "anonymous"
         else:
@@ -10213,11 +10219,11 @@ if(havepysftp):
         else:
             sftp_port = urlparts.port
         if(urlparts.username is not None):
-            sftp_username = urlparts.username
+            sftp_username = unquote(urlparts.username)
         else:
             sftp_username = "anonymous"
         if(urlparts.password is not None):
-            sftp_password = urlparts.password
+            sftp_password = unquote(urlparts.password)
         elif(urlparts.password is None and urlparts.username == "anonymous"):
             sftp_password = "anonymous"
         else:
@@ -10346,24 +10352,17 @@ def upload_file_to_internet_compress_file(ifp, url, compression="auto", compress
     return upload_file_to_internet_file(fp, outfile)
 
 
-def upload_file_to_internet_file(ifp, url):
+def upload_file_to_internet_string(ifp, url):
     urlparts = urlparse(url)
     if(urlparts.scheme == "http" or urlparts.scheme == "https"):
         return False
     elif(urlparts.scheme == "ftp" or urlparts.scheme == "ftps"):
-        return upload_file_to_ftp_file(ifp, url)
+        return upload_file_to_ftp_string(ifp, url)
     elif(urlparts.scheme == "sftp" or urlparts.scheme == "scp"):
         if(__use_pysftp__ and havepysftp):
-            return upload_file_to_pysftp_file(ifp, url)
+            return upload_file_to_pysftp_string(ifp, url)
         else:
-            return upload_file_to_sftp_file(ifp, url)
-    elif(urlparts.scheme == "tcp" or urlparts.scheme == "udp"):
-        use_auth = False
-        if(urlparts.username is not None and urlparts.password is not None):
-            use_auth = True
-        ifp.seek(0, 0)
-        returnval = send_from_fileobj(ifp, urlparts.hostname, urlparts.port, urlparts.scheme, auth_user=urlparts.username, auth_pass=urlparts.password)
-        return returnval
+            return upload_file_to_sftp_string(ifp, url)
     else:
         return False
     return False
@@ -10385,14 +10384,14 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
                       use_ssl=False, ssl_verify=True, ssl_ca_file=None,
                       ssl_certfile=None, ssl_keyfile=None, server_hostname=None,
                       auth_user=None, auth_pass=None, auth_scope=u"",
-                      on_progress=None, rate_limit_bps=None):
+                      on_progress=None, rate_limit_bps=None, want_sha=True):
     """
     Send fileobj contents to (host, port) via TCP or UDP.
 
     UDP behavior:
       - Computes total length and sha256 when possible.
       - Sends:  AF1 (if auth)  +  'LEN <n> [<sha>]\\n'  +  payload
-      - If length unknown: no LEN, but sends final 'DONE\\n'.
+      - If length unknown: stream payload, then 'HASH <sha>\\n' (if enabled), then 'DONE\\n'.
       - Uses small datagrams (<=1200B) to avoid fragmentation.
     """
     proto = (proto or "tcp").lower()
@@ -10408,21 +10407,20 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
             if timeout is not None:
                 sock.settimeout(timeout)
 
-            # "Connected" UDP simplifies sends
+            # connect UDP for convenience
             try:
                 sock.connect((host, port))
                 connected = True
             except Exception:
                 connected = False
 
-            # Discover length (works for BytesIO) and precompute sha if possible
+            # length + optional sha
             total_bytes, start_pos = _discover_len_and_reset(fileobj)
 
             sha_hex = None
-            if total_bytes is not None:
+            if want_sha and total_bytes is not None:
                 import hashlib
                 h = hashlib.sha256()
-                # hash without disturbing caller’s desired position
                 try:
                     cur = fileobj.tell()
                 except Exception:
@@ -10436,7 +10434,6 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
                     if not blk: break
                     h.update(_to_bytes(blk))
                 sha_hex = h.hexdigest()
-                # rewind for actual send
                 if start_pos is not None:
                     try: fileobj.seek(start_pos, os.SEEK_SET)
                     except Exception: pass
@@ -10444,24 +10441,23 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
                     try: fileobj.seek(cur, os.SEEK_SET)
                     except Exception: pass
 
-            # --- (A) Optional AF1 auth first (harmless if also sending LEN) ---
+            # optional AF1 (also carries len/sha, but we'll still send LEN for robustness)
             if auth_user is not None or auth_pass is not None:
                 try:
                     blob = build_auth_blob_v1(
                         auth_user or u"", auth_pass or u"",
-                        scope=auth_scope, length=total_bytes, sha_hex=sha_hex
+                        scope=auth_scope, length=total_bytes, sha_hex=(sha_hex if want_sha else None)
                     )
                 except Exception:
                     blob = _build_auth_blob_legacy(auth_user or b"", auth_pass or b"")
                 if connected:
                     sock.send(blob)
-                    # optional: wait for short OK/NO; if you do, keep a short timeout
+                    # You may ignore the ack in UDP; keep try/except minimal
                     try:
                         resp = sock.recv(16)
                         if resp != _OK:
                             raise RuntimeError("UDP auth failed")
-                    except socket.timeout:
-                        # if your receiver doesn't ack, you can ignore this
+                    except Exception:
                         pass
                 else:
                     sock.sendto(blob, (host, port))
@@ -10469,19 +10465,19 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
                         resp, _ = sock.recvfrom(16)
                         if resp != _OK:
                             raise RuntimeError("UDP auth failed")
-                    except socket.timeout:
+                    except Exception:
                         pass
 
-            # --- (B) ALWAYS send a LEN preface when length is known ---
+            # ALWAYS send LEN when length is known
             if total_bytes is not None:
                 preface = b"LEN " + str(int(total_bytes)).encode("ascii")
-                if sha_hex:
+                if want_sha and sha_hex:
                     preface += b" " + sha_hex.encode("ascii")
                 preface += b"\n"
                 if connected: sock.send(preface)
                 else: sock.sendto(preface, (host, port))
 
-            # Safe UDP payload size (avoid fragmentation)
+            # payload stream
             UDP_PAYLOAD_MAX = 1200
             effective_chunk = min(int(chunk_size or 65536), UDP_PAYLOAD_MAX)
 
@@ -10490,17 +10486,25 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
             last_rate_ts = last_cb_ts
             last_rate_bytes = 0
 
-            # --- (C) Stream payload ---
+            rolling_h = None
+            if want_sha and total_bytes is None:
+                try:
+                    import hashlib
+                    rolling_h = hashlib.sha256()
+                except Exception:
+                    rolling_h = None
+
             while True:
                 chunk = fileobj.read(effective_chunk)
                 if not chunk:
                     break
                 b = _to_bytes(chunk)
+                if rolling_h is not None:
+                    rolling_h.update(b)
                 n = (sock.send(b) if connected else sock.sendto(b, (host, port)))
                 total += n
                 sent_so_far += n
 
-                # Throttle
                 if rate_limit_bps:
                     sleep_s, last_rate_ts, last_rate_bytes = _progress_tick(
                         sent_so_far, total_bytes, last_rate_ts, last_rate_bytes, rate_limit_bps
@@ -10508,17 +10512,22 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
                     if sleep_s > 0.0:
                         time.sleep(min(sleep_s, 0.25))
 
-                # Progress (~100ms)
                 if on_progress and (monotonic() - last_cb_ts) >= 0.1:
                     try: on_progress(sent_so_far, total_bytes)
                     except Exception: pass
                     last_cb_ts = monotonic()
 
-            # --- (D) Unknown-length fallback: send DONE marker ---
+            # unknown-length trailers
             if total_bytes is None:
-                term = b"DONE\n"
+                if rolling_h is not None:
+                    try:
+                        th = rolling_h.hexdigest().encode("ascii")
+                        (sock.send(b"HASH " + th + b"\n") if connected
+                         else sock.sendto(b"HASH " + th + b"\n", (host, port)))
+                    except Exception:
+                        pass
                 try:
-                    (sock.send(term) if connected else sock.sendto(term, (host, port)))
+                    (sock.send(b"DONE\n") if connected else sock.sendto(b"DONE\n", (host, port)))
                 except Exception:
                     pass
 
@@ -10528,7 +10537,6 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
         return total
 
     # ---------------- TCP ----------------
-    # (unchanged – included for completeness)
     sock = _connect_stream(host, port, timeout)
     try:
         if use_ssl:
@@ -10539,10 +10547,9 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
                                     verify=ssl_verify, ca_file=ssl_ca_file,
                                     certfile=ssl_certfile, keyfile=ssl_keyfile)
 
-        # length discovery for progress; may include in AF1 (optional)
         total_bytes, start_pos = _discover_len_and_reset(fileobj)
         sha_hex = None
-        if total_bytes is not None:
+        if want_sha and total_bytes is not None:
             try:
                 import hashlib
                 h = hashlib.sha256()
@@ -10559,22 +10566,20 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
             except Exception:
                 sha_hex = None
 
-        # Optional AF1 on TCP (receiver ignores LEN/DONE on TCP anyway)
         if auth_user is not None or auth_pass is not None:
             try:
                 blob = build_auth_blob_v1(
                     auth_user or u"", auth_pass or u"",
-                    scope=auth_scope, length=total_bytes, sha_hex=sha_hex
+                    scope=auth_scope, length=total_bytes, sha_hex=(sha_hex if want_sha else None)
                 )
             except Exception:
                 blob = _build_auth_blob_legacy(auth_user or b"", auth_pass or b"")
             sock.sendall(blob)
-            # typical to wait for 2-byte OK, but not required
             try:
                 resp = sock.recv(16)
                 if resp != _OK:
                     raise RuntimeError("TCP auth failed")
-            except socket.timeout:
+            except Exception:
                 pass
 
         sent_so_far = 0
@@ -10645,21 +10650,14 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
     """
     Receive bytes into fileobj over TCP/UDP.
 
-    - timeout: per-operation socket timeout (seconds)
-    - total_timeout: overall runtime cap (seconds)
-    - Progress callback: on_progress(bytes_received, total_bytes or None)
-    - Throttling: rate_limit_bps (bytes/sec), average-rate cap
-
     UDP specifics:
-      * Accepts a 'LEN <n> [<sha>]\n' preface (unauthenticated) OR AF1 with len/sha.
-      * If len is unknown, accepts a final 'DONE\\n' marker to end cleanly.
-      * Otherwise, timeouts after partial data raise.
+      * Accepts 'LEN <n> [<sha>]\\n' and 'HASH <sha>\\n' control frames (unauth) or AF1 with len/sha.
+      * If length unknown, accepts final 'DONE\\n' to end cleanly.
     """
     proto = (proto or "tcp").lower()
     port = int(port)
     total = 0
 
-    # total-time helpers
     start_ts = time.time()
     def _time_left():
         if total_timeout is None:
@@ -10691,9 +10689,7 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
         expected_sha = None
 
         try:
-            # Bind broadly to avoid interface surprises
             sock.bind(("", port))
-            # Default idle timeout if none provided
             if timeout is None:
                 try: sock.settimeout(10.0)
                 except Exception: pass
@@ -10704,7 +10700,6 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
             last_rate_bytes = 0
 
             while True:
-                # caps / timers
                 if _time_left() == 0.0:
                     if expected_len is not None and total < expected_len:
                         raise RuntimeError("UDP receive aborted by total_timeout before full payload received")
@@ -10735,25 +10730,30 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                 if not data:
                     continue
 
-                # ---------- (0) Control frames parsed FIRST: LEN / DONE ----------
-                # This works with or without AF1/auth and prevents missing length info.
-                if expected_len is None:
-                    if data.startswith(b"LEN "):
-                        try:
-                            parts = data.strip().split()
-                            n = int(parts[1])
-                            expected_len = (None if n < 0 else n)
-                            if len(parts) >= 3:
-                                expected_sha = parts[2].decode("ascii")
-                        except Exception:
-                            expected_len = None
-                            expected_sha = None
-                        continue  # control consumed; wait for next packet
-                    if data == b"DONE\n":
-                        # Unknown-length clean termination
-                        break
+                # (0) Control frames FIRST: LEN / HASH / DONE
+                if data.startswith(b"LEN ") and expected_len is None:
+                    try:
+                        parts = data.strip().split()
+                        n = int(parts[1])
+                        expected_len = (None if n < 0 else n)
+                        if len(parts) >= 3:
+                            expected_sha = parts[2].decode("ascii")
+                    except Exception:
+                        expected_len = None
+                        expected_sha = None
+                    continue
 
-                # ---------- (1) Auth handshake (if required) ----------
+                if data.startswith(b"HASH "):
+                    try:
+                        expected_sha = data.strip().split()[1].decode("ascii")
+                    except Exception:
+                        expected_sha = None
+                    continue
+
+                if data == b"DONE\n":
+                    break
+
+                # (1) Auth (AF1 preferred; legacy fallback)
                 if authed_addr is None and require_auth:
                     ok = False
                     v_ok, v_user, v_scope, _r, v_len, v_sha = verify_auth_blob_v1(
@@ -10762,7 +10762,6 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                     )
                     if v_ok:
                         ok = True
-                        # If AF1 carried len/sha and we haven't got them yet, use them
                         if expected_len is None:
                             expected_len = v_len
                         if expected_sha is None:
@@ -10778,20 +10777,18 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                         pass
                     if ok:
                         authed_addr = addr
-                    continue  # handled as auth packet
+                    continue
 
-                # Only accept payload from the authed source if auth is enabled
                 if require_auth and addr != authed_addr:
                     continue
 
-                # ---------- (2) Payload ----------
+                # (2) Payload
                 fileobj.write(data)
                 try: fileobj.flush()
                 except Exception: pass
                 total += len(data)
                 recvd_so_far += len(data)
 
-                # Throttle
                 if rate_limit_bps:
                     sleep_s, last_rate_ts, last_rate_bytes = _progress_tick(
                         recvd_so_far, expected_len, last_rate_ts, last_rate_bytes, rate_limit_bps
@@ -10799,17 +10796,15 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                     if sleep_s > 0.0:
                         time.sleep(min(sleep_s, 0.25))
 
-                # Progress (~100ms)
                 if on_progress and (monotonic() - last_cb_ts) >= 0.1:
                     try: on_progress(recvd_so_far, expected_len)
                     except Exception: pass
                     last_cb_ts = monotonic()
 
-                # Stop exactly at expected_len (when known)
                 if expected_len is not None and total >= expected_len:
                     break
 
-            # ---------- Post-conditions ----------
+            # Post-conditions
             if expected_len is not None and total != expected_len:
                 raise RuntimeError("UDP receive incomplete: got %d of %s bytes" % (total, expected_len))
 
@@ -10851,7 +10846,6 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
         except socket.timeout:
             return 0
 
-        # TLS
         if use_ssl:
             if not _ssl_available():
                 try: conn.close()
@@ -10871,7 +10865,6 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
         last_rate_bytes = 0
 
         try:
-            # Auth preface (AF1 preferred; legacy fallback)
             if require_auth:
                 if not _set_effective_timeout(conn, timeout):
                     return 0
@@ -10900,7 +10893,6 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                 if not ok:
                     return 0
 
-            # Main receive loop
             while True:
                 if _time_left() == 0.0: break
                 if (max_bytes is not None) and (total >= max_bytes): break
@@ -10920,7 +10912,6 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                 total += len(data)
                 recvd_so_far += len(data)
 
-                # Throttle (server-side)
                 if rate_limit_bps:
                     sleep_s, last_rate_ts, last_rate_bytes = _progress_tick(
                         recvd_so_far, max_bytes, last_rate_ts, last_rate_bytes, rate_limit_bps
@@ -10928,7 +10919,6 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                     if sleep_s > 0.0:
                         time.sleep(min(sleep_s, 0.25))
 
-                # Progress (~100ms)
                 if on_progress and (monotonic() - last_cb_ts) >= 0.1:
                     try: on_progress(recvd_so_far, max_bytes)
                     except Exception: pass
@@ -10961,6 +10951,7 @@ def send_via_url(fileobj, url, send_from_fileobj_func=send_from_fileobj):
         auth_user=(o["user"] if use_auth else None),
         auth_pass=(o["pw"]   if use_auth else None),
         auth_scope=o.get("path", u""),
+        want_sha=o["want_sha"],   # <— pass through
     )
 
 def recv_via_url(fileobj, url, recv_to_fileobj_func=recv_to_fileobj):
