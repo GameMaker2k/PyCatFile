@@ -10883,7 +10883,7 @@ def upload_file_to_internet_compress_string(ifp, url, compression="auto", compre
 
 
 # ---------- Core: send / recv ----------
-def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
+def send_from_fileobj(fileobj, host, port=3124, proto="tcp", timeout=None,
                       chunk_size=65536,
                       use_ssl=False, ssl_verify=True, ssl_ca_file=None,
                       ssl_certfile=None, ssl_keyfile=None, server_hostname=None,
@@ -11150,7 +11150,7 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", timeout=None,
     return total
 
 
-def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
+def recv_to_fileobj(fileobj, host="", port=3124, proto="tcp", timeout=None,
                     max_bytes=None, chunk_size=65536, backlog=1,
                     use_ssl=False, ssl_verify=True, ssl_ca_file=None,
                     ssl_certfile=None, ssl_keyfile=None,
