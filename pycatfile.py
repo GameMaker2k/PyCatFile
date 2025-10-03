@@ -1557,59 +1557,113 @@ def DetectTarBombCatFileArray(listarrayfiles,
     }
 
 
-def MkTempFile(data=None, inmem=__use_inmemfile__, isbytes=True, prefix=__project__,
-               delete=True, encoding="utf-8"):
+def _normalize_initial_data(data, isbytes, encoding):
     """
-    Return a file-like handle.
-      - If inmem=True: returns StringIO (text) or BytesIO (bytes).
-      - If inmem=False: returns a NamedTemporaryFile opened in text or binary mode.
-    Args:
-      data:     optional initial content; if provided, it's written and the handle is seek(0)
-      inmem:    bool — return in-memory handle if True
-      isbytes:  bool — choose bytes (True) or text (False)
-      prefix:   str  — tempfile prefix
-      delete:   bool — whether the tempfile is deleted on close (NamedTemporaryFile)
-      encoding: str  — used for text mode (and for conversions when needed)
+    Coerce `data` to the correct type for the chosen mode:
+      - bytes mode: return `bytes` (Py2: str; Py3: bytes)
+      - text mode : return unicode/str (Py2: unicode; Py3: str)
+    """
+    if data is None:
+        return None
+
+    if isbytes:
+        # Need a byte sequence
+        if isinstance(data, bytes):
+            return data
+        if isinstance(data, bytearray):
+            return bytes(data)
+        # memoryview may not exist on very old Py2 builds; guard dynamically
+        mv_t = getattr(__builtins__, 'memoryview', type(None))
+        if isinstance(data, mv_t):
+            return bytes(data)
+        if isinstance(data, str):
+            # Py2 str is already bytes; Py3 str must be encoded
+            return data if PY2 else data.encode(encoding)
+        if PY2 and isinstance(data, unicode):  # noqa: F821 (unicode only in Py2)
+            return data.encode(encoding)
+        raise TypeError("data must be bytes-like or text for isbytes=True (got %r)" % (type(data),))
+    else:
+        # Need text (unicode in Py2, str in Py3)
+        if PY2:
+            if isinstance(data, unicode):  # noqa: F821
+                return data
+            if isinstance(data, str):
+                return data.decode(encoding)
+            if isinstance(data, bytearray):
+                return bytes(data).decode(encoding)
+            mv_t = getattr(__builtins__, 'memoryview', type(None))
+            if isinstance(data, mv_t):
+                return bytes(data).decode(encoding)
+            raise TypeError("data must be unicode or bytes-like for text mode (got %r)" % (type(data),))
+        else:
+            if isinstance(data, str):
+                return data
+            if isinstance(data, (bytes, bytearray, memoryview)):
+                return bytes(data).decode(encoding)
+            raise TypeError("data must be str or bytes-like for text mode (got %r)" % (type(data),))
+
+def MkTempFile(data=None,
+               inmem=True,
+               isbytes=True,
+               prefix="",
+               delete=True,
+               encoding="utf-8",
+               newline=None,      # Py3 text only; ignored by Py2 temp classes
+               dir=None,
+               suffix="",
+               # spooled option (RAM until threshold, then rolls to disk)
+               use_spool=False,
+               spool_max=8 * 1024 * 1024,
+               spool_dir=None):
+    """
+    Return a file-like handle with consistent behavior on Py2.7 and Py3.x.
+
+    - inmem=True                       -> BytesIO (bytes) or StringIO (text)
+    - inmem=False, use_spool=True      -> SpooledTemporaryFile (RAM -> disk after spool_max)
+    - inmem=False, use_spool=False     -> NamedTemporaryFile (on disk)
+
+    If `data` is provided, it's written and the handle is rewound to position 0.
     """
     init = _normalize_initial_data(data, isbytes, encoding)
 
+    # -------- In-memory --------
     if inmem:
-        buf = BytesIO() if isbytes else StringIO()
+        if isbytes:
+            return BytesIO(init if init is not None else b"")
+        else:
+            # Py2 needs unicode literal for empty default
+            return StringIO(init if init is not None else (u"" if PY2 else ""))
+
+    # -------- Spooled (RAM then disk) --------
+    if use_spool:
+        if isbytes:
+            f = tempfile.SpooledTemporaryFile(max_size=spool_max, mode="w+b", dir=spool_dir)
+        else:
+            if PY2:
+                # Py2 SpooledTemporaryFile doesn't accept encoding/newline
+                f = tempfile.SpooledTemporaryFile(max_size=spool_max, mode="w+", dir=spool_dir)
+            else:
+                f = tempfile.SpooledTemporaryFile(max_size=spool_max, mode="w+",
+                                                  dir=spool_dir, encoding=encoding, newline=newline)
         if init is not None:
-            buf.write(init)
-            buf.seek(0)
-        return buf
+            f.write(init)
+            f.seek(0)
+        return f
 
-    mode = "wb+" if isbytes else "w+"
-    kwargs = {"prefix": prefix or "", "delete": delete, "mode": mode}
+    # -------- On-disk temp --------
+    if isbytes:
+        f = tempfile.NamedTemporaryFile(mode="w+b", prefix=prefix or "", suffix=suffix,
+                                        dir=dir, delete=delete)
+    else:
+        if PY2:
+            # Py2 temp files don't accept encoding/newline; writes of unicode will be encoded
+            # using the default encoding. If you need strict control, wrap with codecs/io.open.
+            f = tempfile.NamedTemporaryFile(mode="w+", prefix=prefix or "", suffix=suffix,
+                                            dir=dir, delete=delete)
+        else:
+            f = tempfile.NamedTemporaryFile(mode="w+", prefix=prefix or "", suffix=suffix,
+                                            dir=dir, delete=delete, encoding=encoding, newline=newline)
 
-    # Only Python 3's text-mode files accept encoding/newline explicitly
-    if not isbytes and sys.version_info[0] >= 3:
-        kwargs["encoding"] = encoding
-        kwargs["newline"] = ""
-
-    f = tempfile.NamedTemporaryFile(**kwargs)
-
-    if init is not None:
-        f.write(init)
-        f.seek(0)
-    return f
-
-
-def MkTempFileSmart(data=None, isbytes=True, prefix=__project__, max_mem=1024*1024, encoding="utf-8"):
-    """
-    Spooled temp file: starts in memory and spills to disk past max_mem.
-    Behaves like BytesIO/StringIO for small data, with the same preload+seek(0) behavior.
-    """
-    mode = "wb+" if isbytes else "w+"
-    kwargs = {"mode": mode, "max_size": max_mem, "prefix": prefix or ""}
-    if not isbytes and sys.version_info[0] >= 3:
-        kwargs["encoding"] = encoding
-        kwargs["newline"] = ""
-
-    f = tempfile.SpooledTemporaryFile(**kwargs)
-
-    init = _normalize_initial_data(data, isbytes, encoding)
     if init is not None:
         f.write(init)
         f.seek(0)
