@@ -6220,6 +6220,75 @@ class FileLikeAdapter(object):
             object.__setattr__(self, name, value); return
         object.__setattr__(self, name, value)
 
+# ========= shared utilities =========
+
+def _maybe_make_mmap(fp_like, mode, use_mmap=False, mmap_size=None):
+    """
+    If use_mmap is True and fp_like ultimately has a real fileno(),
+    return (fp_like, mm) where mm is an mmap.mmap for the whole file (read)
+    or a pre-sized mapping (write). Otherwise return (fp_like, None).
+    """
+    if not use_mmap:
+        return fp_like, None
+
+    base = _extract_base_fp(fp_like)
+    if base is None:
+        return fp_like, None  # BytesIO / compressed stream etc.
+
+    import mmap
+    # READ mapping: map entire file (size 0 means "whole file")
+    if "r" in mode and "w" not in mode and "a" not in mode and "x" not in mode:
+        try:
+            mm = mmap.mmap(base.fileno(), 0, access=mmap.ACCESS_READ)
+            return fp_like, mm
+        except Exception:
+            return fp_like, None
+
+    # WRITE mapping: must pre-size
+    if any(ch in mode for ch in "wax+"):
+        if not mmap_size or mmap_size <= 0:
+            # caller must provide a mapping length for writes
+            return fp_like, None
+        try:
+            # Ensure the underlying file is opened read+write
+            # (re-open if needed)
+            try:
+                fd = base.fileno()
+            except Exception:
+                return fp_like, None
+
+            # Make sure file is large enough
+            try:
+                base.truncate(mmap_size)
+            except Exception:
+                return fp_like, None
+
+            mm = mmap.mmap(fd, mmap_size, access=mmap.ACCESS_WRITE)
+            return fp_like, mm
+        except Exception:
+            return fp_like, None
+
+    return fp_like, None
+
+
+def open_adapter(obj_or_path, mode="rb", use_mmap=False, mmap_size=None):
+    """
+    Universal opener:
+      - If given a path (str/bytes), open it with built-in open().
+      - If given a file-like, use it as-is.
+    Returns a FileLikeAdapter, optionally mmap-backed (only when possible).
+    """
+    is_path = isinstance(obj_or_path, (str, bytes))
+    if is_path:
+        fp = open(obj_or_path, mode)
+        fp, mm = _maybe_make_mmap(fp, mode, use_mmap=use_mmap, mmap_size=mmap_size)
+        return FileLikeAdapter(fp, mode=mode, mm=mm)
+
+    # file-like object
+    fp_like = obj_or_path
+    fp_like, mm = _maybe_make_mmap(fp_like, mode, use_mmap=use_mmap, mmap_size=mmap_size)
+    return FileLikeAdapter(fp_like, mode=mode, mm=mm)
+
 
 # Assumes you already have: compressionsupport, outextlistwd, MkTempFile, etc.
 
