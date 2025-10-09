@@ -5956,19 +5956,40 @@ def UncompressBytesAltFP(fp, formatspecs=__file_format_multi_dict__, filestart=0
     return filefp
 
 def _extract_base_fp(obj):
-    """Return deepest file-like with a working fileno(), or None."""
+    """Return deepest file-like with working fileno(), or None."""
     seen = set()
     cur = obj
     while cur and id(cur) not in seen:
         seen.add(id(cur))
-        fileno = getattr(cur, "fileno", None)
-        if callable(fileno):
+        f = getattr(cur, "fileno", None)
+        if callable(f):
             try:
-                fileno()  # probe
+                f()  # probe
                 return cur
             except Exception:
                 pass
-        # Walk common wrappers (gzip/bz2/lzma/TextIOWrapper/Buffered* etc.)
+        for attr in ("fileobj", "fp", "_fp", "buffer", "raw"):
+            nxt = getattr(cur, attr, None)
+            if nxt is not None and id(nxt) not in seen:
+                cur = nxt
+                break
+        else:
+            cur = None
+    return None
+
+def _extract_base_fp(obj):
+    """Return deepest file-like with working fileno(), or None."""
+    seen = set()
+    cur = obj
+    while cur and id(cur) not in seen:
+        seen.add(id(cur))
+        f = getattr(cur, "fileno", None)
+        if callable(f):
+            try:
+                f()  # probe
+                return cur
+            except Exception:
+                pass
         for attr in ("fileobj", "fp", "_fp", "buffer", "raw"):
             nxt = getattr(cur, attr, None)
             if nxt is not None and id(nxt) not in seen:
@@ -5981,46 +6002,29 @@ def _extract_base_fp(obj):
 
 class FileLikeAdapter(object):
     """
-    Py2/3-compatible file-like adapter that can wrap:
-      - BytesIO / memory buffers
-      - real files
-      - compressed streams (gzip/bz2/lzma/...)
-      - an (fp, mmap) pair for uncompressed random-access speed
-
-    Bytes-only API. Honors mode ("rb", "wb", "r+b", etc.).
+    Bytes-only, Py2/3-compatible file-like wrapper.
+    Can wrap: BytesIO, real files, compressed streams, or (file,mmap) pair.
     """
-
     def __init__(self, fp_like, mode="rb", mm=None, name=None):
-        self._fp = fp_like               # underlying stream (BytesIO/file/gzip/...)
-        self._mm = mm                    # optional memory map for uncompressed files
-        self._pos = 0                    # mapping position when using _mm
+        self._fp = fp_like
+        self._mm = mm
+        self._pos = 0
         self._mode = mode
         self.name = name if name is not None else getattr(fp_like, "name", None)
         self._closed = False
-
-        # permissions (simple flags from mode)
         self._readable = ("r" in mode) or ("+" in mode)
         self._writable = ("w" in mode) or ("a" in mode) or ("x" in mode) or ("+" in mode)
+        self.write_through = False  # accept & ignore
 
-        # Accept write_through attr; ignore (compat shim)
-        self.write_through = False
-
-    # ---- capability flags ----
-    def readable(self):
-        return bool(self._readable)
-
-    def writable(self):
-        return bool(self._writable)
-
+    # capabilities
+    def readable(self): return bool(self._readable)
+    def writable(self): return bool(self._writable)
     def seekable(self):
-        if self._mm is not None:
-            return True
+        if self._mm is not None: return True
         s = getattr(self._fp, "seekable", None)
         if callable(s):
-            try:
-                return bool(s())
-            except Exception:
-                return hasattr(self._fp, "seek")
+            try: return bool(s())
+            except Exception: return hasattr(self._fp, "seek")
         return hasattr(self._fp, "seek")
 
     @property
@@ -6028,91 +6032,56 @@ class FileLikeAdapter(object):
         base_closed = getattr(self._fp, "closed", None)
         return bool(base_closed) or self._closed
 
-    # ---- position ----
+    # position
     def tell(self):
-        if self._mm is not None:
-            return self._pos
+        if self._mm is not None: return self._pos
         return self._fp.tell()
 
     def seek(self, offset, whence=io.SEEK_SET):
         if self._mm is None:
             return self._fp.seek(offset, whence)
-
-        if whence == io.SEEK_SET:
-            new = offset
-        elif whence == io.SEEK_CUR:
-            new = self._pos + offset
-        elif whence == io.SEEK_END:
-            new = len(self._mm) + offset
-        else:
-            raise ValueError("bad whence")
-
-        if not (0 <= new <= len(self._mm)):
-            raise ValueError("seek out of range")
+        if whence == io.SEEK_SET: new = offset
+        elif whence == io.SEEK_CUR: new = self._pos + offset
+        elif whence == io.SEEK_END: new = len(self._mm) + offset
+        else: raise ValueError("bad whence")
+        if not (0 <= new <= len(self._mm)): raise ValueError("seek out of range")
         self._pos = new
         return self._pos
 
-    # ---- reads ----
+    # reads
     def read(self, n=-1):
-        if not self._readable:
-            raise UnsupportedOperation("not readable")
-
-        if self._mm is None:
-            return self._fp.read(n)
-
-        if n is None or n < 0:
-            n = len(self._mm) - self._pos
+        if not self._readable: raise UnsupportedOperation("not readable")
+        if self._mm is None: return self._fp.read(n)
+        if n is None or n < 0: n = len(self._mm) - self._pos
         end = min(self._pos + n, len(self._mm))
-        if end <= self._pos:
-            return b"" if not PY2 else bytes_type()
-        # In Py2, bytes(self._mm[slice]) returns str (bytes); fine.
+        if end <= self._pos: return b"" if not PY2 else bytes_type()
         out = bytes(self._mm[self._pos:end])
         self._pos = end
         return out
 
     def readinto(self, b):
-        if not self._readable:
-            raise UnsupportedOperation("not readable")
-
+        if not self._readable: raise UnsupportedOperation("not readable")
         if self._mm is None:
-            readinto = getattr(self._fp, "readinto", None)
-            if callable(readinto):
-                return readinto(b)
-            # Emulate readinto if missing (common on Py2 wrappers)
+            ri = getattr(self._fp, "readinto", None)
+            if callable(ri): return ri(b)
             data = self._fp.read(len(b))
-            if not data:
-                return 0
-            mv = memoryview(b)
-            n = min(len(mv), len(data))
-            mv[:n] = data[:n]
-            return n
-
+            if not data: return 0
+            mv = memoryview(b); n = min(len(mv), len(data))
+            mv[:n] = data[:n]; return n
         mv = memoryview(b)
         remaining = len(self._mm) - self._pos
         n = min(len(mv), remaining)
-        if n <= 0:
-            return 0
-        mv[:n] = self._mm[self._pos:self._pos + n]
+        if n <= 0: return 0
+        mv[:n] = self._mm[self._pos:self._pos+n]
         self._pos += n
         return n
 
     def readline(self, limit=-1):
-        if not self._readable:
-            raise UnsupportedOperation("not readable")
-
-        if self._mm is None:
-            return self._fp.readline(limit)
-
-        if limit is not None and limit >= 0:
-            end_limit = min(self._pos + limit, len(self._mm))
-        else:
-            end_limit = len(self._mm)
-
+        if not self._readable: raise UnsupportedOperation("not readable")
+        if self._mm is None: return self._fp.readline(limit)
+        end_limit = min(self._pos + limit, len(self._mm)) if (limit is not None and limit >= 0) else len(self._mm)
         nl = self._mm.find(b"\n", self._pos, end_limit)
-        if nl == -1:
-            end = end_limit
-        else:
-            end = nl + 1
+        end = end_limit if nl == -1 else nl + 1
         out = bytes(self._mm[self._pos:end])
         self._pos = end
         return out
@@ -6121,279 +6090,253 @@ class FileLikeAdapter(object):
         lines, total = [], 0
         while True:
             line = self.readline()
-            if not line:
-                break
-            lines.append(line)
-            total += len(line)
-            if hint >= 0 and total >= hint:
-                break
+            if not line: break
+            lines.append(line); total += len(line)
+            if hint >= 0 and total >= hint: break
         return lines
 
-    # Iteration (Py2/3)
-    def __iter__(self):
-        return self
-
+    def __iter__(self): return self
     def __next__(self):
         line = self.readline()
-        if not line:
-            raise StopIteration
+        if not line: raise StopIteration
         return line
-
-    # Py2 alias
     if PY2:
         next = __next__
 
-    # ---- writes ----
+    # writes
     def write(self, b):
-        if not self._writable:
-            raise UnsupportedOperation("not writable")
-
-        if not isinstance(b, bytes_type):
-            # for safety, only bytes; caller handles text encoding externally
-            raise TypeError("write() requires bytes")
-
-        if self._mm is None:
-            return self._fp.write(b)
-
-        mv = memoryview(b)
-        end = self._pos + len(mv)
-        if end > len(self._mm):
-            raise IOError("write past mapped size; pre-size or resize()")
-        self._mm[self._pos:end] = mv
-        self._pos = end
-        return len(mv)
+        if not self._writable: raise UnsupportedOperation("not writable")
+        if not isinstance(b, bytes_type): raise TypeError("write() requires bytes")
+        if self._mm is None: return self._fp.write(b)
+        mv = memoryview(b); end = self._pos + len(mv)
+        if end > len(self._mm): raise IOError("write past mapped size; pre-size or resize()")
+        self._mm[self._pos:end] = mv; self._pos = end; return len(mv)
 
     def writelines(self, lines):
-        for line in lines:
-            self.write(line)
+        for ln in lines: self.write(ln)
 
-    # ---- durability & size ----
+    # durability & size
     def flush(self):
-        # 1) flush mapping first
         if self._mm is not None:
-            try:
-                self._mm.flush()
-            except Exception:
-                pass
-        # 2) flush Python/stdio buffers
-        try:
-            self._fp.flush()
-        except Exception:
-            pass
-        # 3) fsync real file if any (skips BytesIO and many compressed)
+            try: self._mm.flush()
+            except Exception: pass
+        try: self._fp.flush()
+        except Exception: pass
         base = _extract_base_fp(self._fp)
         if base is not None:
-            try:
-                os.fsync(base.fileno())
-            except Exception:
-                pass
+            try: os.fsync(base.fileno())
+            except Exception: pass
 
     def truncate(self, size=None):
         if self._mm is not None:
             base = _extract_base_fp(self._fp)
-            if base is None:
-                raise UnsupportedOperation("truncate unsupported for mmapped non-file")
-            if size is None:
-                size = self.tell()
-            # Safe approach across OSes: close map, truncate file, re-map
+            if base is None: raise UnsupportedOperation("truncate unsupported for mmapped non-file")
+            if size is None: size = self.tell()
             was_pos = self._pos
-            try:
-                self._mm.close()
-            except Exception:
-                pass
+            try: self._mm.close()
+            except Exception: pass
             base.truncate(size)
             access = mmap.ACCESS_WRITE if self._writable else mmap.ACCESS_READ
             self._mm = mmap.mmap(base.fileno(), size, access=access)
             self._pos = min(was_pos, size)
             return size
-
         trunc = getattr(self._fp, "truncate", None)
-        if not callable(trunc):
-            raise UnsupportedOperation("truncate unsupported by underlying object")
+        if not callable(trunc): raise UnsupportedOperation("truncate unsupported by underlying object")
         return trunc(size)
 
-    # ---- fd/tty ----
+    # fd/tty
     def fileno(self):
         f = getattr(self._fp, "fileno", None)
-        if callable(f):
-            return f()
+        if callable(f): return f()
         raise UnsupportedOperation("no fileno()")
 
     def isatty(self):
         f = getattr(self._fp, "isatty", None)
-        try:
-            return bool(f()) if callable(f) else False
-        except Exception:
-            return False
+        try: return bool(f()) if callable(f) else False
+        except Exception: return False
 
-    # ---- close & ctx mgr ----
+    # close & ctx mgr
     def close(self):
-        if self._closed:
-            return
+        if self._closed: return
         try:
-            if self._writable:
-                self.flush()
+            if self._writable: self.flush()
         finally:
             if self._mm is not None:
-                try:
-                    self._mm.close()
-                except Exception:
-                    pass
+                try: self._mm.close()
+                except Exception: pass
                 self._mm = None
-            try:
-                self._fp.close()
-            except Exception:
-                pass
+            try: self._fp.close()
+            except Exception: pass
             self._closed = True
 
-    def __enter__(self):
-        return self
+    def __enter__(self): return self
+    def __exit__(self, exc_type, exc, tb): self.close()
 
-    def __exit__(self, exc_type, exc, tb):
-        self.close()
-
-    # Accept write_through sets (compat with your current code)
     def __setattr__(self, name, value):
         if name == "write_through":
-            object.__setattr__(self, name, value)
-            return
+            object.__setattr__(self, name, value); return
         object.__setattr__(self, name, value)
 
 
-def CompressOpenFileAlt(fp, compression="auto", compressionlevel=None, compressionuselist=compressionlistalt, formatspecs=__file_format_dict__):
-    if(not hasattr(fp, "read")):
+# Assumes you already have: compressionsupport, outextlistwd, MkTempFile, etc.
+
+def CompressOpenFileAlt(fp, compression="auto", compressionlevel=None,
+                        compressionuselist=compressionlistalt,
+                        formatspecs=__file_format_dict__):
+    """
+    Takes an already-open *bytes* file-like (e.g., BytesIO or file),
+    maybe compresses its contents into a temp file-like, and returns a file-like.
+    Always returns a FileLikeAdapter positioned at start.
+    """
+    if not hasattr(fp, "read"):
         return False
+
     fp.seek(0, 0)
-    if(not compression or compression == formatspecs['format_magic']):
-        compression = "auto"
-    if(compression not in compressionuselist and compression is None):
-        compression = "auto"
-    if(compression == "gzip" and compression in compressionsupport):
-        bytesfp = MkTempFile()
-        if(compressionlevel is None):
-            compressionlevel = 9
-        else:
-            compressionlevel = int(compressionlevel)
-        bytesfp.write(GzipCompressData(
-            fp.read(), compresslevel=compressionlevel))
-    elif(compression == "bzip2" and compression in compressionsupport):
-        bytesfp = MkTempFile()
-        if(compressionlevel is None):
-            compressionlevel = 9
-        else:
-            compressionlevel = int(compressionlevel)
-        bytesfp.write(BzipCompressData(
-            fp.read(), compresslevel=compressionlevel))
-    elif(compression == "lz4" and compression in compressionsupport):
-        bytesfp = MkTempFile()
-        if(compressionlevel is None):
-            compressionlevel = 9
-        else:
-            compressionlevel = int(compressionlevel)
-        bytesfp.write(lz4.frame.compress(
-            fp.read(), compression_level=compressionlevel))
-    elif((compression == "lzo" or compression == "lzop") and compression in compressionsupport):
-        bytesfp = MkTempFile()
-        if(compressionlevel is None):
-            compressionlevel = 9
-        else:
-            compressionlevel = int(compressionlevel)
-        bytesfp.write(lzo.compress(fp.read(), compressionlevel))
-    elif(compression == "zstd" and compression in compressionsupport):
-        bytesfp = MkTempFile()
-        if(compressionlevel is None):
-            compressionlevel = 9
-        else:
-            compressionlevel = int(compressionlevel)
-        compressor = zstandard.ZstdCompressor(compressionlevel, threads=get_default_threads())
-        bytesfp.write(compressor.compress(fp.read()))
-    elif(compression == "lzma" and compression in compressionsupport):
-        bytesfp = MkTempFile()
-        if(compressionlevel is None):
-            compressionlevel = 9
-        else:
-            compressionlevel = int(compressionlevel)
-        try:
-            bytesfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}]))
-        except (NotImplementedError, lzma.LZMAError):
-            bytesfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE))
-    elif(compression == "xz" and compression in compressionsupport):
-        bytesfp = MkTempFile()
-        if(compressionlevel is None):
-            compressionlevel = 9
-        else:
-            compressionlevel = int(compressionlevel)
-        try:
-            bytesfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}]))
-        except (NotImplementedError, lzma.LZMAError):
-            bytesfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ))
-    elif(compression == "zlib" and compression in compressionsupport):
-        bytesfp = MkTempFile()
-        if(compressionlevel is None):
-            compressionlevel = 9
-        else:
-            compressionlevel = int(compressionlevel)
-        bytesfp.write(zlib.compress(fp.read(), compressionlevel))
-    elif(compression == "auto" or compression is None):
-        bytesfp = fp
-    else:
-        bytesfp = fp
-    bytesfp.seek(0, 0)
-    return bytesfp
 
+    if (not compression or compression == formatspecs['format_magic']
+        or (compression not in compressionuselist and compression is None)):
+        compression = "auto"
 
-def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
-    if(outfile is None):
-        return False
-    fbasename = os.path.splitext(outfile)[0]
-    fextname = os.path.splitext(outfile)[1]
-    if(compressionlevel is None):
-        compressionlevel = 9
-    else:
-        compressionlevel = int(compressionlevel)
-    if(sys.version_info[0] == 2):
-        mode = "w"
-    else:
-        mode = "wb"
+    # helper to coerce level
+    def _lvl(x):
+        return 9 if x is None else int(x)
+
+    # default: pass-through
+    bytesfp = fp
+
     try:
-        if(fextname not in outextlistwd or not compressionenable):
-            outfp = open(outfile, "wb")
-        elif(fextname == ".gz" and "gzip" in compressionsupport):
-            if sys.version_info[0] == 2:
-                outfp = GzipFile(outfile, mode=mode, level=compressionlevel)
-            else:
-                outfp = gzip.open(outfile, mode, compressionlevel)
-        elif(fextname == ".bz2" and "bzip2" in compressionsupport):
-            outfp = bz2.open(outfile, mode, compressionlevel)
-        elif(fextname == ".zst" and "zstandard" in compressionsupport):
-            if 'zstandard' in sys.modules:
-                outfp = ZstdFile(outfile, mode=mode, level=compressionlevel)
-            elif 'pyzstd' in sys.modules:
-                outfp = pyzstd.zstdfile.ZstdFile(outfile, mode=mode, level=compressionlevel)
-            else:
-                return Flase
-        elif(fextname == ".xz" and "xz" in compressionsupport):
+        if compression == "gzip" and "gzip" in compressionsupport:
+            bytesfp = MkTempFile()
+            bytesfp.write(GzipCompressData(fp.read(), compresslevel=_lvl(compressionlevel)))
+        elif compression == "bzip2" and "bzip2" in compressionsupport:
+            bytesfp = MkTempFile()
+            bytesfp.write(BzipCompressData(fp.read(), compresslevel=_lvl(compressionlevel)))
+        elif compression == "lz4" and "lz4" in compressionsupport:
+            bytesfp = MkTempFile()
+            bytesfp.write(lz4.frame.compress(fp.read(), compression_level=_lvl(compressionlevel)))
+        elif (compression in ("lzo", "lzop")) and "lzop" in compressionsupport:
+            bytesfp = MkTempFile()
+            bytesfp.write(lzo.compress(fp.read(), _lvl(compressionlevel)))
+        elif compression == "zstd" and "zstandard" in compressionsupport:
+            bytesfp = MkTempFile()
+            level = _lvl(compressionlevel)
+            compressor = zstandard.ZstdCompressor(level, threads=get_default_threads())
+            bytesfp.write(compressor.compress(fp.read()))
+        elif compression == "lzma" and "lzma" in compressionsupport:
+            bytesfp = MkTempFile()
+            level = _lvl(compressionlevel)
             try:
-                outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ, filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}])
+                bytesfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE,
+                                            filters=[{"id": lzma.FILTER_LZMA1, "preset": level}]))
             except (NotImplementedError, lzma.LZMAError):
-                outfp = lzma.open(outfile, mode, format=lzma.FORMAT_XZ)
-        elif(fextname == ".lz4" and "lz4" in compressionsupport):
-            outfp = lz4.frame.open(
-                    outfile, mode, compression_level=compressionlevel)
-        elif(fextname == ".lzo" and "lzop" in compressionsupport):
-            outfp = LzopFile(outfile, mode=mode, level=compressionlevel)
-        elif(fextname == ".lzma" and "lzma" in compressionsupport):
+                bytesfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_ALONE))
+        elif compression == "xz" and "xz" in compressionsupport:
+            bytesfp = MkTempFile()
+            level = _lvl(compressionlevel)
             try:
-                outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE, filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}])
+                bytesfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ,
+                                            filters=[{"id": lzma.FILTER_LZMA2, "preset": level}]))
             except (NotImplementedError, lzma.LZMAError):
-                outfp = lzma.open(outfile, mode, format=lzma.FORMAT_ALONE)
-        elif((fextname == ".zz" or fextname == ".zl" or fextname == ".zlib") and "zlib" in compressionsupport):
-            outfp = ZlibFile(outfile, mode=mode, level=compressionlevel)
+                bytesfp.write(lzma.compress(fp.read(), format=lzma.FORMAT_XZ))
+        elif compression == "zlib" and "zlib" in compressionsupport:
+            bytesfp = MkTempFile()
+            bytesfp.write(zlib.compress(fp.read(), _lvl(compressionlevel)))
+        else:
+            # "auto" or unsupported -> pass-through
+            bytesfp = fp
     except FileNotFoundError:
         return False
+
+    bytesfp.seek(0, 0)
+    out = FileLikeAdapter(bytesfp, mode="rb")  # read interface for the caller
+    try:
+        out.write_through = True
+    except Exception:
+        pass
+    return out
+
+
+def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None,
+                     use_mmap=False, mmap_size=None):
+    """
+    Opens a path for writing (compressed based on extension), returning a FileLikeAdapter.
+    If uncompressed and use_mmap=True, pre-sizes the file and expose mmap-backed writer.
+    """
+    if outfile is None:
+        return False
+
+    fbasename, fextname = os.path.splitext(outfile)
+    compressionlevel = 9 if compressionlevel is None else int(compressionlevel)
+    mode = "w" if PY2 else "wb"
+
+    try:
+        # Uncompressed branch
+        if (fextname not in outextlistwd) or (not compressionenable):
+            if use_mmap:
+                if not mmap_size or mmap_size <= 0:
+                    raise ValueError("use_mmap=True requires positive mmap_size")
+                fp = open(outfile, "w+b")
+                fp.truncate(mmap_size)
+                mm = mmap.mmap(fp.fileno(), mmap_size, access=mmap.ACCESS_WRITE)
+                outfp = FileLikeAdapter(fp, mode="wb", mm=mm)
+            else:
+                outfp = FileLikeAdapter(open(outfile, "wb"), mode="wb")
+
+        # Compressed branches (unchanged openers; all wrapped)
+        elif (fextname == ".gz" and "gzip" in compressionsupport):
+            if PY2:
+                outfp = FileLikeAdapter(GzipFile(outfile, mode=mode, level=compressionlevel), mode="wb")
+            else:
+                outfp = FileLikeAdapter(gzip.open(outfile, mode, compressionlevel), mode="wb")
+
+        elif (fextname == ".bz2" and "bzip2" in compressionsupport):
+            outfp = FileLikeAdapter(bz2.open(outfile, mode, compressionlevel), mode="wb")
+
+        elif (fextname == ".zst" and "zstandard" in compressionsupport):
+            if 'zstandard' in sys.modules:
+                outfp = FileLikeAdapter(ZstdFile(outfile, mode=mode, level=compressionlevel), mode="wb")
+            elif 'pyzstd' in sys.modules:
+                outfp = FileLikeAdapter(pyzstd.zstdfile.ZstdFile(outfile, mode=mode, level=compressionlevel), mode="wb")
+            else:
+                return False  # fix: 'Flase' -> False
+
+        elif (fextname == ".xz" and "xz" in compressionsupport):
+            try:
+                outfp = FileLikeAdapter(
+                    lzma.open(outfile, mode, format=lzma.FORMAT_XZ,
+                              filters=[{"id": lzma.FILTER_LZMA2, "preset": compressionlevel}]),
+                    mode="wb")
+            except (NotImplementedError, lzma.LZMAError):
+                outfp = FileLikeAdapter(lzma.open(outfile, mode, format=lzma.FORMAT_XZ), mode="wb")
+
+        elif (fextname == ".lz4" and "lz4" in compressionsupport):
+            outfp = FileLikeAdapter(lz4.frame.open(outfile, mode, compression_level=compressionlevel), mode="wb")
+
+        elif (fextname == ".lzo" and "lzop" in compressionsupport):
+            outfp = FileLikeAdapter(LzopFile(outfile, mode=mode, level=compressionlevel), mode="wb")
+
+        elif (fextname == ".lzma" and "lzma" in compressionsupport):
+            try:
+                outfp = FileLikeAdapter(
+                    lzma.open(outfile, mode, format=lzma.FORMAT_ALONE,
+                              filters=[{"id": lzma.FILTER_LZMA1, "preset": compressionlevel}]),
+                    mode="wb")
+            except (NotImplementedError, lzma.LZMAError):
+                outfp = FileLikeAdapter(lzma.open(outfile, mode, format=lzma.FORMAT_ALONE), mode="wb")
+
+        elif ((fextname in (".zz", ".zl", ".zlib")) and "zlib" in compressionsupport):
+            outfp = FileLikeAdapter(ZlibFile(outfile, mode=mode, level=compressionlevel), mode="wb")
+
+        else:
+            # Fallback: treat as uncompressed
+            outfp = FileLikeAdapter(open(outfile, "wb"), mode="wb")
+
+    except FileNotFoundError:
+        return False
+
     try:
         outfp.write_through = True
-    except AttributeError:
+    except Exception:
         pass
     return outfp
 
