@@ -346,6 +346,8 @@ __use_ini_file__ = True
 __use_ini_name__ = "catfile.ini"
 __use_json_file__ = False
 __use_json_name__ = "catfile.json"
+if(__use_ini_file__ and __use_json_name__):
+    __use_json_name__ = False
 if('PYCATFILE_CONFIG_FILE' in os.environ and os.path.exists(os.environ['PYCATFILE_CONFIG_FILE']) and __use_env_file__):
     scriptconf = os.environ['PYCATFILE_CONFIG_FILE']
 else:
@@ -356,6 +358,10 @@ else:
         scriptconf = ""
 if os.path.exists(scriptconf):
     __config_file__ = scriptconf
+elif(__use_ini_file__ and not __use_json_file__):
+    __config_file__ = os.path.join(os.path.dirname(os.path.realpath(__file__)), __use_ini_name__)
+elif(not __use_ini_file__ and __use_json_file__):
+    __config_file__ = os.path.join(os.path.dirname(os.path.realpath(__file__)), __use_json_name__)
 else:
     __config_file__ = os.path.join(os.path.dirname(os.path.realpath(__file__)), __use_ini_name__)
 if __use_ini_file__ and os.path.exists(__config_file__):
@@ -372,19 +378,153 @@ if __use_ini_file__ and os.path.exists(__config_file__):
     __use_inmemfile__ = config.getboolean('config', 'inmemfile')
     # Loop through all sections
     for section in config.sections():
+        if section == "config":
+            continue
+
         required_keys = [
-            "len", "hex", "ver", "name", 
+            "len", "hex", "ver", "name",
             "magic", "delimiter", "extension",
             "newstyle", "advancedlist", "altinode"
         ]
-        if section != "config" and all(key in config[section] for key in required_keys):
-            delim = decode_unicode_escape(config.get(section, 'delimiter'))
-            if(not is_only_nonprintable(delim)):
-                delim = "\x00" * len("\x00")
-            __file_format_multi_dict__.update( { decode_unicode_escape(config.get(section, 'magic')): {'format_name': decode_unicode_escape(config.get(section, 'name')), 'format_magic': decode_unicode_escape(config.get(section, 'magic')), 'format_len': config.getint(section, 'len'), 'format_hex': config.get(section, 'hex'), 'format_delimiter': delim, 'format_ver': config.get(section, 'ver'), 'new_style': config.getboolean(section, 'newstyle'), 'use_advanced_list': config.getboolean(section, 'advancedlist'), 'use_alt_inode': config.getboolean(section, 'altinode'), 'format_extension': decode_unicode_escape(config.get(section, 'extension')) } } )
+
+        # Py2+Py3 compatible key presence check
+        has_all_required = all(config.has_option(section, key) for key in required_keys)
+        if not has_all_required:
+            continue
+
+        delim = decode_unicode_escape(config.get(section, 'delimiter'))
+        if (not is_only_nonprintable(delim)):
+            delim = "\x00" * len("\x00")
+
+        __file_format_multi_dict__.update({
+            decode_unicode_escape(config.get(section, 'magic')): {
+                'format_name':        decode_unicode_escape(config.get(section, 'name')),
+                'format_magic':       decode_unicode_escape(config.get(section, 'magic')),
+                'format_len':         config.getint(section, 'len'),
+                'format_hex':         config.get(section, 'hex'),
+                'format_delimiter':   delim,
+                'format_ver':         config.get(section, 'ver'),
+                'new_style':          config.getboolean(section, 'newstyle'),
+                'use_advanced_list':  config.getboolean(section, 'advancedlist'),
+                'use_alt_inode':      config.getboolean(section, 'altinode'),
+                'format_extension':   decode_unicode_escape(config.get(section, 'extension')),
+            }
+        })
         if not __file_format_multi_dict__ and not __include_defaults__:
             __include_defaults__ = True
+elif __use_json_file__ and os.path.exists(__config_file__):
+    # Prefer ujson/simplejson if available (you already have this import block above)
+    with open(__config_file__, 'rb') as f:
+        raw = f.read()
+
+    # Ensure we get a unicode string for json.loads on both Py2 and Py3
+    if sys.version_info[0] < 3:
+        text = raw.decode('utf-8')  # Py2 bytes -> unicode
+    else:
+        text = raw if isinstance(raw, str) else raw.decode('utf-8')
+
+    cfg = json.loads(text)
+
+    # --- helpers: coerce + decode like your INI path ---
+    def decode_unicode_escape(value):
+        if sys.version_info[0] < 3:  # Python 2
+            if isinstance(value, unicode):  # noqa: F821 (Py2 only)
+                return value.encode('utf-8').decode('unicode_escape')
+            elif isinstance(value, str):
+                return value.decode('unicode_escape')
+            else:
+                return value
+        else:  # Python 3
+            if isinstance(value, str):
+                return bytes(value, 'UTF-8').decode('unicode_escape')
+            else:
+                return value
+
+    def _to_bool(v):
+        # handle true/false, 1/0, and "true"/"false"/"1"/"0"
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, (int, float)):
+            return bool(v)
+        if isinstance(v, (str,)):
+            lv = v.strip().lower()
+            if lv in ('true', 'yes', '1'):
+                return True
+            if lv in ('false', 'no', '0'):
+                return False
+        return bool(v)
+
+    def _to_int(v, default=0):
+        try:
+            return int(v)
+        except Exception:
+            return default
+
+    def _get(section_dict, key, default=None):
+        return section_dict.get(key, default)
+
+    # --- read global config (like INI's [config]) ---
+    cfg_config = cfg.get('config', {}) or {}
+    __file_format_default__ = decode_unicode_escape(_get(cfg_config, 'default', ''))
+    __program_name__        = decode_unicode_escape(_get(cfg_config, 'proname', ''))
+    __include_defaults__    = _to_bool(_get(cfg_config, 'includedef', False))
+    __use_inmemfile__       = _to_bool(_get(cfg_config, 'inmemfile', False))
+
+    # --- iterate format sections (everything except "config") ---
+    required_keys = [
+        "len", "hex", "ver", "name",
+        "magic", "delimiter", "extension",
+        "newstyle", "advancedlist", "altinode"
+    ]
+
+    for section_name, section in cfg.items():
+        if section_name == 'config' or not isinstance(section, dict):
+            continue
+
+        # check required keys present
+        if not all(k in section for k in required_keys):
+            continue
+
+        # pull + coerce values
+        magic      = decode_unicode_escape(_get(section, 'magic', ''))
+        name       = decode_unicode_escape(_get(section, 'name', ''))
+        fmt_len    = _to_int(_get(section, 'len', 0))
+        fmt_hex    = decode_unicode_escape(_get(section, 'hex', ''))
+        fmt_ver    = decode_unicode_escape(_get(section, 'ver', ''))
+        delim      = decode_unicode_escape(_get(section, 'delimiter', ''))
+        new_style  = _to_bool(_get(section, 'newstyle', False))
+        adv_list   = _to_bool(_get(section, 'advancedlist', False))
+        alt_inode  = _to_bool(_get(section, 'altinode', False))
+        extension  = decode_unicode_escape(_get(section, 'extension', ''))
+
+        # keep your delimiter validation semantics
+        if not is_only_nonprintable(delim):
+            delim = "\x00" * len("\x00")  # same as your INI branch
+
+        __file_format_multi_dict__.update({
+            magic: {
+                'format_name':        name,
+                'format_magic':       magic,
+                'format_len':         fmt_len,
+                'format_hex':         fmt_hex,
+                'format_delimiter':   delim,
+                'format_ver':         fmt_ver,
+                'new_style':          new_style,
+                'use_advanced_list':  adv_list,
+                'use_alt_inode':      alt_inode,
+                'format_extension':   extension,
+            }
+        })
+
+    # mirror your INI logic
+    if not __file_format_multi_dict__ and not __include_defaults__:
+        __include_defaults__ = True
 elif __use_ini_file__ and not os.path.exists(__config_file__):
+    __use_ini_file__ = False
+    __use_json_file__ = False
+    __include_defaults__ = True
+elif __use_json_file__ and not os.path.exists(__config_file__):
+    __use_json_file__ = False
     __use_ini_file__ = False
     __include_defaults__ = True
 if not __use_ini_file__ and not __include_defaults__:
