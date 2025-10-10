@@ -4944,7 +4944,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         curcompression = "none"
         if not followlink and ftype in data_types:
             with open(fname, "rb") as fpc:
-                shutil.copyfileobj(fpc, fcontents)
+                copy_opaque(fpc, fcontents, bufsize=1 << 20)  # 1 MiB chunks, opaque copy
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
                 fcencoding = GetFileEncoding(fcontents, 0, False)
@@ -4991,7 +4991,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                 return False
             flstatinfo = os.stat(flinkname)
             with open(flinkname, "rb") as fpc:
-                shutil.copyfileobj(fpc, fcontents)
+                copy_opaque(fpc, fcontents, bufsize=1 << 20)  # 1 MiB chunks, opaque copy
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
                 fcencoding = GetFileEncoding(fcontents, 0, False)
@@ -6292,6 +6292,106 @@ def open_adapter(obj_or_path, mode="rb", use_mmap=False, mmap_size=None):
 
 # Assumes you already have: compressionsupport, outextlistwd, MkTempFile, etc.
 
+def ensure_filelike(infile, mode="rb", use_mmap=False):
+    """
+    Accepts either a path or an existing file-like object.
+    Always returns a FileLikeAdapter (optionally mmap-backed).
+    """
+    if hasattr(infile, "read") or hasattr(infile, "write"):
+        # Already a file-like
+        fp = infile
+    else:
+        try:
+            fp = open(infile, mode)
+        except IOError:  # covers FileNotFoundError on Py2
+            return False
+
+    # Wrap in FileLikeAdapter for consistent interface
+    return open_adapter(fp, mode=mode, use_mmap=use_mmap)
+
+def fast_copy(infp, outfp, bufsize=1 << 20):
+    buf = bytearray(bufsize)
+    mv = memoryview(buf)
+    while True:
+        n = getattr(infp, "readinto", None)
+        if callable(n):
+            n = infp.readinto(mv)
+            if not n:
+                break
+            outfp.write(mv[:n])
+        else:
+            # Fallback if readinto is missing
+            data = infp.read(bufsize)
+            if not data:
+                break
+            outfp.write(data)
+
+def copy_file_to_mmap_dest(src_path, outfp, chunk_size=8 << 20):
+    with open(src_path, "rb") as fp:
+        try:
+            mm = mmap.mmap(fp.fileno(), 0, access=mmap.ACCESS_READ)
+            pos, size = 0, len(mm)
+            while pos < size:
+                end = min(pos + chunk_size, size)
+                outfp.write(mm[pos:end])  # outfp is your mmap-backed FileLikeAdapter
+                pos = end
+            mm.close()
+        except (ValueError, mmap.error, OSError):
+            # fall back
+            shutil.copyfileobj(fp, outfp, length=chunk_size)
+
+def copy_opaque(src, dst, bufsize=1 << 20, grow_step=64 << 20):
+    """
+    Copy opaque bytes from 'src' (any readable file-like) to 'dst'
+    (your mmap-backed FileLikeAdapter or any writable file-like).
+    - Uses readinto when available (zero extra allocations).
+    - If dst is mmapped and size is exceeded, auto-grow via truncate().
+    Returns total bytes copied.
+    """
+    total = 0
+    buf = bytearray(bufsize)
+    mv = memoryview(buf)
+
+    # Best-effort: if src supports seek/tell, start from current position
+    # and do not disturb caller beyond what we read.
+    while True:
+        # Prefer readinto to avoid extra allocations
+        readinto = getattr(src, "readinto", None)
+        if callable(readinto):
+            n = src.readinto(mv)
+            if not n:
+                break
+            # write; if mmap too small, grow and retry once
+            try:
+                dst.write(mv[:n])
+            except IOError:
+                # likely "write past mapped size"; try to grow
+                try:
+                    new_size = max(dst.tell() + n, dst.tell() + grow_step)
+                    dst.truncate(new_size)
+                    dst.write(mv[:n])
+                except Exception:
+                    raise
+            total += n
+        else:
+            chunk = src.read(bufsize)
+            if not chunk:
+                break
+            try:
+                dst.write(chunk)
+            except IOError:
+                try:
+                    new_size = max(dst.tell() + len(chunk), dst.tell() + grow_step)
+                    dst.truncate(new_size)
+                    dst.write(chunk)
+                except Exception:
+                    raise
+            total += len(chunk)
+
+    # Your adapter's flush() already does mm.flush() + fp.flush() + fsync(fd) when possible
+    dst.flush()
+    return total
+
 def CompressOpenFileAlt(fp, compression="auto", compressionlevel=None,
                         compressionuselist=compressionlistalt,
                         formatspecs=__file_format_dict__):
@@ -6757,7 +6857,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
         curcompression = "none"
         if not followlink and ftype in data_types:
             with open(fname, "rb") as fpc:
-                shutil.copyfileobj(fpc, fcontents)
+                copy_opaque(fpc, fcontents, bufsize=1 << 20)  # 1 MiB chunks, opaque copy
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
                 fcencoding = GetFileEncoding(fcontents, 0, False)
@@ -6804,7 +6904,7 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
                 return False
             flstatinfo = os.stat(flinkname)
             with open(flinkname, "rb") as fpc:
-                shutil.copyfileobj(fpc, fcontents)
+                copy_opaque(fpc, fcontents, bufsize=1 << 20)  # 1 MiB chunks, opaque copy
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
                 fcencoding = GetFileEncoding(fcontents, 0, False)
@@ -7098,7 +7198,7 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
         curcompression = "none"
         if ftype in data_types:
             fpc = tarfp.extractfile(member)
-            shutil.copyfileobj(fpc, fcontents)
+            copy_opaque(fpc, fcontents, bufsize=1 << 20)  # 1 MiB chunks, opaque copy
             fpc.close()
             typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
             fcontents.seek(0, 0)
