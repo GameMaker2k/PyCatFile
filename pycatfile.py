@@ -2130,583 +2130,939 @@ def create_alias_function(prefix, base_name, suffix, target_function, positional
     globals()[function_name] = alias_function
 
 
-class ZlibFile:
-    def __init__(self, file_path=None, fileobj=None, mode='rb', level=9, wbits=15, encoding=None, errors=None, newline=None):
+if PY2:
+    binary_types = (str, bytearray, buffer)  # noqa: F821 (buffer in Py2)
+else:
+    binary_types = (bytes, bytearray, memoryview)
+
+
+# -------- Helpers --------
+def _byte_at(b, i):
+    """Return int value of byte at index i for both Py2 and Py3."""
+    if PY2:
+        return ord(b[i:i+1])
+    return b[i]
+
+
+def _is_valid_zlib_header(cmf, flg):
+    """
+    RFC1950 CMF/FLG validation:
+      - CM (lower 4 bits of CMF) must be 8 (DEFLATE)
+      - CINFO (upper 4 bits of CMF) <= 7 (window up to 32K)
+      - (CMF*256 + FLG) % 31 == 0
+    """
+    cm = cmf & 0x0F
+    cinfo = (cmf >> 4) & 0x0F
+    if cm != 8 or cinfo > 7:
+        return False
+    if ((cmf << 8) + flg) % 31 != 0:
+        return False
+    return True
+
+
+# -------- Main class --------
+class ZlibFile(object):
+    """
+    Read/Write RFC1950 zlib streams with support for concatenated members.
+
+    Modes:
+      'rb' read bytes
+      'rt' read text (decode with encoding/errors/newline)
+      'wb' write bytes
+      'wt' write text
+      'ab' append bytes (adds a new zlib member)
+      'at' append text
+      'xb'/'xt' create-only (unsupported on Py2)
+
+    Notes:
+      - Write path streams with buffering; no per-write Z_SYNC_FLUSH.
+      - Read path streams from underlying file and materializes the full
+        decompressed payload in memory for simple seek/tell/read.
+      - Streams with preset dictionaries (FDICT) are rejected.
+      - wbits must be > 0 (zlib wrapper). Use gzip/xz elsewhere if needed.
+    """
+
+    def __init__(self, file_path=None, fileobj=None, mode='rb', level=6, wbits=15,
+                 encoding=None, errors=None, newline=None):
         if file_path is None and fileobj is None:
             raise ValueError("Either file_path or fileobj must be provided")
         if file_path is not None and fileobj is not None:
-            raise ValueError(
-                "Only one of file_path or fileobj should be provided")
+            raise ValueError("Only one of file_path or fileobj should be provided")
+
+        if 'b' not in mode and 't' not in mode:
+            mode += 'b'  # default to binary if not specified
+        if 'x' in mode and PY2:
+            raise ValueError("Exclusive creation mode 'x' is not supported on Python 2")
 
         self.file_path = file_path
-        self.fileobj = fileobj
+        self.file = None
+        self._external_fp = (fileobj is not None)
+
         self.mode = mode
-        self.level = level
-        self.wbits = wbits
+        self.level = int(level)
+        self.wbits = int(wbits)
         self.encoding = encoding
         self.errors = errors
         self.newline = newline
-        self._compressed_data = b''
-        self._decompressed_data = b''
+        self._text_mode = ('t' in mode)
+
+        # Internal state
+        self._compressor = None
+        self._write_buf = bytearray()
+        self._decompressed_data = None  # bytes or text
         self._position = 0
-        self._text_mode = 't' in mode
 
-        # Force binary mode for internal handling
+        # Open underlying file with binary I/O
         internal_mode = mode.replace('t', 'b')
-
-        if 'w' in mode or 'a' in mode or 'x' in mode:
-            self.file = open(
-                file_path, internal_mode) if file_path else fileobj
-            self._compressor = zlib.compressobj(level, zlib.DEFLATED, wbits)
-        elif 'r' in mode:
-            if file_path:
-                if os.path.exists(file_path):
-                    self.file = open(file_path, internal_mode)
-                    self._load_file()
-                else:
-                    raise FileNotFoundError(
-                        "No such file: '{}'".format(file_path))
-            elif fileobj:
-                self.file = fileobj
-                self._load_file()
+        if file_path is not None:
+            if 'x' in internal_mode and os.path.exists(file_path):
+                raise IOError("File exists: '{}'".format(file_path))
+            self.file = open(file_path, internal_mode)
         else:
-            raise ValueError("Mode should be 'rb' or 'wb'")
+            self.file = fileobj
+            if self.file is None:
+                raise ValueError("fileobj is None")
+            # basic capability checks
+            if 'r' in internal_mode and not hasattr(self.file, 'read'):
+                raise ValueError("fileobj must support read() in read mode")
+            if any(ch in internal_mode for ch in ('w', 'a', 'x')) and not hasattr(self.file, 'write'):
+                raise ValueError("fileobj must support write() in write/append mode")
 
-    def _load_file(self):
-        self.file.seek(0)
-        self._compressed_data = self.file.read()
-        if not self._compressed_data.startswith((b'\x78\x01', b'\x78\x5E', b'\x78\x9C', b'\x78\xDA')):
-            raise ValueError("Invalid zlib file header")
-        self._decompressed_data = zlib.decompress(
-            self._compressed_data, self.wbits)
-        if self._text_mode:
-            self._decompressed_data = self._decompressed_data.decode(
-                self.encoding or 'UTF-8', self.errors or 'strict')
+        # Initialize per mode
+        if any(ch in internal_mode for ch in ('w', 'a', 'x')):
+            if self.wbits <= 0:
+                raise ValueError("wbits must be > 0 for zlib wrapper")
+            # Start a fresh member (append just seeks to end)
+            if 'a' in internal_mode:
+                try:
+                    self.file.seek(0, os.SEEK_END)
+                except Exception:
+                    pass
+            self._compressor = zlib.compressobj(self.level, zlib.DEFLATED, self.wbits)
 
-    def write(self, data):
+        elif 'r' in internal_mode:
+            self._load_all_members()
+
+        else:
+            raise ValueError("Unsupported mode: {}".format(mode))
+
+    # ---------- READ PATH ----------
+
+    def _load_all_members(self):
+        """
+        Stream the underlying file and decompress all concatenated zlib members.
+        Materializes the full uncompressed content in memory.
+        Rejects streams with FDICT (preset dictionary) set.
+        """
+        # Seek to start if possible
+        try:
+            self.file.seek(0)
+        except Exception:
+            pass
+
+        chunks = []
+        pending = b""
+        d = None  # current decompressor
+
+        while True:
+            data = self.file.read(1 << 20)  # 1 MiB blocks
+            if not data:
+                # End of file. Finish last member if active.
+                if d is not None:
+                    chunks.append(d.flush())
+                break
+
+            buf = pending + data
+            # Process buffer; we may start new member(s) within this buffer.
+            while True:
+                if d is None:
+                    # Need at least 2 bytes for CMF/FLG
+                    if len(buf) < 2:
+                        pending = buf  # keep for next round
+                        break
+                    cmf = _byte_at(buf, 0)
+                    flg = _byte_at(buf, 1)
+                    if not _is_valid_zlib_header(cmf, flg):
+                        raise ValueError("Invalid zlib header")
+                    # FDICT (bit 5) not supported
+                    if (flg & 0x20) != 0:
+                        raise ValueError("Preset dictionary (FDICT) not supported")
+                    # Start new member; do NOT consume the 2 bytes here—let zlib see them
+                    d = zlib.decompressobj(self.wbits)
+
+                out = d.decompress(buf)
+                if out:
+                    chunks.append(out)
+
+                if d.unused_data:
+                    # Member ended; flush and continue with the next member's bytes
+                    chunks.append(d.flush())
+                    buf = d.unused_data
+                    d = None
+                    if not buf:
+                        # No bytes left; proceed to next read()
+                        break
+                    # else: loop to validate header and start next member
+                    continue
+
+                # No unused_data means member continues; carry any partial bytes
+                pending = b""
+                break  # need more input; exit inner loop
+
+        payload = b"".join(chunks)
         if self._text_mode:
-            data = data.encode(self.encoding or 'UTF-8',
-                               self.errors or 'strict')
-        compressed_data = self._compressor.compress(
-            data) + self._compressor.flush(zlib.Z_SYNC_FLUSH)
-        self.file.write(compressed_data)
+            enc = self.encoding or 'UTF-8'
+            errs = self.errors or 'strict'
+            payload = payload.decode(enc, errs)
+        self._decompressed_data = payload
+        self._position = 0
 
     def read(self, size=-1):
-        if size == -1:
+        if self._decompressed_data is None:
+            raise IOError("File not opened for reading")
+        if size is None or size < 0:
             size = len(self._decompressed_data) - self._position
-        data = self._decompressed_data[self._position:self._position + size]
-        self._position += size
-        return data
+        end = self._position + int(size)
+        out = self._decompressed_data[self._position:end]
+        self._position = end
+        return out
+
+    def readline(self, size=-1):
+        if self._decompressed_data is None:
+            raise IOError("File not opened for reading")
+        data = self._decompressed_data
+        if self._position >= len(data):
+            return text_type("") if self._text_mode else b""
+        nl = u"\n" if self._text_mode else b"\n"
+        idx = data.find(nl, self._position)
+        if idx == -1:
+            return self.read(size)
+        end = idx + 1
+        if size is not None and size >= 0:
+            end = min(end, self._position + size)
+        out = data[self._position:end]
+        self._position = end
+        return out
 
     def seek(self, offset, whence=0):
-        if whence == 0:  # absolute file positioning
-            self._position = offset
-        elif whence == 1:  # seek relative to the current position
-            self._position += offset
-        elif whence == 2:  # seek relative to the file's end
-            self._position = len(self._decompressed_data) + offset
+        if self._decompressed_data is None:
+            raise IOError("File not opened for reading")
+        if whence == 0:
+            pos = offset
+        elif whence == 1:
+            pos = self._position + offset
+        elif whence == 2:
+            pos = len(self._decompressed_data) + offset
         else:
-            raise ValueError("Invalid value for whence")
-
-        # Ensure the position is within bounds
-        self._position = max(
-            0, min(self._position, len(self._decompressed_data)))
+            raise ValueError("Invalid whence")
+        pos = int(pos)
+        self._position = max(0, min(pos, len(self._decompressed_data)))
+        return self._position
 
     def tell(self):
         return self._position
 
+    # ---------- WRITE PATH ----------
+
+    def write(self, data):
+        if self._compressor is None:
+            raise IOError("File not opened for writing")
+
+        if self._text_mode:
+            enc = self.encoding or 'UTF-8'
+            errs = self.errors or 'strict'
+            if isinstance(data, text_type):
+                data = data.encode(enc, errs)
+            elif not isinstance(data, binary_types):
+                raise TypeError("write() expects text or bytes-like in text mode")
+        else:
+            if not isinstance(data, binary_types):
+                raise TypeError("write() expects bytes-like in binary mode")
+
+        # Normalize to bytes for Py2/3
+        if not PY2 and isinstance(data, memoryview):
+            data = data.tobytes()
+        elif PY2 and isinstance(data, bytearray):
+            data = bytes(data)
+
+        # Buffer and compress in chunks to limit memory
+        self._write_buf += data
+        if len(self._write_buf) >= (1 << 20):  # 1 MiB threshold
+            chunk = self._compressor.compress(bytes(self._write_buf))
+            if chunk:
+                self.file.write(chunk)
+            del self._write_buf[:]  # clear
+
+        return len(data)
+
     def flush(self):
-        self.file.flush()
+        if self._compressor is not None:
+            if self._write_buf:
+                chunk = self._compressor.compress(bytes(self._write_buf))
+                if chunk:
+                    self.file.write(chunk)
+                del self._write_buf[:]
+            out = self._compressor.flush(zlib.Z_SYNC_FLUSH)
+            if out:
+                self.file.write(out)
+        if hasattr(self.file, 'flush'):
+            self.file.flush()
+
+    def close(self):
+        try:
+            if self._compressor is not None:
+                if self._write_buf:
+                    self.file.write(self._compressor.compress(bytes(self._write_buf)))
+                    del self._write_buf[:]
+                final = self._compressor.flush(zlib.Z_FINISH)
+                if final:
+                    self.file.write(final)
+        finally:
+            if self.file_path and self.file is not None:
+                try:
+                    self.file.close()
+                except Exception:
+                    pass
+
+    # ---------- File-like helpers ----------
 
     def fileno(self):
         if hasattr(self.file, 'fileno'):
             return self.file.fileno()
-        raise OSError("The underlying file object does not support fileno()")
+        raise OSError("Underlying file object does not support fileno()")
 
     def isatty(self):
-        if hasattr(self.file, 'isatty'):
-            return self.file.isatty()
-        return False
+        return bool(getattr(self.file, 'isatty', lambda: False)())
 
     def truncate(self, size=None):
         if hasattr(self.file, 'truncate'):
             return self.file.truncate(size)
-        raise OSError("The underlying file object does not support truncate()")
-
-    def close(self):
-        if 'w' in self.mode or 'a' in self.mode or 'x' in self.mode:
-            self.file.write(self._compressor.flush(zlib.Z_FINISH))
-        if self.file_path:
-            self.file.close()
+        raise OSError("Underlying file object does not support truncate()")
 
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_val, tb):
         self.close()
 
 
+# ---------- Single-shot helpers (kept, but class uses streaming) ----------
 def _gzip_compress(data, compresslevel=9):
-    """
-    Compress data with a GZIP wrapper (wbits=31) in one shot.
-    :param data: Bytes to compress.
-    :param compresslevel: 1..9
-    :return: GZIP-compressed bytes.
-    """
-    compobj = zlib.compressobj(compresslevel, zlib.DEFLATED, 31)
-    cdata = compobj.compress(data)
-    cdata += compobj.flush(zlib.Z_FINISH)
-    return cdata
-
+    co = zlib.compressobj(compresslevel, zlib.DEFLATED, 31)  # 31 => gzip wrapper
+    return co.compress(data) + co.flush(zlib.Z_FINISH)
 
 def _gzip_decompress(data):
-    """
-    Decompress data with gzip headers/trailers (wbits=31).
-    Single-shot approach.
-    :param data: GZIP-compressed bytes
-    :return: Decompressed bytes
-    """
-    # If you need multi-member support, you'd need a streaming loop here.
     return zlib.decompress(data, 31)
 
-
 def _gzip_decompress_multimember(data):
-    """
-    Decompress possibly multi-member GZIP data, returning all uncompressed bytes.
-
-    - We loop over each GZIP member.
-    - zlib.decompressobj(wbits=31) stops after the first member it encounters.
-    - We use 'unused_data' to detect leftover data and continue until no more.
-    """
-    result = b""
-    current_data = data
-
-    while current_data:
-        # Create a new decompress object for the next member
-        dobj = zlib.decompressobj(31)
-        try:
-            part = dobj.decompress(current_data)
-        except zlib.error as e:
-            # If there's a decompression error, break or raise
-            raise ValueError("Decompression error: {}".format(str(e)))
-
-        result += part
-        result += dobj.flush()
-
-        if dobj.unused_data:
-            # 'unused_data' holds the bytes after the end of this gzip member
-            # So we move on to the next member
-            current_data = dobj.unused_data
+    out = []
+    buf = data
+    while buf:
+        d = zlib.decompressobj(31)
+        out.append(d.decompress(buf))
+        out.append(d.flush())
+        if d.unused_data:
+            buf = d.unused_data
         else:
-            # No leftover => we reached the end of the data
             break
+    return b"".join(out)
 
-    return result
 
+# ---------- Streaming GzipFile ----------
 class GzipFile(object):
     """
-    A file-like wrapper that uses zlib at wbits=31 to mimic gzip compress/decompress,
-    with multi-member support. Works on older Python versions (including Py2),
-    where gzip.compress / gzip.decompress might be unavailable.
+    A gzip reader/writer using zlib (wbits=31) with:
+      - streaming writes (no giant in-memory buffer)
+      - streaming reads with multi-member support
+      - text ('t') and binary modes
+      - 'a' appends a new gzip member
 
-    - In read mode: loads entire file, checks GZIP magic if needed, and
-      decompresses all members in a loop.
-    - In write mode: buffers uncompressed data, then writes compressed bytes on close.
-    - 'level' sets compression level (1..9).
-    - Supports text ('t') vs binary modes.
+    Modes: 'rb', 'rt', 'wb', 'wt', 'ab', 'at', ('xb'/'xt' unsupported on Py2)
     """
 
-    # GZIP magic (first 2 bytes)
-    GZIP_MAGIC = b'\x1f\x8b'
+    GZIP_MAGIC = b'\x1f\x8b'  # magic
+    GZIP_CM_DEFLATE = 8       # compression method in header byte 3
 
     def __init__(self, file_path=None, fileobj=None, mode='rb',
-                 level=9, encoding=None, errors=None, newline=None):
-        """
-        :param file_path: Path to file on disk (optional)
-        :param fileobj:  An existing file-like object (optional)
-        :param mode: e.g. 'rb', 'wb', 'rt', 'wt', etc.
-        :param level: Compression level (1..9)
-        :param encoding: If 't' in mode, text encoding
-        :param errors: Error handling for text encode/decode
-        :param newline: Placeholder for signature compatibility
-        """
+                 level=6, encoding=None, errors=None, newline=None):
         if file_path is None and fileobj is None:
             raise ValueError("Either file_path or fileobj must be provided")
         if file_path is not None and fileobj is not None:
             raise ValueError("Only one of file_path or fileobj should be provided")
 
+        if 'b' not in mode and 't' not in mode:
+            mode += 'b'  # default to binary
+        if 'x' in mode and PY2:
+            raise ValueError("Exclusive creation mode 'x' not supported on Python 2")
+
         self.file_path = file_path
-        self.fileobj = fileobj
+        self.file = fileobj
         self.mode = mode
-        self.level = level
+        self.level = int(level)
         self.encoding = encoding
         self.errors = errors
         self.newline = newline
+        self._text_mode = ('t' in mode)
 
-        # If reading, we store fully decompressed data in memory
-        self._decompressed_data = b''
-        self._position = 0
+        self._position = 0              # position in decompressed buffer (read mode)
+        self._decompressed_data = None  # materialized uncompressed bytes or text
 
-        # If writing, we store uncompressed data in memory, compress at close()
-        self._write_buffer = b''
+        self._compressor = None         # write-side compressor
+        self._write_buf = bytearray()   # small staging buffer for writes
 
-        # Text mode if 't' in mode
-        self._text_mode = 't' in mode
-
-        # Force binary file I/O mode
+        # Open file in binary mode underneath
         internal_mode = mode.replace('t', 'b')
-
-        if any(m in mode for m in ('w', 'a', 'x')):
-            # Writing or appending
-            if file_path:
-                self.file = open(file_path, internal_mode)
-            else:
-                self.file = fileobj
-
-        elif 'r' in mode:
-            # Reading
-            if file_path:
-                if os.path.exists(file_path):
-                    self.file = open(file_path, internal_mode)
-                    self._load_file()
-                else:
-                    raise FileNotFoundError("No such file: '{}'".format(file_path))
-            else:
-                # fileobj
-                self.file = fileobj
-                self._load_file()
+        if self.file is None:
+            if 'x' in internal_mode and os.path.exists(file_path):
+                raise IOError("File exists: '{}'".format(file_path))
+            self.file = open(file_path, internal_mode)
         else:
-            raise ValueError("Mode should be 'rb'/'rt' or 'wb'/'wt'")
+            # Basic capability checks
+            if 'r' in internal_mode and not hasattr(self.file, 'read'):
+                raise ValueError("fileobj must support read() in read mode")
+            if any(ch in internal_mode for ch in ('w', 'a', 'x')) and not hasattr(self.file, 'write'):
+                raise ValueError("fileobj must support write() in write/append mode")
 
-    def _load_file(self):
+        if any(ch in internal_mode for ch in ('w', 'a', 'x')):
+            # Streaming write: create a new gzip member
+            if 'a' in internal_mode:
+                try:
+                    self.file.seek(0, os.SEEK_END)
+                except Exception:
+                    pass
+            self._compressor = zlib.compressobj(self.level, zlib.DEFLATED, 31)
+
+        elif 'r' in internal_mode:
+            # Streaming read into memory (for simple seek/tell)
+            self._load_all_members_streaming()
+
+        else:
+            raise ValueError("Unsupported mode: {}".format(mode))
+
+    # ---------- READ PATH (streaming, multi-member) ----------
+    def _load_all_members_streaming(self):
         """
-        Read entire compressed file. Decompress all GZIP members.
+        Stream the underlying file, decompressing all concatenated gzip members.
+        Materializes the full uncompressed content at the end for simple seek().
         """
-        self.file.seek(0)
-        compressed_data = self.file.read()
+        # Seek to start if possible
+        try:
+            self.file.seek(0)
+        except Exception:
+            pass
 
-        # (Optional) Check magic if you want to fail early on non-GZIP data
-        # We'll do a quick check to see if it starts with GZIP magic
-        if not compressed_data.startswith(self.GZIP_MAGIC):
-            raise ValueError("Invalid GZIP header (magic bytes missing)")
+        out_chunks = []
+        d = zlib.decompressobj(31)
+        CHUNK = 1 << 20  # 1 MiB
 
-        self._decompressed_data = _gzip_decompress_multimember(compressed_data)
+        # Optional: quick sanity check for gzip magic (not strictly required)
+        try:
+            pos = self.file.tell()
+            head = self.file.read(2)
+            if head and head != self.GZIP_MAGIC:
+                raise ValueError("Invalid GZIP header (magic bytes missing)")
+            # rewind to include header in the stream for zlib
+            self.file.seek(pos)
+        except Exception:
+            # Some fileobjs may not support tell/seek; skip magic check
+            pass
 
-        # If text mode, decode
+        while True:
+            chunk = self.file.read(CHUNK)
+            if not chunk:
+                out_chunks.append(d.flush())
+                break
+
+            out_chunks.append(d.decompress(chunk))
+
+            # Handle concatenated members
+            while d.unused_data:
+                tail = d.unused_data
+                out_chunks.append(d.flush())
+                d = zlib.decompressobj(31)
+                out_chunks.append(d.decompress(tail))
+
+        payload = b"".join(out_chunks)
         if self._text_mode:
             enc = self.encoding or 'UTF-8'
             err = self.errors or 'strict'
-            self._decompressed_data = self._decompressed_data.decode(enc, err)
+            payload = payload.decode(enc, err)
 
+        self._decompressed_data = payload
+        self._position = 0
+
+    def read(self, size=-1):
+        if self._decompressed_data is None:
+            raise IOError("File not open for reading")
+        if size is None or size < 0:
+            size = len(self._decompressed_data) - self._position
+        end = self._position + int(size)
+        data = self._decompressed_data[self._position:end]
+        self._position = end
+        return data
+
+    def readline(self, size=-1):
+        if self._decompressed_data is None:
+            raise IOError("File not open for reading")
+        data = self._decompressed_data
+        if self._position >= len(data):
+            return text_type("") if self._text_mode else b""
+        nl = u"\n" if self._text_mode else b"\n"
+        idx = data.find(nl, self._position)
+        if idx == -1:
+            return self.read(size)
+        end = idx + 1
+        if size is not None and size >= 0:
+            end = min(end, self._position + size)
+        out = data[self._position:end]
+        self._position = end
+        return out
+
+    def seek(self, offset, whence=0):
+        if self._decompressed_data is None:
+            raise IOError("File not open for reading")
+        if whence == 0:
+            pos = offset
+        elif whence == 1:
+            pos = self._position + offset
+        elif whence == 2:
+            pos = len(self._decompressed_data) + offset
+        else:
+            raise ValueError("Invalid whence")
+        pos = int(pos)
+        self._position = max(0, min(pos, len(self._decompressed_data)))
+        return self._position
+
+    def tell(self):
+        return self._position
+
+    # ---------- WRITE PATH (streaming) ----------
     def write(self, data):
-        """
-        Write data to our in-memory buffer.
-        Actual compression (GZIP) occurs on close().
-        """
-        if 'r' in self.mode:
+        if self._compressor is None:
             raise IOError("File not open for writing")
 
         if self._text_mode:
-            # Encode text to bytes
-            data = data.encode(self.encoding or 'UTF-8', self.errors or 'strict')
-
-        self._write_buffer += data
-
-    def read(self, size=-1):
-        """
-        Read from the decompressed data buffer.
-        """
-        if 'r' not in self.mode:
-            raise IOError("File not open for reading")
-
-        if size < 0:
-            size = len(self._decompressed_data) - self._position
-        data = self._decompressed_data[self._position : self._position + size]
-        self._position += size
-        return data
-
-    def seek(self, offset, whence=0):
-        """
-        Seek in the decompressed data buffer.
-        """
-        if 'r' not in self.mode:
-            raise IOError("File not open for reading")
-
-        if whence == 0:  # absolute
-            new_pos = offset
-        elif whence == 1:  # relative
-            new_pos = self._position + offset
-        elif whence == 2:  # from the end
-            new_pos = len(self._decompressed_data) + offset
+            enc = self.encoding or 'UTF-8'
+            errs = self.errors or 'strict'
+            if isinstance(data, text_type):
+                data = data.encode(enc, errs)
+            elif not isinstance(data, binary_types):
+                raise TypeError("write() expects text or bytes-like in text mode")
         else:
-            raise ValueError("Invalid value for whence")
+            if not isinstance(data, binary_types):
+                raise TypeError("write() expects bytes-like in binary mode")
 
-        self._position = max(0, min(new_pos, len(self._decompressed_data)))
+        # Normalize memoryview/bytearray on Py3
+        if not PY2 and isinstance(data, memoryview):
+            data = data.tobytes()
+        elif PY2 and isinstance(data, bytearray):
+            data = bytes(data)
 
-    def tell(self):
-        """
-        Return the current position in the decompressed data buffer.
-        """
-        return self._position
+        # Stage and compress in chunks
+        self._write_buf += data
+        if len(self._write_buf) >= (1 << 20):  # 1 MiB threshold
+            out = self._compressor.compress(bytes(self._write_buf))
+            if out:
+                self.file.write(out)
+            del self._write_buf[:]
+        return len(data)
 
     def flush(self):
-        """
-        Flush the underlying file, if possible.
-        (No partial compression flush is performed here.)
-        """
+        if self._compressor is not None:
+            if self._write_buf:
+                out = self._compressor.compress(bytes(self._write_buf))
+                if out:
+                    self.file.write(out)
+                del self._write_buf[:]
+            out = self._compressor.flush(zlib.Z_SYNC_FLUSH)
+            if out:
+                self.file.write(out)
         if hasattr(self.file, 'flush'):
             self.file.flush()
 
+    def close(self):
+        try:
+            if self._compressor is not None:
+                if self._write_buf:
+                    self.file.write(self._compressor.compress(bytes(self._write_buf)))
+                    del self._write_buf[:]
+                final = self._compressor.flush(zlib.Z_FINISH)
+                if final:
+                    self.file.write(final)
+        finally:
+            if self.file_path and self.file is not None:
+                try:
+                    self.file.close()
+                except Exception:
+                    pass
+
+    # ---------- Misc ----------
     def fileno(self):
-        """
-        Return the file descriptor if available.
-        """
         if hasattr(self.file, 'fileno'):
             return self.file.fileno()
-        raise OSError("The underlying file object does not support fileno()")
+        raise OSError("Underlying file object does not support fileno()")
 
     def isatty(self):
-        """
-        Return whether the underlying file is a TTY.
-        """
-        if hasattr(self.file, 'isatty'):
-            return self.file.isatty()
-        return False
+        return bool(getattr(self.file, 'isatty', lambda: False)())
 
     def truncate(self, size=None):
-        """
-        Truncate the underlying file if possible.
-        """
         if hasattr(self.file, 'truncate'):
             return self.file.truncate(size)
-        raise OSError("The underlying file object does not support truncate()")
-
-    def close(self):
-        """
-        If in write mode, compress the entire buffer with wbits=31 (gzip) at the
-        specified compression level, then write it out. Close file if we opened it.
-        """
-        if any(m in self.mode for m in ('w', 'a', 'x')):
-            compressed = _gzip_compress(self._write_buffer, compresslevel=self.level)
-            self.file.write(compressed)
-
-        if self.file_path:
-            self.file.close()
+        raise OSError("Underlying file object does not support truncate()")
 
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_val, tb):
         self.close()
 
 
-class LzopFile(object):
-    """
-    A file-like wrapper around LZO compression/decompression using python-lzo.
+# ---------- Simple LZO container (NOT real .lzop) ----------
+# File layout (concatenated members allowed):
+# [MAGIC 8B] [FLAGS 1B] [ULEN 8B] [CRC32 4B] [CCHUNK...]  | repeat...
+# where:
+#   MAGIC     = b'\x89LZO\x0D\x0A\x1A\n' (your magic)
+#   FLAGS     = bit0: 1 => member has ULEN+CRC, 0 => no header (legacy)
+#   ULEN      = uncompressed length (unsigned 64-bit, BE)
+#   CRC32     = CRC32 of uncompressed data (BE)
+#   CCHUNK    = one or more compressed chunks:
+#                 [u32BE chunk_size][chunk_data]... followed by a zero-size u32 terminator
+#
+# We stream compression by feeding fixed-size raw chunks (e.g., 256 KiB)
+# and writing each compressed chunk length + bytes. On read, we iterate chunks.
 
-    - In read mode (r): Reads the entire file, checks for LZOP magic bytes,
-      then decompresses into memory.
-    - In write mode (w/a/x): Buffers all data in memory. On close, writes
-      the LZOP magic bytes + compressed data.
-    - Supports a 'level' parameter (default=9). python-lzo commonly accepts only
-      level=1 or level=9 for LZO1X_1 or LZO1X_999.
-    """
-    # LZOP magic bytes: b'\x89LZO\x0D\x0A\x1A\n'
-    LZOP_MAGIC = b'\x89LZO\x0D\x0A\x1A\n'
+class LzopFile(object):
+    MAGIC = b'\x89LZO\x0D\x0A\x1A\n'
+    FLAG_HAS_UHDR = 0x01
+    CHUNK = 256 * 1024  # 256 KiB per compressed chunk
 
     def __init__(self, file_path=None, fileobj=None, mode='rb',
-                 level=9, encoding=None, errors=None, newline=None):
+                 level=9, encoding=None, errors=None, newline=None,
+                 write_header=True):
         """
-        :param file_path: Path to the file (if any)
-        :param fileobj: An existing file object (if any)
-        :param mode: File mode, e.g., 'rb', 'wb', 'rt', 'wt', etc.
-        :param level: Compression level (int). python-lzo typically supports 1 or 9.
-        :param encoding: Text encoding (for text mode)
-        :param errors: Error handling for encoding/decoding (e.g., 'strict')
-        :param newline: Placeholder to mimic built-in open() signature
+        Custom LZO file (NOT the lzop(1) format).
+        - streaming write/read, supports concatenated members
+        - optional per-member header (uncompressed length + CRC32)
+        :param write_header: if True, include ULEN+CRC32 per member
         """
+        if lzo is None:
+            raise ImportError("python-lzo is required for LzopFile")
+
         if file_path is None and fileobj is None:
             raise ValueError("Either file_path or fileobj must be provided")
         if file_path is not None and fileobj is not None:
             raise ValueError("Only one of file_path or fileobj should be provided")
 
+        if 'b' not in mode and 't' not in mode:
+            mode += 'b'
+        if 'x' in mode and PY2:
+            raise ValueError("Exclusive creation mode 'x' is not supported on Python 2")
+
         self.file_path = file_path
-        self.fileobj = fileobj
+        self.file = fileobj
         self.mode = mode
-        self.level = level
+        self.level = int(level)  # lzo often supports 1 or 9; others map to nearest
         self.encoding = encoding
         self.errors = errors
         self.newline = newline
-        self._decompressed_data = b''
+        self._text_mode = ('t' in mode)
+
+        self._write_header = bool(write_header)
+
+        # Write state
+        self._crc = 0
+        self._ulen = 0
+        self._open_member = False  # whether we've written magic+flags
+
+        # Read state
+        self._decompressed_data = None
         self._position = 0
 
-        # For writing, store uncompressed data in memory until close()
-        self._write_buffer = b''
-
-        # Track whether we're doing text mode
-        self._text_mode = 't' in mode
-
-        # Force binary mode internally for file I/O
         internal_mode = mode.replace('t', 'b')
+        if self.file is None:
+            if 'x' in internal_mode and os.path.exists(file_path):
+                raise IOError("File exists: '{}'".format(file_path))
+            self.file = open(file_path, internal_mode)
+        else:
+            if 'r' in internal_mode and not hasattr(self.file, 'read'):
+                raise ValueError("fileobj must support read() in read mode")
+            if any(ch in internal_mode for ch in ('w','a','x')) and not hasattr(self.file, 'write'):
+                raise ValueError("fileobj must support write() in write/append mode")
 
-        if 'w' in mode or 'a' in mode or 'x' in mode:
-            # Open the file if a path was specified; otherwise, use fileobj
-            if file_path:
-                self.file = open(file_path, internal_mode)
-            else:
-                self.file = fileobj
+        if any(ch in internal_mode for ch in ('w','a','x')):
+            # Start a new member at EOF for append
+            if 'a' in internal_mode:
+                try:
+                    self.file.seek(0, os.SEEK_END)
+                except Exception:
+                    pass
+            # Defer writing header until first write so empty files don’t get empty members
+            self._open_member = False
 
-        elif 'r' in mode:
-            # Reading
-            if file_path:
-                if os.path.exists(file_path):
-                    self.file = open(file_path, internal_mode)
-                    self._load_file()
-                else:
-                    raise FileNotFoundError("No such file: '{}'".format(file_path))
-            else:
-                # fileobj provided
-                self.file = fileobj
-                self._load_file()
+        elif 'r' in internal_mode:
+            self._load_all_members_streaming()
 
         else:
-            raise ValueError("Mode should be 'rb'/'rt' or 'wb'/'wt'")
+            raise ValueError("Unsupported mode: {}".format(mode))
 
-    def _load_file(self):
-        """
-        Read the entire compressed file into memory. Expects LZOP magic bytes
-        at the start. Decompress the remainder into _decompressed_data.
-        """
-        self.file.seek(0)
-        compressed_data = self.file.read()
-
-        # Check for the LZOP magic
-        if not compressed_data.startswith(self.LZOP_MAGIC):
-            raise ValueError("Invalid LZOP file header (magic bytes missing)")
-
-        # Strip the magic; everything after is LZO-compressed data.
-        compressed_data = compressed_data[len(self.LZOP_MAGIC):]
-
-        # Decompress the remainder
-        try:
-            self._decompressed_data = lzo.decompress(compressed_data)
-        except lzo.error as e:
-            raise ValueError("LZO decompression failed: {}".format(str(e)))
-
-        # If we're in text mode, decode from bytes to str
-        if self._text_mode:
-            enc = self.encoding or 'UTF-8'
-            err = self.errors or 'strict'
-            self._decompressed_data = self._decompressed_data.decode(enc, err)
+    # ---------- Write path ----------
+    def _ensure_member_header(self):
+        if self._open_member:
+            return
+        flags = self.FLAG_HAS_UHDR if self._write_header else 0
+        self.file.write(self.MAGIC)
+        self.file.write(struct.pack(">B", flags))
+        if self._write_header:
+            # placeholders for ULEN+CRC, we’ll rewrite them on close()
+            self.file.write(struct.pack(">Q", 0))
+            self.file.write(struct.pack(">I", 0))
+        self._member_header_pos = self.file.tell()  # position after header fields
+        self._open_member = True
 
     def write(self, data):
-        """
-        Write data into an internal buffer. The actual compression + file write
-        happens on close().
-        """
         if 'r' in self.mode:
             raise IOError("File not open for writing")
 
         if self._text_mode:
-            # Encode data from str (Py3) or unicode (Py2) to bytes
-            data = data.encode(self.encoding or 'UTF-8', self.errors or 'strict')
-
-        # Accumulate in memory
-        self._write_buffer += data
-
-    def read(self, size=-1):
-        """
-        Read from the decompressed data buffer.
-        """
-        if 'r' not in self.mode:
-            raise IOError("File not open for reading")
-
-        if size < 0:
-            size = len(self._decompressed_data) - self._position
-        data = self._decompressed_data[self._position:self._position + size]
-        self._position += size
-        return data
-
-    def seek(self, offset, whence=0):
-        """
-        Adjust the current read position in the decompressed buffer.
-        """
-        if 'r' not in self.mode:
-            raise IOError("File not open for reading")
-
-        if whence == 0:  # absolute
-            new_pos = offset
-        elif whence == 1:  # relative
-            new_pos = self._position + offset
-        elif whence == 2:  # relative to end
-            new_pos = len(self._decompressed_data) + offset
+            enc = self.encoding or 'UTF-8'
+            errs = self.errors or 'strict'
+            if isinstance(data, text_type):
+                data = data.encode(enc, errs)
+            elif not isinstance(data, binary_types):
+                raise TypeError("write() expects text or bytes-like in text mode")
         else:
-            raise ValueError("Invalid value for whence")
+            if not isinstance(data, binary_types):
+                raise TypeError("write() expects bytes-like in binary mode")
 
-        self._position = max(0, min(new_pos, len(self._decompressed_data)))
+        if not PY2 and isinstance(data, memoryview):
+            data = data.tobytes()
+        elif PY2 and isinstance(data, bytearray):
+            data = bytes(data)
 
-    def tell(self):
-        """
-        Return the current read position in the decompressed buffer.
-        """
-        return self._position
+        if not data:
+            return 0
+
+        # Begin member and write header on first write
+        self._ensure_member_header()
+
+        # Update integrity stats
+        self._crc = _crc.crc32(data, self._crc) & 0xffffffff
+        self._ulen += len(data)
+
+        # Stream in CHUNK-sized pieces. For each raw piece, write one compressed chunk record.
+        mv = memoryview(data)
+        for off in range(0, len(data), self.CHUNK):
+            raw = mv[off:off+self.CHUNK].tobytes()
+            # For python-lzo, allow level 1 or 9; others map to nearest valid
+            level = 9 if self.level >= 9 else 1
+            c = lzo.compress(raw, level)
+            self.file.write(struct.pack(">I", len(c)))
+            self.file.write(c)
+
+        return len(data)
 
     def flush(self):
-        """
-        Flush the underlying file if supported. (No partial compression flush for LZO.)
-        """
+        # Write a zero-length chunk terminator if a member is open, then allow OS flush
+        if self._open_member:
+            self.file.write(struct.pack(">I", 0))  # terminator for chunk list
+            # If header contains ULEN+CRC placeholders, backfill them
+            if self._write_header:
+                here = self.file.tell()
+                # MAGIC(8) + FLAGS(1) = 9 bytes prior to ULEN
+                # We wrote ULEN(8)+CRC(4) placeholders directly after FLAGS
+                self.file.seek(-(here - 9), os.SEEK_CUR)  # move to start? safer to track exact offsets
+                # Better: compute exact offsets from _member_header_pos
+                # _member_header_pos is after we wrote ULEN+CRC placeholders,
+                # so ULEN is at (_member_header_pos - 12), CRC at (_member_header_pos - 4)
+                ulen_pos = self._member_header_pos - 12
+                crc_pos  = self._member_header_pos - 4
+                cur = self.file.tell()
+                self.file.seek(ulen_pos, os.SEEK_SET)
+                self.file.write(struct.pack(">Q", self._ulen))
+                self.file.seek(crc_pos, os.SEEK_SET)
+                self.file.write(struct.pack(">I", self._crc))
+                self.file.seek(cur, os.SEEK_SET)
+            # Reset state so a subsequent write() starts a new member
+            self._open_member = False
+            self._crc = 0
+            self._ulen = 0
         if hasattr(self.file, 'flush'):
             self.file.flush()
 
+    def close(self):
+        try:
+            # Ensure a clean member terminator & backfill header if needed
+            if any(ch in self.mode for ch in ('w','a','x')) and self._open_member:
+                self.flush()
+        finally:
+            if self.file_path and self.file is not None:
+                try:
+                    self.file.close()
+                except Exception:
+                    pass
+
+    # ---------- Read path ----------
+    def _load_all_members_streaming(self):
+        # Seek to start if possible
+        try:
+            self.file.seek(0)
+        except Exception:
+            pass
+
+        out = []
+        CHUNK = 1 << 20
+
+        def read_exact(n):
+            b = b""
+            while len(b) < n:
+                part = self.file.read(n - len(b))
+                if not part:
+                    break
+                b += part
+            return b
+
+        while True:
+            # Find next magic; allow concatenated members
+            head = read_exact(len(self.MAGIC))
+            if not head:
+                break  # EOF
+            if head != self.MAGIC:
+                raise ValueError("Invalid LZO container magic")
+
+            f_b = read_exact(1)
+            if len(f_b) != 1:
+                raise ValueError("Truncated header (flags)")
+            flags = ord(f_b) if PY2 else f_b[0]
+
+            ulen = None
+            expect_crc = None
+            if flags & self.FLAG_HAS_UHDR:
+                ulen_b = read_exact(8)
+                crc_b  = read_exact(4)
+                if len(ulen_b) != 8 or len(crc_b) != 4:
+                    raise ValueError("Truncated ULEN/CRC header")
+                ulen = struct.unpack(">Q", ulen_b)[0]
+                expect_crc = struct.unpack(">I", crc_b)[0]
+
+            # Now read chunk records until we hit a zero-size u32
+            m_crc = 0
+            m_len = 0
+            while True:
+                sz_b = read_exact(4)
+                if len(sz_b) != 4:
+                    raise ValueError("Truncated chunk size")
+                csz = struct.unpack(">I", sz_b)[0]
+                if csz == 0:
+                    break  # end of member
+                cdata = read_exact(csz)
+                if len(cdata) != csz:
+                    raise ValueError("Truncated chunk payload")
+                raw = lzo.decompress(cdata)
+                out.append(raw)
+                m_len += len(raw)
+                m_crc = _crc.crc32(raw, m_crc) & 0xffffffff
+
+            if ulen is not None and m_len != ulen:
+                raise ValueError("Member length mismatch ({} != {})".format(m_len, ulen))
+            if expect_crc is not None and m_crc != expect_crc:
+                raise ValueError("Member CRC32 mismatch")
+
+        payload = b"".join(out)
+        if self._text_mode:
+            enc = self.encoding or 'UTF-8'
+            err = self.errors or 'strict'
+            payload = payload.decode(enc, err)
+        self._decompressed_data = payload
+        self._position = 0
+
+    # ---------- Buffered read API (materialized) ----------
+    def read(self, size=-1):
+        if 'r' not in self.mode:
+            raise IOError("File not open for reading")
+        if size is None or size < 0:
+            size = len(self._decompressed_data) - self._position
+        end = self._position + int(size)
+        data = self._decompressed_data[self._position:end]
+        self._position = end
+        return data
+
+    def readline(self, size=-1):
+        data = self._decompressed_data
+        if self._position >= len(data):
+            return text_type("") if self._text_mode else b""
+        nl = u"\n" if self._text_mode else b"\n"
+        idx = data.find(nl, self._position)
+        if idx == -1:
+            return self.read(size)
+        end = idx + 1
+        if size is not None and size >= 0:
+            end = min(end, self._position + size)
+        out = data[self._position:end]
+        self._position = end
+        return out
+
+    def seek(self, offset, whence=0):
+        if 'r' not in self.mode:
+            raise IOError("File not open for reading")
+        if whence == 0:
+            pos = offset
+        elif whence == 1:
+            pos = self._position + offset
+        elif whence == 2:
+            pos = len(self._decompressed_data) + offset
+        else:
+            raise ValueError("Invalid whence")
+        pos = int(pos)
+        self._position = max(0, min(pos, len(self._decompressed_data)))
+        return self._position
+
+    def tell(self):
+        return self._position
+
+    # ---------- Misc ----------
+    def flush(self):
+        # Writes terminator and backfills header if needed; see write-path flush
+        if any(ch in self.mode for ch in ('w','a','x')) and self._open_member:
+            self._flush_member_only()
+        if hasattr(self.file, 'flush'):
+            self.file.flush()
+
+    def _flush_member_only(self):
+        # Internal helper: same as flush() but without flushing OS buffers
+        if not self._open_member:
+            return
+        # write terminator
+        self.file.write(struct.pack(">I", 0))
+        if self._write_header:
+            ulen_pos = self._member_header_pos - 12
+            crc_pos  = self._member_header_pos - 4
+            cur = self.file.tell()
+            self.file.seek(ulen_pos, os.SEEK_SET)
+            self.file.write(struct.pack(">Q", self._ulen))
+            self.file.seek(crc_pos, os.SEEK_SET)
+            self.file.write(struct.pack(">I", self._crc))
+            self.file.seek(cur, os.SEEK_SET)
+        self._open_member = False
+        self._crc = 0
+        self._ulen = 0
+
     def fileno(self):
-        """
-        Return the file descriptor if available.
-        """
         if hasattr(self.file, 'fileno'):
             return self.file.fileno()
-        raise OSError("The underlying file object does not support fileno()")
+        raise OSError("Underlying file object does not support fileno()")
 
     def isatty(self):
-        """
-        Return whether the underlying file is a TTY.
-        """
-        if hasattr(self.file, 'isatty'):
-            return self.file.isatty()
-        return False
+        return bool(getattr(self.file, 'isatty', lambda: False)())
 
     def truncate(self, size=None):
-        """
-        Truncate the underlying file if possible.
-        """
         if hasattr(self.file, 'truncate'):
             return self.file.truncate(size)
-        raise OSError("The underlying file object does not support truncate()")
-
-    def close(self):
-        """
-        If in write mode, compress the entire accumulated buffer using LZO
-        (with the specified level) and write it (with the LZOP magic) to the file.
-        """
-        if any(x in self.mode for x in ('w', 'a', 'x')):
-            # Write the LZOP magic
-            self.file.write(self.LZOP_MAGIC)
-
-            # Compress the entire buffer
-            try:
-                # python-lzo supports level=1 or level=9 for LZO1X
-                compressed = lzo.compress(self._write_buffer, self.level)
-            except lzo.error as e:
-                raise ValueError("LZO compression failed: {}".format(str(e)))
-
-            self.file.write(compressed)
-
-        if self.file_path:
-            self.file.close()
+        raise OSError("Underlying file object does not support truncate()")
 
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_val, tb):
         self.close()
 
 
