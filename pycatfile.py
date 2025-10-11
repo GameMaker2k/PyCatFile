@@ -4947,7 +4947,10 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                 copy_opaque(fpc, fcontents, bufsize=1 << 20)  # 1 MiB chunks, opaque copy
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
-                fcencoding = GetFileEncoding(fcontents, 0, False)
+                if(typechecktest is not False):
+                    typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=True)
+                    fcontents.seek(0, 0)
+                fcencoding = GetFileEncoding(fcontents, 0, False)[0]
                 if(typechecktest is False and not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
@@ -4994,7 +4997,10 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                 copy_opaque(fpc, fcontents, bufsize=1 << 20)  # 1 MiB chunks, opaque copy
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
-                fcencoding = GetFileEncoding(fcontents, 0, False)
+                if(typechecktest is not False):
+                    typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=True)
+                    fcontents.seek(0, 0)
+                fcencoding = GetFileEncoding(fcontents, 0, False)[0]
                 if(typechecktest is False and not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
@@ -5098,7 +5104,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extr
         fheaderchecksumtype = curfname[26]
         fcontentchecksumtype = curfname[27]
         fcontents = curfname[28]
-        fencoding = GetFileEncoding(fcontents, 0, False)
+        fencoding = GetFileEncoding(fcontents, 0, False)[0]
         tmpoutlist = [ftype, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize,
                       fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile]
         fcontents.seek(0, 0)
@@ -5443,46 +5449,118 @@ def IsSingleDict(variable):
 
 
 def GetFileEncoding(infile, filestart=0, closefp=True):
-    if(hasattr(infile, "read") or hasattr(infile, "write")):
+    """
+    Detect file/text encoding from BOM (and a few special signatures).
+    Returns (encoding_name, bom_len). If no BOM is found, returns ("UTF-8", 0).
+
+    Compatible with Python 2 and 3.
+    - infile: path string OR file-like object (binary mode)
+    - filestart: byte offset where detection should begin
+    - closefp: if True, close the file only if we opened it here
+    """
+    # --- Precomputed signatures (bytes) ---
+    H = binascii.unhexlify  # convenience
+
+    # 4-byte BOMs
+    BOM_UTF32_LE = H("FFFE0000")
+    BOM_UTF32_BE = H("0000FEFF")
+    BOM_UTF_EBCDIC = H("DD736673")
+
+    # 3-byte BOMs
+    BOM_UTF8 = H("EFBBBF")
+    BOM_SCSU = H("0EFEFF")  # SCSU BOM (0E FE FF)
+
+    # 2-byte BOMs
+    BOM_UTF16_LE = H("FFFE")
+    BOM_UTF16_BE = H("FEFF")
+
+    # UTF-7 variants (first 4 bytes: 2B 2F 76 <38|39|2B|2F>)
+    UTF7_PREFIX = H("2B2F76")
+    UTF7_VARIANTS = (H("38"), H("39"), H("2B"), H("2F"))
+
+    opened_here = False
+    fp = None
+
+    # --- Obtain a binary file object ---
+    if hasattr(infile, "read") or hasattr(infile, "write"):
         fp = infile
     else:
         try:
-            fp = open(infile, "rb")
-        except FileNotFoundError:
-            return False
-    file_encoding = "UTF-8"
-    fp.seek(filestart, 0)
-    prefp = fp.read(2)
-    if(prefp == binascii.unhexlify("fffe")):
-        file_encoding = "UTF-16LE"
-    elif(prefp == binascii.unhexlify("feff")):
-        file_encoding = "UTF-16BE"
-    fp.seek(filestart, 0)
-    prefp = fp.read(3)
-    if(prefp == binascii.unhexlify("efbbbf")):
-        file_encoding = "UTF-8"
-    elif(prefp == binascii.unhexlify("0efeff")):
-        file_encoding = "SCSU"
-    fp.seek(filestart, 0)
-    prefp = fp.read(4)
-    if(prefp == binascii.unhexlify("fffe0000")):
-        file_encoding = "UTF-32LE"
-    elif(prefp == binascii.unhexlify("0000feff")):
-        file_encoding = "UTF-32BE"
-    elif(prefp == binascii.unhexlify("dd736673")):
-        file_encoding = "UTF-EBCDIC"
-    elif(prefp == binascii.unhexlify("2b2f7638")):
-        file_encoding = "UTF-7"
-    elif(prefp == binascii.unhexlify("2b2f7639")):
-        file_encoding = "UTF-7"
-    elif(prefp == binascii.unhexlify("2b2f762b")):
-        file_encoding = "UTF-7"
-    elif(prefp == binascii.unhexlify("2b2f762f")):
-        file_encoding = "UTF-7"
-    fp.seek(filestart, 0)
-    if(closefp):
-        fp.close()
-    return file_encoding
+            fp = open(infile, "rb")  # Python 2 & 3
+            opened_here = True
+        except (IOError, OSError):
+            return ("UTF-8", 0)  # fallback; file not found or unreadable
+
+    try:
+        # Seek to starting point
+        try:
+            fp.seek(filestart, 0)
+        except (IOError, OSError):
+            # If seek fails, treat as start
+            pass
+
+        # Read up to 4 bytes once
+        pre4 = fp.read(4) or b""
+        # Create pre2, pre3 without re-reading
+        pre3 = pre4[:3]
+        pre2 = pre4[:2]
+
+        # --- Check 4-byte BOMs ---
+        if pre4.startswith(BOM_UTF32_LE):
+            _advance(fp, filestart, 4)
+            return ("UTF-32LE", 4)
+        if pre4.startswith(BOM_UTF32_BE):
+            _advance(fp, filestart, 4)
+            return ("UTF-32BE", 4)
+        if pre4.startswith(BOM_UTF_EBCDIC):
+            _advance(fp, filestart, 4)
+            return ("UTF-EBCDIC", 4)
+
+        # --- Check 3-byte BOMs ---
+        if pre3 == BOM_UTF8:
+            _advance(fp, filestart, 3)
+            return ("UTF-8", 3)
+        if pre3 == BOM_SCSU:
+            _advance(fp, filestart, 3)
+            return ("SCSU", 3)
+
+        # --- Check 2-byte BOMs ---
+        if pre2 == BOM_UTF16_LE:
+            _advance(fp, filestart, 2)
+            return ("UTF-16LE", 2)
+        if pre2 == BOM_UTF16_BE:
+            _advance(fp, filestart, 2)
+            return ("UTF-16BE", 2)
+
+        # --- Check UTF-7 (no official BOM, but common signature prefix) ---
+        # 2B 2F 76 <38|39|2B|2F>
+        if len(pre4) >= 4 and pre4[:3] == UTF7_PREFIX and pre4[3:4] in UTF7_VARIANTS:
+            # No BOM length to skip; this is a signature, not a BOM
+            _advance(fp, filestart, 0)
+            return ("UTF-7", 0)
+
+        # Default/fallback: assume UTF-8 with no BOM
+        _advance(fp, filestart, 0)
+        return ("UTF-8", 0)
+
+    finally:
+        if closefp and opened_here and fp is not None:
+            try:
+                fp.close()
+            except Exception:
+                pass
+
+
+def _advance(fp, base, n):
+    """
+    Move file position to right after the BOM/signature.
+    If fp is not seekable, this silently does nothing.
+    """
+    try:
+        fp.seek(base + n, 0)
+    except Exception:
+        # Not seekable or error; ignore
+        pass
 
 
 def GetFileEncodingFromString(instring, filestart=0, closefp=True):
@@ -5492,6 +5570,203 @@ def GetFileEncodingFromString(instring, filestart=0, closefp=True):
         instringsfile = MkTempFile(instring.encode("UTF-8"))
     return GetFileEncoding(instringsfile, filestart, closefp)
 
+def GetBinaryFileType(infile, filestart=0, closefp=True):
+    """
+    Detect common *non-compression* binary file types by magic bytes / structure.
+    Returns (type_string, sig_len) or False if not recognized.
+    - infile: path (str), file-like object (opened rb), or raw bytes/bytearray
+    - filestart: offset to start inspecting
+    - closefp: close only if we opened the file here
+    """
+    H = binascii.unhexlify
+    opened_here = False
+
+    # --- Normalize to bytes buffer 'data' ---
+    if isinstance(infile, (bytes, bytearray)):
+        data = infile[filestart:filestart+560]
+        fp = None
+    else:
+        fp = infile if (hasattr(infile, "read") or hasattr(infile, "write")) else None
+        if fp is None:
+            try:
+                fp = open(infile, "rb")
+                opened_here = True
+            except (IOError, OSError):
+                return False
+        try:
+            try:
+                fp.seek(filestart, 0)
+            except Exception:
+                pass
+            data = fp.read(560) or b""
+        finally:
+            if closefp and opened_here and fp is not None:
+                try:
+                    fp.close()
+                except Exception:
+                    pass
+
+    pre16 = data[:16]
+    pre12 = data[:12]
+    pre8  = data[:8]
+    pre7  = data[:7]
+    pre6  = data[:6]
+    pre5  = data[:5]
+    pre4  = data[:4]
+    pre3  = data[:3]
+    pre2  = data[:2]
+    pre1  = data[:1]
+
+    # -------------- EXECUTABLES --------------
+    # ELF
+    if pre4 == H("7F454C46"):
+        return ("ELF", 4)
+
+    # Mach-O (32/64; BE/LE)
+    if pre4 in (H("FEEDFACE"), H("FEEDFACF"), H("CEFAEDFE"), H("CFFAEDFE")):
+        return ("Mach-O", 4)
+
+    # PE/COFF (Windows EXE/DLL): 'MZ' + 'PE\0\0' at lfanew
+    if pre2 == H("4D5A"):
+        if len(data) >= 0x40:
+            peofs = struct.unpack("<I", data[0x3C:0x40])[0]
+            if 0 <= peofs <= len(data) - 4 and data[peofs:peofs+4] == b"PE\0\0":
+                return ("PE", 2)
+        return ("MZ", 2)  # generic MZ (could be DOS stub)
+
+    # -------------- DOCUMENTS / DB --------------
+    # PDF
+    if pre5 == b"%PDF-":
+        return ("PDF", 5)
+
+    # SQLite 3
+    if pre16 == b"SQLite format 3\0":
+        return ("SQLite3", 16)
+
+    # -------------- MEDIA CONTAINERS --------------
+    # RIFF (WAV/AVI/WEBP)
+    if pre4 == b"RIFF" and len(data) >= 12:
+        fourcc = data[8:12]
+        if fourcc == b"WAVE":
+            return ("WAV", 4)
+        if fourcc == b"AVI ":
+            return ("AVI", 4)
+        if fourcc == b"WEBP":
+            return ("WEBP", 4)
+        return ("RIFF", 4)
+
+    # MP3 with ID3
+    if pre3 == H("494433"):
+        return ("MP3/ID3", 3)
+
+    # OGG
+    if pre4 == H("4F676753"):
+        return ("OGG", 4)
+
+    # FLAC
+    if pre4 == H("664C6143"):
+        return ("FLAC", 4)
+
+    # -------------- IMAGES / ICONS --------------
+    # JPEG
+    if pre3 == H("FFD8FF"):
+        return ("JPEG", 3)
+
+    # PNG
+    if pre8 == H("89504E470D0A1A0A"):
+        return ("PNG", 8)
+
+    # GIF87a
+    if pre6 == H("474946383761"):
+        return ("GIF87a", 6)
+
+    # GIF89a
+    if pre6 == H("474946383961"):
+        return ("GIF89a", 6)
+
+    # BMP
+    if pre2 == H("424D"):
+        return ("BMP", 2)
+
+    # TIFF (LE / BE)
+    if pre4 == H("49492A00"):
+        return ("TIFF-LE", 4)
+    if pre4 == H("4D4D002A"):
+        return ("TIFF-BE", 4)
+
+    # ICO
+    if pre4 == H("00000100"):
+        return ("ICO", 4)
+
+    # ICNS
+    if pre4 == H("69636E73"):
+        return ("ICNS", 4)
+
+    # PSD
+    if pre4 == H("38425053"):
+        return ("PSD", 4)
+
+    # DDS
+    if pre4 == H("44445320"):
+        return ("DDS", 4)
+
+    # SVG (text-based)
+    if data.lstrip().startswith(b"<svg"):
+        return ("SVG", 0)
+
+    # HEIF/AVIF (ISO BMFF) via ftyp brand
+    if len(data) >= 12 and data[4:8] == b"ftyp":
+        brand = data[8:12]
+        if brand in (b"heic", b"heix", b"hevc", b"hevx", b"mif1", b"msf1"):
+            return ("HEIF", 0)
+        if brand in (b"avif", b"avis"):
+            return ("AVIF", 0)
+
+    # -------------- FONTS --------------
+    # TTF (sfnt 00010000)
+    if pre4 == H("00010000"):
+        return ("TTF", 4)
+
+    # OTF (OTTO)
+    if pre4 == H("4F54544F"):
+        return ("OTF", 4)
+
+    # TTC (ttcf)
+    if pre4 == H("74746366"):
+        return ("TTC", 4)
+
+    # WOFF / WOFF2
+    if pre4 == H("774F4646"):
+        return ("WOFF", 4)
+    if pre4 == H("774F4632"):
+        return ("WOFF2", 4)
+
+    # CFF / CFF2
+    if pre4 == H("01000404"):
+        return ("CFF", 4)
+    if pre4 == H("01000405"):
+        return ("CFF2", 4)
+
+    # EOT
+    if pre4 == H("4C500000"):
+        return ("EOT", 4)
+
+    # PFB (Type 1 binary)
+    if pre2 in (H("8001"), H("8002")):
+        return ("PFB", 2)
+
+    # PFA / BDF (text-based)
+    if data.lstrip().startswith(b"%!PS-AdobeFont"):
+        return ("PFA", 0)
+    if data.lstrip().startswith(b"STARTFONT"):
+        return ("BDF", 0)
+
+    # PCF
+    if pre4 in (H("01666370"), H("70636601")):
+        return ("PCF", 4)
+
+    # -------------- FALLBACK --------------
+    return False
 
 def CheckCompressionType(infile, formatspecs=__file_format_multi_dict__, filestart=0, closefp=True):
     if(hasattr(infile, "read") or hasattr(infile, "write")):
@@ -6860,7 +7135,10 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
                 copy_opaque(fpc, fcontents, bufsize=1 << 20)  # 1 MiB chunks, opaque copy
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
-                fcencoding = GetFileEncoding(fcontents, 0, False)
+                if(typechecktest is not False):
+                    typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=True)
+                    fcontents.seek(0, 0)
+                fcencoding = GetFileEncoding(fcontents, 0, False)[0]
                 if(typechecktest is False and not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
@@ -6907,7 +7185,10 @@ def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compress
                 copy_opaque(fpc, fcontents, bufsize=1 << 20)  # 1 MiB chunks, opaque copy
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
-                fcencoding = GetFileEncoding(fcontents, 0, False)
+                if(typechecktest is not False):
+                    typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=True)
+                    fcontents.seek(0, 0)
+                fcencoding = GetFileEncoding(fcontents, 0, False)[0]
                 if(typechecktest is False and not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
@@ -7202,7 +7483,10 @@ def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", 
             fpc.close()
             typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
             fcontents.seek(0, 0)
-            fcencoding = GetFileEncoding(fcontents, 0, False)
+            if(typechecktest is not False):
+                typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=True)
+                fcontents.seek(0, 0)
+            fcencoding = GetFileEncoding(fcontents, 0, False)[0]
             if(typechecktest is False and not compresswholefile):
                 fcontents.seek(0, 2)
                 ucfsize = fcontents.tell()
@@ -7493,7 +7777,7 @@ def PackCatFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", 
             fcontents.write(zipfp.read(member.filename))
             typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
             fcontents.seek(0, 0)
-            fcencoding = GetFileEncoding(fcontents, 0, False)
+            fcencoding = GetFileEncoding(fcontents, 0, False)[0]
             if(typechecktest is False and not compresswholefile):
                 fcontents.seek(0, 2)
                 ucfsize = fcontents.tell()
@@ -7804,7 +8088,7 @@ if(rarfile_support):
                 fcontents.write(rarfp.read(member.filename))
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
-                fcencoding = GetFileEncoding(fcontents, 0, False)
+                fcencoding = GetFileEncoding(fcontents, 0, False)[0]
                 if(typechecktest is False and not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
@@ -8051,7 +8335,7 @@ if(py7zr_support):
                 fcontents.seek(0, 0)
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
-                fcencoding = GetFileEncoding(fcontents, 0, False)
+                fcencoding = GetFileEncoding(fcontents, 0, False)[0]
                 file_content[member.filename].close()
                 if(typechecktest is False and not compresswholefile):
                     fcontents.seek(0, 2)
@@ -9407,7 +9691,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             fcontents = MkTempFile(fcontents)
         typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
         fcontents.seek(0, 0)
-        fcencoding = GetFileEncoding(fcontents, 0, False)
+        fcencoding = GetFileEncoding(fcontents, 0, False)[0]
         fcompression = ""
         fcsize = format(int(0), 'x').lower()
         curcompression = "none"
