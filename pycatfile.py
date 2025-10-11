@@ -566,7 +566,7 @@ __version_date_info__ = (2025, 10, 1, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: 24a0adfbe461e7d8a612f1b1a0f6a5daaefd2fe4 $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -5347,7 +5347,7 @@ def GzipCompressData(data, compresslevel=9):
     except AttributeError:
         # Fallback to older method for Python 2.x and older 3.x versions
         out = MkTempFile()
-        with gzip.GzipFile(fileobj=out, mode="wb", compresslevel=compresslevel) as f:
+        with gzip.GzipFile(filename=None, fileobj=out, mode="wb", compresslevel=compresslevel) as f:
             f.write(data)
         out.seek(0, 0)
         compressed_data = out.read()
@@ -5361,7 +5361,7 @@ def GzipDecompressData(compressed_data):
     except AttributeError:
         # Fallback to older method for Python 2.x and older 3.x versions
         inp = MkTempFile(compressed_data)
-        with gzip.GzipFile(fileobj=inp, mode="rb") as f:
+        with gzip.GzipFile(filename=None, fileobj=inp, mode="rb") as f:
             decompressed_data = f.read()
     return decompressed_data
 
@@ -6061,7 +6061,7 @@ def UncompressFileAlt(fp, formatspecs=__file_format_multi_dict__, filestart=0,
 
     # Build the appropriate decompressor stream (or pass-through)
     if (compresscheck == "gzip" and compresscheck in compressionsupport):
-        fp = gzip.GzipFile(fileobj=fp, mode="rb")
+        fp = gzip.GzipFile(filename=None, fileobj=fp, mode="rb")
     elif (compresscheck == "bzip2" and compresscheck in compressionsupport):
         fp = bz2.BZ2File(fp)
     elif (compresscheck == "zstd" and compresscheck in compressionsupport):
