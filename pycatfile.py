@@ -785,29 +785,93 @@ if __name__ == "__main__":
         scrcmd.wait()
 
 
-def VerbosePrintOut(dbgtxt, outtype="log", dbgenable=True, dgblevel=20):
-    if(not dbgenable):
+# Use a module logger instead of the root logger
+_logger = logging.getLogger(__name__)
+
+# Map common level names (case-insensitive) to numeric levels
+_LEVEL_BY_NAME = {
+    "debug":    logging.DEBUG,
+    "info":     logging.INFO,
+    "warning":  logging.WARNING,
+    "error":    logging.ERROR,
+    "critical": logging.CRITICAL,
+}
+
+def VerbosePrintOut(dbgtxt, outtype="log", dbgenable=True, dgblevel=20, **kwargs):
+    """
+    Python 2/3-safe logging switchboard.
+
+    Args:
+        dbgtxt: message to emit (any object; coerced to text).
+        outtype: 'print', a level name (info/warning/error/critical/debug),
+                 an ALL-CAPS logging constant name ('INFO', 'WARNING', ...),
+                 an integer level, or 'log' to use dgblevel.
+        dbgenable: if False, skip emitting and return False.
+        dgblevel: numeric level used when outtype is 'log' or unmapped.
+        **kwargs: passed to logging (e.g., exc_info=True, stacklevel=2, extra=...).
+
+    Returns:
+        True if something was emitted; False otherwise.
+    """
+    if not dbgenable:
+        return False
+
+    logger = kwargs.pop("logger", None) or _logger
+    msg = _to_text(dbgtxt)
+
+    # Normalize outtype
+    lvl = None
+    if isinstance(outtype, int):
+        lvl = outtype
+        route = "logging"
+    else:
+        name = (outtype or "log")
+        if isinstance(name, string_types):
+            name_l = name.lower()
+            if name_l == "print":
+                print(msg)
+                return True
+            if name_l in _LEVEL_BY_NAME:
+                lvl = _LEVEL_BY_NAME[name_l]
+                route = "logging"
+            elif name.isupper() and hasattr(logging, name):
+                # Accept 'INFO', 'WARNING', etc.
+                lvl = getattr(logging, name)
+                route = "logging"
+            elif name_l in ("log", "logalt"):
+                lvl = int(dgblevel)
+                route = "logging"
+            elif name_l == "exception":
+                # Safer: only include exc_info if the caller asked for it
+                lvl = logging.ERROR
+                kwargs.setdefault("exc_info", True)
+                route = "logging"
+            else:
+                # Unknown string → fall back to dgblevel
+                lvl = int(dgblevel)
+                route = "logging"
+        else:
+            # Unknown type → fallback
+            lvl = int(dgblevel)
+            route = "logging"
+
+    if route == "logging":
+        if not logger.isEnabledFor(lvl):
+            return False
+        logger.log(lvl, msg, **kwargs)
         return True
-    log_functions = {
-        "print": print,
-        "log": logging.info,
-        "warning": logging.warning,
-        "error": logging.error,
-        "critical": logging.critical,
-        "exception": logging.exception,
-        "logalt": lambda x: logging.log(dgblevel, x),
-        "debug": logging.debug
-    }
-    log_function = log_functions.get(outtype)
-    if(log_function):
-        log_function(dbgtxt)
-        return True
+
     return False
 
 
-def VerbosePrintOutReturn(dbgtxt, outtype="log", dbgenable=True, dgblevel=20):
-    VerbosePrintOut(dbgtxt, outtype, dbgenable, dgblevel)
+def VerbosePrintOutReturn(dbgtxt, outtype="log", dbgenable=True, dgblevel=20, **kwargs):
+    """
+    Log/print dbgtxt (per VerbosePrintOut) and return dbgtxt unchanged.
+    Useful for tap-style debugging in pipelines.
+    """
+    VerbosePrintOut(dbgtxt, outtype, dbgenable, dgblevel, **kwargs)
     return dbgtxt
+
 
 
 def _split_posix(path_text):
