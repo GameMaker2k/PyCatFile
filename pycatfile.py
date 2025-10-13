@@ -1606,37 +1606,100 @@ def _pace_rate(last_ts, sent_bytes_since_ts, rate_limit_bps, add_bytes):
     return (sleep_s, last_ts, sent_bytes_since_ts)
 
 
-def DetectTarBombCatFileArray(listarrayfiles,
-                                 top_file_ratio_threshold=0.6,
-                                 min_members_for_ratio=4,
-                                 symlink_policy="escape-only",  # 'escape-only' | 'deny' | 'single-folder-only'
-                                 to_text=to_text):
+def _split_posix(name):
     """
-    Detect 'tarbomb-like' archives from CatFileToArray/TarFileToArray dicts.
+    Return a list of path parts without collapsing '..'.
+    - Normalize backslashes to '/'
+    - Strip leading './' and redundant slashes
+    - Keep '..' parts for traversal detection
+    """
+    if not name:
+        return []
+    n = name.replace(u"\\", u"/")
+    # drop leading ./ repeatedly
+    while n.startswith(u"./"):
+        n = n[2:]
+    # split and filter empty and '.'
+    parts = [p for p in n.split(u"/") if p not in (u"", u".")]
+    return parts
 
-    Parameters:
-      listarrayfiles: dict with key 'ffilelist' -> list of entries (requires 'fname')
-      top_file_ratio_threshold: float, fraction of root files considered tarbomb
-      min_members_for_ratio: int, minimum members before ratio heuristic applies
-      symlink_policy:
-        - 'escape-only': only symlinks that escape parent/are absolute are unsafe
-        - 'deny': any symlink is unsafe
-        - 'single-folder-only': symlinks allowed only if archive has a single top-level folder
-      to_text: normalization function (your provided to_text)
+def _is_abs_like(name):
+    """Detect absolute-like paths across platforms (/, \, drive letters)."""
+    if not name:
+        return False
+    n = name.replace(u"\\", u"/")
+    if n.startswith(u"/"):
+        return True
+    # Windows drive: C:/ or C:\  (allow lowercase too)
+    if len(n) >= 3 and n[1] == u":" and n[2] in (u"/", u"\\"):
+        return True
+    return False
+
+def _resolves_outside(parent, target):
+    """
+    Does a symlink from 'parent' to 'target' escape parent?
+    - Treat absolute target as escaping.
+    - For relative target, join parent + target, normpath, then check if it starts with parent.
+    - Parent is POSIX-style path ('' means root of archive).
+    """
+    parent = _ensure_text(parent or u"")
+    target = _ensure_text(target or u"")
+    # absolute target is unsafe by definition
+    if _is_abs_like(target):
+        return True
+
+    # Build a virtual root '/' so we can compare safely
+    # e.g., parent='dir/sub', target='../../etc' -> '/dir/sub/../../etc' -> '/etc' (escapes)
+    import posixpath
+    root = u"/"
+    base = posixpath.normpath(posixpath.join(root, parent))  # '/dir/sub'
+    candidate = posixpath.normpath(posixpath.join(base, target))  # resolved path under '/'
+
+    # Ensure base always ends with a slash for prefix test
+    base_slash = base if base.endswith(u"/") else (base + u"/")
+    # candidate must be base itself or inside base
+    if candidate == base or candidate.startswith(base_slash):
+        return False
+    return True
+
+def _symlink_type(ftype):
+    """
+    Return True if ftype denotes a symlink.
+    Accepts: 2 (int), '2', 'symlink', 'link' (case-insensitive).
+    """
+    if ftype is None:
+        return False
+    # numeric or numeric string
+    try:
+        if int(ftype) == 2:
+            return True
+    except Exception:
+        pass
+    s = ensure_text(ftype).strip().lower()
+    return s in (u"2", u"symlink", u"link", u"symbolic_link", u"symbolic-link")
+
+def DetectTarBombFoxFileArray(listarrayfiles,
+                              top_file_ratio_threshold=0.6,
+                              min_members_for_ratio=4,
+                              symlink_policy="escape-only",  # 'escape-only' | 'deny' | 'single-folder-only'
+                              to_text=None):
+    """
+    Detect 'tarbomb-like' archives from FoxFileToArray/TarFileToArray dicts.
 
     Returns dict with:
       - is_tarbomb, reasons, total_members, top_level_entries, top_level_files_count,
         has_absolute_paths, has_parent_traversal,
-        symlink_escapes_root (bool), symlink_issues (list[{entry,target,reason}])
+        symlink_escapes_root (bool), symlink_issues (list[{entry,target,reason}]),
+        has_symlinks (bool)
     """
-    files = listarrayfiles or {}
+    if to_text is None:
+        to_text = .files or {}
     members = files.get('ffilelist') or []
 
     names = []
     has_abs = False
     has_parent = False
 
-    # Symlink tracking
     has_any_symlink = False
     symlink_issues = []
     any_symlink_escape = False
@@ -1658,18 +1721,17 @@ def DetectTarBombCatFileArray(listarrayfiles,
         norm_name = u'/'.join(parts)
         names.append(norm_name)
 
-        # ---- Symlink detection ----
+        # Symlink detection
         ftype = m.get('ftype')
-        is_symlink = (ftype == 2) or (to_text(ftype).lower() == u'symlink' if ftype is not None else False)
-        if is_symlink:
+        if _symlink_type(ftype):
             has_any_symlink = True
             target = to_text(m.get('flinkname', u""))
-            # Absolute symlink target is unsafe
+            # Absolute target or escaping target is unsafe
             if _is_abs_like(target):
                 any_symlink_escape = True
                 symlink_issues.append({'entry': norm_name, 'target': target, 'reason': 'absolute symlink target'})
             else:
-                parent = u'/'.join(parts[:-1])  # may be ''
+                parent = u'/'.join(parts[:-1])  # '' for root
                 if _resolves_outside(parent, target):
                     any_symlink_escape = True
                     symlink_issues.append({'entry': norm_name, 'target': target, 'reason': 'symlink escapes parent directory'})
@@ -1687,6 +1749,7 @@ def DetectTarBombCatFileArray(listarrayfiles,
             "has_parent_traversal": has_parent,
             "symlink_escapes_root": any_symlink_escape,
             "symlink_issues": symlink_issues,
+            "has_symlinks": has_any_symlink,
         }
 
     # Layout counts
@@ -1720,13 +1783,14 @@ def DetectTarBombCatFileArray(listarrayfiles,
     elif symlink_policy == "single-folder-only" and has_any_symlink and len(top_keys) != 1:
         is_tarbomb = True
         reasons.append("symlinks present but archive lacks a single top-level folder")
+    # (escape-only handled by the escape detection above)
 
     # Tarbomb layout heuristics
     if len(top_keys) == 1:
         reasons.append("single top-level entry '{0}'".format(top_keys[0]))
     else:
         ratio = float(top_level_files_count) / float(total)
-        if total >= min_members_for_ratio and ratio > float(top_file_ratio_threshold):
+        if total >= int(min_members_for_ratio) and ratio > float(top_file_ratio_threshold):
             is_tarbomb = True
             reasons.append("high fraction of members ({0:.0%}) at archive root".format(ratio))
         else:
@@ -1748,6 +1812,7 @@ def DetectTarBombCatFileArray(listarrayfiles,
         "has_parent_traversal": has_parent,
         "symlink_escapes_root": any_symlink_escape,
         "symlink_issues": symlink_issues,
+        "has_symlinks": has_any_symlink,
     }
 
 
@@ -5820,85 +5885,169 @@ def ReadInMultipleFilesWithContentToList(infile, fmttype="auto", filestart=0, se
     return ReadInMultipleFileWithContentToList(infile, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend)
 
 
+def _field_to_bytes(x):
+    """Convert one field to bytes (no delimiter)."""
+    if x is None:
+        return b""
+    if isinstance(x, (bytes, bytearray, memoryview)):
+        return bytes(x)
+    if isinstance(x, unicode):
+        return x.encode('utf-8')
+    if isinstance(x, int):
+        # Avoid bytes(int) => NULs; use decimal string
+        return str(x).encode('utf-8')
+    # Prefer __bytes__ if present
+    to_bytes = getattr(x, '__bytes__', None)
+    if callable(to_bytes):
+        try:
+            return bytes(x)
+        except Exception:
+            pass
+    return (x if isinstance(x, unicode) else str(x)).encode('utf-8')
+
+
+# ---------- Fixed implementations ----------
+
 def AppendNullByte(indata, delimiter=__file_format_dict__['format_delimiter']):
-    if(isinstance(indata, int)):
-        indata = str(indata)
-    outdata = indata.encode("UTF-8") + delimiter.encode("UTF-8")
-    return outdata
+    """
+    Return <field-bytes> + <delimiter-bytes>.
+    - Accepts bytes/bytearray/memoryview/str/unicode/int/None/other.
+    - Always returns bytes.
+    """
+    d = _delim_bytes(delimiter)
+    return _field_to_bytes(indata) + d
 
 
-def AppendNullBytes(indata=[], delimiter=__file_format_dict__['format_delimiter']):
-    outdata = "".encode("UTF-8")
-    inum = 0
-    il = len(indata)
-    while(inum < il):
-        outdata = outdata + AppendNullByte(indata[inum], delimiter)
-        inum = inum + 1
-    return outdata
+def AppendNullBytes(indata=None, delimiter=__file_format_dict__['format_delimiter']):
+    """
+    Join many fields with delimiter and append a trailing delimiter.
+    Equivalent to: delimiter.join(map(bytes, indata)) + delimiter
+    but robust and fast (O(n)).
+    """
+    if not indata:
+        # Match old behavior: empty list -> b"" (no trailing delimiter)
+        return b""
+    d = _delim_bytes(delimiter)
+    # Convert all fields to bytes once, then join
+    parts = [_field_to_bytes(x) for x in indata]
+    return d.join(parts) + d
 
 
-def AppendFileHeader(fp, numfiles, fencoding, extradata=[], checksumtype="crc32", formatspecs=__file_format_dict__):
-    if(not hasattr(fp, "write")):
+def _hex_lower(n):
+    return format(int(n), 'x').lower()
+
+def AppendFileHeader(fp,
+                     numfiles,
+                     fencoding,
+                     extradata=None,
+                     checksumtype="crc32",
+                     formatspecs=__file_format_dict__):
+    """
+    Build and write the archive file header.
+    Returns the same file-like 'fp' on success, or False on failure.
+    NOTE: This preserves the original field ordering & sizing logic.
+    """
+    # basic capability
+    if not hasattr(fp, "write"):
         return False
+
+    # normalize inputs
     delimiter = formatspecs['format_delimiter']
+    d = _delim_bytes(delimiter)
+
     formver = formatspecs['format_ver']
-    fileheaderver = str(int(formver.replace(".", "")))
-    fileheader = AppendNullByte(
-        formatspecs['format_magic'] + fileheaderver, formatspecs['format_delimiter'])
-    if (isinstance(extradata, dict) or IsNestedDictAlt(extradata)) and len(extradata) > 0:
-        extradata = [base64.b64encode(json.dumps(extradata, separators=(',', ':')).encode("UTF-8")).decode("UTF-8")]
-    elif (isinstance(extradata, dict) or IsNestedDictAlt(extradata)) and len(extradata) == 0:
-        extradata = []
-    extrafields = format(len(extradata), 'x').lower()
-    extrasizestr = AppendNullByte(extrafields, formatspecs['format_delimiter'])
-    if(len(extradata) > 0):
-        extrasizestr = extrasizestr + \
-            AppendNullBytes(extradata, formatspecs['format_delimiter'])
-    extrasizelen = format(len(extrasizestr), 'x').lower()
-    tmpoutlist = []
-    tmpoutlist.append(extrasizelen)
-    tmpoutlist.append(extrafields)
-    fnumfiles = format(numfiles, 'x').lower()
-    tmpoutlen = 3 + len(tmpoutlist) + len(extradata) + 2
-    tmpoutlenhex = format(tmpoutlen, 'x').lower()
-    fnumfilesa = AppendNullBytes(
-        [tmpoutlenhex, fencoding, platform.system(), fnumfiles], formatspecs['format_delimiter'])
-    fnumfilesa = fnumfilesa + AppendNullBytes(
-        tmpoutlist, formatspecs['format_delimiter'])
-    if(len(extradata) > 0):
-        fnumfilesa = fnumfilesa + AppendNullBytes(
-            extradata, formatspecs['format_delimiter'])
-    fnumfilesa = fnumfilesa + \
-        AppendNullByte(checksumtype, formatspecs['format_delimiter'])
-    outfileheadercshex = GetFileChecksum(
-        fnumfilesa, checksumtype, True, formatspecs)
-    tmpfileoutstr = fnumfilesa + \
-        AppendNullByte(outfileheadercshex,
-                        formatspecs['format_delimiter'])
-    formheaersize = format(int(len(tmpfileoutstr) - len(formatspecs['format_delimiter'])), 'x').lower()
-    fnumfilesa = fileheader + \
-        AppendNullByte(
-        formheaersize, formatspecs['format_delimiter']) + fnumfilesa
-    outfileheadercshex = GetFileChecksum(
-        fnumfilesa, checksumtype, True, formatspecs)
-    fnumfilesa = fnumfilesa + \
-        AppendNullByte(outfileheadercshex, formatspecs['format_delimiter'])
-    formheaersize = format(int(len(fnumfilesa) - len(formatspecs['format_delimiter'])), 'x').lower()
-    formheaersizestr = AppendNullByte(formheaersize, formatspecs['format_delimiter'])
+    # "1.2.3" -> "123"
+    fileheaderver = str(int(str(formver).replace(".", "")))
+    magic_plus_ver = str(formatspecs['format_magic']) + fileheaderver
+
+    # 1) fileheader = MAGIC+VER<delim>
+    fileheader = AppendNullByte(magic_plus_ver, delimiter)
+
+    # 2) normalize extradata -> list[str]
+    if extradata is None:
+        xlist = []
+    elif isinstance(extradata, (list, tuple)):
+        # coerce each item to text; we’ll bytes-encode in AppendNullBytes
+        xlist = [x if isinstance(x, (bytes, bytearray)) else
+                 (x if isinstance(x, str) else json.dumps(x, separators=(',', ':')))
+                 for x in extradata]
+    elif isinstance(extradata, dict) or IsNestedDictAlt(extradata):
+        # compact JSON, ensure UTF-8 bytes → base64 → text
+        j = json.dumps(extradata, separators=(',', ':')).encode("utf-8")
+        xlist = [base64.b64encode(j).decode("utf-8")]
+    else:
+        # single non-dict value → make a single-element list
+        xlist = [extradata]
+
+    # 3) extras block (count + items), including its own serialized bytes length
+    extrafields = _hex_lower(len(xlist))                         # count (hex)
+    extrasizestr = AppendNullByte(extrafields, delimiter)        # count+delim
+    if xlist:
+        extrasizestr += AppendNullBytes(xlist, delimiter)        # items joined + trailing delim
+    extrasizelen = _hex_lower(len(extrasizestr))                 # byte length of the extras block
+
+    # 4) core header fields before checksum:
+    #    tmpoutlenhex, fencoding, platform.system(), fnumfiles
+    fnumfiles_hex = _hex_lower(numfiles)
+
+    # Preserve your original "tmpoutlen" computation exactly
+    tmpoutlist = [extrasizelen, extrafields]   # you used this as a separate list
+    tmpoutlen = 3 + len(tmpoutlist) + len(xlist) + 2
+    tmpoutlenhex = _hex_lower(tmpoutlen)
+
+    # Serialize the first group
+    fnumfilesa = AppendNullBytes([tmpoutlenhex, fencoding, platform.system(), fnumfiles_hex], delimiter)
+    # Append tmpoutlist
+    fnumfilesa += AppendNullBytes(tmpoutlist, delimiter)
+    # Append extradata items if any
+    if xlist:
+        fnumfilesa += AppendNullBytes(xlist, delimiter)
+    # Append checksum type
+    fnumfilesa += AppendNullByte(checksumtype, delimiter)
+
+    # 5) inner checksum over fnumfilesa
+    outfileheadercshex = GetFileChecksum(fnumfilesa, checksumtype, True, formatspecs)
+    tmpfileoutstr = fnumfilesa + AppendNullByte(outfileheadercshex, delimiter)
+
+    # 6) size of (tmpfileoutstr) excluding one delimiter, per your original math
+    formheaersize = _hex_lower(len(tmpfileoutstr) - len(d))
+
+    # 7) prepend the fileheader + size, recompute outer checksum
+    fnumfilesa = (
+        fileheader
+        + AppendNullByte(formheaersize, delimiter)
+        + fnumfilesa
+    )
+
+    outfileheadercshex = GetFileChecksum(fnumfilesa, checksumtype, True, formatspecs)
+    fnumfilesa += AppendNullByte(outfileheadercshex, delimiter)
+
+    # 8) final total size field (again per your original logic)
+    formheaersize = _hex_lower(len(fnumfilesa) - len(d))
+    formheaersizestr = AppendNullByte(formheaersize, delimiter)  # computed but not appended in original
+    # Note: you computed 'formheaersizestr' but didn’t append it afterward in the original either.
+    # Keeping that behavior for compatibility.
+
+    # 9) write and try to sync
     try:
         fp.write(fnumfilesa)
-    except OSError:
+    except (OSError, io.UnsupportedOperation):
         return False
+
     try:
-        fp.flush()
-        if(hasattr(os, "sync")):
-            os.fsync(fp.fileno())
-    except io.UnsupportedOperation:
+        # flush Python buffers
+        if hasattr(fp, "flush"):
+            fp.flush()
+        # best-effort durability
+        if hasattr(fp, "fileno"):
+            try:
+                os.fsync(fp.fileno())
+            except (OSError, io.UnsupportedOperation, AttributeError):
+                pass
+    except Exception:
+        # swallowing to match your tolerant behavior
         pass
-    except AttributeError:
-        pass
-    except OSError:
-        pass
+
     return fp
 
 
