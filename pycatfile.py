@@ -26,6 +26,7 @@ import time
 import stat
 import zlib
 import mmap
+import hmac
 import base64
 import shutil
 import socket
@@ -33,7 +34,6 @@ import struct
 import hashlib
 import inspect
 import datetime
-import tempfile
 import logging
 import zipfile
 import binascii
@@ -346,8 +346,8 @@ __use_ini_file__ = True
 __use_ini_name__ = "catfile.ini"
 __use_json_file__ = False
 __use_json_name__ = "catfile.json"
-if(__use_ini_file__ and __use_json_name__):
-    __use_json_name__ = False
+if(__use_ini_file__ and __use_json_file__):
+    __use_json_file__ = False
 if('PYCATFILE_CONFIG_FILE' in os.environ and os.path.exists(os.environ['PYCATFILE_CONFIG_FILE']) and __use_env_file__):
     scriptconf = os.environ['PYCATFILE_CONFIG_FILE']
 else:
@@ -622,8 +622,8 @@ UNION_RULES = [
 
 # Deterministic category order (handy for consistent output/printing).
 CATEGORY_ORDER = [
-    "files", "hardlinks", "symlinks", "character", "block",
-    "directories", "fifo", "sockets", "doors", "ports",
+    "files", "hardlinks", "symlinks", "characters", "blocks",
+    "directories", "fifos", "sockets", "doors", "ports",
     "whiteouts", "sparsefiles", "junctions", "links", "devices"
 ]
 
@@ -806,46 +806,6 @@ def VerbosePrintOut(dbgtxt, outtype="log", dbgenable=True, dgblevel=20):
 def VerbosePrintOutReturn(dbgtxt, outtype="log", dbgenable=True, dgblevel=20):
     VerbosePrintOut(dbgtxt, outtype, dbgenable, dgblevel)
     return dbgtxt
-
-
-# --- Helpers ---
-def _normalize_initial_data(data, isbytes, encoding):
-    """Return data in the correct type for write(): bytes (if isbytes) or text (if not)."""
-    if data is None:
-        return None
-
-    if isbytes:
-        # Want bytes
-        if isinstance(data, bytes):
-            return data
-        # Py2: str is already bytes, unicode needs encode
-        if sys.version_info[0] == 2:
-            try:
-                unicode  # noqa: F821
-            except NameError:
-                pass
-            else:
-                if isinstance(data, unicode):  # noqa: F821
-                    return data.encode(encoding)
-        # Py3 str -> encode
-        return str(data).encode(encoding)
-    else:
-        # Want text (unicode/str)
-        if sys.version_info[0] == 2:
-            try:
-                unicode  # noqa: F821
-                if isinstance(data, unicode):  # noqa: F821
-                    return data
-                # bytes/str -> decode
-                return data.decode(encoding) if isinstance(data, str) else unicode(data)  # noqa: F821
-            except NameError:
-                # Very defensive; shouldn't happen
-                return data
-        else:
-            # Py3: want str
-            if isinstance(data, bytes):
-                return data.decode(encoding)
-            return str(data)
 
 
 def _split_posix(path_text):
@@ -1712,50 +1672,55 @@ def DetectTarBombCatFileArray(listarrayfiles,
     }
 
 
-def _normalize_initial_data(data, isbytes, encoding):
-    """
-    Coerce `data` to the correct type for the chosen mode:
-      - bytes mode: return `bytes` (Py2: str; Py3: bytes)
-      - text mode : return unicode/str (Py2: unicode; Py3: str)
-    """
+def _as_bytes_like(data):
+    if isinstance(data, bytes):
+        return data
+    if isinstance(data, bytearray):
+        return bytes(data)
+    try:
+        mv = memoryview
+    except NameError:
+        mv = ()
+    if mv and isinstance(data, mv):
+        return bytes(data)
+    return None
+
+def _normalize_initial_data(data, isbytes, encoding, *, errors="strict"):
+    """Return bytes (if isbytes) or text (unicode on Py2, str on Py3)."""
     if data is None:
         return None
 
     if isbytes:
-        # Need a byte sequence
-        if isinstance(data, bytes):
-            return data
-        if isinstance(data, bytearray):
-            return bytes(data)
-        # memoryview may not exist on very old Py2 builds; guard dynamically
-        mv_t = getattr(__builtins__, 'memoryview', type(None))
-        if isinstance(data, mv_t):
-            return bytes(data)
-        if isinstance(data, str):
-            # Py2 str is already bytes; Py3 str must be encoded
-            return data if PY2 else data.encode(encoding)
-        if PY2 and isinstance(data, unicode):  # noqa: F821 (unicode only in Py2)
-            return data.encode(encoding)
+        b = _as_bytes_like(data)
+        if b is not None:
+            return b
+        if PY2:
+            if isinstance(data, unicode_type):
+                return data.encode(encoding, errors)
+            if isinstance(data, str):  # Py2: str is already bytes-like
+                return data
+        else:
+            if isinstance(data, str):
+                return data.encode(encoding, errors)
         raise TypeError("data must be bytes-like or text for isbytes=True (got %r)" % (type(data),))
     else:
-        # Need text (unicode in Py2, str in Py3)
         if PY2:
-            if isinstance(data, unicode):  # noqa: F821
+            if isinstance(data, unicode_type):
                 return data
+            b = _as_bytes_like(data)
+            if b is not None:
+                return b.decode(encoding, errors)
             if isinstance(data, str):
-                return data.decode(encoding)
-            if isinstance(data, bytearray):
-                return bytes(data).decode(encoding)
-            mv_t = getattr(__builtins__, 'memoryview', type(None))
-            if isinstance(data, mv_t):
-                return bytes(data).decode(encoding)
+                return data.decode(encoding, errors)
             raise TypeError("data must be unicode or bytes-like for text mode (got %r)" % (type(data),))
         else:
             if isinstance(data, str):
                 return data
-            if isinstance(data, (bytes, bytearray, memoryview)):
-                return bytes(data).decode(encoding)
+            b = _as_bytes_like(data)
+            if b is not None:
+                return b.decode(encoding, errors)
             raise TypeError("data must be str or bytes-like for text mode (got %r)" % (type(data),))
+
 
 def MkTempFile(data=None,
                inmem=True,
