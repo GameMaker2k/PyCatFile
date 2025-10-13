@@ -39,6 +39,7 @@ import zipfile
 import binascii
 import platform
 from io import StringIO, BytesIO
+from collections import namedtuple
 import posixpath as pp  # POSIX-safe joins/normpaths
 try:
     from backports import tempfile
@@ -839,33 +840,110 @@ def _resolves_outside(base_rel, target_rel):
         return False
     return True
 
-def _to_bytes(data):
+def _to_bytes(data, encoding="utf-8", errors="strict"):
+    """
+    Robustly coerce `data` to bytes:
+      - None -> b""
+      - bytes/bytearray/memoryview -> bytes(...)
+      - unicode/str -> .encode(encoding, errors)
+      - file-like (has .read) -> read all, return bytes
+      - int -> encode its decimal string (avoid bytes(int) => NULs)
+      - other -> try __bytes__, else str(...).encode(...)
+    """
     if data is None:
         return b""
-    if isinstance(data, bytes):
-        return data
-    if isinstance(data, unicode):
-        return data.encode("utf-8")
-    try:
-        return bytes(data)
-    except Exception:
-        return (u"%s" % data).encode("utf-8")
 
-def _to_text(s):
-    # Return a text/unicode string on both Py2 and Py3
-    try:
-        unicode  # noqa: F821 (exists on Py2)
-        if isinstance(s, unicode):
-            return s
-        if isinstance(s, bytes):
-            return s.decode('utf-8', 'replace')
-        return unicode(s)
-    except NameError:
-        if isinstance(s, str):
-            return s
-        if isinstance(s, (bytes, bytearray)):
-            return s.decode('utf-8', 'replace')
-        return str(s)
+    if isinstance(data, (bytes, bytearray, memoryview)):
+        return bytes(data)
+
+    if isinstance(data, unicode):
+        return data.encode(encoding, errors)
+
+    # file-like: read its content
+    if hasattr(data, "read"):
+        chunk = data.read()
+        return bytes(chunk) if isinstance(chunk, (bytes, bytearray, memoryview)) else (
+            (chunk if isinstance(chunk, unicode) else str(chunk)).encode(encoding, errors)
+        )
+
+    # avoid bytes(int) => NUL padding
+    if isinstance(data, int):
+        return str(data).encode(encoding, errors)
+
+    # prefer __bytes__ when available
+    to_bytes = getattr(data, "__bytes__", None)
+    if callable(to_bytes):
+        try:
+            return bytes(data)
+        except Exception:
+            pass
+
+    # fallback: string form
+    return (data if isinstance(data, unicode) else str(data)).encode(encoding, errors)
+
+
+def _to_text(s, encoding="utf-8", errors="replace", normalize=None, prefer_surrogates=False):
+    """
+    Coerce `s` to a text/unicode string safely.
+
+    Args:
+      s: Any object (bytes/bytearray/memoryview/str/unicode/other).
+      encoding: Used when decoding bytes-like objects (default: 'utf-8').
+      errors: Decoding error policy (default: 'replace').
+              Consider 'surrogateescape' when you need byte-preserving round-trip on Py3.
+      normalize: Optional unicode normalization form, e.g. 'NFC', 'NFKC', 'NFD', 'NFKD'.
+      prefer_surrogates: If True on Py3 and errors is the default, use 'surrogateescape'
+                         to preserve undecodable bytes.
+
+    Returns:
+      A text string (unicode on Py2, str on Py3).
+    """
+    # Fast path: already text
+    if isinstance(s, unicode):
+        out = s
+    else:
+        # Bytes-like → decode
+        if isinstance(s, (bytes, bytearray, memoryview)):
+            b = s if isinstance(s, (bytes, bytearray)) else bytes(s)
+            # Prefer surrogateescape on Py3 if requested (keeps raw bytes round-tripable)
+            eff_errors = errors
+            if prefer_surrogates and errors == "replace":
+                try:
+                    # Only available on Py3
+                    "".encode("utf-8", "surrogateescape")
+                    eff_errors = "surrogateescape"
+                except LookupError:
+                    pass
+            try:
+                out = b.decode(encoding, eff_errors)
+            except Exception:
+                # Last-resort: decode with 'latin-1' to avoid exceptions
+                out = b.decode("latin-1", "replace")
+        else:
+            # Not bytes-like: stringify
+            try:
+                # Py2: many objects implement __unicode__
+                if hasattr(s, "__unicode__"):
+                    out = s.__unicode__()  # noqa: E1101 (only on Py2 objects)
+                else:
+                    out = unicode(s)
+            except Exception:
+                # Fallback to repr() if object’s __str__/__unicode__ is broken
+                out = unicode(repr(s))
+
+    # Optional normalization
+    if normalize:
+        try:
+            import unicodedata
+            out = unicodedata.normalize(normalize, out)
+        except Exception:
+            # Keep original if normalization fails
+            pass
+
+    return out
+
+def ensure_text(s, **kw):
+    return _to_text(s, **kw)
 
 def _quote_path_for_wire(path_text):
     # Percent-encode as UTF-8; return ASCII bytes text
@@ -1686,8 +1764,14 @@ def _as_bytes_like(data):
         return bytes(data)
     return None
 
-def _normalize_initial_data(data, isbytes, encoding, *, errors="strict"):
-    """Return bytes (if isbytes) or text (unicode on Py2, str on Py3)."""
+def _normalize_initial_data(data, isbytes, encoding, errors=None):
+    """
+    Return bytes (if isbytes) or text (unicode on Py2, str on Py3).
+    Py2-safe signature (no keyword-only args).
+    """
+    if errors is None:
+        errors = "strict"
+
     if data is None:
         return None
 
@@ -1696,15 +1780,18 @@ def _normalize_initial_data(data, isbytes, encoding, *, errors="strict"):
         if b is not None:
             return b
         if PY2:
+            # Py2: 'unicode' -> encode; 'str' is already bytes
             if isinstance(data, unicode_type):
                 return data.encode(encoding, errors)
-            if isinstance(data, str):  # Py2: str is already bytes-like
+            if isinstance(data, str):
                 return data
         else:
+            # Py3: text -> encode
             if isinstance(data, str):
                 return data.encode(encoding, errors)
         raise TypeError("data must be bytes-like or text for isbytes=True (got %r)" % (type(data),))
     else:
+        # text mode
         if PY2:
             if isinstance(data, unicode_type):
                 return data
@@ -1712,6 +1799,7 @@ def _normalize_initial_data(data, isbytes, encoding, *, errors="strict"):
             if b is not None:
                 return b.decode(encoding, errors)
             if isinstance(data, str):
+                # Py2 str -> decode
                 return data.decode(encoding, errors)
             raise TypeError("data must be unicode or bytes-like for text mode (got %r)" % (type(data),))
         else:
@@ -1721,7 +1809,6 @@ def _normalize_initial_data(data, isbytes, encoding, *, errors="strict"):
             if b is not None:
                 return b.decode(encoding, errors)
             raise TypeError("data must be str or bytes-like for text mode (got %r)" % (type(data),))
-
 
 def MkTempFile(data=None,
                inmem=True,
@@ -3669,101 +3756,375 @@ def SevenZipFileCheck(infile):
     except (py7zr.Bad7zFile, AttributeError, IOError):
         return False
 
-# initial_value can be 0xFFFF or 0x0000
+def _mv_tobytes(mv):
+    """Compat: memoryview to bytes (Py3: tobytes, Py2: tostring)."""
+    return mv.tobytes() if hasattr(mv, "tobytes") else mv.tostring()
+
+# =========================
+#   Byte / text helpers
+# =========================
+def _iter_bytes(msg):
+    """Iterate ints 0..255 over msg on Py2/3 efficiently."""
+    if isinstance(msg, memoryview):
+        b = _mv_tobytes(msg)
+    else:
+        try:
+            b = _mv_tobytes(memoryview(msg))
+        except TypeError:
+            # iterable of ints fallback
+            for x in msg:
+                yield int(x) & 0xFF
+            return
+    for ch in b:
+        if not isinstance(ch, int):  # Py2: str of len 1
+            ch = ord(ch)
+        yield ch & 0xFF
 
 
-def crc_calculate(msg, poly, initial_value, bit_length):
-    """Generic CRC calculation function."""
-    crc = initial_value
-    for byte in msg:
-        crc ^= byte << (bit_length - 8)
-        for _ in range(8):
-            crc = (crc << 1) ^ poly if crc & (1 << (bit_length - 1)) else crc << 1
-            crc &= (1 << bit_length) - 1
-    return crc
+def _delim_bytes(delimiter):
+    if delimiter is None:
+        delimiter = __file_format_dict__['format_delimiter']
+    return delimiter.encode('utf-8') if isinstance(delimiter, basestring) else bytes(delimiter)
 
-
-def crc16_ansi(msg, initial_value=0xFFFF):
-    # CRC-16-IBM / CRC-16-ANSI polynomial and initial value
-    poly = 0x8005  # Polynomial for CRC-16-IBM / CRC-16-ANSI
-    crc = initial_value  # Initial value
-    for b in msg:
-        crc ^= b << 8  # XOR byte into CRC top byte
-        for _ in range(8):  # Process each bit
-            if crc & 0x8000:  # If the top bit is set
-                # Shift left and XOR with the polynomial
-                crc = (crc << 1) ^ poly
+def _serialize_header_fields(value, delimiter):
+    """
+    Accept list/tuple (joined with delimiter + trailing delimiter) or single field.
+    Returns bytes.
+    """
+    d = _delim_bytes(delimiter)
+    if isinstance(value, (list, tuple)):
+        parts = []
+        for v in value:
+            if isinstance(v, (bytes, bytearray, memoryview)):
+                parts.append(bytes(v))
+            elif isinstance(v, basestring) or v is None:
+                parts.append((u"" if v is None else unicode(v)).encode('utf-8'))
             else:
-                crc = crc << 1  # Just shift left
-            crc &= 0xFFFF  # Ensure CRC remains 16-bit
-    return crc
+                parts.append(str(v).encode('utf-8'))
+        return d.join(parts) + d
+    # single field
+    return _to_bytes(value)
 
-# initial_value can be 0xFFFF or 0x0000
+def _hex_pad(n, width_bits):
+    width = (width_bits + 3) // 4
+    return format(n, '0{}x'.format(width)).lower()
 
+# =========================
+#   Reflection + tables
+# =========================
+def _reflect(v, width):
+    r = 0
+    for _ in range(width):
+        r = (r << 1) | (v & 1)
+        v >>= 1
+    return r
+
+_crc_table_cache = {}  # (width, poly, refin) -> table[256]
+
+def _build_table(width, poly, refin):
+    key = (width, poly, refin)
+    tbl = _crc_table_cache.get(key)
+    if tbl is not None:
+        return tbl
+
+    mask = (1 << width) - 1
+    tbl = [0] * 256
+    if refin:
+        rpoly = _reflect(poly, width)
+        for i in range(256):
+            crc = i
+            for _ in range(8):
+                crc = (crc >> 1) ^ rpoly if (crc & 1) else (crc >> 1)
+            tbl[i] = crc & mask
+    else:
+        top = 1 << (width - 1)
+        for i in range(256):
+            crc = i << (width - 8)
+            for _ in range(8):
+                crc = ((crc << 1) ^ poly) & mask if (crc & top) else ((crc << 1) & mask)
+            tbl[i] = crc & mask
+    _crc_table_cache[key] = tbl
+    return tbl
+
+# =========================
+#  Generic (table) CRC API
+# =========================
+def crc_generic(msg, width, poly, init, xorout, refin, refout):
+    mask = (1 << width) - 1
+    table = _build_table(width, poly, refin)
+
+    crc = init & mask
+    if refin:
+        for b in _iter_bytes(msg):
+            crc = table[(crc ^ b) & 0xFF] ^ (crc >> 8)
+    else:
+        shift = width - 8
+        for b in _iter_bytes(msg):
+            crc = table[((crc >> shift) ^ b) & 0xFF] ^ ((crc << 8) & mask)
+
+    if refout ^ refin:
+        crc = _reflect(crc, width)
+    return (crc ^ xorout) & mask
+
+# =========================
+#       Named CRCs
+# =========================
+# CRC-16/ANSI (ARC/MODBUS family with init=0xFFFF by default)
+def crc16_ansi(msg, initial_value=0xFFFF):
+    return crc_generic(msg, 16, 0x8005, initial_value & 0xFFFF, 0x0000, True, True)
 
 def crc16_ibm(msg, initial_value=0xFFFF):
     return crc16_ansi(msg, initial_value)
 
-# initial_value is 0xFFFF
-
-
 def crc16(msg):
     return crc16_ansi(msg, 0xFFFF)
 
-# initial_value can be 0xFFFF, 0x1D0F or 0x0000
-
-
 def crc16_ccitt(msg, initial_value=0xFFFF):
-    # CRC-16-CCITT polynomial
-    poly = 0x1021  # Polynomial for CRC-16-CCITT
-    # Use the specified initial value
-    crc = initial_value
-    for b in msg:
-        crc ^= b << 8  # XOR byte into CRC top byte
-        for _ in range(8):  # Process each bit
-            if crc & 0x8000:  # If the top bit is set
-                # Shift left and XOR with the polynomial
-                crc = (crc << 1) ^ poly
-            else:
-                crc = crc << 1  # Just shift left
-            crc &= 0xFFFF  # Ensure CRC remains 16-bit
-    return crc
+    # CCITT-FALSE
+    return crc_generic(msg, 16, 0x1021, initial_value & 0xFFFF, 0x0000, False, False)
 
-# initial_value can be 0x42F0E1EBA9EA3693 or 0x0000000000000000
+def crc16_x25(msg):
+    return crc_generic(msg, 16, 0x1021, 0xFFFF, 0xFFFF, True, True)
 
+def crc16_kermit(msg):
+    return crc_generic(msg, 16, 0x1021, 0x0000, 0x0000, True, True)
 
 def crc64_ecma(msg, initial_value=0x0000000000000000):
-    # CRC-64-ECMA polynomial and initial value
-    poly = 0x42F0E1EBA9EA3693
-    crc = initial_value  # Initial value for CRC-64-ECMA
-    for b in msg:
-        crc ^= b << 56  # XOR byte into the most significant byte of the CRC
-        for _ in range(8):  # Process each bit
-            if crc & (1 << 63):  # Check if the leftmost (most significant) bit is set
-                # Shift left and XOR with poly if the MSB is 1
-                crc = (crc << 1) ^ poly
-            else:
-                crc <<= 1  # Just shift left if the MSB is 0
-            crc &= 0xFFFFFFFFFFFFFFFF  # Ensure CRC remains 64-bit
-    return crc
-
-# initial_value can be 0x000000000000001B or 0xFFFFFFFFFFFFFFFF
-
+    return crc_generic(msg, 64, 0x42F0E1EBA9EA3693,
+                       initial_value & 0xFFFFFFFFFFFFFFFF,
+                       0x0000000000000000, False, False)
 
 def crc64_iso(msg, initial_value=0xFFFFFFFFFFFFFFFF):
-    # CRC-64-ISO polynomial and initial value
-    poly = 0x000000000000001B
-    crc = initial_value  # Common initial value for CRC-64-ISO
-    for b in msg:
-        crc ^= b << 56  # XOR byte into the most significant byte of the CRC
-        for _ in range(8):  # Process each bit
-            if crc & (1 << 63):  # Check if the leftmost (most significant) bit is set
-                # Shift left and XOR with poly if the MSB is 1
-                crc = (crc << 1) ^ poly
-            else:
-                crc <<= 1  # Just shift left if the MSB is 0
-            crc &= 0xFFFFFFFFFFFFFFFF  # Ensure CRC remains 64-bit
-    return crc
+    return crc_generic(msg, 64, 0x000000000000001B,
+                       initial_value & 0xFFFFFFFFFFFFFFFF,
+                       0xFFFFFFFFFFFFFFFF, True, True)
+
+# =========================
+#  Incremental CRC context
+# =========================
+CRCSpec = namedtuple("CRCSpec", "width poly init xorout refin refout")
+
+_CRC_SPECS = {
+    "crc16_ansi":  CRCSpec(16, 0x8005, 0xFFFF, 0x0000, True,  True),
+    "crc16_ccitt": CRCSpec(16, 0x1021, 0xFFFF, 0x0000, False, False),
+    "crc16_x25":   CRCSpec(16, 0x1021, 0xFFFF, 0xFFFF, True,  True),
+    "crc16_kermit":CRCSpec(16, 0x1021, 0x0000, 0x0000, True,  True),
+    "crc64_ecma":  CRCSpec(64, 0x42F0E1EBA9EA3693, 0x0000000000000000, 0x0000000000000000, False, False),
+    "crc64_iso":   CRCSpec(64, 0x000000000000001B, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, True,  True),
+}
+
+class CRCContext(object):
+    __slots__ = ("spec", "table", "mask", "shift", "crc")
+
+    def __init__(self, spec):
+        self.spec  = spec
+        self.table = _build_table(spec.width, spec.poly, spec.refin)
+        self.mask  = (1 << spec.width) - 1
+        self.shift = spec.width - 8
+        self.crc   = spec.init & self.mask
+
+    def update(self, data):
+        if not isinstance(data, (bytes, bytearray, memoryview)):
+            data = bytes(bytearray(data))
+        buf = _mv_tobytes(memoryview(data))
+        if self.spec.refin:
+            c = self.crc
+            tbl = self.table
+            for b in buf:
+                if not isinstance(b, int):  # Py2
+                    b = ord(b)
+                c = tbl[(c ^ b) & 0xFF] ^ (c >> 8)
+            self.crc = c & self.mask
+        else:
+            c = self.crc
+            tbl = self.table
+            sh  = self.shift
+            msk = self.mask
+            for b in buf:
+                if not isinstance(b, int):
+                    b = ord(b)
+                c = tbl[((c >> sh) ^ b) & 0xFF] ^ ((c << 8) & msk)
+            self.crc = c & msk
+        return self
+
+    def digest_int(self):
+        c = self.crc
+        if self.spec.refout ^ self.spec.refin:
+            c = _reflect(c, self.spec.width)
+        return (c ^ self.spec.xorout) & self.mask
+
+    def hexdigest(self):
+        width_hex = (self.spec.width + 3) // 4
+        return format(self.digest_int(), "0{}x".format(width_hex)).lower()
+
+def crc_context_from_name(name_norm):
+    spec = _CRC_SPECS.get(name_norm)
+    if spec is None:
+        raise KeyError("Unknown CRC spec: {}".format(name_norm))
+    return CRCContext(spec)
+
+# =========================
+#     Dispatch helpers
+# =========================
+_CRC_ALIASES = {
+    # keep your historical behaviors
+    "crc16": "crc16_ansi",
+    "crc16_ibm": "crc16_ansi",
+    "crc16_ansi": "crc16_ansi",
+    "crc16_modbus": "crc16_ansi",
+    "crc16_ccitt": "crc16_ccitt",
+    "crc16_ccitt_false": "crc16_ccitt",
+    "crc16_x25": "crc16_x25",
+    "crc16_kermit": "crc16_kermit",
+    "crc64": "crc64_iso",
+    "crc64_iso": "crc64_iso",
+    "crc64_ecma": "crc64_ecma",
+    "adler32": "adler32",
+    "crc32": "crc32",
+}
+
+_CRC_WIDTH = {
+    "crc16_ansi": 16,
+    "crc16_ccitt": 16,
+    "crc16_x25": 16,
+    "crc16_kermit": 16,
+    "crc64_iso": 64,
+    "crc64_ecma": 64,
+    "adler32": 32,
+    "crc32": 32,
+}
+
+def _crc_compute(algo_key, data_bytes):
+    if algo_key == "crc16_ansi":
+        return crc16_ansi(data_bytes) & 0xFFFF
+    if algo_key == "crc16_ccitt":
+        return crc16_ccitt(data_bytes) & 0xFFFF
+    if algo_key == "crc16_x25":
+        return crc16_x25(data_bytes) & 0xFFFF
+    if algo_key == "crc16_kermit":
+        return crc16_kermit(data_bytes) & 0xFFFF
+    if algo_key == "crc64_iso":
+        return crc64_iso(data_bytes) & 0xFFFFFFFFFFFFFFFF
+    if algo_key == "crc64_ecma":
+        return crc64_ecma(data_bytes) & 0xFFFFFFFFFFFFFFFF
+    if algo_key == "adler32":
+        return zlib.adler32(data_bytes) & 0xFFFFFFFF
+    if algo_key == "crc32":
+        return zlib.crc32(data_bytes) & 0xFFFFFFFF
+    raise KeyError(algo_key)
+
+try:
+    hashlib_guaranteed
+except NameError:
+    hashlib_guaranteed = set(a.lower() for a in hashlib.algorithms_available)
+
+def CheckSumSupportAlt(name, guaranteed):
+    try:
+        return name.lower() in guaranteed
+    except Exception:
+        return False
+
+# =========================
+#     Public checksum API
+# =========================
+def GetHeaderChecksum(inlist=None, checksumtype="crc32", encodedata=True, formatspecs=__file_format_dict__):
+    """
+    Serialize header fields (list/tuple => joined with delimiter + trailing delimiter;
+    or a single field) and compute the requested checksum. Returns lowercase hex.
+    """
+    checksumtype_norm = (checksumtype or "crc32").lower()
+    algo_key = _CRC_ALIASES.get(checksumtype_norm, checksumtype_norm)
+
+    delim = formatspecs.get('format_delimiter', u"\0")
+    hdr_bytes = _serialize_header_fields(inlist or [], delim)
+    if encodedata and not isinstance(hdr_bytes, (bytes, bytearray, memoryview)):
+        hdr_bytes = _to_bytes(hdr_bytes)
+    hdr_bytes = bytes(hdr_bytes)
+
+    if algo_key in _CRC_WIDTH:
+        n = _crc_compute(algo_key, hdr_bytes)
+        return _hex_pad(n, _CRC_WIDTH[algo_key])
+
+    if CheckSumSupportAlt(algo_key, hashlib_guaranteed):
+        h = hashlib.new(algo_key)
+        h.update(hdr_bytes)
+        return h.hexdigest().lower()
+
+    return "0"
+
+def GetFileChecksum(instr, checksumtype="crc32", encodedata=True, formatspecs=__file_format_dict__):
+    """
+    Accepts bytes/str/file-like.
+      - Hashlib algos: streamed in 1 MiB chunks.
+      - CRC algos (crc16_ansi/ccitt/x25/kermit, crc64_iso/ecma): streamed via CRCContext for file-like.
+      - Falls back to one-shot for non-file-like inputs.
+    """
+    checksumtype_norm = (checksumtype or "crc32").lower()
+    algo_key = _CRC_ALIASES.get(checksumtype_norm, checksumtype_norm)
+
+    # file-like streaming
+    if hasattr(instr, "read"):
+        # hashlib
+        if algo_key not in _CRC_SPECS and CheckSumSupportAlt(algo_key, hashlib_guaranteed):
+            h = hashlib.new(algo_key)
+            while True:
+                chunk = instr.read(1 << 20)
+                if not chunk:
+                    break
+                if not isinstance(chunk, (bytes, bytearray, memoryview)):
+                    chunk = bytes(bytearray(chunk))
+                h.update(chunk)
+            return h.hexdigest().lower()
+
+        # CRC streaming via context
+        if algo_key in _CRC_SPECS:
+            ctx = crc_context_from_name(algo_key)
+            while True:
+                chunk = instr.read(1 << 20)
+                if not chunk:
+                    break
+                if not isinstance(chunk, (bytes, bytearray, memoryview)):
+                    chunk = bytes(bytearray(chunk))
+                ctx.update(chunk)
+            return ctx.hexdigest()
+
+        # not known streaming algo: fallback to one-shot bytes
+        data = instr.read()
+        if not isinstance(data, (bytes, bytearray, memoryview)):
+            data = bytes(bytearray(data))
+    else:
+        data = _to_bytes(instr) if (encodedata or not isinstance(instr, (bytes, bytearray, memoryview))) else instr
+        data = bytes(data)
+
+    # one-shot
+    if algo_key in _CRC_SPECS:
+        return crc_context_from_name(algo_key).update(data).hexdigest()
+
+    if algo_key in _CRC_WIDTH:
+        n = _crc_compute(algo_key, data)
+        return _hex_pad(n, _CRC_WIDTH[algo_key])
+
+    if CheckSumSupportAlt(algo_key, hashlib_guaranteed):
+        h = hashlib.new(algo_key)
+        h.update(data)
+        return h.hexdigest().lower()
+
+    return "0"
+
+def ValidateHeaderChecksum(inlist=None, checksumtype="crc32", inchecksum="0", formatspecs=__file_format_dict__):
+    calc = GetHeaderChecksum(inlist, checksumtype, True, formatspecs)
+    want = (inchecksum or "0").strip().lower()
+    if want.startswith("0x"):
+        want = want[2:]
+    return hmac.compare_digest(want, calc)
+
+def ValidateFileChecksum(infile, checksumtype="crc32", inchecksum="0", formatspecs=__file_format_dict__):
+    calc = GetFileChecksum(infile, checksumtype, True, formatspecs)
+    want = (inchecksum or "0").strip().lower()
+    if want.startswith("0x"):
+        want = want[2:]
+    return hmac.compare_digest(want, calc)
+
 
 def MajorMinorToDev(major, minor):
     """
@@ -4022,31 +4383,58 @@ def _expect_delimiter(fp, delimiter):
         raise ValueError("Delimiter mismatch: expected {!r}, got {!r}".format(delim_b, got))
 
 # ========= unified public API (bytes/text control) =========
-def read_until_delimiter(fp, delimiter=b"\0", *, max_read=64 * 1024 * 1024, chunk_size=8192,
-                         decode=True, errors="strict"):
+def read_until_delimiter(fp,
+                         delimiter=b"\0",
+                         max_read=None,
+                         chunk_size=None,
+                         decode=True,
+                         errors=None):
     """
     Read until the first occurrence of 'delimiter'. Strips the delimiter.
     - Returns text (UTF-8) when decode=True; bytes when decode=False.
     - Non-seekable streams are supported via pushback on the file object.
+    Py2/3 compatible (no keyword-only args).
     """
+    if max_read is None:
+        max_read = 64 * 1024 * 1024
+    if chunk_size is None:
+        chunk_size = 8192
+    if errors is None:
+        errors = "strict"
+
     r = _DelimiterReader(fp, delimiter=_default_delim(delimiter),
                          chunk_size=chunk_size, max_read=max_read)
     piece, _found = r.read_one_piece()
     return _decode_text(piece, errors) if decode else piece
 
-def read_until_n_delimiters(fp, delimiter=b"\0", num_delimiters=1, *,
-                            max_read=64 * 1024 * 1024, chunk_size=8192, decode=True, errors="strict",
+
+def read_until_n_delimiters(fp,
+                            delimiter=b"\0",
+                            num_delimiters=1,
+                            max_read=None,
+                            chunk_size=None,
+                            decode=True,
+                            errors=None,
                             pad_to_n=False):
     """
     Read up to 'num_delimiters' occurrences. Returns list of pieces (len <= N).
     If pad_to_n=True, pads with empty pieces to length N (useful for rigid parsers).
+    Py2/3 compatible (no keyword-only args).
     """
+    if max_read is None:
+        max_read = 64 * 1024 * 1024
+    if chunk_size is None:
+        chunk_size = 8192
+    if errors is None:
+        errors = "strict"
+
     r = _DelimiterReader(fp, delimiter=_default_delim(delimiter),
                          chunk_size=chunk_size, max_read=max_read)
     parts = r.read_n_pieces(num_delimiters, pad_to_n=pad_to_n)
     if decode:
         return [_decode_text(p, errors) for p in parts]
     return parts
+
 
 # ========= back-compat wrappers (your original names) =========
 def ReadTillNullByteOld(fp, delimiter=_default_delim(None)):
