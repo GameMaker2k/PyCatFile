@@ -6692,6 +6692,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmtt
         fmttype = __file_format_default__
         formatspecs = formatspecs[fmttype]
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+        outfile = RemoveWindowsPath(outfile)
         if(os.path.exists(outfile)):
             try:
                 os.unlink(outfile)
