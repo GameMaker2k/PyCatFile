@@ -192,10 +192,17 @@ except NameError:
     FileNotFoundError = IOError
 
 try:
-    UnsupportedOperation = io.UnsupportedOperation  # Py3
-except AttributeError:
-    class UnsupportedOperation(IOError):  # Py2 fallback
-        pass
+    # Works on Py3 and Py2.7
+    from io import UnsupportedOperation
+except Exception:
+    # Mimic CPython: subclass both OSError/IOError and ValueError
+    try:
+        class UnsupportedOperation(IOError, ValueError):
+            pass
+    except Exception:
+        # Ultra-old fallback if multiple inheritance caused issues on exotic runtimes
+        class UnsupportedOperation(IOError):
+            pass
 
 # RAR file support
 rarfile_support = False
