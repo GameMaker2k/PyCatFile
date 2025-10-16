@@ -6636,7 +6636,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         pass
     return fp
 
-def AppendFilesWithContentFromTarFile(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
+def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
     if(not hasattr(fp, "write")):
         return False
     if(verbose):
@@ -6860,7 +6860,7 @@ def AppendFilesWithContentFromTarFile(infile, fp, dirlistfromtxt=False, filevalu
         pass
     return fp
 
-def AppendFilesWithContentFromZipFile(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
+def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
     if(not hasattr(fp, "write")):
         return False
     if(verbose):
@@ -7079,11 +7079,11 @@ def AppendFilesWithContentFromZipFile(infile, fp, dirlistfromtxt=False, filevalu
     return fp
 
 if(not rarfile_support):
-    def AppendFilesWithContentFromRarFile(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
+    def AppendFilesWithContentFromRarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
         return False
 
 if(rarfile_support):
-    def AppendFilesWithContentFromRarFile(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
+    def AppendFilesWithContentFromRarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
         if(not hasattr(fp, "write")):
             return False
         if(verbose):
@@ -7323,11 +7323,11 @@ if(rarfile_support):
         return fp
 
 if(not py7zr_support):
-    def AppendFilesWithContentFromSevenZip(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
+    def AppendFilesWithContentFromSevenZip(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
         return False
 
 if(py7zr_support):
-    def AppendFilesWithContentFromSevenZip(infile, fp, dirlistfromtxt=False, filevalues=[], extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
+    def AppendFilesWithContentFromSevenZip(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
         if(not hasattr(fp, "write")):
             return False
         if(verbose):
@@ -7647,7 +7647,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmtt
         fp.close()
         return True
 
-def AppendFilesWithContentFromTarFileToOutFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def AppendFilesWithContentFromTarFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
@@ -7689,8 +7689,8 @@ def AppendFilesWithContentFromTarFileToOutFile(infiles, outfile, dirlistfromtxt=
             fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
         except PermissionError:
             return False
-    AppendFilesWithContentFromTarFile(infiles, fp, dirlistfromtxt, filevalues, extradata, jsondata, compression,
-                                   compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, formatspecs, verbose)
+    AppendFilesWithContentFromTarFile(infiles, fp, extradata, jsondata, compression,
+                                   compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, verbose)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, compressionuselist, formatspecs)
@@ -7727,7 +7727,7 @@ def AppendFilesWithContentFromTarFileToOutFile(infiles, outfile, dirlistfromtxt=
         fp.close()
         return True
 
-def AppendFilesWithContentFromZipFileToOutFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def AppendFilesWithContentFromZipFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
@@ -7769,8 +7769,8 @@ def AppendFilesWithContentFromZipFileToOutFile(infiles, outfile, dirlistfromtxt=
             fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
         except PermissionError:
             return False
-    AppendFilesWithContentFromZipFile(infiles, fp, dirlistfromtxt, filevalues, extradata, jsondata, compression,
-                                   compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, formatspecs, verbose)
+    AppendFilesWithContentFromZipFile(infiles, fp, extradata, jsondata, compression,
+                                   compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, verbose)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, compressionuselist, formatspecs)
@@ -7808,11 +7808,11 @@ def AppendFilesWithContentFromZipFileToOutFile(infiles, outfile, dirlistfromtxt=
         return True
 
 if(not rarfile_support):
-    def AppendFilesWithContentFromRarFileToOutFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    def AppendFilesWithContentFromRarFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
         return False
 
 if(rarfile_support):
-    def AppendFilesWithContentFromRarFileToOutFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    def AppendFilesWithContentFromRarFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
         if(IsNestedDict(formatspecs) and fmttype=="auto" and 
             (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
             get_in_ext = os.path.splitext(outfile)
@@ -7854,8 +7854,8 @@ if(rarfile_support):
                 fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
             except PermissionError:
                 return False
-        AppendFilesWithContentFromRarFile(infiles, fp, dirlistfromtxt, filevalues, extradata, jsondata, compression,
-                                       compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, formatspecs, verbose)
+        AppendFilesWithContentFromRarFile(infiles, fp, extradata, jsondata, compression,
+                                       compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, verbose)
         if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
             fp = CompressOpenFileAlt(
                 fp, compression, compressionlevel, compressionuselist, formatspecs)
@@ -7893,11 +7893,11 @@ if(rarfile_support):
             return True
 
 if(not py7zr_support):
-    def AppendFilesWithContentFromSevenZipToOutFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    def AppendFilesWithContentFromSevenZipToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
         return False
 
 if(py7zr_support):
-    def AppendFilesWithContentFromSevenZipToOutFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    def AppendFilesWithContentFromSevenZipToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
         if(IsNestedDict(formatspecs) and fmttype=="auto" and 
             (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
             get_in_ext = os.path.splitext(outfile)
@@ -7939,8 +7939,8 @@ if(py7zr_support):
                 fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
             except PermissionError:
                 return False
-        AppendFilesWithContentFromSevenZip(infiles, fp, dirlistfromtxt, filevalues, extradata, jsondata, compression,
-                                       compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, formatspecs, verbose)
+        AppendFilesWithContentFromSevenZip(infiles, fp, extradata, jsondata, compression,
+                                       compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, verbose)
         if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
             fp = CompressOpenFileAlt(
                 fp, compression, compressionlevel, compressionuselist, formatspecs)
@@ -9775,585 +9775,11 @@ def PackCatFileFromDirList(infiles, outfile, dirlistfromtxt=False, fmttype="auto
 
 
 def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-    if(IsNestedDict(formatspecs) and fmttype=="auto" and 
-        (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
-        get_in_ext = os.path.splitext(outfile)
-        tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
-        if(tmpfmt is None and get_in_ext[1]!=""):
-            get_in_ext = os.path.splitext(get_in_ext[0])
-            tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
-        if(tmpfmt is None):
-            fmttype = __file_format_default__
-            formatspecs = formatspecs[fmttype]
-        else:
-            fmttype = tmpfmt
-            formatspecs = formatspecs[tmpfmt]
-    elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
-        formatspecs = formatspecs[fmttype]
-    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
-        fmttype = __file_format_default__
-        formatspecs = formatspecs[fmttype]
-    if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
-        outfile = RemoveWindowsPath(outfile)
-    if(not compression or compression == formatspecs['format_magic']):
-        compression = "auto"
-    if(compression not in compressionuselist and compression is None):
-        compression = "auto"
-    if(verbose):
-        logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
-    if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
-        if(os.path.exists(outfile)):
-            try:
-                os.unlink(outfile)
-            except OSError:
-                pass
-    if(outfile == "-" or outfile is None):
-        verbose = False
-        fp = MkTempFile()
-    elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
-        fp = outfile
-    elif(re.findall(__upload_proto_support__, outfile)):
-        fp = MkTempFile()
-    else:
-        fbasename = os.path.splitext(outfile)[0]
-        fextname = os.path.splitext(outfile)[1]
-        if(not compresswholefile and fextname in outextlistwd):
-            compresswholefile = True
-        try:
-            fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
-        except PermissionError:
-            return False
-    formver = formatspecs['format_ver']
-    fileheaderver = str(int(formver.replace(".", "")))
-    curinode = 0
-    curfid = 0
-    inodelist = []
-    inodetofile = {}
-    filetoinode = {}
-    inodetoforminode = {}
-    if(infile == "-"):
-        infile = MkTempFile()
-        if(hasattr(sys.stdin, "buffer")):
-            shutil.copyfileobj(sys.stdin.buffer, infile)
-        else:
-            shutil.copyfileobj(sys.stdin, infile)
-        infile.seek(0, 0)
-        if(not infile):
-            return False
-        infile.seek(0, 0)
-    elif(re.findall(__download_proto_support__, infile)):
-        infile = download_file_from_internet_file(infile)
-        infile.seek(0, 0)
-        if(not infile):
-            return False
-        infile.seek(0, 0)
-    elif(hasattr(infile, "read") or hasattr(infile, "write")):
-        try:
-            if(not tarfile.is_tarfile(infile)):
-                return False
-        except AttributeError:
-            if(not TarFileCheck(infile)):
-                return False
-    elif(not os.path.exists(infile) or not os.path.isfile(infile)):
-        return False
-    elif(os.path.exists(infile) and os.path.isfile(infile)):
-        try:
-            if(not tarfile.is_tarfile(infile)):
-                return False
-        except AttributeError:
-            if(not TarFileCheck(infile)):
-                return False
-    try:
-        if(hasattr(infile, "read") or hasattr(infile, "write")):
-            compresscheck = CheckCompressionType(infile, formatspecs, 0, False)
-            if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
-                formatspecs = formatspecs[compresscheck]
-            if(compresscheck=="zstd"):
-                if 'zstandard' in sys.modules:
-                    infile = ZstdFile(fileobj=infile, mode="rb")
-                elif 'pyzstd' in sys.modules:
-                    infile = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
-                tarfp = tarfile.open(fileobj=infile, mode="r")
-            else:
-                tarfp = tarfile.open(fileobj=infile, mode="r")
-        else:
-            compresscheck = CheckCompressionType(infile, formatspecs, 0, True)
-            if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
-                formatspecs = formatspecs[compresscheck]
-            if(compresscheck=="zstd"):
-                if 'zstandard' in sys.modules:
-                    infile = ZstdFile(fileobj=infile, mode="rb")
-                elif 'pyzstd' in sys.modules:
-                    infile = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
-                tarfp = tarfile.open(fileobj=infile, mode="r")
-            else:
-                tarfp = tarfile.open(infile, "r")
-    except FileNotFoundError:
-        return False
-    numfiles = int(len(tarfp.getmembers()))
-    AppendFileHeader(fp, numfiles, "UTF-8", [], checksumtype[0], formatspecs)
-    for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
-        fencoding = "UTF-8"
-        if(re.findall("^[.|/]", member.name)):
-            fname = member.name
-        else:
-            fname = "./"+member.name
-        if(verbose):
-            VerbosePrintOut(fname)
-        fpremode = member.mode
-        ffullmode = member.mode
-        flinkcount = 0
-        ftype = 0
-        if(member.isreg()):
-            ffullmode = member.mode + stat.S_IFREG
-            ftype = 0
-        elif(member.islnk()):
-            ffullmode = member.mode + stat.S_IFREG
-            ftype = 1
-        elif(member.issym()):
-            ffullmode = member.mode + stat.S_IFLNK
-            ftype = 2
-        elif(member.ischr()):
-            ffullmode = member.mode + stat.S_IFCHR
-            ftype = 3
-        elif(member.isblk()):
-            ffullmode = member.mode + stat.S_IFBLK
-            ftype = 4
-        elif(member.isdir()):
-            ffullmode = member.mode + stat.S_IFDIR
-            ftype = 5
-        elif(member.isfifo()):
-            ffullmode = member.mode + stat.S_IFIFO
-            ftype = 6
-        elif(hasattr(member, "issparse") and member.issparse()):
-            ffullmode = member.mode
-            ftype = 12
-        elif(member.isdev()):
-            ffullmode = member.mode
-            ftype = 14
-        else:
-            ffullmode = member.mode
-            ftype = 0
-        flinkname = ""
-        fcurfid = format(int(curfid), 'x').lower()
-        fcurinode = format(int(curfid), 'x').lower()
-        curfid = curfid + 1
-        if(ftype == 2):
-            flinkname = member.linkname
-        try:
-            fdev = format(int(os.makedev(member.devmajor, member.devminor)), 'x').lower()
-        except AttributeError:
-            fdev = format(int(MakeDevAlt(member.devmajor, member.devminor)), 'x').lower()
-        fdev_minor = format(int(member.devminor), 'x').lower()
-        fdev_major = format(int(member.devmajor), 'x').lower()
-        # Types that should be considered zero-length in the archive context:
-        zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
-        # Types that have actual data to read:
-        data_types = {0, 7, 12}
-        if ftype in zero_length_types:
-            fsize = format(int("0"), 'x').lower()
-        elif ftype in data_types:
-            fsize = format(int(member.size), 'x').lower()
-        else:
-            fsize = format(int(member.size), 'x').lower()
-        fatime = format(int(member.mtime), 'x').lower()
-        fmtime = format(int(member.mtime), 'x').lower()
-        fctime = format(int(member.mtime), 'x').lower()
-        fbtime = format(int(member.mtime), 'x').lower()
-        fmode = format(int(ffullmode), 'x').lower()
-        fchmode = format(int(stat.S_IMODE(ffullmode)), 'x').lower()
-        ftypemod = format(int(stat.S_IFMT(ffullmode)), 'x').lower()
-        fuid = format(int(member.uid), 'x').lower()
-        fgid = format(int(member.gid), 'x').lower()
-        funame = member.uname
-        fgname = member.gname
-        flinkcount = format(int(flinkcount), 'x').lower()
-        fwinattributes = format(int(0), 'x').lower()
-        fcompression = ""
-        fcsize = format(int(0), 'x').lower()
-        fcontents = MkTempFile()
-        fcencoding = "UTF-8"
-        curcompression = "none"
-        if ftype in data_types:
-            fpc = tarfp.extractfile(member)
-            copy_opaque(fpc, fcontents, bufsize=1 << 20)  # 1 MiB chunks, opaque copy
-            fpc.close()
-            typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
-            fcontents.seek(0, 0)
-            if(typechecktest is not False):
-                typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=True)
-                fcontents.seek(0, 0)
-            fcencoding = GetFileEncoding(fcontents, 0, False)[0]
-            if(typechecktest is False and not compresswholefile):
-                fcontents.seek(0, 2)
-                ucfsize = fcontents.tell()
-                fcontents.seek(0, 0)
-                if(compression == "auto"):
-                    ilsize = len(compressionuselist)
-                    ilmin = 0
-                    ilcsize = []
-                    while(ilmin < ilsize):
-                        cfcontents = MkTempFile()
-                        fcontents.seek(0, 0)
-                        shutil.copyfileobj(fcontents, cfcontents)
-                        fcontents.seek(0, 0)
-                        cfcontents.seek(0, 0)
-                        cfcontents = CompressOpenFileAlt(
-                            cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs)
-                        if(cfcontents):
-                            cfcontents.seek(0, 2)
-                            ilcsize.append(cfcontents.tell())
-                            cfcontents.close()
-                        else:
-                            ilcsize.append(float("inf"))
-                        ilmin = ilmin + 1
-                    ilcmin = ilcsize.index(min(ilcsize))
-                    curcompression = compressionuselist[ilcmin]
-                fcontents.seek(0, 0)
-                cfcontents = MkTempFile()
-                shutil.copyfileobj(fcontents, cfcontents)
-                cfcontents.seek(0, 0)
-                cfcontents = CompressOpenFileAlt(
-                    cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
-                cfcontents.seek(0, 2)
-                cfsize = cfcontents.tell()
-                if(ucfsize > cfsize):
-                    fcsize = format(int(cfsize), 'x').lower()
-                    fcompression = curcompression
-                    fcontents.close()
-                    fcontents = cfcontents
-        if(fcompression == "none"):
-            fcompression = ""
-        fcontents.seek(0, 0)
-        ftypehex = format(ftype, 'x').lower()
-        tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
-        AppendFileHeaderWithContent(
-            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
-        fcontents.close()
-    if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
-        fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, compressionuselist, formatspecs)
-        try:
-            fp.flush()
-            if(hasattr(os, "sync")):
-                os.fsync(fp.fileno())
-        except io.UnsupportedOperation:
-            pass
-        except AttributeError:
-            pass
-        except OSError:
-            pass
-    if(outfile == "-"):
-        fp.seek(0, 0)
-        if(hasattr(sys.stdout, "buffer")):
-            shutil.copyfileobj(fp, sys.stdout.buffer)
-        else:
-            shutil.copyfileobj(fp, sys.stdout)
-    elif(outfile is None):
-        fp.seek(0, 0)
-        outvar = fp.read()
-        fp.close()
-        return outvar
-    elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall(__upload_proto_support__, outfile)):
-        fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, compressionuselist, formatspecs)
-        fp.seek(0, 0)
-        upload_file_to_internet_file(fp, outfile)
-    if(returnfp):
-        fp.seek(0, 0)
-        return fp
-    else:
-        fp.close()
-        return True
+    return AppendFilesWithContentFromTarFileToOutFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, returnfp)
 
 
 def PackCatFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-    if(IsNestedDict(formatspecs) and fmttype=="auto" and 
-        (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
-        get_in_ext = os.path.splitext(outfile)
-        tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
-        if(tmpfmt is None and get_in_ext[1]!=""):
-            get_in_ext = os.path.splitext(get_in_ext[0])
-            tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
-        if(tmpfmt is None):
-            fmttype = __file_format_default__
-            formatspecs = formatspecs[fmttype]
-        else:
-            fmttype = tmpfmt
-            formatspecs = formatspecs[tmpfmt]
-    elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
-        formatspecs = formatspecs[fmttype]
-    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
-        fmttype = __file_format_default__
-        formatspecs = formatspecs[fmttype]
-    if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
-        outfile = RemoveWindowsPath(outfile)
-    if(not compression or compression == formatspecs['format_magic']):
-        compression = "auto"
-    if(compression not in compressionuselist and compression is None):
-        compression = "auto"
-    if(verbose):
-        logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
-    if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
-        if(os.path.exists(outfile)):
-            try:
-                os.unlink(outfile)
-            except OSError:
-                pass
-    if(outfile == "-" or outfile is None):
-        verbose = False
-        fp = MkTempFile()
-    elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
-        fp = outfile
-    elif(re.findall(__upload_proto_support__, outfile)):
-        fp = MkTempFile()
-    else:
-        fbasename = os.path.splitext(outfile)[0]
-        fextname = os.path.splitext(outfile)[1]
-        if(not compresswholefile and fextname in outextlistwd):
-            compresswholefile = True
-        try:
-            fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
-        except PermissionError:
-            return False
-    formver = formatspecs['format_ver']
-    fileheaderver = str(int(formver.replace(".", "")))
-    curinode = 0
-    curfid = 0
-    inodelist = []
-    inodetofile = {}
-    filetoinode = {}
-    inodetoforminode = {}
-    if(infile == "-"):
-        infile = MkTempFile()
-        if(hasattr(sys.stdin, "buffer")):
-            shutil.copyfileobj(sys.stdin.buffer, infile)
-        else:
-            shutil.copyfileobj(sys.stdin, infile)
-        infile.seek(0, 0)
-        if(not infile):
-            return False
-        infile.seek(0, 0)
-    elif(re.findall(__download_proto_support__, infile)):
-        infile = download_file_from_internet_file(infile)
-        infile.seek(0, 0)
-        if(not infile):
-            return False
-        infile.seek(0, 0)
-    elif(hasattr(infile, "read") or hasattr(infile, "write")):
-        pass
-    elif(not os.path.exists(infile) or not os.path.isfile(infile)):
-        return False
-    if(not zipfile.is_zipfile(infile)):
-        return False
-    try:
-        zipfp = zipfile.ZipFile(infile, "r", allowZip64=True)
-    except FileNotFoundError:
-        return False
-    ziptest = zipfp.testzip()
-    if(ziptest):
-        VerbosePrintOut("Bad file found!")
-    numfiles = int(len(zipfp.infolist()))
-    AppendFileHeader(fp, numfiles, "UTF-8", [], checksumtype[0], formatspecs)
-    for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
-        fencoding = "UTF-8"
-        if(re.findall("^[.|/]", member.filename)):
-            fname = member.filename
-        else:
-            fname = "./"+member.filename
-        zipinfo = zipfp.getinfo(member.filename)
-        if(verbose):
-            VerbosePrintOut(fname)
-        if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
-            fpremode = int(stat.S_IFDIR + 511)
-        else:
-            fpremode = int(stat.S_IFREG + 438)
-        flinkcount = 0
-        ftype = 0
-        if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
-            ftype = 5
-        else:
-            ftype = 0
-        flinkname = ""
-        fcurfid = format(int(curfid), 'x').lower()
-        fcurinode = format(int(curfid), 'x').lower()
-        curfid = curfid + 1
-        fdev = format(int(0), 'x').lower()
-        fdev_minor = format(int(0), 'x').lower()
-        fdev_major = format(int(0), 'x').lower()
-        if(ftype == 5):
-            fsize = format(int("0"), 'x').lower()
-        elif(ftype == 0):
-            fsize = format(int(member.file_size), 'x').lower()
-        else:
-            fsize = format(int(member.file_size), 'x').lower()
-        fatime = format(
-            int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower()
-        fmtime = format(
-            int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower()
-        fctime = format(
-            int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower()
-        fbtime = format(
-            int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower()
-        if(zipinfo.create_system == 0 or zipinfo.create_system == 10):
-            fwinattributes = format(int(zipinfo.external_attr), 'x').lower()
-            if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
-                fmode = format(int(stat.S_IFDIR + 511), 'x').lower()
-                fchmode = stat.S_IMODE(int(stat.S_IFDIR + 511))
-                ftypemod = stat.S_IFMT(int(stat.S_IFDIR + 511))
-            else:
-                fmode = format(int(stat.S_IFREG + 438), 'x').lower()
-                fchmode = stat.S_IMODE(int(stat.S_IFREG + 438))
-                ftypemod = stat.S_IFMT(int(stat.S_IFREG + 438))
-        elif(zipinfo.create_system == 3):
-            fwinattributes = format(int(0), 'x').lower()
-            try:
-                fmode = format(int(zipinfo.external_attr), 'x').lower()
-                prefmode = int(zipinfo.external_attr)
-                fchmode = stat.S_IMODE(prefmode)
-                ftypemod = stat.S_IFMT(prefmode)
-            except OverflowError:
-                fmode = format(int(zipinfo.external_attr >> 16), 'x').lower()
-                prefmode = int(zipinfo.external_attr >> 16)
-                fchmode = stat.S_IMODE(prefmode)
-                ftypemod = stat.S_IFMT(prefmode)
-        else:
-            fwinattributes = format(int(0), 'x').lower()
-            if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
-                fmode = format(int(stat.S_IFDIR + 511), 'x').lower()
-                prefmode = int(stat.S_IFDIR + 511)
-                fchmode = stat.S_IMODE(prefmode)
-                ftypemod = stat.S_IFMT(prefmode)
-            else:
-                fmode = format(int(stat.S_IFREG + 438), 'x').lower()
-                prefmode = int(stat.S_IFREG + 438)
-                fchmode = stat.S_IMODE(prefmode)
-                ftypemod = stat.S_IFMT(prefmode)
-        fcompression = ""
-        fcsize = format(int(0), 'x').lower()
-        try:
-            fuid = format(int(os.getuid()), 'x').lower()
-        except AttributeError:
-            fuid = format(int(0), 'x').lower()
-        except KeyError:
-            fuid = format(int(0), 'x').lower()
-        try:
-            fgid = format(int(os.getgid()), 'x').lower()
-        except AttributeError:
-            fgid = format(int(0), 'x').lower()
-        except KeyError:
-            fgid = format(int(0), 'x').lower()
-        try:
-            import pwd
-            try:
-                userinfo = pwd.getpwuid(os.getuid())
-                funame = userinfo.pw_name
-            except KeyError:
-                funame = ""
-            except AttributeError:
-                funame = ""
-        except ImportError:
-            funame = ""
-        fgname = ""
-        try:
-            import grp
-            try:
-                groupinfo = grp.getgrgid(os.getgid())
-                fgname = groupinfo.gr_name
-            except KeyError:
-                fgname = ""
-            except AttributeError:
-                fgname = ""
-        except ImportError:
-            fgname = ""
-        fcontents = MkTempFile()
-        fcencoding = "UTF-8"
-        curcompression = "none"
-        if ftype == 0:
-            fcontents.write(zipfp.read(member.filename))
-            typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
-            fcontents.seek(0, 0)
-            fcencoding = GetFileEncoding(fcontents, 0, False)[0]
-            if(typechecktest is False and not compresswholefile):
-                fcontents.seek(0, 2)
-                ucfsize = fcontents.tell()
-                fcontents.seek(0, 0)
-                if(compression == "auto"):
-                    ilsize = len(compressionuselist)
-                    ilmin = 0
-                    ilcsize = []
-                    while(ilmin < ilsize):
-                        cfcontents = MkTempFile()
-                        fcontents.seek(0, 0)
-                        shutil.copyfileobj(fcontents, cfcontents)
-                        fcontents.seek(0, 0)
-                        cfcontents.seek(0, 0)
-                        cfcontents = CompressOpenFileAlt(
-                            cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs)
-                        cfcontents.seek(0, 2)
-                        ilcsize.append(cfcontents.tell())
-                        cfcontents.close()
-                        ilmin = ilmin + 1
-                    ilcmin = ilcsize.index(min(ilcsize))
-                    curcompression = compressionuselist[ilcmin]
-                fcontents.seek(0, 0)
-                cfcontents = MkTempFile()
-                shutil.copyfileobj(fcontents, cfcontents)
-                cfcontents.seek(0, 0)
-                cfcontents = CompressOpenFileAlt(
-                    cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
-                cfcontents.seek(0, 2)
-                cfsize = cfcontents.tell()
-                if(ucfsize > cfsize):
-                    fcsize = format(int(cfsize), 'x').lower()
-                    fcompression = curcompression
-                    fcontents.close()
-                    fcontents = cfcontents
-        if(fcompression == "none"):
-            fcompression = ""
-        fcontents.seek(0, 0)
-        ftypehex = format(ftype, 'x').lower()
-        tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
-        AppendFileHeaderWithContent(
-            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
-        fcontents.close()
-    if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
-        fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, compressionuselist, formatspecs)
-        try:
-            fp.flush()
-            if(hasattr(os, "sync")):
-                os.fsync(fp.fileno())
-        except io.UnsupportedOperation:
-            pass
-        except AttributeError:
-            pass
-        except OSError:
-            pass
-    if(outfile == "-"):
-        fp.seek(0, 0)
-        if(hasattr(sys.stdout, "buffer")):
-            shutil.copyfileobj(fp, sys.stdout.buffer)
-        else:
-            shutil.copyfileobj(fp, sys.stdout)
-    elif(outfile is None):
-        fp.seek(0, 0)
-        outvar = fp.read()
-        fp.close()
-        return outvar
-    elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall(__upload_proto_support__, outfile)):
-        fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, compressionuselist, formatspecs)
-        fp.seek(0, 0)
-        upload_file_to_internet_file(fp, outfile)
-    if(returnfp):
-        fp.seek(0, 0)
-        return fp
-    else:
-        fp.close()
-        return True
+    return AppendFilesWithContentFromZipFileToOutFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, returnfp)
 
 
 if(not rarfile_support):
@@ -10362,312 +9788,7 @@ if(not rarfile_support):
 
 if(rarfile_support):
     def PackCatFileFromRarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-        if(IsNestedDict(formatspecs) and fmttype=="auto" and 
-            (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
-            get_in_ext = os.path.splitext(outfile)
-            tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
-            if(tmpfmt is None and get_in_ext[1]!=""):
-                get_in_ext = os.path.splitext(get_in_ext[0])
-                tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
-            if(tmpfmt is None):
-                fmttype = __file_format_default__
-                formatspecs = formatspecs[fmttype]
-            else:
-                fmttype = tmpfmt
-                formatspecs = formatspecs[tmpfmt]
-        elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
-            formatspecs = formatspecs[fmttype]
-        elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
-            fmttype = __file_format_default__
-            formatspecs = formatspecs[fmttype]
-        if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
-            outfile = RemoveWindowsPath(outfile)
-        if(not compression or compression == formatspecs['format_magic']):
-            compression = "auto"
-        if(compression not in compressionuselist and compression is None):
-            compression = "auto"
-        if(verbose):
-            logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
-        if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
-            if(os.path.exists(outfile)):
-                try:
-                    os.unlink(outfile)
-                except OSError:
-                    pass
-        if(outfile == "-" or outfile is None):
-            verbose = False
-            fp = MkTempFile()
-        elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
-            fp = outfile
-        elif(re.findall(__upload_proto_support__, outfile)):
-            fp = MkTempFile()
-        else:
-            fbasename = os.path.splitext(outfile)[0]
-            fextname = os.path.splitext(outfile)[1]
-            if(not compresswholefile and fextname in outextlistwd):
-                compresswholefile = True
-            try:
-                fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
-            except PermissionError:
-                return False
-        formver = formatspecs['format_ver']
-        fileheaderver = str(int(formver.replace(".", "")))
-        curinode = 0
-        curfid = 0
-        inodelist = []
-        inodetofile = {}
-        filetoinode = {}
-        inodetoforminode = {}
-        if(not os.path.exists(infile) or not os.path.isfile(infile)):
-            return False
-        if(not rarfile.is_rarfile(infile) and not rarfile.is_rarfile_sfx(infile)):
-            return False
-        rarfp = rarfile.RarFile(infile, "r")
-        rartest = rarfp.testrar()
-        if(rartest):
-            VerbosePrintOut("Bad file found!")
-        numfiles = int(len(rarfp.infolist()))
-        AppendFileHeader(fp, numfiles, "UTF-8", [], checksumtype[0], formatspecs)
-        try:
-            fp.flush()
-            if(hasattr(os, "sync")):
-                os.fsync(fp.fileno())
-        except io.UnsupportedOperation:
-            pass
-        except AttributeError:
-            pass
-        except OSError:
-            pass
-        for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
-            is_unix = False
-            is_windows = False
-            if(member.host_os == rarfile.RAR_OS_UNIX):
-                is_windows = False
-                try:
-                    member.external_attr
-                    is_unix = True
-                except AttributeError:
-                    is_unix = False
-            elif(member.host_os == rarfile.RAR_OS_WIN32):
-                is_unix = False
-                try:
-                    member.external_attr
-                    is_windows = True
-                except AttributeError:
-                    is_windows = False
-            else:
-                is_unix = False
-                is_windows = False
-            fencoding = "UTF-8"
-            if(re.findall("^[.|/]", member.filename)):
-                fname = member.filename
-            else:
-                fname = "./"+member.filename
-            rarinfo = rarfp.getinfo(member.filename)
-            if(verbose):
-                VerbosePrintOut(fname)
-            if(is_unix and member.external_attr != 0):
-                fpremode = int(member.external_attr)
-            elif(member.is_file()):
-                fpremode = int(stat.S_IFREG + 438)
-            elif(member.is_symlink()):
-                fpremode = int(stat.S_IFLNK + 438)
-            elif(member.is_dir()):
-                fpremode = int(stat.S_IFDIR + 511)
-            if(is_windows and member.external_attr != 0):
-                fwinattributes = format(int(member.external_attr), 'x').lower()
-            else:
-                fwinattributes = format(int(0), 'x').lower()
-            fcompression = ""
-            fcsize = format(int(0), 'x').lower()
-            flinkcount = 0
-            ftype = 0
-            if(member.is_file()):
-                ftype = 0
-            elif(member.is_symlink()):
-                ftype = 2
-            elif(member.is_dir()):
-                ftype = 5
-            flinkname = ""
-            if(ftype == 2):
-                flinkname = rarfp.read(member.filename).decode("UTF-8")
-            fcurfid = format(int(curfid), 'x').lower()
-            fcurinode = format(int(curfid), 'x').lower()
-            curfid = curfid + 1
-            fdev = format(int(0), 'x').lower()
-            fdev_minor = format(int(0), 'x').lower()
-            fdev_major = format(int(0), 'x').lower()
-            if(ftype == 5):
-                fsize = format(int("0"), 'x').lower()
-            elif(ftype == 0):
-                fsize = format(int(member.file_size), 'x').lower()
-            else:
-                fsize = format(int(member.file_size), 'x').lower()
-            try:
-                if(member.atime):
-                    fatime = format(int(member.atime.timestamp()), 'x').lower()
-                else:
-                    fatime = format(int(member.mtime.timestamp()), 'x').lower()
-            except AttributeError:
-                fatime = format(int(member.mtime.timestamp()), 'x').lower()
-            fmtime = format(int(member.mtime.timestamp()), 'x').lower()
-            try:
-                if(member.ctime):
-                    fctime = format(int(member.ctime.timestamp()), 'x').lower()
-                else:
-                    fctime = format(int(member.mtime.timestamp()), 'x').lower()
-            except AttributeError:
-                fctime = format(int(member.mtime.timestamp()), 'x').lower()
-            fbtime = format(int(member.mtime.timestamp()), 'x').lower()
-            if(is_unix and member.external_attr != 0):
-                fmode = format(int(member.external_attr), 'x').lower()
-                fchmode = format(
-                    int(stat.S_IMODE(member.external_attr)), 'x').lower()
-                ftypemod = format(
-                    int(stat.S_IFMT(member.external_attr)), 'x').lower()
-            elif(member.is_file()):
-                fmode = format(int(stat.S_IFREG + 438), 'x').lower()
-                fchmode = format(
-                    int(stat.S_IMODE(int(stat.S_IFREG + 438))), 'x').lower()
-                ftypemod = format(
-                    int(stat.S_IFMT(int(stat.S_IFREG + 438))), 'x').lower()
-            elif(member.is_symlink()):
-                fmode = format(int(stat.S_IFLNK + 438), 'x').lower()
-                fchmode = format(
-                    int(stat.S_IMODE(int(stat.S_IFREG + 438))), 'x').lower()
-                ftypemod = format(
-                    int(stat.S_IFMT(int(stat.S_IFREG + 438))), 'x').lower()
-            elif(member.is_dir()):
-                fmode = format(int(stat.S_IFDIR + 511), 'x').lower()
-                fchmode = format(
-                    int(stat.S_IMODE(int(stat.S_IFDIR + 511))), 'x').lower()
-                ftypemod = format(
-                    int(stat.S_IFMT(int(stat.S_IFDIR + 511))), 'x').lower()
-            try:
-                fuid = format(int(os.getuid()), 'x').lower()
-            except AttributeError:
-                fuid = format(int(0), 'x').lower()
-            except KeyError:
-                fuid = format(int(0), 'x').lower()
-            try:
-                fgid = format(int(os.getgid()), 'x').lower()
-            except AttributeError:
-                fgid = format(int(0), 'x').lower()
-            except KeyError:
-                fgid = format(int(0), 'x').lower()
-            try:
-                import pwd
-                try:
-                    userinfo = pwd.getpwuid(os.getuid())
-                    funame = userinfo.pw_name
-                except KeyError:
-                    funame = ""
-                except AttributeError:
-                    funame = ""
-            except ImportError:
-                funame = ""
-            fgname = ""
-            try:
-                import grp
-                try:
-                    groupinfo = grp.getgrgid(os.getgid())
-                    fgname = groupinfo.gr_name
-                except KeyError:
-                    fgname = ""
-                except AttributeError:
-                    fgname = ""
-            except ImportError:
-                fgname = ""
-            fcontents = MkTempFile()
-            fcencoding = "UTF-8"
-            curcompression = "none"
-            if ftype == 0:
-                fcontents.write(rarfp.read(member.filename))
-                typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
-                fcontents.seek(0, 0)
-                fcencoding = GetFileEncoding(fcontents, 0, False)[0]
-                if(typechecktest is False and not compresswholefile):
-                    fcontents.seek(0, 2)
-                    ucfsize = fcontents.tell()
-                    fcontents.seek(0, 0)
-                    if(compression == "auto"):
-                        ilsize = len(compressionuselist)
-                        ilmin = 0
-                        ilcsize = []
-                        while(ilmin < ilsize):
-                            cfcontents = MkTempFile()
-                            fcontents.seek(0, 0)
-                            shutil.copyfileobj(fcontents, cfcontents)
-                            fcontents.seek(0, 0)
-                            cfcontents.seek(0, 0)
-                            cfcontents = CompressOpenFileAlt(
-                                cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs)
-                            if(cfcontents):
-                                cfcontents.seek(0, 2)
-                                ilcsize.append(cfcontents.tell())
-                                cfcontents.close()
-                            else:
-                                ilcsize.append(float("inf"))
-                            ilmin = ilmin + 1
-                        ilcmin = ilcsize.index(min(ilcsize))
-                        curcompression = compressionuselist[ilcmin]
-                    fcontents.seek(0, 0)
-                    cfcontents = MkTempFile()
-                    shutil.copyfileobj(fcontents, cfcontents)
-                    cfcontents.seek(0, 0)
-                    cfcontents = CompressOpenFileAlt(
-                        cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
-                    cfcontents.seek(0, 2)
-                    cfsize = cfcontents.tell()
-                    if(ucfsize > cfsize):
-                        fcsize = format(int(cfsize), 'x').lower()
-                        fcompression = curcompression
-                        fcontents.close()
-                        fcontents = cfcontents
-            if(fcompression == "none"):
-                fcompression = ""
-            fcontents.seek(0, 0)
-            ftypehex = format(ftype, 'x').lower()
-            tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                          fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
-            AppendFileHeaderWithContent(
-                fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
-            fcontents.close()
-        if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
-            fp = CompressOpenFileAlt(
-                fp, compression, compressionlevel, compressionuselist, formatspecs)
-            try:
-                fp.flush()
-                if(hasattr(os, "sync")):
-                    os.fsync(fp.fileno())
-            except io.UnsupportedOperation:
-                pass
-            except AttributeError:
-                pass
-            except OSError:
-                pass
-        if(outfile == "-"):
-            fp.seek(0, 0)
-            if(hasattr(sys.stdout, "buffer")):
-                shutil.copyfileobj(fp, sys.stdout.buffer)
-            else:
-                shutil.copyfileobj(fp, sys.stdout)
-        elif(outfile is None):
-            fp.seek(0, 0)
-            outvar = fp.read()
-            fp.close()
-            return outvar
-        elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall(__upload_proto_support__, outfile)):
-            fp = CompressOpenFileAlt(
-                fp, compression, compressionlevel, compressionuselist, formatspecs)
-            fp.seek(0, 0)
-            upload_file_to_internet_file(fp, outfile)
-        if(returnfp):
-            fp.seek(0, 0)
-            return fp
-        else:
-            fp.close()
-            return True
+        return AppendFilesWithContentFromRarFileToOutFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, returnfp)
 
 
 if(not py7zr_support):
@@ -10676,246 +9797,7 @@ if(not py7zr_support):
 
 if(py7zr_support):
     def PackCatFileFromSevenZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-        if(IsNestedDict(formatspecs) and fmttype=="auto" and 
-            (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
-            get_in_ext = os.path.splitext(outfile)
-            tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
-            if(tmpfmt is None and get_in_ext[1]!=""):
-                get_in_ext = os.path.splitext(get_in_ext[0])
-                tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
-            if(tmpfmt is None):
-                fmttype = __file_format_default__
-                formatspecs = formatspecs[fmttype]
-            else:
-                fmttype = tmpfmt
-                formatspecs = formatspecs[tmpfmt]
-        elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
-            formatspecs = formatspecs[fmttype]
-        elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
-            fmttype = __file_format_default__
-            formatspecs = formatspecs[fmttype]
-        if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
-            outfile = RemoveWindowsPath(outfile)
-        if(not compression or compression == formatspecs['format_magic']):
-            compression = "auto"
-        if(compression not in compressionuselist and compression is None):
-            compression = "auto"
-        if(verbose):
-            logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
-        if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
-            if(os.path.exists(outfile)):
-                try:
-                    os.unlink(outfile)
-                except OSError:
-                    pass
-        if(outfile == "-" or outfile is None):
-            verbose = False
-            fp = MkTempFile()
-        elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
-            fp = outfile
-        elif(re.findall(__upload_proto_support__, outfile)):
-            fp = MkTempFile()
-        else:
-            fbasename = os.path.splitext(outfile)[0]
-            fextname = os.path.splitext(outfile)[1]
-            if(not compresswholefile and fextname in outextlistwd):
-                compresswholefile = True
-            try:
-                fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
-            except PermissionError:
-                return False
-        formver = formatspecs['format_ver']
-        fileheaderver = str(int(formver.replace(".", "")))
-        curinode = 0
-        curfid = 0
-        inodelist = []
-        inodetofile = {}
-        filetoinode = {}
-        inodetoforminode = {}
-        if(not os.path.exists(infile) or not os.path.isfile(infile)):
-            return False
-        szpfp = py7zr.SevenZipFile(infile, mode="r")
-        file_content = szpfp.readall()
-        #sztest = szpfp.testzip()
-        sztestalt = szpfp.test()
-        if(sztestalt):
-            VerbosePrintOut("Bad file found!")
-        numfiles = int(len(szpfp.list()))
-        AppendFileHeader(fp, numfiles, "UTF-8", [], checksumtype[0], formatspecs)
-        for member in sorted(szpfp.list(), key=lambda x: x.filename):
-            fencoding = "UTF-8"
-            if(re.findall("^[.|/]", member.filename)):
-                fname = member.filename
-            else:
-                fname = "./"+member.filename
-            if(verbose):
-                VerbosePrintOut(fname)
-            if(not member.is_directory):
-                fpremode = int(stat.S_IFREG + 438)
-            elif(member.is_directory):
-                fpremode = int(stat.S_IFDIR + 511)
-            fwinattributes = format(int(0), 'x').lower()
-            fcompression = ""
-            fcsize = format(int(0), 'x').lower()
-            flinkcount = 0
-            ftype = 0
-            if(member.is_directory):
-                ftype = 5
-            else:
-                ftype = 0
-            flinkname = ""
-            fcurfid = format(int(curfid), 'x').lower()
-            fcurinode = format(int(curfid), 'x').lower()
-            curfid = curfid + 1
-            fdev = format(int(0), 'x').lower()
-            fdev_minor = format(int(0), 'x').lower()
-            fdev_major = format(int(0), 'x').lower()
-            if(ftype == 5):
-                fsize = format(int("0"), 'x').lower()
-            fatime = format(int(member.creationtime.timestamp()), 'x').lower()
-            fmtime = format(int(member.creationtime.timestamp()), 'x').lower()
-            fctime = format(int(member.creationtime.timestamp()), 'x').lower()
-            fbtime = format(int(member.creationtime.timestamp()), 'x').lower()
-            if(member.is_directory):
-                fmode = format(int(stat.S_IFDIR + 511), 'x').lower()
-                fchmode = format(
-                    int(stat.S_IMODE(int(stat.S_IFDIR + 511))), 'x').lower()
-                ftypemod = format(
-                    int(stat.S_IFMT(int(stat.S_IFDIR + 511))), 'x').lower()
-            else:
-                fmode = format(int(stat.S_IFREG + 438), 'x').lower()
-                fchmode = format(
-                    int(stat.S_IMODE(int(stat.S_IFREG + 438))), 'x').lower()
-                ftypemod = format(
-                    int(stat.S_IFMT(int(stat.S_IFREG + 438))), 'x').lower()
-            try:
-                fuid = format(int(os.getuid()), 'x').lower()
-            except AttributeError:
-                fuid = format(int(0), 'x').lower()
-            except KeyError:
-                fuid = format(int(0), 'x').lower()
-            try:
-                fgid = format(int(os.getgid()), 'x').lower()
-            except AttributeError:
-                fgid = format(int(0), 'x').lower()
-            except KeyError:
-                fgid = format(int(0), 'x').lower()
-            try:
-                import pwd
-                try:
-                    userinfo = pwd.getpwuid(os.getuid())
-                    funame = userinfo.pw_name
-                except KeyError:
-                    funame = ""
-                except AttributeError:
-                    funame = ""
-            except ImportError:
-                funame = ""
-            fgname = ""
-            try:
-                import grp
-                try:
-                    groupinfo = grp.getgrgid(os.getgid())
-                    fgname = groupinfo.gr_name
-                except KeyError:
-                    fgname = ""
-                except AttributeError:
-                    fgname = ""
-            except ImportError:
-                fgname = ""
-            fcontents = MkTempFile()
-            fcencoding = "UTF-8"
-            curcompression = "none"
-            if ftype == 0:
-                fcontents.write(file_content[member.filename].read())
-                fsize = format(fcontents.tell(), 'x').lower()
-                fcontents.seek(0, 0)
-                typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
-                fcontents.seek(0, 0)
-                fcencoding = GetFileEncoding(fcontents, 0, False)[0]
-                file_content[member.filename].close()
-                if(typechecktest is False and not compresswholefile):
-                    fcontents.seek(0, 2)
-                    ucfsize = fcontents.tell()
-                    fcontents.seek(0, 0)
-                    if(compression == "auto"):
-                        ilsize = len(compressionuselist)
-                        ilmin = 0
-                        ilcsize = []
-                        while(ilmin < ilsize):
-                            cfcontents = MkTempFile()
-                            fcontents.seek(0, 0)
-                            shutil.copyfileobj(fcontents, cfcontents)
-                            fcontents.seek(0, 0)
-                            cfcontents.seek(0, 0)
-                            cfcontents = CompressOpenFileAlt(
-                                cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs)
-                            if(cfcontents):
-                                cfcontents.seek(0, 2)
-                                ilcsize.append(cfcontents.tell())
-                                cfcontents.close()
-                            else:
-                                ilcsize.append(float("inf"))
-                            ilmin = ilmin + 1
-                        ilcmin = ilcsize.index(min(ilcsize))
-                        curcompression = compressionuselist[ilcmin]
-                    fcontents.seek(0, 0)
-                    cfcontents = MkTempFile()
-                    shutil.copyfileobj(fcontents, cfcontents)
-                    cfcontents.seek(0, 0)
-                    cfcontents = CompressOpenFileAlt(
-                        cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
-                    cfcontents.seek(0, 2)
-                    cfsize = cfcontents.tell()
-                    if(ucfsize > cfsize):
-                        fcsize = format(int(cfsize), 'x').lower()
-                        fcompression = curcompression
-                        fcontents.close()
-                        fcontents = cfcontents
-            if(fcompression == "none"):
-                fcompression = ""
-            fcontents.seek(0, 0)
-            ftypehex = format(ftype, 'x').lower()
-            tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                          fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
-            AppendFileHeaderWithContent(
-                fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
-            fcontents.close()
-        if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
-            fp = CompressOpenFileAlt(
-                fp, compression, compressionlevel, compressionuselist, formatspecs)
-            try:
-                fp.flush()
-                if(hasattr(os, "sync")):
-                    os.fsync(fp.fileno())
-            except io.UnsupportedOperation:
-                pass
-            except AttributeError:
-                pass
-            except OSError:
-                pass
-        if(outfile == "-"):
-            fp.seek(0, 0)
-            if(hasattr(sys.stdout, "buffer")):
-                shutil.copyfileobj(fp, sys.stdout.buffer)
-            else:
-                shutil.copyfileobj(fp, sys.stdout)
-        elif(outfile is None):
-            fp.seek(0, 0)
-            outvar = fp.read()
-            fp.close()
-            return outvar
-        elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall(__upload_proto_support__, outfile)):
-            fp = CompressOpenFileAlt(
-                fp, compression, compressionlevel, compressionuselist, formatspecs)
-            fp.seek(0, 0)
-            upload_file_to_internet_file(fp, outfile)
-        if(returnfp):
-            fp.seek(0, 0)
-            return fp
-        else:
-            fp.close()
-            return True
+        return AppendFilesWithContentFromSevenZipToOutFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, returnfp)
 
 
 def PackCatFileFromInFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
