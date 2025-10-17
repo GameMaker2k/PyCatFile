@@ -125,6 +125,38 @@ try:
 except Exception:
     PATH_TYPES = (basestring,)
 
+def _ensure_text(s, encoding="utf-8", errors="replace", allow_none=False):
+    """
+    Normalize any input to text_type (unicode on Py2, str on Py3).
+
+    - bytes/bytearray/memoryview -> decode
+    - os.PathLike -> fspath then normalize
+    - None -> "" (unless allow_none=True, then return None)
+    - everything else -> text_type(s)
+    """
+    if s is None:
+        return None if allow_none else text_type("")
+
+    if isinstance(s, text_type):
+        return s
+
+    if isinstance(s, (bytes_type, bytearray, memoryview)):
+        return bytes(s).decode(encoding, errors)
+
+    # Handle pathlib.Path & other path-like objects
+    try:
+        import os
+        if hasattr(os, "fspath"):
+            fs = os.fspath(s)
+            if isinstance(fs, text_type):
+                return fs
+            if isinstance(fs, (bytes_type, bytearray, memoryview)):
+                return bytes(fs).decode(encoding, errors)
+    except Exception:
+        pass
+
+    return text_type(s)
+
 def to_text(s, encoding="utf-8", errors="ignore"):
     if s is None:
         return u""
@@ -899,35 +931,65 @@ def VerbosePrintOutReturn(dbgtxt, outtype="log", dbgenable=True, dgblevel=20, **
 
 
 
-def _split_posix(path_text):
-    """Split POSIX paths regardless of OS; return list of components."""
-    # Normalize leading './'
-    if path_text.startswith(u'./'):
-        path_text = path_text[2:]
-    # Strip redundant slashes
-    path_text = re.sub(u'/+', u'/', path_text)
-    # Drop trailing '/' so 'dir/' -> ['dir']
-    if path_text.endswith(u'/'):
-        path_text = path_text[:-1]
-    return path_text.split(u'/') if path_text else []
-
-def _is_abs_like(s):
-    """Absolute targets (POSIX or Windows-drive style)."""
-    return s.startswith(u'/') or s.startswith(u'\\') or re.match(u'^[A-Za-z]:[/\\\\]', s)
-
-def _resolves_outside(base_rel, target_rel):
+def _split_posix(name):
     """
-    Given a base directory (relative, POSIX) and a target (relative),
-    return True if base/target resolves outside of base.
-    We anchor under '/' so normpath is root-anchored and portable.
+    Return a list of path parts without collapsing '..'.
+    - Normalize backslashes to '/'
+    - Strip leading './' (repeated)
+    - Remove '' and '.' parts; keep '..' for traversal detection
     """
-    base_clean = u'/'.join(_split_posix(base_rel))
-    target_clean = u'/'.join(_split_posix(target_rel))
-    base_abs = u'/' + base_clean if base_clean else u'/'
-    combined = pp.normpath(pp.join(base_abs, target_clean))
-    if combined == base_abs or combined.startswith(base_abs + u'/'):
+    if not name:
+        return []
+    n = name.replace(u"\\", u"/")
+    while n.startswith(u"./"):
+        n = n[2:]
+    return [p for p in n.split(u"/") if p not in (u"", u".")]
+
+def _is_abs_like(name):
+    """Detect absolute-like paths across platforms (/, \\, drive letters, UNC)."""
+    if not name:
         return False
-    return True
+    n = name.replace(u"\\", u"/")
+
+    # POSIX absolute
+    if n.startswith(u"/"):
+        return True
+
+    # Windows UNC (\\server\share\...) -> after replace: startswith '//'
+    if n.startswith(u"//"):
+        return True
+
+    # Windows drive: 'C:/', 'C:\', or bare 'C:' (treat as absolute-like conservatively)
+    if len(n) >= 2 and n[1] == u":":
+        if len(n) == 2:
+            return True
+        if n[2:3] in (u"/", u"\\"):
+            return True
+    return False
+
+def _resolves_outside(parent, target):
+    """
+    Does a symlink from 'parent' to 'target' escape parent?
+    - Absolute-like target => escape.
+    - Compare normalized '/<parent>/<target>' against '/<parent>'.
+    - 'parent' is POSIX-style ('' means archive root).
+    """
+    parent = _ensure_text(parent or u"")
+    target = _ensure_text(target or u"")
+
+    # Absolute target is unsafe by definition
+    if _is_abs_like(target):
+        return True
+
+    import posixpath as pp
+    root = u"/"
+    base = pp.normpath(pp.join(root, parent))   # '/dir/sub' or '/'
+    cand = pp.normpath(pp.join(base, target))   # resolved target under '/'
+
+    # ensure trailing slash on base for the prefix test
+    base_slash = base if base.endswith(u"/") else (base + u"/")
+    return not (cand == base or cand.startswith(base_slash))
+
 
 def _to_bytes(data, encoding="utf-8", errors="strict"):
     """
@@ -1030,9 +1092,6 @@ def _to_text(s, encoding="utf-8", errors="replace", normalize=None, prefer_surro
             pass
 
     return out
-
-def ensure_text(s, **kw):
-    return _to_text(s, **kw)
 
 def _quote_path_for_wire(path_text):
     # Percent-encode as UTF-8; return ASCII bytes text
@@ -1399,7 +1458,7 @@ def _guess_filename(url, filename):
         return filename
     path = urlparse(url).path or ''
     base = os.path.basename(path)
-    return base or 'OutFile.'+__file_format_extension__
+    return base or 'CatFile'+__file_format_extension__
 
 # ---- progress + rate limiting helpers ----
 try:
@@ -1695,62 +1754,6 @@ def _pace_rate(last_ts, sent_bytes_since_ts, rate_limit_bps, add_bytes):
     return (sleep_s, last_ts, sent_bytes_since_ts)
 
 
-def _split_posix(name):
-    """
-    Return a list of path parts without collapsing '..'.
-    - Normalize backslashes to '/'
-    - Strip leading './' and redundant slashes
-    - Keep '..' parts for traversal detection
-    """
-    if not name:
-        return []
-    n = name.replace(u"\\", u"/")
-    # drop leading ./ repeatedly
-    while n.startswith(u"./"):
-        n = n[2:]
-    # split and filter empty and '.'
-    parts = [p for p in n.split(u"/") if p not in (u"", u".")]
-    return parts
-
-def _is_abs_like(name):
-    """Detect absolute-like paths across platforms (/, \, drive letters)."""
-    if not name:
-        return False
-    n = name.replace(u"\\", u"/")
-    if n.startswith(u"/"):
-        return True
-    # Windows drive: C:/ or C:\  (allow lowercase too)
-    if len(n) >= 3 and n[1] == u":" and n[2] in (u"/", u"\\"):
-        return True
-    return False
-
-def _resolves_outside(parent, target):
-    """
-    Does a symlink from 'parent' to 'target' escape parent?
-    - Treat absolute target as escaping.
-    - For relative target, join parent + target, normpath, then check if it starts with parent.
-    - Parent is POSIX-style path ('' means root of archive).
-    """
-    parent = _ensure_text(parent or u"")
-    target = _ensure_text(target or u"")
-    # absolute target is unsafe by definition
-    if _is_abs_like(target):
-        return True
-
-    # Build a virtual root '/' so we can compare safely
-    # e.g., parent='dir/sub', target='../../etc' -> '/dir/sub/../../etc' -> '/etc' (escapes)
-    import posixpath
-    root = u"/"
-    base = posixpath.normpath(posixpath.join(root, parent))  # '/dir/sub'
-    candidate = posixpath.normpath(posixpath.join(base, target))  # resolved path under '/'
-
-    # Ensure base always ends with a slash for prefix test
-    base_slash = base if base.endswith(u"/") else (base + u"/")
-    # candidate must be base itself or inside base
-    if candidate == base or candidate.startswith(base_slash):
-        return False
-    return True
-
 def _symlink_type(ftype):
     """
     Return True if ftype denotes a symlink.
@@ -1764,7 +1767,7 @@ def _symlink_type(ftype):
             return True
     except Exception:
         pass
-    s = ensure_text(ftype).strip().lower()
+    s = _ensure_text(ftype).strip().lower()
     return s in (u"2", u"symlink", u"link", u"symbolic_link", u"symbolic-link")
 
 def DetectTarBombFoxFileArray(listarrayfiles,
