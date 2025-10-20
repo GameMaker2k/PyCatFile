@@ -8896,14 +8896,6 @@ def UncompressFileAlt(fp, formatspecs=__file_format_multi_dict__, filestart=0,
 def UncompressFile(infile, formatspecs=__file_format_multi_dict__, mode="rb",
                    filestart=0, use_mmap=False):
 
-    # If caller already gave us a FileLikeAdapter => honor it and return it.
-    if isinstance(fp, FileLikeAdapter):
-        try:
-            fp.write_through = True
-        except Exception:
-            pass
-        return fp
-
     """
     Opens a path, detects compression by header, and returns a FileLikeAdapter.
     If uncompressed and use_mmap=True, returns an mmap-backed reader.
@@ -9647,14 +9639,6 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None,
     """
     if outfile is None:
         return False
-
-    # If caller already gave us a FileLikeAdapter => honor it and return it.
-    if isinstance(fp, FileLikeAdapter):
-        try:
-            fp.write_through = True
-        except Exception:
-            pass
-        return fp
 
     fbasename, fextname = os.path.splitext(outfile)
     compressionlevel = 9 if compressionlevel is None else int(compressionlevel)
