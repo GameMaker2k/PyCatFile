@@ -624,7 +624,7 @@ __version_date_info__ = (2025, 10, 1, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id: d13b86e09c7003fa60c729b4895fa15cdaaee0d2 $"
+__revision_id__ = "$Id: 99c30dfa3a1a500ddbf705ad57f55427004ca435 $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -8885,8 +8885,24 @@ def UncompressFileAlt(fp, formatspecs=__file_format_multi_dict__, filestart=0,
 
     return FileLikeAdapter(fp, mode="rb", mm=mm)
 
-def UncompressFile(infile, formatspecs=__file_format_multi_dict__, mode="rb",
-                   filestart=0, use_mmap=False):
+def UncompressFileAlt(fp, formatspecs=__file_format_multi_dict__, filestart=0,
+                      use_mmap=False):
+    """
+    Accepts an already-open *bytes* file-like (fp). Detects compression and
+    returns a FileLikeAdapter opened for 'rb'. If the stream is uncompressed
+    and backed by a real file, you can enable mmap via use_mmap=True.
+    """
+    if not hasattr(fp, "read"):
+        return False
+
+    # If caller already gave us a FileLikeAdapter => honor it and return it.
+    if isinstance(fp, FileLikeAdapter):
+        try:
+            fp.write_through = True
+        except Exception:
+            pass
+        return fp
+
     """
     Opens a path, detects compression by header, and returns a FileLikeAdapter.
     If uncompressed and use_mmap=True, returns an mmap-backed reader.
