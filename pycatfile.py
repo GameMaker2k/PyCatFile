@@ -8836,6 +8836,14 @@ def UncompressFileAlt(fp, formatspecs=__file_format_multi_dict__, filestart=0,
     if not hasattr(fp, "read"):
         return False
 
+    # If caller already gave us a FileLikeAdapter => honor it and return it.
+    if isinstance(fp, FileLikeAdapter):
+        try:
+            fp.write_through = True
+        except Exception:
+            pass
+        return fp
+
     # Detect format on the fileobj at filestart
     compresscheck = CheckCompressionType(fp, formatspecs, filestart, False)
     if IsNestedDict(formatspecs) and compresscheck in formatspecs:
@@ -8885,15 +8893,8 @@ def UncompressFileAlt(fp, formatspecs=__file_format_multi_dict__, filestart=0,
 
     return FileLikeAdapter(fp, mode="rb", mm=mm)
 
-def UncompressFileAlt(fp, formatspecs=__file_format_multi_dict__, filestart=0,
-                      use_mmap=False):
-    """
-    Accepts an already-open *bytes* file-like (fp). Detects compression and
-    returns a FileLikeAdapter opened for 'rb'. If the stream is uncompressed
-    and backed by a real file, you can enable mmap via use_mmap=True.
-    """
-    if not hasattr(fp, "read"):
-        return False
+def UncompressFile(infile, formatspecs=__file_format_multi_dict__, mode="rb",
+                   filestart=0, use_mmap=False):
 
     # If caller already gave us a FileLikeAdapter => honor it and return it.
     if isinstance(fp, FileLikeAdapter):
@@ -9646,6 +9647,14 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None,
     """
     if outfile is None:
         return False
+
+    # If caller already gave us a FileLikeAdapter => honor it and return it.
+    if isinstance(fp, FileLikeAdapter):
+        try:
+            fp.write_through = True
+        except Exception:
+            pass
+        return fp
 
     fbasename, fextname = os.path.splitext(outfile)
     compressionlevel = 9 if compressionlevel is None else int(compressionlevel)
