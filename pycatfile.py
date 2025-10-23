@@ -5888,35 +5888,48 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=
         outfsize = fp.tell()
         fp.seek(filestart, 0)
         currentfilepos = fp.tell()
+    if(not isinstance(infile, FileLikeAdapter)):
+
+        # For uncompressed: optional mmap
+        mm = None
+        try:
+            base = _extract_base_fp(fp)
+            if base is not None:
+                mm = mmap.mmap(base.fileno(), 0, access=mmap.ACCESS_READ if "r" in mode else mmap.ACCESS_WRITE)
+        except Exception:
+            mm = None  # fallback to normal file stream
+        readfp = FileLikeAdapter(fp, mode="rb", mm=mm)
+    else:
+        readfp = fp
     ArchiveList = []
     while True:
         if currentfilepos >= outfsize:   # stop when function signals False
             break
-        oldfppos = fp.tell()
-        compresscheck = CheckCompressionType(fp, formatspecs, currentfilepos, False)
+        oldfppos = readfp.tell()
+        compresscheck = CheckCompressionType(readfp, formatspecs, currentfilepos, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             pass
         else:
-            checkcompressfile = CheckCompressionSubType(fp, formatspecs, currentfilepos, False)
+            checkcompressfile = CheckCompressionSubType(readfp, formatspecs, currentfilepos, False)
             if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
                 pass
             else:
                 break
-        fp.seek(oldfppos, 0)
+        readfp.seek(oldfppos, 0)
         if(compresscheck in formatspecs):
             if currentfilepos >= outfsize:   # stop when function signals False
                 break
-            oldfppos = fp.tell()
-            compresscheck = CheckCompressionType(fp, formatspecs, currentfilepos, False)
+            oldfppos = readfp.tell()
+            compresscheck = CheckCompressionType(readfp, formatspecs, currentfilepos, False)
             if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
                 informatspecs = formatspecs[compresscheck]
             else:
                 break
-            fp.seek(oldfppos, 0)
-            ArchiveList.append(ReadFileDataWithContentToArray(fp, currentfilepos, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, informatspecs, seektoend))
-            currentfilepos = fp.tell()
+            readfp.seek(oldfppos, 0)
+            ArchiveList.append(ReadFileDataWithContentToArray(readfp, currentfilepos, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, informatspecs, seektoend))
+            currentfilepos = readfp.tell()
         else:
-            infp = UncompressFileAlt(fp, formatspecs, currentfilepos)
+            infp = UncompressFileAlt(readfp, formatspecs, currentfilepos)
             infp.seek(0, 0)
             currentinfilepos = infp.tell()
             try:
@@ -5939,7 +5952,7 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=
                 infp.seek(oldinfppos, 0)
                 ArchiveList.append(ReadFileDataWithContentToArray(infp, currentinfilepos, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, informatspecs, seektoend))
                 currentinfilepos = infp.tell()
-            currentfilepos = fp.tell()
+            currentfilepos = readfp.tell()
     return ArchiveList
 
 
