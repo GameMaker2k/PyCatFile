@@ -622,7 +622,7 @@ __version_date_info__ = (2025, 10, 1, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: b49a691e7b814a957c65b7e6859ae0670540456f $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -8905,71 +8905,95 @@ def CheckCompressionTypeFromBytes(instring, formatspecs=__file_format_multi_dict
 
 
 def UncompressFileAlt(fp, formatspecs=__file_format_multi_dict__, filestart=0,
-                      use_mmap=False):
+                      use_mmap=False, reuse_adapter=True):
     """
-    Accepts an already-open *bytes* file-like (fp). Detects compression and
-    returns a FileLikeAdapter opened for 'rb'. If the stream is uncompressed
-    and backed by a real file, you can enable mmap via use_mmap=True.
+    Detect compression at 'filestart' on fp and return a seekable, bytes-only stream.
+    - If fp is a FileLikeAdapter and reuse_adapter=True, reuse it by swapping its _fp.
+    - If passthrough (uncompressed), optionally mmap the raw file.
     """
     if not hasattr(fp, "read"):
         return False
 
-    # If caller already gave us a FileLikeAdapter => honor it and return it.
-    if isinstance(fp, FileLikeAdapter):
-        try:
-            fp.write_through = True
-        except Exception:
-            pass
-        return fp
+    # Always operate on the raw source for probe/wrap
+    src = getattr(fp, "_fp", fp)
 
-    # Detect format on the fileobj at filestart
-    compresscheck = CheckCompressionType(fp, formatspecs, filestart, False)
-    if IsNestedDict(formatspecs) and compresscheck in formatspecs:
-        formatspecs = formatspecs[compresscheck]
+    # Probe at filestart using RAW handle
+    try:
+        src.seek(filestart, 0)
+    except Exception:
+        pass
 
-    # Build the appropriate decompressor stream (or pass-through)
-    if (compresscheck == "gzip" and compresscheck in compressionsupport):
-        fp = gzip.GzipFile(filename=None, fileobj=fp, mode="rb")
-    elif (compresscheck == "bzip2" and compresscheck in compressionsupport):
-        fp = bz2.BZ2File(fp)
-    elif (compresscheck == "zstd" and compresscheck in compressionsupport):
+    kind = CheckCompressionType(src, formatspecs, filestart, False)
+    # Optional canonicalization so names match your compressionsupport entries
+    if kind == "bz2":
+        kind = "bzip2"
+
+    if IsNestedDict(formatspecs) and kind in formatspecs:
+        formatspecs = formatspecs[kind]
+
+    # Guard against detector side-effects: ensure we're back at filestart
+    try:
+        src.seek(filestart, 0)
+    except Exception:
+        pass
+
+    # Build logical stream (or passthrough)
+    if   kind == "gzip"   and "gzip"   in compressionsupport:
+        wrapped = gzip.GzipFile(fileobj=src, mode="rb")
+    elif kind == "bzip2"  and ("bzip2" in compressionsupport or "bz2" in compressionsupport):
+        wrapped = bz2.BZ2File(src)
+    elif kind in ("lzma","xz") and (("lzma" in compressionsupport) or ("xz" in compressionsupport)):
+        wrapped = lzma.LZMAFile(src)
+    elif kind == "zstd"   and ("zstd" in compressionsupport or "zstandard" in compressionsupport):
         if 'zstandard' in sys.modules:
-            fp = ZstdFile(fileobj=fp, mode="rb")
+            wrapped = ZstdFile(fileobj=src, mode="rb")
         elif 'pyzstd' in sys.modules:
-            fp = pyzstd.zstdfile.ZstdFile(fileobj=fp, mode="rb")
+            wrapped = pyzstd.zstdfile.ZstdFile(fileobj=src, mode="rb")
         else:
             return False
-    elif (compresscheck == "lz4" and compresscheck in compressionsupport):
-        fp = lz4.frame.LZ4FrameFile(fp, mode='rb')
-    elif ((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
-        fp = LzopFile(fileobj=fp, mode="rb")
-    elif ((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
-        fp = lzma.LZMAFile(fp)
-    elif (compresscheck == "zlib" and compresscheck in compressionsupport):
-        fp = ZlibFile(fileobj=fp, mode="rb")
+    elif kind == "lz4"    and "lz4"    in compressionsupport:
+        wrapped = lz4.frame.LZ4FrameFile(src, mode="rb")
+    elif kind in ("lzo","lzop") and (("lzo" in compressionsupport) or ("lzop" in compressionsupport)):
+        wrapped = LzopFile(fileobj=src, mode="rb")
+    elif kind == "zlib"   and "zlib"   in compressionsupport:
+        wrapped = ZlibFile(fileobj=src, mode="rb")
     else:
-        # Either magic matched your format OR no compression detected:
-        # pass-through original fp.
-        fp.seek(filestart, 0)
-
-    # Wrap in FileLikeAdapter; optionally mmap only if uncompressed + real file
-    mm = None
-    if use_mmap and compresscheck in (None, formatspecs.get('format_magic', None)):
-        base = _extract_base_fp(fp)
+        # Passthrough
+        wrapped = src
         try:
-            if base is not None:
-                # Map whole file for read-only; keep base open via adapter
-                mm = mmap.mmap(base.fileno(), 0, access=mmap.ACCESS_READ)
-        except Exception:
-            mm = None  # silently fall back to streaming
-    if(compresscheck in compressionsupport):
-        # Always position at start of logical stream
-        try:
-            fp.seek(0, 0)
+            wrapped.seek(filestart, 0)
         except Exception:
             pass
+        kind = ""  # treat as uncompressed for logic below
 
-    return FileLikeAdapter(fp, mode="rb", mm=mm)
+    # Positioning: start-of-member for compressed; filestart for passthrough
+    try:
+        if kind in compressionsupport:
+            wrapped.seek(0, 0)
+        else:
+            wrapped.seek(filestart, 0)
+    except Exception:
+        pass
+
+    # Reuse existing adapter by swapping its underlying handle
+    if isinstance(fp, FileLikeAdapter) and reuse_adapter:
+        fp._mm = None
+        fp._fp = wrapped
+        fp._mode = "rb"
+        fp._pos = 0
+        return fp
+
+    # New adapter; mmap only for passthrough/raw file
+    mm = None
+    if use_mmap and wrapped is src and kind == "":
+        base = _extract_base_fp(src)
+        try:
+            if base is not None:
+                mm = mmap.mmap(base.fileno(), 0, access=mmap.ACCESS_READ)
+        except Exception:
+            mm = None
+
+    return FileLikeAdapter(wrapped, mode="rb", mm=mm)
 
 def UncompressFile(infile, formatspecs=__file_format_multi_dict__, mode="rb",
                    filestart=0, use_mmap=False):
