@@ -2455,6 +2455,7 @@ class ZlibFile(object):
             if any(ch in internal_mode for ch in ('w', 'a', 'x')) and not hasattr(self.file, 'write'):
                 raise ValueError("fileobj must support write() in write/append mode")
 
+        self._fp = self.file
         # Initialize per mode
         if any(ch in internal_mode for ch in ('w', 'a', 'x')):
             if self.wbits <= 0:
@@ -2801,12 +2802,6 @@ class ZlibFile(object):
     def myfileobj(self):
         return self.file
 
-    # if some code expects ._fp to be “the stream itself”:
-    @property
-    def _fp(self):
-        # OR return self.file if callers intend the raw file
-        return self
-
 # ---------- Top-level helpers (optional) ----------
 def decompress_bytes(blob, **kw):
     """
@@ -2941,6 +2936,7 @@ class GzipFile(object):
             if any(ch in internal_mode for ch in ('w', 'a', 'x')) and not hasattr(self.file, 'write'):
                 raise ValueError("fileobj must support write() in write/append mode")
 
+        self._fp = self.file
         # Init per mode
         if any(ch in internal_mode for ch in ('w', 'a', 'x')):
             # Streaming write: start a new gzip member
@@ -3264,13 +3260,6 @@ class GzipFile(object):
     def myfileobj(self):
         return self.file
 
-    # if some code expects ._fp to be “the stream itself”:
-    @property
-    def _fp(self):
-        # OR return self.file if callers intend the raw file
-        return self
-
-
 # ---------- Top-level helpers ----------
 def gzip_decompress_bytes(blob, mode='rb', multi=True, **kw):
     """
@@ -3412,6 +3401,7 @@ class LzopFile(object):
             if any(ch in internal_mode for ch in ('w', 'a', 'x')) and not hasattr(self.file, 'write'):
                 raise ValueError("fileobj must support write() in write/append mode")
 
+        self._fp = self.file
         if any(ch in internal_mode for ch in ('w', 'a', 'x')):
             # Start a new member at EOF for append
             if 'a' in internal_mode:
@@ -3800,13 +3790,6 @@ class LzopFile(object):
     @property
     def myfileobj(self):
         return self.file
-
-    # if some code expects ._fp to be “the stream itself”:
-    @property
-    def _fp(self):
-        # OR return self.file if callers intend the raw file
-        return self
-
 
 # ---------- Top-level helpers ----------
 def lzop_compress_bytes(payload, level=9, text=False, **kw):
@@ -9534,6 +9517,15 @@ class FileLikeAdapter(object):
         self._mm = None
         self._closed = True
         return fp, mm
+
+    # compatibility aliases for unwrapping utilities
+    @property
+    def fileobj(self):
+        return self.file
+
+    @property
+    def myfileobj(self):
+        return self.file
 
 
 # ========= mmap helpers & openers =========
