@@ -587,21 +587,9 @@ if not __use_ini_file__ and not __include_defaults__:
     __include_defaults__ = True
 if(__include_defaults__):
     if("CatFile" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { 'CatFile': {'format_name': "CatFile", 'format_magic': "CatFile", 'format_len': 7, 'format_hex': "43617446696c65", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".cat" } } )
-    if("NekoFile" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { 'NekoFile': {'format_name': "NekoFile", 'format_magic': "NekoFile", 'format_len': 8, 'format_hex': "4e656b6f46696c65", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".neko" } } )
-    if("ねこファイル" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { 'ねこファイル': {'format_name': "NekoFairu", 'format_magic': "ねこファイル", 'format_len': 18, 'format_hex': "e381ade38193e38395e382a1e382a4e383ab", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".ねこ" } } )
-    if("ネコファイル" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { 'ネコファイル': {'format_name': "NekoFairu", 'format_magic': "ネコファイル", 'format_len': 18, 'format_hex': "e381ade38193e38395e382a1e382a4e383ab", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".ネコ" } } )
-    if("네코파일" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { '네코파일': {'format_name': "NekoPa-il", 'format_magic': "네코파일", 'format_len': 12, 'format_hex': "eb84a4ecbd94ed8c8cec9dbc", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".네코" } } )
-    if("고양이파일" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { '고양이파일': {'format_name': "GoyangiPa-il", 'format_magic': "고양이파일", 'format_len': 15, 'format_hex': "eab3a0ec9691ec9db4ed8c8cec9dbc", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".고양이" } } )
-    if("内酷法伊鲁" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { '内酷法伊鲁': {'format_name': "NèiKùFǎYīLǔ", 'format_magic': "内酷法伊鲁", 'format_len': 15, 'format_hex': "e58685e985b7e6b395e4bc8ae9b281", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".内酷" } } )
-    if("猫文件" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { '猫文件': {'format_name': "MāoWénjiàn", 'format_magic': "猫文件", 'format_len': 9, 'format_hex': "e78cabe69687e4bbb6", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".猫" } } )
+        __file_format_multi_dict__.update( { 'CatFile': {'format_name': "CatFile", 'format_magic': "CatFile", 'format_len': 11, 'format_hex': "4172636869766546696c65", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".arc" } } )
+    if("NeoFile" not in __file_format_multi_dict__):
+        __file_format_multi_dict__.update( { 'NeoFile': {'format_name': "NeoFile", 'format_magic': "NeoFile", 'format_len': 7, 'format_hex': "4e656f46696c65", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".neo" } } )
 if(__file_format_default__ not in __file_format_multi_dict__):
     __file_format_default__ = next(iter(__file_format_multi_dict__))
 __file_format_name__ = __file_format_multi_dict__[__file_format_default__]['format_name']
@@ -5944,9 +5932,9 @@ def ReadInMultipleFileWithContentToArray(infile, fmttype="auto", filestart=0, se
         pass
     else:
         infile = [infile]
-    outretval = {}
+    outretval = []
     for curfname in infile:
-        outretval[curfname] = ReadInFileWithContentToArray(curfname, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend)
+        outretval.append(ReadInFileWithContentToArray(curfname, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend))
     return outretval
 
 def ReadInMultipleFilesWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
@@ -6025,35 +6013,48 @@ def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0
         outfsize = fp.tell()
         fp.seek(filestart, 0)
         currentfilepos = fp.tell()
+    if(not isinstance(infile, FileLikeAdapter)):
+
+        # For uncompressed: optional mmap
+        mm = None
+        try:
+            base = _extract_base_fp(fp)
+            if base is not None:
+                mm = mmap.mmap(base.fileno(), 0, access=mmap.ACCESS_READ if "r" in mode else mmap.ACCESS_WRITE)
+        except Exception:
+            mm = None  # fallback to normal file stream
+        readfp = FileLikeAdapter(fp, mode="rb", mm=mm)
+    else:
+        readfp = fp
     ArchiveList = []
     while True:
         if currentfilepos >= outfsize:   # stop when function signals False
             break
-        oldfppos = fp.tell()
-        compresscheck = CheckCompressionType(fp, formatspecs, currentfilepos, False)
+        oldfppos = readfp.tell()
+        compresscheck = CheckCompressionType(readfp, formatspecs, currentfilepos, False)
         if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
             pass
         else:
-            checkcompressfile = CheckCompressionSubType(fp, formatspecs, currentfilepos, False)
+            checkcompressfile = CheckCompressionSubType(readfp, formatspecs, currentfilepos, False)
             if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
                 pass
             else:
                 break
-        fp.seek(oldfppos, 0)
+        readfp.seek(oldfppos, 0)
         if(compresscheck in formatspecs):
             if currentfilepos >= outfsize:   # stop when function signals False
                 break
-            oldfppos = fp.tell()
-            compresscheck = CheckCompressionType(fp, formatspecs, currentfilepos, False)
+            oldfppos = readfp.tell()
+            compresscheck = CheckCompressionType(readfp, formatspecs, currentfilepos, False)
             if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
                 informatspecs = formatspecs[compresscheck]
             else:
                 break
-            fp.seek(oldfppos, 0)
-            ArchiveList.append(ReadFileDataWithContentToList(fp, currentfilepos, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, informatspecs, seektoend))
-            currentfilepos = fp.tell()
+            readfp.seek(oldfppos, 0)
+            ArchiveList.append(ReadFileDataWithContentToList(readfp, currentfilepos, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, informatspecs, seektoend))
+            currentfilepos = readfp.tell()
         else:
-            infp = UncompressFileAlt(fp, formatspecs, currentfilepos)
+            infp = UncompressFileAlt(readfp, formatspecs, currentfilepos)
             infp.seek(0, 0)
             currentinfilepos = infp.tell()
             try:
@@ -6076,8 +6077,7 @@ def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0
                 infp.seek(oldinfppos, 0)
                 ArchiveList.append(ReadFileDataWithContentToList(infp, currentinfilepos, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, informatspecs, seektoend))
                 currentinfilepos = infp.tell()
-            infp.close()
-            currentfilepos = fp.tell()
+            currentfilepos = readfp.tell()
     return ArchiveList
 
 
@@ -6088,7 +6088,7 @@ def ReadInMultipleFileWithContentToList(infile, fmttype="auto", filestart=0, see
         infile = [infile]
     outretval = {}
     for curfname in infile:
-        outretval[curfname] = ReadInFileWithContentToList(curfname, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend)
+        outretval.append(ReadInFileWithContentToList(curfname, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend))
     return outretval
 
 def ReadInMultipleFilesWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
@@ -9528,6 +9528,7 @@ class FileLikeAdapter(object):
         return self.file
 
 
+
 # ========= mmap helpers & openers =========
 
 def _maybe_make_mmap(fp_like, mode, use_mmap=False, mmap_size=None):
@@ -10511,9 +10512,9 @@ def MultipleCatFileToArray(infile, fmttype="auto", filestart=0, seekstart=0, see
         pass
     else:
         infile = [infile]
-    outretval = {}
+    outretval = []
     for curfname in infile:
-        outretval[curfname] = CatFileToArray(curfname, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend, returnfp)
+        outretval.append(CatFileToArray(curfname, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend, returnfp))
     return outretval
 
 def MultipleCatFilesToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
