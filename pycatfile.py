@@ -355,6 +355,24 @@ def get_default_threads():
         # os.cpu_count() might not be available in some environments
         return 1
 
+def add_format(reg, key, magic, ext, name=None, ver="001",
+               new_style=True, use_advanced_list=True, use_alt_inode=False, delim="\x00"):
+    if key in reg:
+        return
+    magic_bytes = magic.encode("utf-8")
+    reg[key] = {
+        "format_name": name or key,
+        "format_magic": magic,
+        "format_len": len(magic_bytes),
+        "format_hex": magic_bytes.hex(),
+        "format_delimiter": delim,
+        "format_ver": ver,
+        "new_style": new_style,
+        "use_advanced_list": use_advanced_list,
+        "use_alt_inode": use_alt_inode,
+        "format_extension": ext,
+    }
+
 __upload_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp)://"
 __download_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp)://"
 __use_pysftp__ = False
@@ -585,24 +603,19 @@ elif __use_json_file__ and not os.path.exists(__config_file__):
     __include_defaults__ = True
 if not __use_ini_file__ and not __include_defaults__:
     __include_defaults__ = True
-if(__include_defaults__):
-    if("CatFile" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { 'CatFile': {'format_name': "CatFile", 'format_magic': "CatFile", 'format_len': 7, 'format_hex': "43617446696c65", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".cat" } } )
-    if("NekoFile" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { 'NekoFile': {'format_name': "NekoFile", 'format_magic': "NekoFile", 'format_len': 8, 'format_hex': "4e656b6f46696c65", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".neko" } } )
-    if("ねこファイル" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { 'ねこファイル': {'format_name': "NekoFairu", 'format_magic': "ねこファイル", 'format_len': 18, 'format_hex': "e381ade38193e38395e382a1e382a4e383ab", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".ねこ" } } )
-    if("ネコファイル" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { 'ネコファイル': {'format_name': "NekoFairu", 'format_magic': "ネコファイル", 'format_len': 18, 'format_hex': "e381ade38193e38395e382a1e382a4e383ab", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".ネコ" } } )
-    if("네코파일" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { '네코파일': {'format_name': "NekoPa-il", 'format_magic': "네코파일", 'format_len': 12, 'format_hex': "eb84a4ecbd94ed8c8cec9dbc", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".네코" } } )
-    if("고양이파일" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { '고양이파일': {'format_name': "GoyangiPa-il", 'format_magic': "고양이파일", 'format_len': 15, 'format_hex': "eab3a0ec9691ec9db4ed8c8cec9dbc", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".고양이" } } )
-    if("内酷法伊鲁" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { '内酷法伊鲁': {'format_name': "NèiKùFǎYīLǔ", 'format_magic': "内酷法伊鲁", 'format_len': 15, 'format_hex': "e58685e985b7e6b395e4bc8ae9b281", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".内酷" } } )
-    if("猫文件" not in __file_format_multi_dict__):
-        __file_format_multi_dict__.update( { '猫文件': {'format_name': "MāoWénjiàn", 'format_magic': "猫文件", 'format_len': 9, 'format_hex': "e78cabe69687e4bbb6", 'format_delimiter': "\x00", 'format_ver': "001", 'new_style': True, 'use_advanced_list': True, 'use_alt_inode': False, 'format_extension': ".猫" } } )
-if(__file_format_default__ not in __file_format_multi_dict__):
+if __include_defaults__:
+    # Cat / Neko
+    add_format(__file_format_multi_dict__, "CatFile",     "CatFile",     ".cat",     "CatFile")
+    add_format(__file_format_multi_dict__, "NekoFile",    "NekoFile",    ".neko",    "NekoFile")
+    add_format(__file_format_multi_dict__, "ねこファイル", "ねこファイル", ".ねこ",    "NekoFairu")
+    add_format(__file_format_multi_dict__, "ネコファイル", "ネコファイル", ".ネコ",    "NekoFairu")
+    add_format(__file_format_multi_dict__, "네코파일",     "네코파일",     ".네코",    "NekoPa-il")
+    add_format(__file_format_multi_dict__, "고양이파일",   "고양이파일",   ".고양이",  "GoyangiPa-il")
+    add_format(__file_format_multi_dict__, "内酷法伊鲁",   "内酷法伊鲁",   ".内酷",    "NèiKùFǎYīLǔ")
+    add_format(__file_format_multi_dict__, "猫文件",       "猫文件",       ".猫",      "MāoWénjiàn")
+
+# Pick a default if current default key is not present
+if __file_format_default__ not in __file_format_multi_dict__:
     __file_format_default__ = next(iter(__file_format_multi_dict__))
 __file_format_name__ = __file_format_multi_dict__[__file_format_default__]['format_name']
 __file_format_magic__ = __file_format_multi_dict__[__file_format_default__]['format_magic']
@@ -691,7 +704,7 @@ PyBitness = "64" if struct.calcsize("P") * 8 == 64 else ("64" if sys.maxsize > 2
 
 # Operating system bitness
 try:
-    OSBitness = platform.architecture()[0].replace("bit", "")
+    OSBitness = platform.cathitecture()[0].replace("bit", "")
 except Exception:
     m = platform.machine().lower()
     OSBitness = "64" if "64" in m else "32"
@@ -13734,7 +13747,7 @@ def run_tcp_file_server(fileobj, url, on_progress=None):
     Ends after serving exactly one client or wait window elapses.
 
     URL example:
-      tcp://user:pass@0.0.0.0:5000/path/my.arc?
+      tcp://user:pass@0.0.0.0:5000/path/my.cat?
           auth=1&enforce_path=1&rate=200000&timeout=5&wait=30&ssl=0
     """
     parts, o = _parse_net_url(url)  # already returns proto/host/port/timeout/ssl/etc.
@@ -13936,7 +13949,7 @@ def run_udp_file_server(fileobj, url, on_progress=None):
     Ends after serving exactly one client or wait window elapses.
 
     URL example:
-      udp://user:pass@0.0.0.0:5001/path/my.arc?
+      udp://user:pass@0.0.0.0:5001/path/my.cat?
           auth=1&enforce_path=1&rate=250000&timeout=5&wait=30
     """
     parts, o = _parse_net_url(url)
@@ -14360,7 +14373,7 @@ def run_tcp_file_server(fileobj, url, on_progress=None):
     Ends after serving exactly one client or wait window elapses.
 
     URL example:
-      tcp://user:pass@0.0.0.0:5000/path/my.arc?
+      tcp://user:pass@0.0.0.0:5000/path/my.cat?
           auth=1&enforce_path=1&rate=200000&timeout=5&wait=30&ssl=0
     """
     parts, o = _parse_net_url(url)  # already returns proto/host/port/timeout/ssl/etc.
@@ -14912,7 +14925,7 @@ def run_udp_file_server(fileobj, url, on_progress=None):
     Ends after serving exactly one client or wait window elapses.
 
     URL example:
-      udp://user:pass@0.0.0.0:5001/path/my.arc?
+      udp://user:pass@0.0.0.0:5001/path/my.cat?
           auth=1&enforce_path=1&rate=250000&timeout=5&wait=30
     """
     parts, o = _parse_net_url(url)
