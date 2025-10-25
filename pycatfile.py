@@ -10744,27 +10744,7 @@ def CatFileArrayToArrayIndex(inarray, returnfp=False):
     return out
 
 
-def RePackCatFile(
-    infile,
-    outfile,
-    fmttype="auto",
-    compression="auto",
-    compresswholefile=True,
-    compressionlevel=None,
-    compressionuselist=None,       # was: compressionlistalt at def time
-    followlink=False,
-    filestart=0,
-    seekstart=0,
-    seekend=0,
-    checksumtype=None,             # was: ["crc32", ...] (mutable)
-    skipchecksum=False,
-    extradata=None,                # was: [] (mutable)
-    jsondata=None,                 # was: {} (mutable)
-    formatspecs=None,              # was: __file_format_dict__ at def time
-    seektoend=False,
-    verbose=False,
-    returnfp=False,
-):
+def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=None,  followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=None, skipchecksum=False, extradata=None, jsondata=None, formatspecs=None, seektoend=False, verbose=False, returnfp=False):
     # ---------- Safe defaults ----------
     if compressionuselist is None:
         compressionuselist = compressionlistalt
@@ -10787,7 +10767,7 @@ def RePackCatFile(
         listarrayfiles = CatFileToArray(
             infile, "auto", filestart, seekstart, seekend,
             False, True, True, skipchecksum, formatspecs, seektoend, returnfp
-        )
+        )[0]
 
     # Light guard on required structure
     if not listarrayfiles or 'ffilelist' not in listarrayfiles or 'fnumfiles' not in listarrayfiles:
@@ -10843,6 +10823,8 @@ def RePackCatFile(
     if outfile == "-" or outfile is None:
         verbose = False
         fp = MkTempFile()
+    elif(isinstance(outfile, FileLikeAdapter)):
+        fp = outfile
     elif hasattr(outfile, "read") or hasattr(outfile, "write"):
         fp = outfile
     elif re.findall(__upload_proto_support__, outfile):
@@ -11104,7 +11086,6 @@ def RePackCatFile(
         upload_file_to_internet_file(fp, outfile)
 
     if returnfp:
-        fp.seek(0, 0)
         return fp
     else:
         try:
@@ -11113,6 +11094,20 @@ def RePackCatFile(
             pass
         return True
 
+def RePackMultipleCatFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=None,  followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=None, skipchecksum=False, extradata=None, jsondata=None, formatspecs=None, seektoend=False, verbose=False, returnfp=False):
+    if not isinstance(infiles, list):
+        infiles = [infiles]
+    returnout = False
+    for infileslist in infiles:
+        returnout = RePackArchiveFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, filestart, seekstart, seekend, checksumtype, skipchecksum, extradata, jsondata, formatspecs, seektoend, verbose, True)
+        if(not returnout):
+            break
+        else:
+            outfile = returnout
+    if(not returnfp and returnout):
+        returnout.close()
+        return True
+    return returnout
 
 def RePackCatFileFromString(instr, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["crc32", "crc32", "crc32"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=__file_format_dict__, seektoend=False, verbose=False, returnfp=False):
     fp = MkTempFile(instr)
