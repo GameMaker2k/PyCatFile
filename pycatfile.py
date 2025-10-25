@@ -6546,7 +6546,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
         ftype = 0
         if(hasattr(os.path, "isjunction") and os.path.isjunction(fname)):
             ftype = 13
-        elif(fstatinfo.st_blocks * 512 < fstatinfo.st_size):
+        elif(hasattr(fstatinfo, "st_blocks") and fstatinfo.st_blocks * 512 < fstatinfo.st_size):
             ftype = 12
         elif(stat.S_ISREG(fpremode)):
             ftype = 0
@@ -6772,14 +6772,6 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, filevalues=[], ext
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
         AppendFileHeaderWithContent(
             fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
-    try:
-        fp.seek(0, 0)
-    except io.UnsupportedOperation:
-        pass
-    except AttributeError:
-        pass
-    except OSError:
-        pass
     return fp
 
 def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
@@ -6996,14 +6988,6 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
         AppendFileHeaderWithContent(
             fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
         fcontents.close()
-    try:
-        fp.seek(0, 0)
-    except io.UnsupportedOperation:
-        pass
-    except AttributeError:
-        pass
-    except OSError:
-        pass
     return fp
 
 def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
@@ -7214,14 +7198,6 @@ def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, com
         AppendFileHeaderWithContent(
             fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
         fcontents.close()
-    try:
-        fp.seek(0, 0)
-    except io.UnsupportedOperation:
-        pass
-    except AttributeError:
-        pass
-    except OSError:
-        pass
     return fp
 
 if(not rarfile_support):
@@ -7458,14 +7434,6 @@ if(rarfile_support):
             AppendFileHeaderWithContent(
                 fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
             fcontents.close()
-        try:
-            fp.seek(0, 0)
-        except io.UnsupportedOperation:
-            pass
-        except AttributeError:
-            pass
-        except OSError:
-            pass
         return fp
 
 if(not py7zr_support):
@@ -7636,14 +7604,6 @@ if(py7zr_support):
             AppendFileHeaderWithContent(
                 fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
             fcontents.close()
-        try:
-            fp.seek(0, 0)
-        except io.UnsupportedOperation:
-            pass
-        except AttributeError:
-            pass
-        except OSError:
-            pass
         return fp
 
 def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, filevalues=[], extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
@@ -7742,6 +7702,8 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmtt
     if(outfile == "-" or outfile is None):
         verbose = False
         fp = MkTempFile()
+    elif(isinstance(outfile, FileLikeAdapter)):
+        fp = outfile
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = outfile
     elif(re.findall(__upload_proto_support__, outfile)):
@@ -7787,12 +7749,25 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmtt
         fp.seek(0, 0)
         upload_file_to_internet_file(fp, outfile)
     if(returnfp):
-        fp.seek(0, 0)
         return fp
     else:
         fp.close()
         return True
 
+def AppendFilesWithContentToStackedOutFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    if not isinstance(infiles, list):
+        infiles = [infiles]
+    returnout = False
+    for infileslist in infiles:
+        returnout = AppendFilesWithContentToOutFile(infileslist, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, filevalues, extradata, jsondata, followlink, checksumtype, formatspecs, verbose, True)
+        if(not returnout):
+            break
+        else:
+            outfile = returnout
+    if(not returnfp and returnout):
+        returnout.close()
+        return True
+    return returnout
 
 def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
@@ -9746,7 +9721,14 @@ def CompressOpenFileAlt(fp, compression="auto", compressionlevel=None,
     if not hasattr(fp, "read"):
         return False
 
-    fp.seek(0, 0)
+    try:
+        fp.seek(0, 0)
+    except io.UnsupportedOperation:
+        pass
+    except AttributeError:
+        pass
+    except OSError:
+        pass
 
     if (not compression or compression == formatspecs['format_magic']
         or (compression not in compressionuselist and compression is None)):
@@ -9802,7 +9784,14 @@ def CompressOpenFileAlt(fp, compression="auto", compressionlevel=None,
     except FileNotFoundError:
         return False
 
-    bytesfp.seek(0, 0)
+    try:
+        bytesfp.seek(0, 0)
+    except io.UnsupportedOperation:
+        pass
+    except AttributeError:
+        pass
+    except OSError:
+        pass
     out = FileLikeAdapter(bytesfp, mode="rb")  # read interface for the caller
     try:
         out.write_through = True
@@ -9821,12 +9810,12 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None,
         return False
 
     # If caller already gave us a FileLikeAdapter => honor it and return it.
-    if isinstance(fp, FileLikeAdapter):
+    if isinstance(outfile, FileLikeAdapter):
         try:
-            fp.write_through = True
+            outfile.write_through = True
         except Exception:
             pass
-        return fp
+        return outfile
 
     fbasename, fextname = os.path.splitext(outfile)
     compressionlevel = 9 if compressionlevel is None else int(compressionlevel)
@@ -9969,6 +9958,8 @@ def CheckSumSupportAlt(checkfor, guaranteed=True):
 def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
         return AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, [], extradata, jsondata, followlink, checksumtype, formatspecs, verbose, returnfp)
 
+def PackStackedCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+        return AppendFilesWithContentToStackedOutFile(infiles, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, [], extradata, jsondata, followlink, checksumtype, formatspecs, verbose, returnfp)
 
 def PackCatFileFromDirList(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["crc32", "crc32", "crc32"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     return PackCatFile(infiles, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, extradata, formatspecs, verbose, returnfp)
