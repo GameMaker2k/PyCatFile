@@ -40,7 +40,7 @@ import binascii
 import platform
 from io import StringIO, BytesIO
 from collections import namedtuple
-import posixpath as pp  # POSIX-safe joins/normpaths
+import posixpath  # POSIX-safe joins/normpaths
 try:
     from backports import tempfile
 except ImportError:
@@ -49,13 +49,13 @@ except ImportError:
 try:
     from http.server import BaseHTTPRequestHandler, HTTPServer
     from socketserver import TCPServer
-    from urllib.parse import urlparse as _urlparse, parse_qs as _parse_qs
-    import base64 as _b64
+    from urllib.parse import urlparse, parse_qs
+    import base64
 except ImportError:
     from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
     from SocketServer import TCPServer
-    from urlparse import urlparse as _urlparse, parse_qs as _parse_qs
-    import base64 as _b64
+    from urlparse import urlparse, parse_qs
+    import base64
 
 # FTP Support
 ftpssl = True
@@ -993,8 +993,8 @@ def _resolves_outside(parent, target):
 
     import posixpath as pp
     root = u"/"
-    base = pp.normpath(pp.join(root, parent))   # '/dir/sub' or '/'
-    cand = pp.normpath(pp.join(base, target))   # resolved target under '/'
+    base = posixpath.normpath(posixpath.join(root, parent))   # '/dir/sub' or '/'
+    cand = posixpath.normpath(posixpath.join(base, target))   # resolved target under '/'
 
     # ensure trailing slash on base for the prefix test
     base_slash = base if base.endswith(u"/") else (base + u"/")
@@ -1536,8 +1536,8 @@ def _discover_len_and_reset(fobj):
 # URL parser for HTTP/HTTPS
 # =========================
 def _parse_http_url(url):
-    parts = _urlparse(url)
-    qs = _parse_qs(parts.query or "")
+    parts = urlparse(url)
+    qs = parse_qs(parts.query or "")
 
     scheme = (parts.scheme or "").lower()
     if scheme not in ("http", "https"):
@@ -1585,7 +1585,7 @@ def _basic_ok(auth_header, expect_user, expect_pass):
         return False
     try:
         b64 = auth_header.strip().split(" ", 1)[1]
-        raw = _b64.b64decode(_to_bytes(b64))
+        raw = base64.b64decode(_to_bytes(b64))
         # raw may be bytes like b"user:pass"
         try:
             raw_txt = raw.decode("utf-8")
@@ -14181,7 +14181,7 @@ def run_http_file_server(fileobj, url, on_progress=None, backlog=5):
             self.end_headers()
 
         def _path_only(self):
-            p = _urlparse(self.path or "/")
+            p = urlparse(self.path or "/")
             try:
                 from urllib.parse import unquote
             except ImportError:
