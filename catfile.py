@@ -235,7 +235,7 @@ if active_action:
             input_file = tempout
             if(not tmpout):
                 sys.exit(1)
-        fvalid = pycatfile.CatFileValidate(
+        fvalid = pycatfile.StackedCatFileValidate(
             input_file, "auto", 0, fnamedict, False, getargs.verbose, False)
         if(not getargs.verbose):
             import sys
