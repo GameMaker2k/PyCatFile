@@ -704,7 +704,7 @@ PyBitness = "64" if struct.calcsize("P") * 8 == 64 else ("64" if sys.maxsize > 2
 
 # Operating system bitness
 try:
-    OSBitness = platform.cathitecture()[0].replace("bit", "")
+    OSBitness = platform.architecture()[0].replace("bit", "")
 except Exception:
     m = platform.machine().lower()
     OSBitness = "64" if "64" in m else "32"
@@ -10759,21 +10759,17 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
 
     # ---------- Input handling ----------
     if isinstance(infile, dict):
-        listarrayfiles = infile
+        listarrayfileslist = [infile]
+    elif isinstance(infile, list):
+        pass
     else:
         if (infile != "-" and not isinstance(infile, bytes_type)  # bytes is str on Py2
             and not hasattr(infile, "read") and not hasattr(infile, "write")):
             infile = RemoveWindowsPath(infile)
-        listarrayfiles = CatFileToArray(
+        listarrayfileslist = CatFileToArray(
             infile, "auto", filestart, seekstart, seekend,
-            False, True, True, skipchecksum, formatspecs, seektoend, returnfp
-        )[0]
-
-    # Light guard on required structure
-    if not listarrayfiles or 'ffilelist' not in listarrayfiles or 'fnumfiles' not in listarrayfiles:
-        if verbose:
-            logging.warning("Invalid listarrayfiles structure.")
-        return False
+            False, True, True, skipchecksum, formatspecs, seektoend, False
+        )
 
     # ---------- Format specs selection ----------
     if IsNestedDict(formatspecs) and fmttype in formatspecs:
@@ -10792,19 +10788,6 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
         and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
 
-    # ---------- Compression normalization (fixed logic) ----------
-    try:
-        fmt_magic = formatspecs['format_magic']
-    except Exception:
-        fmt_magic = None
-    if (not compression) or (fmt_magic is not None and compression == fmt_magic):
-        compression = "auto"
-    if (compression is None) or (compressionuselist and compression not in compressionuselist):
-        compression = "auto"
-
-    if verbose:
-        logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
-
     # ---------- Prepare destination ----------
     if (outfile != "-" and outfile is not None
         and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
@@ -10814,10 +10797,6 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             except OSError as e:
                 if verbose:
                     logging.warning("Could not unlink existing outfile %r: %s", outfile, e)
-
-    # No files?
-    if not listarrayfiles.get('ffilelist'):
-        return False
 
     # Decide file object
     if outfile == "-" or outfile is None:
@@ -10839,213 +10818,237 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
         except PermissionError:
             return False
 
-    # ---------- Header prep ----------
-    formver = formatspecs.get('format_ver', "1.0")
-    fileheaderver = str(int(str(formver).replace(".", "")))  # kept for parity
-    lenlist = len(listarrayfiles['ffilelist'])
-    fnumfiles = int(listarrayfiles.get('fnumfiles', lenlist))
-    if lenlist != fnumfiles:
-        fnumfiles = lenlist
+    for listarrayfiles in listarrayfileslist:
+        # Light guard on required structure
+        if not listarrayfiles or 'ffilelist' not in listarrayfiles or 'fnumfiles' not in listarrayfiles:
+            if verbose:
+                logging.warning("Invalid listarrayfiles structure.")
+            return False
 
-    AppendFileHeader(fp, fnumfiles, listarrayfiles.get('fencoding', 'utf-8'), [], checksumtype[0], formatspecs)
-
-    # loop counters
-    lcfi = 0
-    lcfx = fnumfiles
-    curinode = 0
-    curfid = 0
-    inodetofile = {}
-    filetoinode = {}
-    reallcfi = 0
-
-    # ---------- File entries loop ----------
-    while lcfi < lcfx:
-        cur_entry = listarrayfiles['ffilelist'][reallcfi]
-
-        fencoding = cur_entry.get('fencoding', listarrayfiles.get('fencoding', 'utf-8'))
-
-        # path
-        fname_field = cur_entry['fname']
-        if re.findall(r"^[.|/]", fname_field):
-            fname = fname_field
-        else:
-            fname = "./" + fname_field
+        # ---------- Compression normalization (fixed logic) ----------
+        try:
+            fmt_magic = formatspecs['format_magic']
+        except Exception:
+            fmt_magic = None
+        if (not compression) or (fmt_magic is not None and compression == fmt_magic):
+            compression = "auto"
+        if (compression is None) or (compressionuselist and compression not in compressionuselist):
+            compression = "auto"
 
         if verbose:
-            VerbosePrintOut(fname)
+            logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
 
-        # fields (hex-encoded where expected)
-        fheadersize = format(int(cur_entry['fheadersize']), 'x').lower()
-        fsize       = format(int(cur_entry['fsize']), 'x').lower()
-        flinkname   = cur_entry['flinkname']
-        fatime      = format(int(cur_entry['fatime']), 'x').lower()
-        fmtime      = format(int(cur_entry['fmtime']), 'x').lower()
-        fctime      = format(int(cur_entry['fctime']), 'x').lower()
-        fbtime      = format(int(cur_entry['fbtime']), 'x').lower()
-        fmode       = format(int(cur_entry['fmode']), 'x').lower()
-        fchmode     = format(int(cur_entry['fchmode']), 'x').lower()
-        fuid        = format(int(cur_entry['fuid']), 'x').lower()
-        funame      = cur_entry['funame']
-        fgid        = format(int(cur_entry['fgid']), 'x').lower()
-        fgname      = cur_entry['fgname']
-        finode_int  = int(cur_entry['finode'])  # use int for logic
-        finode      = format(finode_int, 'x').lower()
-        flinkcount  = format(int(cur_entry['flinkcount']), 'x').lower()
-        fwinattributes = format(int(cur_entry['fwinattributes']), 'x').lower()
-        fcompression   = cur_entry['fcompression']
-        fcsize         = format(int(cur_entry['fcsize']), 'x').lower()
-        fdev           = format(int(cur_entry['fdev']), 'x').lower()
-        fdev_minor     = format(int(cur_entry['fminor']), 'x').lower()
-        fdev_major     = format(int(cur_entry['fmajor']), 'x').lower()
-        fseeknextfile  = cur_entry['fseeknextfile']
+        # No files?
+        if not listarrayfiles.get('ffilelist'):
+            return False
 
-        # extra fields sizing
-        if (len(cur_entry['fextradata']) > cur_entry['fextrafields']
-            and len(cur_entry['fextradata']) > 0):
-            cur_entry['fextrafields'] = len(cur_entry['fextradata'])
+        # ---------- Header prep ----------
+        formver = formatspecs.get('format_ver', "1.0")
+        fileheaderver = str(int(str(formver).replace(".", "")))  # kept for parity
+        lenlist = len(listarrayfiles['ffilelist'])
+        fnumfiles = int(listarrayfiles.get('fnumfiles', lenlist))
+        if lenlist != fnumfiles:
+            fnumfiles = lenlist
 
-        # extradata/jsondata defaults per file
-        if not followlink and len(extradata) <= 0:
-            extradata = cur_entry['fextradata']
-        if not followlink and len(jsondata) <= 0:
-            jsondata = cur_entry['fjsondata']
+        AppendFileHeader(fp, fnumfiles, listarrayfiles.get('fencoding', 'utf-8'), [], checksumtype[0], formatspecs)
 
-        # content handling
-        fcontents = cur_entry['fcontents']
-        if not cur_entry['fcontentasfile']:
-            fcontents = MkTempFile(fcontents)
+        # loop counters
+        lcfi = 0
+        lcfx = fnumfiles
+        curinode = 0
+        curfid = 0
+        inodetofile = {}
+        filetoinode = {}
+        reallcfi = 0
 
-        # detect/possibly recompress per-file (only if not already compressed and not compresswholefile)
-        typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
-        fcontents.seek(0, 0)
+        # ---------- File entries loop ----------
+        while lcfi < lcfx:
+            cur_entry = listarrayfiles['ffilelist'][reallcfi]
 
-        # get fcencoding once here
-        fcencoding = GetFileEncoding(fcontents, 0, False)[0]
+            fencoding = cur_entry.get('fencoding', listarrayfiles.get('fencoding', 'utf-8'))
 
-        fcompression = ""
-        fcsize = format(int(0), 'x').lower()
-        curcompression = "none"
-
-        if typechecktest is False and not compresswholefile:
-            fcontents.seek(0, 2)
-            ucfsize = fcontents.tell()
-            fcontents.seek(0, 0)
-
-            if compression == "auto":
-                ilsize = len(compressionuselist)
-                ilmin = 0
-                ilcsize = []
-                while ilmin < ilsize:
-                    cfcontents = MkTempFile()
-                    fcontents.seek(0, 0)
-                    shutil.copyfileobj(fcontents, cfcontents)
-                    fcontents.seek(0, 0)
-                    cfcontents.seek(0, 0)
-                    cfcontents = CompressOpenFileAlt(
-                        cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs
-                    )
-                    if cfcontents:
-                        cfcontents.seek(0, 2)
-                        ilcsize.append(cfcontents.tell())
-                        cfcontents.close()
-                    else:
-                        ilcsize.append(float("inf"))
-                    ilmin += 1
-                ilcmin = ilcsize.index(min(ilcsize))
-                curcompression = compressionuselist[ilcmin]
-
-            fcontents.seek(0, 0)
-            cfcontents = MkTempFile()
-            shutil.copyfileobj(fcontents, cfcontents)
-            cfcontents.seek(0, 0)
-            cfcontents = CompressOpenFileAlt(
-                cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs
-            )
-            cfcontents.seek(0, 2)
-            cfsize_val = cfcontents.tell()
-            if ucfsize > cfsize_val:
-                fcsize = format(int(cfsize_val), 'x').lower()
-                fcompression = curcompression
-                fcontents.close()
-                fcontents = cfcontents
-
-        # link following (fixed: use listarrayfiles, not prelistarrayfiles)
-        if followlink:
-            if (cur_entry['ftype'] == 1 or cur_entry['ftype'] == 2):
-                getflinkpath = cur_entry['flinkname']
-                flinkid = listarrayfiles['filetoid'][getflinkpath]
-                flinkinfo = listarrayfiles['ffilelist'][flinkid]
-                fheadersize = format(int(flinkinfo['fheadersize']), 'x').lower()
-                fsize       = format(int(flinkinfo['fsize']), 'x').lower()
-                flinkname   = flinkinfo['flinkname']
-                fatime      = format(int(flinkinfo['fatime']), 'x').lower()
-                fmtime      = format(int(flinkinfo['fmtime']), 'x').lower()
-                fctime      = format(int(flinkinfo['fctime']), 'x').lower()
-                fbtime      = format(int(flinkinfo['fbtime']), 'x').lower()
-                fmode       = format(int(flinkinfo['fmode']), 'x').lower()
-                fchmode     = format(int(flinkinfo['fchmode']), 'x').lower()
-                fuid        = format(int(flinkinfo['fuid']), 'x').lower()
-                funame      = flinkinfo['funame']
-                fgid        = format(int(flinkinfo['fgid']), 'x').lower()
-                fgname      = flinkinfo['fgname']
-                finode_int  = int(flinkinfo['finode'])
-                finode      = format(int(flinkinfo['finode']), 'x').lower()
-                flinkcount  = format(int(flinkinfo['flinkcount']), 'x').lower()
-                fwinattributes = format(int(flinkinfo['fwinattributes']), 'x').lower()
-                fcompression   = flinkinfo['fcompression']
-                fcsize         = format(int(flinkinfo['fcsize']), 'x').lower()
-                fdev           = format(int(flinkinfo['fdev']), 'x').lower()
-                fdev_minor     = format(int(flinkinfo['fminor']), 'x').lower()
-                fdev_major     = format(int(flinkinfo['fmajor']), 'x').lower()
-                fseeknextfile  = flinkinfo['fseeknextfile']
-                if (len(flinkinfo['fextradata']) > flinkinfo['fextrafields']
-                    and len(flinkinfo['fextradata']) > 0):
-                    flinkinfo['fextrafields'] = len(flinkinfo['fextradata'])
-                if len(extradata) < 0:
-                    extradata = flinkinfo['fextradata']
-                if len(jsondata) < 0:
-                    jsondata = flinkinfo['fjsondata']
-                fcontents = flinkinfo['fcontents']
-                if not flinkinfo['fcontentasfile']:
-                    fcontents = MkTempFile(fcontents)
-                ftypehex = format(flinkinfo['ftype'], 'x').lower()
-        else:
-            ftypehex = format(int(cur_entry['ftype']), 'x').lower()
-
-        # file/inode ids (fixed: compare using int)
-        fcurfid = format(curfid, 'x').lower()
-        if (not followlink and finode_int != 0):
-            if cur_entry['ftype'] != 1:
-                fcurinode = format(int(curinode), 'x').lower()
-                inodetofile[curinode] = fname
-                filetoinode[fname] = curinode
-                curinode += 1
+            # path
+            fname_field = cur_entry['fname']
+            if re.findall(r"^[.|/]", fname_field):
+                fname = fname_field
             else:
-                fcurinode = format(int(filetoinode[flinkname]), 'x').lower()
-        else:
-            fcurinode = format(int(curinode), 'x').lower()
-            curinode += 1
-        curfid += 1
+                fname = "./" + fname_field
 
-        if fcompression == "none":
+            if verbose:
+                VerbosePrintOut(fname)
+
+            # fields (hex-encoded where expected)
+            fheadersize = format(int(cur_entry['fheadersize']), 'x').lower()
+            fsize       = format(int(cur_entry['fsize']), 'x').lower()
+            flinkname   = cur_entry['flinkname']
+            fatime      = format(int(cur_entry['fatime']), 'x').lower()
+            fmtime      = format(int(cur_entry['fmtime']), 'x').lower()
+            fctime      = format(int(cur_entry['fctime']), 'x').lower()
+            fbtime      = format(int(cur_entry['fbtime']), 'x').lower()
+            fmode       = format(int(cur_entry['fmode']), 'x').lower()
+            fchmode     = format(int(cur_entry['fchmode']), 'x').lower()
+            fuid        = format(int(cur_entry['fuid']), 'x').lower()
+            funame      = cur_entry['funame']
+            fgid        = format(int(cur_entry['fgid']), 'x').lower()
+            fgname      = cur_entry['fgname']
+            finode_int  = int(cur_entry['finode'])  # use int for logic
+            finode      = format(finode_int, 'x').lower()
+            flinkcount  = format(int(cur_entry['flinkcount']), 'x').lower()
+            fwinattributes = format(int(cur_entry['fwinattributes']), 'x').lower()
+            fcompression   = cur_entry['fcompression']
+            fcsize         = format(int(cur_entry['fcsize']), 'x').lower()
+            fdev           = format(int(cur_entry['fdev']), 'x').lower()
+            fdev_minor     = format(int(cur_entry['fminor']), 'x').lower()
+            fdev_major     = format(int(cur_entry['fmajor']), 'x').lower()
+            fseeknextfile  = cur_entry['fseeknextfile']
+
+            # extra fields sizing
+            if (len(cur_entry['fextradata']) > cur_entry['fextrafields']
+                and len(cur_entry['fextradata']) > 0):
+                cur_entry['fextrafields'] = len(cur_entry['fextradata'])
+
+            # extradata/jsondata defaults per file
+            if not followlink and len(extradata) <= 0:
+                extradata = cur_entry['fextradata']
+            if not followlink and len(jsondata) <= 0:
+                jsondata = cur_entry['fjsondata']
+
+            # content handling
+            fcontents = cur_entry['fcontents']
+            if not cur_entry['fcontentasfile']:
+                fcontents = MkTempFile(fcontents)
+
+            # detect/possibly recompress per-file (only if not already compressed and not compresswholefile)
+            typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
+            fcontents.seek(0, 0)
+
+            # get fcencoding once here
+            fcencoding = GetFileEncoding(fcontents, 0, False)[0]
+
             fcompression = ""
+            fcsize = format(int(0), 'x').lower()
+            curcompression = "none"
 
-        tmpoutlist = [
-            ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime,
-            fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame,
-            fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile
-        ]
+            if typechecktest is False and not compresswholefile:
+                fcontents.seek(0, 2)
+                ucfsize = fcontents.tell()
+                fcontents.seek(0, 0)
 
-        AppendFileHeaderWithContent(
-            fp, tmpoutlist, extradata, jsondata, fcontents.read(),
-            [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs
-        )
-        try:
-            fcontents.close()
-        except Exception:
-            pass
-        lcfi += 1
-        reallcfi += 1
+                if compression == "auto":
+                    ilsize = len(compressionuselist)
+                    ilmin = 0
+                    ilcsize = []
+                    while ilmin < ilsize:
+                        cfcontents = MkTempFile()
+                        fcontents.seek(0, 0)
+                        shutil.copyfileobj(fcontents, cfcontents)
+                        fcontents.seek(0, 0)
+                        cfcontents.seek(0, 0)
+                        cfcontents = CompressOpenFileAlt(
+                            cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs
+                        )
+                        if cfcontents:
+                            cfcontents.seek(0, 2)
+                            ilcsize.append(cfcontents.tell())
+                            cfcontents.close()
+                        else:
+                            ilcsize.append(float("inf"))
+                        ilmin += 1
+                    ilcmin = ilcsize.index(min(ilcsize))
+                    curcompression = compressionuselist[ilcmin]
+
+                fcontents.seek(0, 0)
+                cfcontents = MkTempFile()
+                shutil.copyfileobj(fcontents, cfcontents)
+                cfcontents.seek(0, 0)
+                cfcontents = CompressOpenFileAlt(
+                    cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs
+                )
+                cfcontents.seek(0, 2)
+                cfsize_val = cfcontents.tell()
+                if ucfsize > cfsize_val:
+                    fcsize = format(int(cfsize_val), 'x').lower()
+                    fcompression = curcompression
+                    fcontents.close()
+                    fcontents = cfcontents
+
+            # link following (fixed: use listarrayfiles, not prelistarrayfiles)
+            if followlink:
+                if (cur_entry['ftype'] == 1 or cur_entry['ftype'] == 2):
+                    getflinkpath = cur_entry['flinkname']
+                    flinkid = listarrayfiles['filetoid'][getflinkpath]
+                    flinkinfo = listarrayfiles['ffilelist'][flinkid]
+                    fheadersize = format(int(flinkinfo['fheadersize']), 'x').lower()
+                    fsize       = format(int(flinkinfo['fsize']), 'x').lower()
+                    flinkname   = flinkinfo['flinkname']
+                    fatime      = format(int(flinkinfo['fatime']), 'x').lower()
+                    fmtime      = format(int(flinkinfo['fmtime']), 'x').lower()
+                    fctime      = format(int(flinkinfo['fctime']), 'x').lower()
+                    fbtime      = format(int(flinkinfo['fbtime']), 'x').lower()
+                    fmode       = format(int(flinkinfo['fmode']), 'x').lower()
+                    fchmode     = format(int(flinkinfo['fchmode']), 'x').lower()
+                    fuid        = format(int(flinkinfo['fuid']), 'x').lower()
+                    funame      = flinkinfo['funame']
+                    fgid        = format(int(flinkinfo['fgid']), 'x').lower()
+                    fgname      = flinkinfo['fgname']
+                    finode_int  = int(flinkinfo['finode'])
+                    finode      = format(int(flinkinfo['finode']), 'x').lower()
+                    flinkcount  = format(int(flinkinfo['flinkcount']), 'x').lower()
+                    fwinattributes = format(int(flinkinfo['fwinattributes']), 'x').lower()
+                    fcompression   = flinkinfo['fcompression']
+                    fcsize         = format(int(flinkinfo['fcsize']), 'x').lower()
+                    fdev           = format(int(flinkinfo['fdev']), 'x').lower()
+                    fdev_minor     = format(int(flinkinfo['fminor']), 'x').lower()
+                    fdev_major     = format(int(flinkinfo['fmajor']), 'x').lower()
+                    fseeknextfile  = flinkinfo['fseeknextfile']
+                    if (len(flinkinfo['fextradata']) > flinkinfo['fextrafields']
+                        and len(flinkinfo['fextradata']) > 0):
+                        flinkinfo['fextrafields'] = len(flinkinfo['fextradata'])
+                    if len(extradata) < 0:
+                        extradata = flinkinfo['fextradata']
+                    if len(jsondata) < 0:
+                        jsondata = flinkinfo['fjsondata']
+                    fcontents = flinkinfo['fcontents']
+                    if not flinkinfo['fcontentasfile']:
+                        fcontents = MkTempFile(fcontents)
+                    ftypehex = format(flinkinfo['ftype'], 'x').lower()
+            else:
+                ftypehex = format(int(cur_entry['ftype']), 'x').lower()
+
+            # file/inode ids (fixed: compare using int)
+            fcurfid = format(curfid, 'x').lower()
+            if (not followlink and finode_int != 0):
+                if cur_entry['ftype'] != 1:
+                    fcurinode = format(int(curinode), 'x').lower()
+                    inodetofile[curinode] = fname
+                    filetoinode[fname] = curinode
+                    curinode += 1
+                else:
+                    fcurinode = format(int(filetoinode[flinkname]), 'x').lower()
+            else:
+                fcurinode = format(int(curinode), 'x').lower()
+                curinode += 1
+            curfid += 1
+
+            if fcompression == "none":
+                fcompression = ""
+
+            tmpoutlist = [
+                ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fatime, fmtime,
+                fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame,
+                fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile
+            ]
+
+            AppendFileHeaderWithContent(
+                fp, tmpoutlist, extradata, jsondata, fcontents.read(),
+                [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs
+            )
+            try:
+                fcontents.close()
+            except Exception:
+                pass
+            lcfi += 1
+            reallcfi += 1
 
     # ---------- Finalization ----------
     if (outfile == "-" or outfile is None
@@ -11099,7 +11102,7 @@ def RePackMultipleCatFile(infiles, outfile, fmttype="auto", compression="auto", 
         infiles = [infiles]
     returnout = False
     for infileslist in infiles:
-        returnout = RePackArchiveFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, filestart, seekstart, seekend, checksumtype, skipchecksum, extradata, jsondata, formatspecs, seektoend, verbose, True)
+        returnout = RePackCatFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, filestart, seekstart, seekend, checksumtype, skipchecksum, extradata, jsondata, formatspecs, seektoend, verbose, True)
         if(not returnout):
             break
         else:
@@ -13733,7 +13736,7 @@ def run_tcp_file_server(fileobj, url, on_progress=None):
     Ends after serving exactly one client or wait window elapses.
 
     URL example:
-      tcp://user:pass@0.0.0.0:5000/path/my.cat?
+      tcp://user:pass@0.0.0.0:5000/path/my.arc?
           auth=1&enforce_path=1&rate=200000&timeout=5&wait=30&ssl=0
     """
     parts, o = _parse_net_url(url)  # already returns proto/host/port/timeout/ssl/etc.
@@ -13935,7 +13938,7 @@ def run_udp_file_server(fileobj, url, on_progress=None):
     Ends after serving exactly one client or wait window elapses.
 
     URL example:
-      udp://user:pass@0.0.0.0:5001/path/my.cat?
+      udp://user:pass@0.0.0.0:5001/path/my.arc?
           auth=1&enforce_path=1&rate=250000&timeout=5&wait=30
     """
     parts, o = _parse_net_url(url)
@@ -14359,7 +14362,7 @@ def run_tcp_file_server(fileobj, url, on_progress=None):
     Ends after serving exactly one client or wait window elapses.
 
     URL example:
-      tcp://user:pass@0.0.0.0:5000/path/my.cat?
+      tcp://user:pass@0.0.0.0:5000/path/my.arc?
           auth=1&enforce_path=1&rate=200000&timeout=5&wait=30&ssl=0
     """
     parts, o = _parse_net_url(url)  # already returns proto/host/port/timeout/ssl/etc.
@@ -14911,7 +14914,7 @@ def run_udp_file_server(fileobj, url, on_progress=None):
     Ends after serving exactly one client or wait window elapses.
 
     URL example:
-      udp://user:pass@0.0.0.0:5001/path/my.cat?
+      udp://user:pass@0.0.0.0:5001/path/my.arc?
           auth=1&enforce_path=1&rate=250000&timeout=5&wait=30
     """
     parts, o = _parse_net_url(url)
