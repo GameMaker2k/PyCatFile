@@ -10761,7 +10761,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
     if isinstance(infile, dict):
         listarrayfileslist = [infile]
     elif isinstance(infile, list):
-        pass
+        listarrayfileslist = infile
     else:
         if (infile != "-" and not isinstance(infile, bytes_type)  # bytes is str on Py2
             and not hasattr(infile, "read") and not hasattr(infile, "write")):
@@ -11410,49 +11410,52 @@ def CatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0
     if(verbose):
         logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
     if(isinstance(infile, dict)):
-        listarrayfiles = infile
+        listarrayfileslist = [infile]
+    if(isinstance(infile, list)):
+        listarrayfileslist = infile
     else:
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
             infile = RemoveWindowsPath(infile)
-        listarrayfiles = CatFileToArray(infile, fmttype, filestart, seekstart, seekend, True, False, False, skipchecksum, formatspecs, seektoend, returnfp)
-    if(not listarrayfiles):
+        listarrayfileslist = ArchiveFileToArray(infile, fmttype, filestart, seekstart, seekend, True, False, False, skipchecksum, formatspecs, seektoend, returnfp)
+    if(not listarrayfileslist):
         return False
-    lenlist = len(listarrayfiles['ffilelist'])
-    fnumfiles = int(listarrayfiles['fnumfiles'])
-    lcfi = 0
-    lcfx = int(listarrayfiles['fnumfiles'])
-    if(lenlist > listarrayfiles['fnumfiles'] or lenlist < listarrayfiles['fnumfiles']):
-        lcfx = int(lenlist)
-    else:
+    for listarrayfiles in listarrayfileslist:
+        lenlist = len(listarrayfiles['ffilelist'])
+        fnumfiles = int(listarrayfiles['fnumfiles'])
+        lcfi = 0
         lcfx = int(listarrayfiles['fnumfiles'])
-    returnval = {}
-    while(lcfi < lcfx):
-        returnval.update({lcfi: listarrayfiles['ffilelist'][lcfi]['fname']})
-        if(not verbose):
-            VerbosePrintOut(listarrayfiles['ffilelist'][lcfi]['fname'])
-        if(verbose):
-            permissions = {'access': {'0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': (
-                'r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx')}, 'roles': {0: 'owner', 1: 'group', 2: 'other'}}
-            printfname = listarrayfiles['ffilelist'][lcfi]['fname']
-            if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 1):
-                printfname = listarrayfiles['ffilelist'][lcfi]['fname'] + \
-                    " link to " + listarrayfiles['ffilelist'][lcfi]['flinkname']
-            if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 2):
-                printfname = listarrayfiles['ffilelist'][lcfi]['fname'] + \
-                    " -> " + listarrayfiles['ffilelist'][lcfi]['flinkname']
-            fuprint = listarrayfiles['ffilelist'][lcfi]['funame']
-            if(len(fuprint) <= 0):
-                fuprint = listarrayfiles['ffilelist'][lcfi]['fuid']
-            fgprint = listarrayfiles['ffilelist'][lcfi]['fgname']
-            if(len(fgprint) <= 0):
-                fgprint = listarrayfiles['ffilelist'][lcfi]['fgid']
-            if(newstyle):
-                VerbosePrintOut(ftype_to_str(listarrayfiles['ffilelist'][lcfi]['ftype']) + "\t" + listarrayfiles['ffilelist'][lcfi]['fcompression'] + "\t" + str(
-                listarrayfiles['ffilelist'][lcfi]['fsize']).rjust(15) + "\t" + printfname)
-            else:
-                VerbosePrintOut(PrintPermissionString(listarrayfiles['ffilelist'][lcfi]['fmode'], listarrayfiles['ffilelist'][lcfi]['ftype']) + " " + str(fuprint) + "/" + str(fgprint) + " " + str(
-                listarrayfiles['ffilelist'][lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listarrayfiles['ffilelist'][lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname)
-        lcfi = lcfi + 1
+        if(lenlist > listarrayfiles['fnumfiles'] or lenlist < listarrayfiles['fnumfiles']):
+            lcfx = int(lenlist)
+        else:
+            lcfx = int(listarrayfiles['fnumfiles'])
+        returnval = {}
+        while(lcfi < lcfx):
+            returnval.update({lcfi: listarrayfiles['ffilelist'][lcfi]['fname']})
+            if(not verbose):
+                VerbosePrintOut(listarrayfiles['ffilelist'][lcfi]['fname'])
+            if(verbose):
+                permissions = {'access': {'0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': (
+                    'r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx')}, 'roles': {0: 'owner', 1: 'group', 2: 'other'}}
+                printfname = listarrayfiles['ffilelist'][lcfi]['fname']
+                if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 1):
+                    printfname = listarrayfiles['ffilelist'][lcfi]['fname'] + \
+                        " link to " + listarrayfiles['ffilelist'][lcfi]['flinkname']
+                if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 2):
+                    printfname = listarrayfiles['ffilelist'][lcfi]['fname'] + \
+                        " -> " + listarrayfiles['ffilelist'][lcfi]['flinkname']
+                fuprint = listarrayfiles['ffilelist'][lcfi]['funame']
+                if(len(fuprint) <= 0):
+                    fuprint = listarrayfiles['ffilelist'][lcfi]['fuid']
+                fgprint = listarrayfiles['ffilelist'][lcfi]['fgname']
+                if(len(fgprint) <= 0):
+                    fgprint = listarrayfiles['ffilelist'][lcfi]['fgid']
+                if(newstyle):
+                    VerbosePrintOut(ftype_to_str(listarrayfiles['ffilelist'][lcfi]['ftype']) + "\t" + listarrayfiles['ffilelist'][lcfi]['fcompression'] + "\t" + str(
+                    listarrayfiles['ffilelist'][lcfi]['fsize']).rjust(15) + "\t" + printfname)
+                else:
+                    VerbosePrintOut(PrintPermissionString(listarrayfiles['ffilelist'][lcfi]['fmode'], listarrayfiles['ffilelist'][lcfi]['ftype']) + " " + str(fuprint) + "/" + str(fgprint) + " " + str(
+                    listarrayfiles['ffilelist'][lcfi]['fsize']).rjust(15) + " " + datetime.datetime.utcfromtimestamp(listarrayfiles['ffilelist'][lcfi]['fmtime']).strftime('%Y-%m-%d %H:%M') + " " + printfname)
+            lcfi = lcfi + 1
     if(returnfp):
         return listarrayfiles['fp']
     else:
