@@ -13736,7 +13736,7 @@ def run_tcp_file_server(fileobj, url, on_progress=None):
     Ends after serving exactly one client or wait window elapses.
 
     URL example:
-      tcp://user:pass@0.0.0.0:5000/path/my.arc?
+      tcp://user:pass@0.0.0.0:5000/path/my.cat?
           auth=1&enforce_path=1&rate=200000&timeout=5&wait=30&ssl=0
     """
     parts, o = _parse_net_url(url)  # already returns proto/host/port/timeout/ssl/etc.
@@ -13938,7 +13938,7 @@ def run_udp_file_server(fileobj, url, on_progress=None):
     Ends after serving exactly one client or wait window elapses.
 
     URL example:
-      udp://user:pass@0.0.0.0:5001/path/my.arc?
+      udp://user:pass@0.0.0.0:5001/path/my.cat?
           auth=1&enforce_path=1&rate=250000&timeout=5&wait=30
     """
     parts, o = _parse_net_url(url)
@@ -14362,7 +14362,7 @@ def run_tcp_file_server(fileobj, url, on_progress=None):
     Ends after serving exactly one client or wait window elapses.
 
     URL example:
-      tcp://user:pass@0.0.0.0:5000/path/my.arc?
+      tcp://user:pass@0.0.0.0:5000/path/my.cat?
           auth=1&enforce_path=1&rate=200000&timeout=5&wait=30&ssl=0
     """
     parts, o = _parse_net_url(url)  # already returns proto/host/port/timeout/ssl/etc.
@@ -14914,7 +14914,7 @@ def run_udp_file_server(fileobj, url, on_progress=None):
     Ends after serving exactly one client or wait window elapses.
 
     URL example:
-      udp://user:pass@0.0.0.0:5001/path/my.arc?
+      udp://user:pass@0.0.0.0:5001/path/my.cat?
           auth=1&enforce_path=1&rate=250000&timeout=5&wait=30
     """
     parts, o = _parse_net_url(url)
