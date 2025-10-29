@@ -65,10 +65,10 @@ pymodule['verdaterc'] = int(setuppy_dateinfo_exp[4])
 pymodule['verdatelist'] = (int(setuppy_dateinfo_exp[0]), int(setuppy_dateinfo_exp[1]), int(
     setuppy_dateinfo_exp[2]), str(setuppy_dateinfo_exp[3]), int(setuppy_dateinfo_exp[4]))
 pymodule['name'] = 'PyCatFile'
-pymodule['author'] = 'Kazuki Przyborowski'
-pymodule['authoremail'] = 'kazuki.przyborowski@gmail.com'
-pymodule['maintainer'] = 'Kazuki Suzuki Sadeghi'
-pymodule['maintaineremail'] = 'kazuki.suzuki.sadeghi@gmail.com'
+pymodule['author'] = 'Kazuhana Neko-chan'
+pymodule['authoremail'] = 'kazuki.suzuki.cat@gmail.com'
+pymodule['maintainer'] = 'Kazuhika Kitsune-chan'
+pymodule['maintaineremail'] = 'kazuki.suzuki.fox@gmail.com'
 pymodule['description'] = 'A tar like file format name catfile after unix cat command (concatenate files) .'
 pymodule['license'] = 'Revised BSD License'
 pymodule['keywords'] = 'cat catfile cat-archive catfile-archive pycatfile python python-catfile neko nekofile neko-archive nekofile-archive pynekofile python python-nekofile compression tarball gzip tar bzip2 tar-archive lzma xz gz lzma2 xz2 tarlike tarlite hairball'
