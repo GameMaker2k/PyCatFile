@@ -7928,6 +7928,21 @@ def AppendFilesWithContentFromTarFileToOutFile(infiles, outfile, fmttype="auto",
         fp.close()
         return True
 
+def AppendFilesWithContentFromTarFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    if not isinstance(infiles, list):
+        infiles = [infiles]
+    returnout = False
+    for infileslist in infiles:
+        returnout = AppendFilesWithContentFromTarFileToOutFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, True)
+        if(not returnout):
+            break
+        else:
+            outfile = returnout
+    if(not returnfp and returnout):
+        returnout.close()
+        return True
+    return returnout
+
 def AppendFilesWithContentFromZipFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
@@ -8007,6 +8022,21 @@ def AppendFilesWithContentFromZipFileToOutFile(infiles, outfile, fmttype="auto",
     else:
         fp.close()
         return True
+
+def AppendFilesWithContentFromZipFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    if not isinstance(infiles, list):
+        infiles = [infiles]
+    returnout = False
+    for infileslist in infiles:
+        returnout = AppendFilesWithContentFromZipFileToOutFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, True)
+        if(not returnout):
+            break
+        else:
+            outfile = returnout
+    if(not returnfp and returnout):
+        returnout.close()
+        return True
+    return returnout
 
 if(not rarfile_support):
     def AppendFilesWithContentFromRarFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
@@ -8093,6 +8123,21 @@ if(rarfile_support):
             fp.close()
             return True
 
+def AppendFilesWithContentFromRarFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    if not isinstance(infiles, list):
+        infiles = [infiles]
+    returnout = False
+    for infileslist in infiles:
+        returnout = AppendFilesWithContentFromRarFileToOutFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, True)
+        if(not returnout):
+            break
+        else:
+            outfile = returnout
+    if(not returnfp and returnout):
+        returnout.close()
+        return True
+    return returnout
+
 if(not py7zr_support):
     def AppendFilesWithContentFromSevenZipToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
         return False
@@ -8177,6 +8222,21 @@ if(py7zr_support):
         else:
             fp.close()
             return True
+
+def AppendFilesWithContentFromSevenZipToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    if not isinstance(infiles, list):
+        infiles = [infiles]
+    returnout = False
+    for infileslist in infiles:
+        returnout = AppendFilesWithContentFromSevenZipToOutFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, True)
+        if(not returnout):
+            break
+        else:
+            outfile = returnout
+    if(not returnfp and returnout):
+        returnout.close()
+        return True
+    return returnout
 
 def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, filevalues=[], extradata=[], jsondata={}, followlink=False, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
     inlist = ReadInFileWithContentToList(infile, "auto", 0, 0, False, False, True, False, formatspecs)
