@@ -6521,6 +6521,16 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
     numfiles = int(len(GetDirList))
     fnumfiles = format(numfiles, 'x').lower()
     AppendFileHeader(fp, numfiles, "UTF-8", [], checksumtype[0], formatspecs)
+    try:
+        fp.flush()
+        if(hasattr(os, "sync")):
+            os.fsync(fp.fileno())
+    except io.UnsupportedOperation:
+        pass
+    except AttributeError:
+        pass
+    except OSError:
+        pass
     FullSizeFilesAlt = 0
     for curfname in GetDirList:
         fencoding = "UTF-8"
@@ -6772,6 +6782,16 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
         AppendFileHeaderWithContent(
             fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
+        try:
+            fp.flush()
+            if(hasattr(os, "sync")):
+                os.fsync(fp.fileno())
+        except io.UnsupportedOperation:
+            pass
+        except AttributeError:
+            pass
+        except OSError:
+            pass
     return fp
 
 def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
@@ -6780,8 +6800,6 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
     if(verbose):
         logging.basicConfig(format="%(message)s",
                             stream=sys.stdout, level=logging.DEBUG)
-    formver = formatspecs['format_ver']
-    fileheaderver = str(int(formver.replace(".", "")))
     curinode = 0
     curfid = 0
     inodelist = []
@@ -6849,6 +6867,16 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
         return False
     numfiles = int(len(tarfp.getmembers()))
     AppendFileHeader(fp, numfiles, "UTF-8", [], checksumtype[0], formatspecs)
+    try:
+        fp.flush()
+        if(hasattr(os, "sync")):
+            os.fsync(fp.fileno())
+    except io.UnsupportedOperation:
+        pass
+    except AttributeError:
+        pass
+    except OSError:
+        pass
     for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
         fencoding = "UTF-8"
         if(re.findall("^[.|/]", member.name)):
@@ -6987,6 +7015,16 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
         AppendFileHeaderWithContent(
             fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
+        try:
+            fp.flush()
+            if(hasattr(os, "sync")):
+                os.fsync(fp.fileno())
+        except io.UnsupportedOperation:
+            pass
+        except AttributeError:
+            pass
+        except OSError:
+            pass
         fcontents.close()
     return fp
 
@@ -6996,8 +7034,6 @@ def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, com
     if(verbose):
         logging.basicConfig(format="%(message)s",
                             stream=sys.stdout, level=logging.DEBUG)
-    formver = formatspecs['format_ver']
-    fileheaderver = str(int(formver.replace(".", "")))
     curinode = 0
     curfid = 0
     inodelist = []
@@ -7035,6 +7071,16 @@ def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, com
         VerbosePrintOut("Bad file found!")
     numfiles = int(len(zipfp.infolist()))
     AppendFileHeader(fp, numfiles, "UTF-8", [], checksumtype[0], formatspecs)
+    try:
+        fp.flush()
+        if(hasattr(os, "sync")):
+            os.fsync(fp.fileno())
+    except io.UnsupportedOperation:
+        pass
+    except AttributeError:
+        pass
+    except OSError:
+        pass
     for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
         fencoding = "UTF-8"
         if(re.findall("^[.|/]", member.filename)):
@@ -7197,6 +7243,16 @@ def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, com
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
         AppendFileHeaderWithContent(
             fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
+        try:
+            fp.flush()
+            if(hasattr(os, "sync")):
+                os.fsync(fp.fileno())
+        except io.UnsupportedOperation:
+            pass
+        except AttributeError:
+            pass
+        except OSError:
+            pass
         fcontents.close()
     return fp
 
@@ -7211,8 +7267,6 @@ if(rarfile_support):
         if(verbose):
             logging.basicConfig(format="%(message)s",
                                 stream=sys.stdout, level=logging.DEBUG)
-        formver = formatspecs['format_ver']
-        fileheaderver = str(int(formver.replace(".", "")))
         curinode = 0
         curfid = 0
         inodelist = []
@@ -7229,6 +7283,16 @@ if(rarfile_support):
             VerbosePrintOut("Bad file found!")
         numfiles = int(len(rarfp.infolist()))
         AppendFileHeader(fp, numfiles, "UTF-8", [], checksumtype[0], formatspecs)
+        try:
+            fp.flush()
+            if(hasattr(os, "sync")):
+                os.fsync(fp.fileno())
+        except io.UnsupportedOperation:
+            pass
+        except AttributeError:
+            pass
+        except OSError:
+            pass
         try:
             fp.flush()
             if(hasattr(os, "sync")):
@@ -7433,6 +7497,16 @@ if(rarfile_support):
                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
             AppendFileHeaderWithContent(
                 fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
+            try:
+                fp.flush()
+                if(hasattr(os, "sync")):
+                    os.fsync(fp.fileno())
+            except io.UnsupportedOperation:
+                pass
+            except AttributeError:
+                pass
+            except OSError:
+                pass
             fcontents.close()
         return fp
 
@@ -7465,6 +7539,16 @@ if(py7zr_support):
             VerbosePrintOut("Bad file found!")
         numfiles = int(len(szpfp.list()))
         AppendFileHeader(fp, numfiles, "UTF-8", [], checksumtype[0], formatspecs)
+        try:
+            fp.flush()
+            if(hasattr(os, "sync")):
+                os.fsync(fp.fileno())
+        except io.UnsupportedOperation:
+            pass
+        except AttributeError:
+            pass
+        except OSError:
+            pass
         for member in sorted(szpfp.list(), key=lambda x: x.filename):
             fencoding = "UTF-8"
             if(re.findall("^[.|/]", member.filename)):
@@ -7603,6 +7687,16 @@ if(py7zr_support):
                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
             AppendFileHeaderWithContent(
                 fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs)
+            try:
+                fp.flush()
+                if(hasattr(os, "sync")):
+                    os.fsync(fp.fileno())
+            except io.UnsupportedOperation:
+                pass
+            except AttributeError:
+                pass
+            except OSError:
+                pass
             fcontents.close()
         return fp
 
