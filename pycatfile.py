@@ -413,7 +413,9 @@ def is_only_nonprintable(var):
 __file_format_multi_dict__ = {}
 __file_format_default__ = "CatFile"
 __include_defaults__ = True
-__use_inmemfile__ = False
+__use_inmemfile__ = True
+__use_spoolfile__ = False
+__use_spooldir__ = tempfile.gettempdir()
 __program_name__ = "Py"+__file_format_default__
 __use_env_file__ = True
 __use_ini_file__ = True
@@ -635,7 +637,7 @@ __version_date_info__ = (2025, 10, 31, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: a457db17e60184130c861d8d0790717b035aa222 $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -1963,7 +1965,7 @@ def _normalize_initial_data(data, isbytes, encoding, errors=None):
 
 
 def MkTempFile(data=None,
-               inmem=True,
+               inmem=__use_inmemfile__,
                isbytes=True,
                prefix="",
                delete=True,
@@ -1971,9 +1973,9 @@ def MkTempFile(data=None,
                newline=None,      # text mode only; in-memory objects ignore newline semantics
                dir=None,
                suffix="",
-               use_spool=False,
+               use_spool=__use_spoolfile__,
                spool_max=8 * 1024 * 1024,
-               spool_dir=None):
+               spool_dir=__use_spooldir__):
     """
     Return a file-like handle with consistent behavior on Py2.7 and Py3.x.
 
