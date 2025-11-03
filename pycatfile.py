@@ -33,10 +33,11 @@ import socket
 import struct
 import hashlib
 import inspect
-import datetime
 import logging
 import zipfile
+import version
 import binascii
+import datetime
 import platform
 from io import StringIO, BytesIO
 from collections import namedtuple
@@ -644,7 +645,7 @@ __version_date_info__ = (2025, 10, 31, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id: a457db17e60184130c861d8d0790717b035aa222 $"
+__revision_id__ = "$Id$"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -655,6 +656,78 @@ if(__version_info__[3] is not None):
         1]) + "." + str(__version_info__[2]) + " " + str(__version_info__[3])
 if(__version_info__[3] is None):
     __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2])
+
+# From: https://stackoverflow.com/a/28568003
+# By Phaxmohdem
+
+
+def versiontuple(v):
+    filled = []
+    for point in v.split("."):
+        filled.append(point.zfill(8))
+    return tuple(filled)
+
+
+def version_check(myvercheck, newvercheck):
+    vercheck = 0
+    try:
+        from packaging import version
+        vercheck = 1
+    except ImportError:
+        try:
+            from distutils.version import LooseVersion, StrictVersion
+            vercheck = 2
+        except ImportError:
+            try:
+                from pkg_resources import parse_version
+                vercheck = 3
+            except ImportError:
+                return 5
+    # print(myvercheck, newvercheck)
+    if (vercheck == 1):
+        if (version.parse(myvercheck) == version.parse(newvercheck)):
+            return 0
+        elif (version.parse(myvercheck) < version.parse(newvercheck)):
+            return 1
+        elif (version.parse(myvercheck) > version.parse(newvercheck)):
+            return 2
+        else:
+            return 3
+    elif (vercheck == 2):
+        if (StrictVersion(myvercheck) == StrictVersion(newvercheck)):
+            return 0
+        elif (StrictVersion(myvercheck) < StrictVersion(newvercheck)):
+            return 1
+        elif (StrictVersion(myvercheck) > StrictVersion(newvercheck)):
+            return 2
+        else:
+            return 3
+    elif (vercheck == 3):
+        if (parse_version(myvercheck) == parse_version(newvercheck)):
+            return 0
+        elif (parse_version(myvercheck) < parse_version(newvercheck)):
+            return 1
+        elif (parse_version(myvercheck) > parse_version(newvercheck)):
+            return 2
+        else:
+            return 3
+    else:
+        if (versiontuple(myvercheck) == versiontuple(newvercheck)):
+            return 0
+        elif (versiontuple(myvercheck) < versiontuple(newvercheck)):
+            return 1
+        elif (versiontuple(myvercheck) > versiontuple(newvercheck)):
+            return 2
+        else:
+            return 3
+    return 4
+
+
+def check_version_number(myversion=__version__, proname=__program_alt_name__, newverurl=__project_release_url__):
+    prevercheck = download_from_url(newverurl, geturls_headers, geturls_cj)
+    newvercheck = re.findall(proname + " ([0-9\\.]+)<\\/a\\>", prevercheck['Content'].decode("UTF-8"))[0]
+    myvercheck = re.findall("([0-9\\.]+)", myversion)[0]
+    return version_check(myvercheck, newvercheck)
 
 # ===== Module-level type code table & helpers (reuse anywhere) =====
 
@@ -756,6 +829,7 @@ try:
     compressionsupport.append("lz4")
 except ImportError:
     pass
+'''
 try:
     import lzo
     compressionsupport.append("lzo")
@@ -763,6 +837,7 @@ try:
 except ImportError:
     lzo = None
     pass
+'''
 try:
     import zstandard
     compressionsupport.append("zst")
@@ -822,11 +897,13 @@ if('lzo' in compressionsupport):
     compressionlistalt.append('lzo')
     outextlist.append('lzo')
     outextlistwd.append('.lzo')
+'''
 if('lzop' in compressionsupport):
     compressionlist.append('lzop')
     compressionlistalt.append('lzop')
     outextlist.append('lzop')
     outextlistwd.append('.lzop')
+'''
 if('lzma' in compressionsupport):
     compressionlist.append('lzma')
     compressionlistalt.append('lzma')
@@ -3336,519 +3413,6 @@ def gzip_decompress_bytes_all_members(blob):
     """
     return _gzip_decompress_multimember(bytes(blob))
 
-
-# ---------- Simple LZO container (NOT real .lzop) ----------
-# File layout (concatenated members allowed):
-# [MAGIC 8B] [FLAGS 1B] [ULEN 8B] [CRC32 4B] [CCHUNK...]  | repeat...
-# where:
-#   MAGIC  = b'\x89LZO\x0D\x0A\x1A\n'
-#   FLAGS  = bit0: 1 => member has ULEN+CRC, 0 => no header (legacy)
-#   ULEN   = uncompressed length (u64 BE)
-#   CRC32  = CRC32 of uncompressed data (u32 BE)
-#   CCHUNK = one or more compressed chunks:
-#              [u32BE chunk_size][chunk_data] ... then a zero-size u32 terminator
-
-
-class LzopFile(object):
-    MAGIC = b'\x89LZO\x0D\x0A\x1A\n'
-    FLAG_HAS_UHDR = 0x01
-    RAW_CHUNK = 256 * 1024  # 256 KiB per raw (pre-compress) chunk
-
-    def __init__(self, file_path=None, fileobj=None, mode='rb',
-                 level=9, encoding=None, errors=None, newline=None,
-                 write_header=True,
-                 tolerant_read=False, scan_bytes=(64 << 10),
-                 spool_threshold=__spoolfile_size__):
-        """
-        Custom LZO file (NOT the lzop(1) format).
-        - streaming write/read, supports concatenated members
-        - optional per-member header (uncompressed length + CRC32)
-        - spooled reads to limit RAM, strict text mode with newline control
-        - tolerant_read: scan forward (up to scan_bytes) to first MAGIC
-
-        :param write_header: if True, include ULEN+CRC32 per member
-        :param tolerant_read: skip leading junk up to scan_bytes to find MAGIC
-        :param scan_bytes: max bytes to scan when tolerant_read=True
-        :param spool_threshold: SpooledTemporaryFile RAM threshold before spill
-        """
-        if lzo is None:
-            raise ImportError("python-lzo is required for LzopFile")
-
-        if file_path is None and fileobj is None:
-            raise ValueError("Either file_path or fileobj must be provided")
-        if file_path is not None and fileobj is not None:
-            raise ValueError("Only one of file_path or fileobj should be provided")
-
-        if 'b' not in mode and 't' not in mode:
-            mode += 'b'
-        if 'x' in mode and PY2:
-            raise ValueError("Exclusive creation mode 'x' is not supported on Python 2")
-
-        self.file_path = file_path
-        self.file = fileobj
-        self.mode = mode
-        self.level = int(level)  # effective: 1 or 9 (clamped)
-        self.encoding = encoding
-        self.errors = errors
-        self.newline = newline
-        self._text_mode = ('t' in mode)
-
-        self._write_header = bool(write_header)
-
-        # Config (read path)
-        self.tolerant_read = bool(tolerant_read)
-        self.scan_bytes = int(scan_bytes)
-        self.spool_threshold = int(spool_threshold)
-
-        # Write state
-        self._crc = 0
-        self._ulen = 0
-        self._open_member = False
-        self._member_header_pos = None  # position *after* ULEN+CRC placeholders
-
-        # Read state
-        self._spool = None
-        self._text_reader = None
-        self._position = 0
-        self.closed = False
-
-        internal_mode = mode.replace('t', 'b')
-        if self.file is None:
-            if 'x' in internal_mode and os.path.exists(file_path):
-                raise IOError("File exists: '{}'".format(file_path))
-            self.file = open(file_path, internal_mode)
-        else:
-            if 'r' in internal_mode and not hasattr(self.file, 'read'):
-                raise ValueError("fileobj must support read() in read mode")
-            if any(ch in internal_mode for ch in ('w', 'a', 'x')) and not hasattr(self.file, 'write'):
-                raise ValueError("fileobj must support write() in write/append mode")
-
-        self._fp = self.file
-        if any(ch in internal_mode for ch in ('w', 'a', 'x')):
-            # Start a new member at EOF for append
-            if 'a' in internal_mode:
-                try:
-                    self.file.seek(0, os.SEEK_END)
-                except Exception:
-                    pass
-            # Defer writing header until first write so empty files don’t get empty members
-        elif 'r' in internal_mode:
-            self._load_all_members_spooled()
-        else:
-            raise ValueError("Unsupported mode: {}".format(mode))
-
-    # ---------- helpers ----------
-    @property
-    def name(self):
-        return self.file_path
-
-    def readable(self):
-        return 'r' in self.mode
-
-    def writable(self):
-        return any(ch in self.mode for ch in ('w', 'a', 'x'))
-
-    def seekable(self):
-        return True if self._spool is not None else bool(getattr(self.file, 'seek', None))
-
-    def _normalize_newlines_for_write(self, s):
-        nl = self.newline if self.newline is not None else "\n"
-        return s.replace("\r\n", "\n").replace("\r", "\n").replace("\n", nl)
-
-    def _reader(self):
-        return self._text_reader if self._text_mode else self._spool
-
-    # ---------- Write path ----------
-    def _ensure_member_header(self):
-        if self._open_member:
-            return
-        flags = self.FLAG_HAS_UHDR if self._write_header else 0
-        self.file.write(self.MAGIC)
-        self.file.write(struct.pack(">B", flags))
-        if self._write_header:
-            # placeholders for ULEN+CRC; we’ll backfill on finalize
-            self.file.write(struct.pack(">Q", 0))
-            self.file.write(struct.pack(">I", 0))
-        # position *after* ULEN+CRC placeholders (or after FLAGS if no header)
-        self._member_header_pos = self.file.tell()
-        self._open_member = True
-        # reset member stats
-        self._crc = 0
-        self._ulen = 0
-
-    def write(self, data):
-        if 'r' in self.mode:
-            raise IOError("File not open for writing")
-
-        if self._text_mode:
-            enc = self.encoding or 'UTF-8'
-            errs = self.errors or 'strict'
-            if not isinstance(data, text_type):
-                raise TypeError("write() expects text (unicode/str) in text mode")
-            data = self._normalize_newlines_for_write(data).encode(enc, errs)
-        else:
-            if not isinstance(data, binary_types):
-                raise TypeError("write() expects bytes-like in binary mode")
-
-        # Normalize Py3 memoryview / Py2 bytearray
-        if (not PY2) and isinstance(data, memoryview):
-            data = data.tobytes()
-        elif PY2 and isinstance(data, bytearray):
-            data = bytes(data)
-
-        if not data:
-            return 0
-
-        # Begin member and write header on first write
-        self._ensure_member_header()
-
-        # Update integrity stats
-        self._crc = _crc32u(data, self._crc)
-        self._ulen += len(data)
-
-        # Stream in RAW_CHUNK-sized pieces. Each piece becomes one compressed chunk record.
-        mv = memoryview(data)
-        # clamp level to {1, 9}
-        lvl = 9 if self.level >= 9 else 1
-        for off in range(0, len(data), self.RAW_CHUNK):
-            raw = mv[off:off + self.RAW_CHUNK].tobytes()
-            c = lzo.compress(raw, lvl)
-            self.file.write(struct.pack(">I", len(c)))
-            self.file.write(c)
-
-        return len(data)
-
-    def _flush_member_only(self):
-        """Finalize the current member: write terminator and backfill header."""
-        if not self._open_member:
-            return
-        # write zero-length chunk terminator
-        self.file.write(struct.pack(">I", 0))
-        if self._write_header:
-            # ULEN is at (_member_header_pos - 12), CRC at (_member_header_pos - 4)
-            ulen_pos = self._member_header_pos - 12
-            crc_pos = self._member_header_pos - 4
-            cur = self.file.tell()
-            # backfill ULEN
-            self.file.seek(ulen_pos, os.SEEK_SET)
-            self.file.write(struct.pack(">Q", self._ulen))
-            # backfill CRC32
-            self.file.seek(crc_pos, os.SEEK_SET)
-            self.file.write(struct.pack(">I", self._crc))
-            # restore position
-            self.file.seek(cur, os.SEEK_SET)
-        # reset for potential new member
-        self._open_member = False
-        self._crc = 0
-        self._ulen = 0
-        self._member_header_pos = None
-
-    def flush(self):
-        if self.closed:
-            return
-        # finalize any open member
-        if any(ch in self.mode for ch in ('w', 'a', 'x')) and self._open_member:
-            self._flush_member_only()
-        if hasattr(self.file, 'flush'):
-            self.file.flush()
-
-    def close(self):
-        if self.closed:
-            return
-        try:
-            # Ensure a clean member terminator & header backfill if needed
-            if any(ch in self.mode for ch in ('w', 'a', 'x')) and self._open_member:
-                self._flush_member_only()
-            if hasattr(self.file, 'flush'):
-                try:
-                    self.file.flush()
-                except Exception:
-                    pass
-        finally:
-            if self.file_path and self.file is not None:
-                try:
-                    self.file.close()
-                except Exception:
-                    pass
-            # tear down read handles
-            try:
-                if self._text_reader is not None:
-                    self._text_reader.detach()
-            except Exception:
-                pass
-            try:
-                if self._spool is not None:
-                    self._spool.close()
-            except Exception:
-                pass
-            self.closed = True
-
-    # ---------- Read path (spooled, multi-member, tolerant scan) ----------
-    def _load_all_members_spooled(self):
-        # Seek to start if possible
-        try:
-            self.file.seek(0)
-        except Exception:
-            pass
-
-        self._spool = tempfile.SpooledTemporaryFile(max_size=self.spool_threshold)
-
-        def read_exact(n, abs_off_ref):
-            """Read exactly n bytes, updating abs_off_ref[0]."""
-            b = b""
-            while len(b) < n:
-                part = self.file.read(n - len(b))
-                if not part:
-                    break
-                b += part
-                abs_off_ref[0] += len(part)
-            return b
-
-        CHUNK = 1 << 20
-        abs_off = [0]   # track absolute file offset
-        scanned = 0
-
-        while True:
-            # Locate MAGIC (support tolerant scan across chunk boundaries)
-            head = read_exact(len(self.MAGIC), abs_off)
-            if not head:
-                break  # EOF
-            if head != self.MAGIC:
-                # Tolerant scan: slide-by-one until found or limit exceeded
-                buf = head
-                while True:
-                    if self.tolerant_read and scanned < self.scan_bytes:
-                        nxt = read_exact(1, abs_off)
-                        if not nxt:
-                            # EOF without finding magic
-                            raise ValueError("Invalid LZO container: magic not found before EOF")
-                        buf = buf[1:] + nxt
-                        scanned += 1
-                        if buf == self.MAGIC:
-                            break
-                        continue
-                    raise ValueError("Invalid LZO container magic near offset {}".format(abs_off[0] - len(buf)))
-                # found MAGIC; proceed
-
-            # FLAGS
-            f_b = read_exact(1, abs_off)
-            if len(f_b) != 1:
-                raise ValueError("Truncated header (flags) at offset {}".format(abs_off[0]))
-            flags = ord(f_b) if PY2 else f_b[0]
-
-            # Optional ULEN/CRC
-            ulen = None
-            expect_crc = None
-            if flags & self.FLAG_HAS_UHDR:
-                ulen_b = read_exact(8, abs_off)
-                crc_b = read_exact(4, abs_off)
-                if len(ulen_b) != 8 or len(crc_b) != 4:
-                    raise ValueError("Truncated ULEN/CRC header at offset {}".format(abs_off[0]))
-                ulen = struct.unpack(">Q", ulen_b)[0]
-                expect_crc = struct.unpack(">I", crc_b)[0]
-
-            # Chunk loop
-            m_crc = 0
-            m_len = 0
-            while True:
-                sz_b = read_exact(4, abs_off)
-                if len(sz_b) != 4:
-                    raise ValueError("Truncated chunk size at offset {}".format(abs_off[0]))
-                csz = struct.unpack(">I", sz_b)[0]
-                if csz == 0:
-                    break  # end of member
-                cdata = read_exact(csz, abs_off)
-                if len(cdata) != csz:
-                    raise ValueError("Truncated chunk payload at offset {}".format(abs_off[0]))
-                try:
-                    raw = lzo.decompress(cdata)
-                except Exception as e:
-                    raise ValueError("LZO decompression error at offset {}: {}".format(abs_off[0], e))
-                self._spool.write(raw)
-                m_len += len(raw)
-                m_crc = _crc32u(raw, m_crc)
-
-            # Validate member integrity if header present
-            if ulen is not None and m_len != ulen:
-                raise ValueError("Member length mismatch ({} != {})".format(m_len, ulen))
-            if expect_crc is not None and m_crc != expect_crc:
-                raise ValueError("Member CRC32 mismatch (got 0x{:08x}, want 0x{:08x})"
-                                 .format(m_crc, expect_crc))
-
-        # Prepare read handles
-        try:
-            self._spool.seek(0)
-        except Exception:
-            pass
-
-        if self._text_mode:
-            enc = self.encoding or 'UTF-8'
-            errs = self.errors or 'strict'
-            # newline=None => universal newline translation; exact string if provided
-            self._text_reader = io.TextIOWrapper(self._spool, encoding=enc, errors=errs, newline=self.newline)
-            try:
-                self._text_reader.seek(0)
-            except Exception:
-                pass
-
-        self._position = 0
-
-    # ---------- Buffered read API (delegates to spool/text wrapper) ----------
-    def read(self, size=-1):
-        if self.closed:
-            raise ValueError("I/O operation on closed file")
-        if 'r' not in self.mode:
-            raise IOError("File not open for reading")
-        r = self._reader()
-        if r is None:
-            raise IOError("Reader not initialized")
-        out = r.read() if (size is None or size < 0) else r.read(int(size))
-        try:
-            self._position = r.tell()
-        except Exception:
-            pass
-        return out
-
-    def readline(self, size=-1):
-        if self.closed:
-            raise ValueError("I/O operation on closed file")
-        if 'r' not in self.mode:
-            raise IOError("File not open for reading")
-        r = self._reader()
-        if r is None:
-            raise IOError("Reader not initialized")
-        out = r.readline() if (size is None or size < 0) else r.readline(int(size))
-        try:
-            self._position = r.tell()
-        except Exception:
-            pass
-        if not self._text_mode and out is None:
-            return b""
-        if self._text_mode and out is None:
-            return text_type("")
-        return out
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        line = self.readline()
-        if (self._text_mode and line == "") or (not self._text_mode and line == b""):
-            raise StopIteration
-        return line
-
-    if PY2:
-        next = __next__
-
-    def seek(self, offset, whence=0):
-        if self.closed:
-            raise ValueError("I/O operation on closed file")
-        if 'r' not in self.mode:
-            raise IOError("File not open for reading")
-        r = self._reader()
-        if r is None:
-            raise IOError("Reader not initialized")
-        newpos = r.seek(int(offset), int(whence))
-        self._position = newpos
-        return newpos
-
-    def tell(self):
-        if self._reader() is not None:
-            try:
-                self._position = self._reader().tell()
-            except Exception:
-                pass
-        return self._position
-
-    # ---------- Misc ----------
-    def fileno(self):
-        if hasattr(self.file, 'fileno'):
-            return self.file.fileno()
-        raise OSError("Underlying file object does not support fileno()")
-
-    def isatty(self):
-        return bool(getattr(self.file, 'isatty', lambda: False)())
-
-    def truncate(self, size=None):
-        # Prevent corruption of compressed streams
-        raise OSError("truncate() is not supported for compressed streams")
-
-    # ---------- Convenience constructors ----------
-    @classmethod
-    def open(cls, path, mode='rb', **kw):
-        """
-        Mirror built-in open() but for LzopFile.
-        Example:
-            with LzopFile.open("data.lzo", "rt", encoding="utf-8") as f:
-                print(f.readline())
-        """
-        return cls(file_path=path, mode=mode, **kw)
-
-    @classmethod
-    def from_fileobj(cls, fileobj, mode='rb', **kw):
-        """
-        Wrap an existing file-like object (caller retains ownership).
-        """
-        return cls(fileobj=fileobj, mode=mode, **kw)
-
-    @classmethod
-    def from_bytes(cls, data, mode='rb', **kw):
-        """
-        Read from an in-memory bytes buffer.
-        Example:
-            f = LzopFile.from_bytes(blob, mode='rt', encoding='utf-8', tolerant_read=True)
-            text = f.read()
-        """
-        if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError("from_bytes() expects a bytes-like object")
-        bio = io.BytesIO(bytes(data) if not isinstance(data, bytes) else data)
-        return cls(fileobj=bio, mode=mode, **kw)
-
-    # compatibility aliases for unwrapping utilities
-    @property
-    def fileobj(self):
-        return self.file
-
-    @property
-    def myfileobj(self):
-        return self.file
-
-# ---------- Top-level helpers ----------
-def lzop_compress_bytes(payload, level=9, text=False, **kw):
-    """
-    Compress 'payload' into a single LZO member (our custom container) and return bytes.
-    - text=True: 'payload' is text; encoding/newline/errors handled via LzopFile('wt')
-    - text=False: 'payload' is bytes-like; written via LzopFile('wb')
-    Kwargs forwarded: write_header (default True), newline/encoding/errors, etc.
-    """
-    bio = io.BytesIO()
-    mode = 'wt' if text else 'wb'
-    f = LzopFile(fileobj=bio, mode=mode, level=level, **kw)
-    try:
-        f.write(payload)
-        f.flush()  # finalize member (writes terminator + backfills header)
-    finally:
-        f.close()
-    return bio.getvalue()
-
-
-def lzop_decompress_bytes(blob, mode='rb', tolerant_read=False, scan_bytes=(64 << 10),
-                          spool_threshold=__spoolfile_size__, **kw):
-    """
-    Decompress bytes produced by this custom container.
-    - mode='rb' -> returns bytes; mode='rt' -> returns text (set encoding/errors/newline in kw)
-    - tolerant_read/scan_bytes/spool_threshold forwarded to LzopFile
-    """
-    if not isinstance(blob, (bytes, bytearray, memoryview)):
-        raise TypeError("lzop_decompress_bytes() expects a bytes-like object")
-    f = LzopFile.from_bytes(blob, mode=mode, tolerant_read=tolerant_read,
-                            scan_bytes=scan_bytes, spool_threshold=spool_threshold, **kw)
-    try:
-        return f.read()
-    finally:
-        f.close()
-
-
 def TarFileCheck(infile):
     try:
         if is_tarfile(infile):
@@ -4331,6 +3895,49 @@ _CRC_SPECS = {
     "crc64_iso":   CRCSpec(64, 0x000000000000001B, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, True,  True),
 }
 
+# --- helpers --------------------------------------------------------------
+
+try:
+    # Python 2 may not have algorithms_available
+    _ALGORITHMS_AVAILABLE = set(hashlib.algorithms_available)
+except AttributeError:
+    _ALGORITHMS_AVAILABLE = set(getattr(hashlib, "algorithms", []))
+
+
+def _coerce_bytes(data):
+    """Return `data` as a bytes object (Py2 / Py3)."""
+    if isinstance(data, memoryview):
+        # Py3 has .tobytes(), Py2 falls back to bytes()
+        try:
+            return data.tobytes()
+        except AttributeError:
+            return bytes(data)
+
+    if isinstance(data, bytearray):
+        return bytes(data)
+
+    if not isinstance(data, bytes):
+        # E.g. list of ints, unicode, etc.
+        return bytes(bytearray(data))
+
+    return data
+
+
+def _bytes_to_int(b):
+    """Big-endian bytes -> int, Py2/3 safe."""
+    if not isinstance(b, (bytes, bytearray)):
+        b = _coerce_bytes(b)
+
+    value = 0
+    for ch in b:
+        if not isinstance(ch, int):  # Py2: ch is a 1-char string
+            ch = ord(ch)
+        value = (value << 8) | ch
+    return value
+
+
+# --- your existing CRCContext (unchanged) ---------------------------------
+
 class CRCContext(object):
     __slots__ = ("spec", "table", "mask", "shift", "crc")
 
@@ -4344,10 +3951,11 @@ class CRCContext(object):
     def update(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
             data = bytes(bytearray(data))
+        buf = _mv_tobytes(memoryview(data))
         if self.spec.refin:
             c = self.crc
             tbl = self.table
-            for b in memoryview(data).tobytes():
+            for b in buf:
                 if not isinstance(b, int):  # Py2
                     b = ord(b)
                 c = tbl[(c ^ b) & 0xFF] ^ (c >> 8)
@@ -4357,7 +3965,7 @@ class CRCContext(object):
             tbl = self.table
             sh  = self.shift
             msk = self.mask
-            for b in memoryview(data).tobytes():
+            for b in buf:
                 if not isinstance(b, int):
                     b = ord(b)
                 c = tbl[((c >> sh) ^ b) & 0xFF] ^ ((c << 8) & msk)
@@ -4373,6 +3981,82 @@ class CRCContext(object):
     def hexdigest(self):
         width_hex = (self.spec.width + 3) // 4
         return format(self.digest_int(), "0{}x".format(width_hex)).lower()
+
+
+# --- hashlib-backed implementation ---------------------------------------
+
+class _HashlibCRCWrapper(object):
+    """
+    Wrap a hashlib object to present the same interface as CRCContext
+    (update, digest_int, hexdigest).
+
+    Assumes the hashlib algorithm already implements the exact CRC
+    specification (refin/refout/xorout/etc.).
+    """
+    __slots__ = ("_h", "spec", "mask", "width_hex")
+
+    def __init__(self, algo_name, spec):
+        self._h = hashlib.new(algo_name)
+        self.spec = spec
+        self.mask = (1 << spec.width) - 1
+        self.width_hex = (spec.width + 3) // 4
+
+    def update(self, data):
+        self._h.update(_coerce_bytes(data))
+        return self
+
+    def digest_int(self):
+        # Convert final digest bytes to an integer and mask to width
+        value = _bytes_to_int(self._h.digest())
+        return value & self.mask
+
+    def hexdigest(self):
+        h = self._h.hexdigest().lower()
+        # Normalize to the same number of hex digits as CRCContext
+        if len(h) < self.width_hex:
+            h = ("0" * (self.width_hex - len(h))) + h
+        elif len(h) > self.width_hex:
+            h = h[-self.width_hex:]
+        return h
+
+
+# --- public class: choose hashlib or fallback -----------------------------
+
+class CRC(object):
+    """
+    CRC wrapper that uses hashlib if available, otherwise falls back to
+    the pure-Python CRCContext.
+
+    spec.hashlib_name (preferred) or spec.name is used as the hashlib
+    algorithm name, e.g. 'crc32', 'crc32c', etc.
+    """
+
+    __slots__ = ("spec", "_impl")
+
+    def __init__(self, spec):
+        self.spec = spec
+
+        algo_name = getattr(spec, "hashlib_name", None) or getattr(spec, "name", None)
+        impl = None
+
+        if algo_name and algo_name in _ALGORITHMS_AVAILABLE:
+            # Use hashlib-backed implementation
+            impl = _HashlibCRCWrapper(algo_name, spec)
+        else:
+            # Fallback to your pure-Python implementation
+            impl = CRCContext(spec)
+
+        self._impl = impl
+
+    def update(self, data):
+        self._impl.update(data)
+        return self
+
+    def digest_int(self):
+        return self._impl.digest_int()
+
+    def hexdigest(self):
+        return self._impl.hexdigest()
 
 def crc_context_from_name(name_norm):
     spec = _CRC_SPECS.get(name_norm)
@@ -9035,8 +8719,6 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, file
                     fp = pyzstd.zstdfile.ZstdFile(infile, mode="rb")
                 else:
                     return Flase
-            elif((compresscheck == "lzo" or compresscheck == "lzop") and compresscheck in compressionsupport):
-                fp = LzopFile(infile, mode="rb")
             elif((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
                 fp = lzma.open(infile, "rb")
             elif(compresscheck == "zlib" and compresscheck in compressionsupport):
@@ -9159,8 +8841,6 @@ def UncompressFileAlt(fp, formatspecs=__file_format_multi_dict__, filestart=0,
             return False
     elif kind == "lz4"    and "lz4"    in compressionsupport:
         wrapped = lz4.frame.LZ4FrameFile(src, mode="rb")
-    elif kind in ("lzo","lzop") and (("lzo" in compressionsupport) or ("lzop" in compressionsupport)):
-        wrapped = LzopFile(fileobj=src, mode="rb")
     elif kind == "zlib"   and "zlib"   in compressionsupport:
         wrapped = ZlibFile(fileobj=src, mode="rb")
     else:
@@ -9232,8 +8912,6 @@ def UncompressFile(infile, formatspecs=__file_format_multi_dict__, mode="rb",
                 return False
         elif (compresscheck == "lz4" and "lz4" in compressionsupport):
             fp = lz4.frame.open(infile, mode)
-        elif ((compresscheck == "lzo" or compresscheck == "lzop") and "lzop" in compressionsupport):
-            fp = LzopFile(infile, mode=mode)
         elif ((compresscheck == "lzma" or compresscheck == "xz") and "xz" in compressionsupport):
             fp = lzma.open(infile, mode)
         elif (compresscheck == "zlib" and "zlib" in compressionsupport):
@@ -10026,9 +9704,6 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None,
 
         elif (fextname == ".lz4" and "lz4" in compressionsupport):
             outfp = FileLikeAdapter(lz4.frame.open(outfile, mode, compression_level=compressionlevel), mode="wb")
-
-        elif (fextname == ".lzo" and "lzop" in compressionsupport):
-            outfp = FileLikeAdapter(LzopFile(outfile, mode=mode, level=compressionlevel), mode="wb")
 
         elif (fextname == ".lzma" and "lzma" in compressionsupport):
             try:
