@@ -416,6 +416,9 @@ __include_defaults__ = True
 __use_inmemfile__ = True
 __use_spoolfile__ = False
 __use_spooldir__ = tempfile.gettempdir()
+BYTES_PER_MiB = 1024 * 1024
+DEFAULT_SPOOL_MAX = 8 * BYTES_PER_MiB
+__use_spooldir__ = DEFAULT_SPOOL_MAX
 __program_name__ = "Py"+__file_format_default__
 __use_env_file__ = True
 __use_ini_file__ = True
@@ -1974,7 +1977,7 @@ def MkTempFile(data=None,
                dir=None,
                suffix="",
                use_spool=__use_spoolfile__,
-               spool_max=8 * 1024 * 1024,
+               spool_max=__use_spooldir__,
                spool_dir=__use_spooldir__):
     """
     Return a file-like handle with consistent behavior on Py2.7 and Py3.x.
@@ -2418,7 +2421,7 @@ class ZlibFile(object):
 
     def __init__(self, file_path=None, fileobj=None, mode='rb', level=6, wbits=15,
                  encoding=None, errors=None, newline=None,
-                 tolerant_read=False, scan_bytes=(64 << 10), spool_threshold=(8 << 20)):
+                 tolerant_read=False, scan_bytes=(64 << 10), spool_threshold=__use_spooldir__):
 
         if file_path is None and fileobj is None:
             raise ValueError("Either file_path or fileobj must be provided")
@@ -2905,7 +2908,7 @@ class GzipFile(object):
 
     def __init__(self, file_path=None, fileobj=None, mode='rb',
                  level=6, encoding=None, errors=None, newline=None,
-                 tolerant_read=False, scan_bytes=(64 << 10), spool_threshold=(8 << 20)):
+                 tolerant_read=False, scan_bytes=(64 << 10), spool_threshold=__use_spooldir__):
 
         if file_path is None and fileobj is None:
             raise ValueError("Either file_path or fileobj must be provided")
@@ -3351,7 +3354,7 @@ class LzopFile(object):
                  level=9, encoding=None, errors=None, newline=None,
                  write_header=True,
                  tolerant_read=False, scan_bytes=(64 << 10),
-                 spool_threshold=(8 << 20)):
+                 spool_threshold=__use_spooldir__):
         """
         Custom LZO file (NOT the lzop(1) format).
         - streaming write/read, supports concatenated members
@@ -3826,7 +3829,7 @@ def lzop_compress_bytes(payload, level=9, text=False, **kw):
 
 
 def lzop_decompress_bytes(blob, mode='rb', tolerant_read=False, scan_bytes=(64 << 10),
-                          spool_threshold=(8 << 20), **kw):
+                          spool_threshold=__use_spooldir__, **kw):
     """
     Decompress bytes produced by this custom container.
     - mode='rb' -> returns bytes; mode='rt' -> returns text (set encoding/errors/newline in kw)
@@ -9794,7 +9797,7 @@ def fast_copy(infp, outfp, bufsize=1 << 20):
             outfp.write(data)
 
 
-def copy_file_to_mmap_dest(src_path, outfp, chunk_size=8 << 20):
+def copy_file_to_mmap_dest(src_path, outfp, chunk_size=__use_spooldir__):
     """
     Copy a disk file into an mmap-backed destination (FileLikeAdapter).
     Falls back to buffered copy if the source cannot be mmapped.
