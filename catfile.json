@@ -3,7 +3,9 @@
         "default": "CatFile",
         "proname": "PyCatFile",
         "includedef": "true",
-        "inmemfile": "true"
+        "inmemfile": "true",
+        "usespoolfile": "false",
+        "inmemfile": "8388608"
     },
     "CatFile": {
         "len": "7",
