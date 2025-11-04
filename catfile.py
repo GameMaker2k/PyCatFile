@@ -216,7 +216,7 @@ if active_action:
             if(not tmpout):
                 sys.exit(1)
         fvalid = pycatfile.StackedCatFileValidate(
-            input_file, "auto", 0, fnamedict, False, getargs.verbose, False)
+            input_file, "auto", getargs.filestart, fnamedict, False, getargs.verbose, False)
         if(not getargs.verbose):
             import sys
             import logging

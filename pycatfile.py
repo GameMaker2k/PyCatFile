@@ -9940,14 +9940,6 @@ def CatFileValidate(infile, fmttype="auto", filestart=0,
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, filestart, True)
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
-        if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
-        elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
-        elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
-        elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
         elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
             return False
         elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
@@ -10309,9 +10301,10 @@ def StackedCatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__fi
     while True:
         if outstartfile >= outfsize:   # stop when function signals False
             break
-        is_valid_file = CatFileValidate(infile, fmttype, filestart, formatspecs, seektoend, verbose, True)
+        is_valid_file = ArchiveFileValidate(infile, fmttype, outstartfile, formatspecs, seektoend, verbose, True)
         if is_valid_file is False:   # stop when function signals False
             outretval.append(is_valid_file)
+            break
         else:
             outretval.append(True)
         infile = is_valid_file
@@ -11315,35 +11308,6 @@ def MultipleCatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, s
     for curfname in infile:
         outretval[curfname] = CatFileListFiles(infile, fmttype, filestart, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, newstyle, returnfp)
     return outretval
-
-
-def StackedCatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
-    outretval = []
-    outstartfile = filestart
-    outfsize = float('inf')
-    while True:
-        if outstartfile >= outfsize:   # stop when function signals False
-            break
-        is_valid_file = CatFileValidate(infile, fmttype, filestart, formatspecs, seektoend, verbose, True)
-        if is_valid_file is False:   # stop when function signals False
-            outretval.append(is_valid_file)
-        else:
-            outretval.append(True)
-        infile = is_valid_file
-        outstartfile = infile.tell()
-        try:
-            infile.seek(0, 2)
-        except OSError:
-            SeekToEndOfFile(infile)
-        except ValueError:
-            SeekToEndOfFile(infile)
-        outfsize = infile.tell()
-        infile.seek(outstartfile, 0)
-    if(returnfp):
-        return infile
-    else:
-        infile.close()
-        return outretval
 
 
 def StackedCatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, newstyle=False, returnfp=False):
