@@ -6784,9 +6784,9 @@ def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, com
         if(verbose):
             VerbosePrintOut(fname)
         if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
-            fpremode = int(stat.S_IFDIR + 511)
+            fpremode = int(stat.S_IFDIR | 0x1ff)
         else:
-            fpremode = int(stat.S_IFREG + 438)
+            fpremode = int(stat.S_IFREG | 0x1b6)
         flinkcount = 0
         ftype = 0
         if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
@@ -6815,37 +6815,42 @@ def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, com
         fbtime = format(
             int(time.mktime(member.date_time + (0, 0, -1))), 'x').lower()
         if(zipinfo.create_system == 0 or zipinfo.create_system == 10):
-            fwinattributes = format(int(zipinfo.external_attr), 'x').lower()
+            fwinattributes = format(int(zipinfo.external_attr & 0xFFFF), 'x').lower()
             if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
-                fmode = format(int(stat.S_IFDIR + 511), 'x').lower()
-                fchmode = stat.S_IMODE(int(stat.S_IFDIR + 511))
-                ftypemod = stat.S_IFMT(int(stat.S_IFDIR + 511))
+                fmode = format(int(stat.S_IFDIR | 0x1ff), 'x').lower()
+                fchmode = stat.S_IMODE(int(stat.S_IFDIR | 0x1ff))
+                ftypemod = stat.S_IFMT(int(stat.S_IFDIR | 0x1ff))
             else:
-                fmode = format(int(stat.S_IFREG + 438), 'x').lower()
-                fchmode = stat.S_IMODE(int(stat.S_IFREG + 438))
-                ftypemod = stat.S_IFMT(int(stat.S_IFREG + 438))
+                fmode = format(int(stat.S_IFREG | 0x1b6), 'x').lower()
+                fchmode = stat.S_IMODE(int(stat.S_IFREG | 0x1b6))
+                ftypemod = stat.S_IFMT(int(stat.S_IFREG | 0x1b6))
         elif(zipinfo.create_system == 3):
-            fwinattributes = format(int(0), 'x').lower()
-            try:
-                fmode = format(int(zipinfo.external_attr), 'x').lower()
-                prefmode = int(zipinfo.external_attr)
-                fchmode = stat.S_IMODE(prefmode)
-                ftypemod = stat.S_IFMT(prefmode)
-            except OverflowError:
-                fmode = format(int(zipinfo.external_attr >> 16), 'x').lower()
-                prefmode = int(zipinfo.external_attr >> 16)
-                fchmode = stat.S_IMODE(prefmode)
-                ftypemod = stat.S_IFMT(prefmode)
+            fwinattributes = format(int(zipinfo.external_attr & 0xFFFF), 'x').lower()
+            fmode = format(int((zipinfo.external_attr >> 16) & 0xFFFF), 'x').lower()
+            prefmode = int((zipinfo.external_attr >> 16) & 0xFFFF)
+            if (prefmode == 0):
+                if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
+                    fmode = format(int(stat.S_IFDIR | 0x1ff), 'x').lower()
+                    prefmode = int(stat.S_IFDIR | 0x1ff)
+                    fchmode = stat.S_IMODE(prefmode)
+                    ftypemod = stat.S_IFMT(prefmode)
+                else:
+                    fmode = format(int(stat.S_IFREG | 0x1b6), 'x').lower()
+                    prefmode = int(stat.S_IFREG | 0x1b6)
+                    fchmode = stat.S_IMODE(prefmode)
+                    ftypemod = stat.S_IFMT(prefmode)
+            fchmode = stat.S_IMODE(prefmode)
+            ftypemod = stat.S_IFMT(prefmode)
         else:
-            fwinattributes = format(int(0), 'x').lower()
+            fwinattributes = format(int(zipinfo.external_attr & 0xFFFF), 'x').lower()
             if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
-                fmode = format(int(stat.S_IFDIR + 511), 'x').lower()
-                prefmode = int(stat.S_IFDIR + 511)
+                fmode = format(int(stat.S_IFDIR | 0x1ff), 'x').lower()
+                prefmode = int(stat.S_IFDIR | 0x1ff)
                 fchmode = stat.S_IMODE(prefmode)
                 ftypemod = stat.S_IFMT(prefmode)
             else:
-                fmode = format(int(stat.S_IFREG + 438), 'x').lower()
-                prefmode = int(stat.S_IFREG + 438)
+                fmode = format(int(stat.S_IFREG | 0x1b6), 'x').lower()
+                prefmode = int(stat.S_IFREG | 0x1b6)
                 fchmode = stat.S_IMODE(prefmode)
                 ftypemod = stat.S_IFMT(prefmode)
         fcompression = ""
@@ -7027,11 +7032,11 @@ if(rarfile_support):
             if(is_unix and member.external_attr != 0):
                 fpremode = int(member.external_attr)
             elif(member.is_file()):
-                fpremode = int(stat.S_IFREG + 438)
+                fpremode = int(stat.S_IFREG | 0x1b6)
             elif(member.is_symlink()):
-                fpremode = int(stat.S_IFLNK + 438)
+                fpremode = int(stat.S_IFLNK | 0x1b6)
             elif(member.is_dir()):
-                fpremode = int(stat.S_IFDIR + 511)
+                fpremode = int(stat.S_IFDIR | 0x1ff)
             if(is_windows and member.external_attr != 0):
                 fwinattributes = format(int(member.external_attr), 'x').lower()
             else:
@@ -7084,23 +7089,23 @@ if(rarfile_support):
                 ftypemod = format(
                     int(stat.S_IFMT(member.external_attr)), 'x').lower()
             elif(member.is_file()):
-                fmode = format(int(stat.S_IFREG + 438), 'x').lower()
+                fmode = format(int(stat.S_IFREG | 0x1b6), 'x').lower()
                 fchmode = format(
-                    int(stat.S_IMODE(int(stat.S_IFREG + 438))), 'x').lower()
+                    int(stat.S_IMODE(int(stat.S_IFREG | 0x1b6))), 'x').lower()
                 ftypemod = format(
-                    int(stat.S_IFMT(int(stat.S_IFREG + 438))), 'x').lower()
+                    int(stat.S_IFMT(int(stat.S_IFREG | 0x1b6))), 'x').lower()
             elif(member.is_symlink()):
-                fmode = format(int(stat.S_IFLNK + 438), 'x').lower()
+                fmode = format(int(stat.S_IFLNK | 0x1b6), 'x').lower()
                 fchmode = format(
-                    int(stat.S_IMODE(int(stat.S_IFREG + 438))), 'x').lower()
+                    int(stat.S_IMODE(int(stat.S_IFREG | 0x1b6))), 'x').lower()
                 ftypemod = format(
-                    int(stat.S_IFMT(int(stat.S_IFREG + 438))), 'x').lower()
+                    int(stat.S_IFMT(int(stat.S_IFREG | 0x1b6))), 'x').lower()
             elif(member.is_dir()):
-                fmode = format(int(stat.S_IFDIR + 511), 'x').lower()
+                fmode = format(int(stat.S_IFDIR | 0x1ff), 'x').lower()
                 fchmode = format(
-                    int(stat.S_IMODE(int(stat.S_IFDIR + 511))), 'x').lower()
+                    int(stat.S_IMODE(int(stat.S_IFDIR | 0x1ff))), 'x').lower()
                 ftypemod = format(
-                    int(stat.S_IFMT(int(stat.S_IFDIR + 511))), 'x').lower()
+                    int(stat.S_IFMT(int(stat.S_IFDIR | 0x1ff))), 'x').lower()
             try:
                 fuid = format(int(os.getuid()), 'x').lower()
             except AttributeError:
@@ -7204,11 +7209,11 @@ if(rarfile_support):
         return fp
 
 if(not py7zr_support):
-    def AppendFilesWithContentFromSevenZip(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
+    def AppendFilesWithContentFromSevenZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
         return False
 
 if(py7zr_support):
-    def AppendFilesWithContentFromSevenZip(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
+    def AppendFilesWithContentFromSevenZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_dict__, verbose=False):
         if(not hasattr(fp, "write")):
             return False
         if(verbose):
@@ -7251,9 +7256,9 @@ if(py7zr_support):
             if(verbose):
                 VerbosePrintOut(fname)
             if(not member.is_directory):
-                fpremode = int(stat.S_IFREG + 438)
+                fpremode = int(stat.S_IFREG | 0x1b6)
             elif(member.is_directory):
-                fpremode = int(stat.S_IFDIR + 511)
+                fpremode = int(stat.S_IFDIR | 0x1ff)
             fwinattributes = format(int(0), 'x').lower()
             fcompression = ""
             fcsize = format(int(0), 'x').lower()
@@ -7277,17 +7282,17 @@ if(py7zr_support):
             fctime = format(int(member.creationtime.timestamp()), 'x').lower()
             fbtime = format(int(member.creationtime.timestamp()), 'x').lower()
             if(member.is_directory):
-                fmode = format(int(stat.S_IFDIR + 511), 'x').lower()
+                fmode = format(int(stat.S_IFDIR | 0x1ff), 'x').lower()
                 fchmode = format(
-                    int(stat.S_IMODE(int(stat.S_IFDIR + 511))), 'x').lower()
+                    int(stat.S_IMODE(int(stat.S_IFDIR | 0x1ff))), 'x').lower()
                 ftypemod = format(
-                    int(stat.S_IFMT(int(stat.S_IFDIR + 511))), 'x').lower()
+                    int(stat.S_IFMT(int(stat.S_IFDIR | 0x1ff))), 'x').lower()
             else:
-                fmode = format(int(stat.S_IFREG + 438), 'x').lower()
+                fmode = format(int(stat.S_IFREG | 0x1b6), 'x').lower()
                 fchmode = format(
-                    int(stat.S_IMODE(int(stat.S_IFREG + 438))), 'x').lower()
+                    int(stat.S_IMODE(int(stat.S_IFREG | 0x1b6))), 'x').lower()
                 ftypemod = format(
-                    int(stat.S_IFMT(int(stat.S_IFREG + 438))), 'x').lower()
+                    int(stat.S_IFMT(int(stat.S_IFREG | 0x1b6))), 'x').lower()
             try:
                 fuid = format(int(os.getuid()), 'x').lower()
             except AttributeError:
@@ -7926,11 +7931,11 @@ def AppendFilesWithContentFromRarFileToStackedOutFile(infiles, outfile, fmttype=
     return returnout
 
 if(not py7zr_support):
-    def AppendFilesWithContentFromSevenZipToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    def AppendFilesWithContentFromSevenZipFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
         return False
 
 if(py7zr_support):
-    def AppendFilesWithContentFromSevenZipToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    def AppendFilesWithContentFromSevenZipFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
         if(IsNestedDict(formatspecs) and fmttype=="auto" and 
             (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
             get_in_ext = os.path.splitext(outfile)
@@ -7972,7 +7977,7 @@ if(py7zr_support):
                 fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
             except PermissionError:
                 return False
-        AppendFilesWithContentFromSevenZip(infiles, fp, extradata, jsondata, compression,
+        AppendFilesWithContentFromSevenZipFile(infiles, fp, extradata, jsondata, compression,
                                        compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, verbose)
         if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
             fp = CompressOpenFileAlt(
@@ -8010,12 +8015,12 @@ if(py7zr_support):
             fp.close()
             return True
 
-def AppendFilesWithContentFromSevenZipToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def AppendFilesWithContentFromSevenZipFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["crc32", "crc32", "crc32", "crc32"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     if not isinstance(infiles, list):
         infiles = [infiles]
     returnout = False
     for infileslist in infiles:
-        returnout = AppendFilesWithContentFromSevenZipToOutFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, True)
+        returnout = AppendFilesWithContentFromSevenZipFileToOutFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, True)
         if(not returnout):
             break
         else:
@@ -9826,7 +9831,7 @@ if(not py7zr_support):
 
 if(py7zr_support):
     def PackCatFileFromSevenZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-        return AppendFilesWithContentFromSevenZipToOutFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, returnfp)
+        return AppendFilesWithContentFromSevenZipFileToOutFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, returnfp)
 
 
 def PackCatFileFromInFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["crc32", "crc32", "crc32"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
@@ -11550,11 +11555,11 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
         if(zipinfo.create_system == 0 or zipinfo.create_system == 10):
             fwinattributes = int(zipinfo.external_attr)
             if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
-                fmode = int(stat.S_IFDIR + 511)
-                fchmode = int(stat.S_IMODE(int(stat.S_IFDIR + 511)))
-                ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)))
+                fmode = int(stat.S_IFDIR | 0x1ff)
+                fchmode = int(stat.S_IMODE(int(stat.S_IFDIR | 0x1ff)))
+                ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR | 0x1ff)))
             else:
-                fmode = int(stat.S_IFREG + 438)
+                fmode = int(stat.S_IFREG | 0x1b6)
                 fchmode = int(stat.S_IMODE(fmode))
                 ftypemod = int(stat.S_IFMT(fmode))
         elif(zipinfo.create_system == 3):
@@ -11570,11 +11575,11 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
         else:
             fwinattributes = int(0)
             if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
-                fmode = int(stat.S_IFDIR + 511)
-                fchmode = int(stat.S_IMODE(int(stat.S_IFDIR + 511)))
-                ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)))
+                fmode = int(stat.S_IFDIR | 0x1ff)
+                fchmode = int(stat.S_IMODE(int(stat.S_IFDIR | 0x1ff)))
+                ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR | 0x1ff)))
             else:
-                fmode = int(stat.S_IFREG + 438)
+                fmode = int(stat.S_IFREG | 0x1b6)
                 fchmode = int(stat.S_IMODE(fmode))
                 ftypemod = int(stat.S_IFMT(fmode))
         returnval.update({lcfi: member.filename})
@@ -11685,11 +11690,11 @@ if(rarfile_support):
             if(is_unix and member.external_attr != 0):
                 fpremode = int(member.external_attr)
             elif(member.is_file()):
-                fpremode = int(stat.S_IFREG + 438)
+                fpremode = int(stat.S_IFREG | 0x1b6)
             elif(member.is_symlink()):
-                fpremode = int(stat.S_IFLNK + 438)
+                fpremode = int(stat.S_IFLNK | 0x1b6)
             elif(member.is_dir()):
-                fpremode = int(stat.S_IFDIR + 511)
+                fpremode = int(stat.S_IFDIR | 0x1ff)
             if(is_windows and member.external_attr != 0):
                 fwinattributes = int(member.external_attr)
             else:
@@ -11699,17 +11704,17 @@ if(rarfile_support):
                 fchmode = int(stat.S_IMODE(member.external_attr))
                 ftypemod = int(stat.S_IFMT(member.external_attr))
             elif(member.is_file()):
-                fmode = int(stat.S_IFREG + 438)
-                fchmode = int(stat.S_IMODE(int(stat.S_IFREG + 438)))
-                ftypemod = int(stat.S_IFMT(int(stat.S_IFREG + 438)))
+                fmode = int(stat.S_IFREG | 0x1b6)
+                fchmode = int(stat.S_IMODE(int(stat.S_IFREG | 0x1b6)))
+                ftypemod = int(stat.S_IFMT(int(stat.S_IFREG | 0x1b6)))
             elif(member.is_symlink()):
-                fmode = int(stat.S_IFLNK + 438)
-                fchmode = int(stat.S_IMODE(int(stat.S_IFLNK + 438)))
-                ftypemod = int(stat.S_IFMT(int(stat.S_IFLNK + 438)))
+                fmode = int(stat.S_IFLNK | 0x1b6)
+                fchmode = int(stat.S_IMODE(int(stat.S_IFLNK | 0x1b6)))
+                ftypemod = int(stat.S_IFMT(int(stat.S_IFLNK | 0x1b6)))
             elif(member.is_dir()):
-                fmode = int(stat.S_IFDIR + 511)
-                fchmode = int(stat.S_IMODE(int(stat.S_IFDIR + 511)))
-                ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)))
+                fmode = int(stat.S_IFDIR | 0x1ff)
+                fchmode = int(stat.S_IMODE(int(stat.S_IFDIR | 0x1ff)))
+                ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR | 0x1ff)))
             returnval.update({lcfi: member.filename})
             if(not verbose):
                 VerbosePrintOut(member.filename)
@@ -11805,18 +11810,18 @@ if(py7zr_support):
             else:
                 fname = "./"+member.filename
             if(not member.is_directory):
-                fpremode = int(stat.S_IFREG + 438)
+                fpremode = int(stat.S_IFREG | 0x1b6)
             elif(member.is_directory):
-                fpremode = int(stat.S_IFDIR + 511)
+                fpremode = int(stat.S_IFDIR | 0x1ff)
             fwinattributes = int(0)
             if(member.is_directory):
-                fmode = int(stat.S_IFDIR + 511)
-                fchmode = int(stat.S_IMODE(int(stat.S_IFDIR + 511)))
-                ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR + 511)))
+                fmode = int(stat.S_IFDIR | 0x1ff)
+                fchmode = int(stat.S_IMODE(int(stat.S_IFDIR | 0x1ff)))
+                ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR | 0x1ff)))
             else:
-                fmode = int(stat.S_IFLNK + 438)
-                fchmode = int(stat.S_IMODE(int(stat.S_IFLNK + 438)))
-                ftypemod = int(stat.S_IFMT(int(stat.S_IFLNK + 438)))
+                fmode = int(stat.S_IFLNK | 0x1b6)
+                fchmode = int(stat.S_IMODE(int(stat.S_IFLNK | 0x1b6)))
+                ftypemod = int(stat.S_IFMT(int(stat.S_IFLNK | 0x1b6)))
             returnval.update({lcfi: member.filename})
             if(not verbose):
                 VerbosePrintOut(member.filename)
