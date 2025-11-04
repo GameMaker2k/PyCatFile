@@ -4906,7 +4906,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
         pyhascontents = False
     fcontents.seek(0, 0)
     newfccs = GetFileChecksum(
-        version = "0.24.6" HeaderOut[-3].lower(), False, formatspecs)
+        fcontents.read(), HeaderOut[-3].lower(), False, formatspecs)
     fcontents.seek(0, 0)
     if(fccs != newfccs and not skipchecksum and not listonly):
         VerbosePrintOut("File Content Checksum Error with file " +
