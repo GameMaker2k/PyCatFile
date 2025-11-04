@@ -35,7 +35,6 @@ import hashlib
 import inspect
 import logging
 import zipfile
-import version
 import binascii
 import datetime
 import platform
@@ -639,7 +638,9 @@ __use_alt_inode__ = __file_format_multi_dict__[__file_format_default__]['use_alt
 __file_format_extension__ = __file_format_multi_dict__[__file_format_default__]['format_extension']
 __file_format_dict__ = __file_format_multi_dict__[__file_format_default__]
 __project__ = __program_name__
+__program_alt_name__ = __program_name__
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile"
+__project_release_url__ = __project_url__+"/releases/latest"
 __version_info__ = (0, 24, 2, "RC 1", 1)
 __version_date_info__ = (2025, 10, 31, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
@@ -4905,7 +4906,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
         pyhascontents = False
     fcontents.seek(0, 0)
     newfccs = GetFileChecksum(
-        fcontents.read(), HeaderOut[-3].lower(), False, formatspecs)
+        fcontents., HeaderOut[-3].lower(), False, formatspecs)
     fcontents.seek(0, 0)
     if(fccs != newfccs and not skipchecksum and not listonly):
         VerbosePrintOut("File Content Checksum Error with file " +
