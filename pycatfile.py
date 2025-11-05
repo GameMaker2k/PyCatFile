@@ -794,7 +794,7 @@ geturls_ua_pyfile_python = "Mozilla/5.0 (compatible; {proname}/{prover}; +{prour
 if(platform.python_implementation() != ""):
     py_implementation = platform.python_implementation()
 if(platform.python_implementation() == ""):
-    py_implementation = "Python"
+    py_implementation = "CPython"
 geturls_ua_pyfile_python_alt = "Mozilla/5.0 ({osver}; {archtype}; +{prourl}) {pyimp}/{pyver} (KHTML, like Gecko) {proname}/{prover}".format(osver=platform.system(
 )+" "+platform.release(), archtype=platform.machine(), prourl=__project_url__, pyimp=py_implementation, pyver=platform.python_version(), proname=__project__, prover=__version__)
 geturls_ua_googlebot_google = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
@@ -3681,7 +3681,7 @@ def GetHeaderChecksum(inlist=None, checksumtype="md5", encodedata=True, formatsp
 
     return "0"
 
-def GetFileChecksum(instr, checksumtype="md5", encodedata=True, formatspecs=__file_format_dict__):
+def GetFileChecksum(inbytes, checksumtype="md5", encodedata=True, formatspecs=__file_format_dict__):
     """
     Accepts bytes/str/file-like.
       - Hashlib algos: streamed in 1 MiB chunks.
@@ -3691,12 +3691,12 @@ def GetFileChecksum(instr, checksumtype="md5", encodedata=True, formatspecs=__fi
     algo_key = (checksumtype or "md5").lower()
 
     # file-like streaming
-    if hasattr(instr, "read"):
+    if hasattr(inbytes, "read"):
         # hashlib
         if CheckSumSupport(algo_key, hashlib_guaranteed):
             h = hashlib.new(algo_key)
             while True:
-                chunk = instr.read(1 << 20)
+                chunk = inbytes.read(1 << 20)
                 if not chunk:
                     break
                 if not isinstance(chunk, (bytes, bytearray, memoryview)):
@@ -3705,11 +3705,11 @@ def GetFileChecksum(instr, checksumtype="md5", encodedata=True, formatspecs=__fi
             return h.hexdigest().lower()
 
         # not known streaming algo: fallback to one-shot bytes
-        data = instr.read()
+        data = inbytes.read()
         if not isinstance(data, (bytes, bytearray, memoryview)):
             data = bytes(bytearray(data))
     else:
-        data = _to_bytes(instr) if (encodedata or not isinstance(instr, (bytes, bytearray, memoryview))) else instr
+        data = _to_bytes(inbytes) if (encodedata or not isinstance(inbytes, (bytes, bytearray, memoryview))) else inbytes
         data = bytes(data)
 
     # one-shot
@@ -3757,7 +3757,7 @@ def GetHeaderChecksum(inlist=None, checksumtype="md5", encodedata=True, formatsp
 
     return "0"
 
-def GetFileChecksum(instr, checksumtype="md5", encodedata=True, formatspecs=__file_format_dict__):
+def GetFileChecksum(inbytes, checksumtype="md5", encodedata=True, formatspecs=__file_format_dict__):
     """
     Accepts bytes/str/file-like.
       - Hashlib algos: streamed in 1 MiB chunks.
@@ -3767,12 +3767,12 @@ def GetFileChecksum(instr, checksumtype="md5", encodedata=True, formatspecs=__fi
     algo_key = (checksumtype or "md5").lower()
 
     # file-like streaming
-    if hasattr(instr, "read"):
+    if hasattr(inbytes, "read"):
         # hashlib
         if CheckSumSupport(algo_key, hashlib_guaranteed):
             h = hashlib.new(algo_key)
             while True:
-                chunk = instr.read(1 << 20)
+                chunk = inbytes.read(1 << 20)
                 if not chunk:
                     break
                 if not isinstance(chunk, (bytes, bytearray, memoryview)):
@@ -3781,11 +3781,11 @@ def GetFileChecksum(instr, checksumtype="md5", encodedata=True, formatspecs=__fi
             return h.hexdigest().lower()
 
         # not known streaming algo: fallback to one-shot bytes
-        data = instr.read()
+        data = inbytes.read()
         if not isinstance(data, (bytes, bytearray, memoryview)):
             data = bytes(bytearray(data))
     else:
-        data = _to_bytes(instr) if (encodedata or not isinstance(instr, (bytes, bytearray, memoryview))) else instr
+        data = _to_bytes(inbytes) if (encodedata or not isinstance(inbytes, (bytes, bytearray, memoryview))) else inbytes
         data = bytes(data)
 
     # one-shot
@@ -3862,12 +3862,12 @@ def GetHeaderChecksum(inlist=[], checksumtype="md5", encodedata=True, formatspec
     return format(0, 'x').lower()
 
 
-def GetFileChecksum(instr, checksumtype="md5", encodedata=True, formatspecs=__file_format_dict__):
-    if encodedata and hasattr(instr, "encode"):
-        instr = instr.encode('UTF-8')
+def GetFileChecksum(inbytes, checksumtype="md5", encodedata=True, formatspecs=__file_format_dict__):
+    if encodedata and hasattr(inbytes, "encode"):
+        inbytes = inbytes.encode('UTF-8')
     if CheckSumSupport(checksumtype, hashlib_guaranteed):
         checksumoutstr = hashlib.new(checksumtype)
-        checksumoutstr.update(instr)
+        checksumoutstr.update(inbytes)
         return checksumoutstr.hexdigest().lower()
     return format(0, 'x').lower()
 
@@ -4483,7 +4483,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
             cfcontents.close()
             fcontents.seek(0, 0)
             fccs = GetFileChecksum(
-                fcontents, HeaderOut[-3].lower(), False, formatspecs)
+                fcontents.read(), HeaderOut[-3].lower(), False, formatspecs)
     fcontentend = fp.tell()
     if(re.findall("^\\+([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile.replace("+", ""))
@@ -4701,9 +4701,7 @@ def ReadFileDataWithContent(fp, filestart=0, listonly=False, uncompress=True, sk
     curloc = filestart
     try:
         fp.seek(0, 2)
-    except OSError:
-        SeekToEndOfFile(fp)
-    except ValueError:
+    except (OSError, ValueError):
         SeekToEndOfFile(fp)
     CatSize = fp.tell()
     CatSizeEnd = CatSize
@@ -4752,9 +4750,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
     curloc = filestart
     try:
         fp.seek(0, 2)
-    except OSError:
-        SeekToEndOfFile(fp)
-    except ValueError:
+    except (OSError, ValueError):
         SeekToEndOfFile(fp)
     CatSize = fp.tell()
     CatSizeEnd = CatSize
@@ -4773,8 +4769,8 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
     else:
         inheader = ReadFileHeaderDataWoSize(
             fp, formatspecs['format_delimiter'])
-    fnumextrafieldsize = int(inheader[5], 16)
-    fnumextrafields = int(inheader[6], 16)
+    fnumextrafieldsize = int(inheader[6], 16)
+    fnumextrafields = int(inheader[7], 16)
     fextrafieldslist = []
     extrastart = 7
     extraend = extrastart + fnumextrafields
@@ -4795,7 +4791,8 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
     fnumfields = int(inheader[1], 16)
     fhencoding = inheader[2]
     fostype = inheader[3]
-    fnumfiles = int(inheader[4], 16)
+    fpythontype = inheader[4]
+    fnumfiles = int(inheader[5], 16)
     fprechecksumtype = inheader[-2]
     fprechecksum = inheader[-1]
     headercheck = ValidateHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
@@ -4808,7 +4805,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
         return False
     formversions = re.search('(.*?)(\\d+)', formstring).groups()
     fcompresstype = ""
-    outlist = {'fnumfiles': fnumfiles, 'ffilestart': filestart, 'fformat': formversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': formversions[1], 'fostype': fostype, 'fheadersize': fheadsize, 'fsize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [formstring] + inheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextradata': fextrafieldslist, 'ffilelist': []}
+    outlist = {'fnumfiles': fnumfiles, 'ffilestart': filestart, 'fformat': formversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fversion': formversions[1], 'fostype': fostype, 'fimptype': fpythontype, 'fheadersize': fheadsize, 'fsize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'frawheader': [formstring] + inheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextradata': fextrafieldslist, 'ffilelist': []}
     if (seekstart < 0) or (seekstart > fnumfiles):
         seekstart = 0
     if (seekend == 0) or (seekend > fnumfiles) or (seekend < seekstart):
@@ -4909,7 +4906,7 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
     curloc = filestart
     try:
         fp.seek(0, 2)
-    except (ValueError, OSError):
+    except (OSError, ValueError):
         SeekToEndOfFile(fp)
     CatSize = fp.tell()
     CatSizeEnd = CatSize
@@ -5066,7 +5063,7 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=
         fp = infile
         try:
             fp.seek(0, 2)
-        except (ValueError, OSError):
+        except (OSError, ValueError):
             SeekToEndOfFile(fp)
         outfsize = fp.tell()
         fp.seek(filestart, 0)
@@ -5076,7 +5073,7 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=
         shutil.copyfileobj(PY_STDIN_BUF, fp, length=__filebuff_size__)
         try:
             fp.seek(0, 2)
-        except (ValueError, OSError):
+        except (OSError, ValueError):
             SeekToEndOfFile(fp)
         outfsize = fp.tell()
         fp.seek(filestart, 0)
@@ -5086,7 +5083,7 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=
         fp.write(infile)
         try:
             fp.seek(0, 2)
-        except (ValueError, OSError):
+        except (OSError, ValueError):
             SeekToEndOfFile(fp)
         outfsize = fp.tell()
         fp.seek(filestart, 0)
@@ -5095,7 +5092,7 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=
         fp = download_file_from_internet_file(infile)
         try:
             fp.seek(0, 2)
-        except (ValueError, OSError):
+        except (OSError, ValueError):
             SeekToEndOfFile(fp)
         outfsize = fp.tell()
         fp.seek(filestart, 0)
@@ -5103,7 +5100,7 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=
     elif(isinstance(infile, FileLikeAdapter)):
         try:
             fp.seek(0, 2)
-        except (ValueError, OSError):
+        except (OSError, ValueError):
             SeekToEndOfFile(fp)
         outfsize = fp.tell()
         fp.seek(filestart, 0)
@@ -5113,7 +5110,7 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=
         fp = open(infile, "rb")
         try:
             fp.seek(0, 2)
-        except (ValueError, OSError):
+        except (OSError, ValueError):
             SeekToEndOfFile(fp)
         outfsize = fp.tell()
         fp.seek(filestart, 0)
@@ -5164,7 +5161,7 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=
             currentinfilepos = infp.tell()
             try:
                 infp.seek(0, 2)
-            except (ValueError, OSError):
+            except (OSError, ValueError):
                 SeekToEndOfFile(infp)
             outinfsize = infp.tell()
             infp.seek(currentinfilepos, 0)
@@ -5203,7 +5200,7 @@ def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0
         fp = infile
         try:
             fp.seek(0, 2)
-        except (ValueError, OSError):
+        except (OSError, ValueError):
             SeekToEndOfFile(fp)
         outfsize = fp.tell()
         fp.seek(filestart, 0)
@@ -5213,7 +5210,7 @@ def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0
         shutil.copyfileobj(PY_STDIN_BUF, fp, length=__filebuff_size__)
         try:
             fp.seek(0, 2)
-        except (ValueError, OSError):
+        except (OSError, ValueError):
             SeekToEndOfFile(fp)
         outfsize = fp.tell()
         fp.seek(filestart, 0)
@@ -5223,7 +5220,7 @@ def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0
         fp.write(infile)
         try:
             fp.seek(0, 2)
-        except (ValueError, OSError):
+        except (OSError, ValueError):
             SeekToEndOfFile(fp)
         outfsize = fp.tell()
         fp.seek(filestart, 0)
@@ -5232,7 +5229,7 @@ def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0
         fp = download_file_from_internet_file(infile)
         try:
             fp.seek(0, 2)
-        except (ValueError, OSError):
+        except (OSError, ValueError):
             SeekToEndOfFile(fp)
         outfsize = fp.tell()
         fp.seek(filestart, 0)
@@ -5240,7 +5237,7 @@ def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0
     elif(isinstance(infile, FileLikeAdapter)):
         try:
             fp.seek(0, 2)
-        except (ValueError, OSError):
+        except (OSError, ValueError):
             SeekToEndOfFile(fp)
         outfsize = fp.tell()
         fp.seek(filestart, 0)
@@ -5250,7 +5247,7 @@ def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0
         fp = open(infile, "rb")
         try:
             fp.seek(0, 2)
-        except (ValueError, OSError):
+        except (OSError, ValueError):
             SeekToEndOfFile(fp)
         outfsize = fp.tell()
         fp.seek(filestart, 0)
@@ -5301,7 +5298,7 @@ def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0
             currentinfilepos = infp.tell()
             try:
                 infp.seek(0, 2)
-            except (ValueError, OSError):
+            except (OSError, ValueError):
                 SeekToEndOfFile(infp)
             outinfsize = infp.tell()
             infp.seek(currentinfilepos, 0)
@@ -5442,11 +5439,11 @@ def AppendFileHeader(fp,
 
     # Preserve your original "tmpoutlen" computation exactly
     tmpoutlist = [extrasizelen, extrafields]   # you used this as a separate list
-    tmpoutlen = 3 + len(tmpoutlist) + len(xlist) + 2
+    tmpoutlen = 4 + len(tmpoutlist) + len(xlist) + 2
     tmpoutlenhex = _hex_lower(tmpoutlen)
 
     # Serialize the first group
-    fnumfilesa = AppendNullBytes([tmpoutlenhex, fencoding, platform.system(), fnumfiles_hex], delimiter)
+    fnumfilesa = AppendNullBytes([tmpoutlenhex, fencoding, platform.system(), py_implementation, fnumfiles_hex], delimiter)
     # Append tmpoutlist
     fnumfilesa += AppendNullBytes(tmpoutlist, delimiter)
     # Append extradata items if any
@@ -9419,8 +9416,8 @@ def CatFileValidate(infile, fmttype="auto", filestart=0,
     else:
         inheader = ReadFileHeaderDataWoSize(fp, formatspecs['format_delimiter'])
 
-    fnumextrafieldsize = int(inheader[5], 16)
-    fnumextrafields = int(inheader[6], 16)
+    fnumextrafieldsize = int(inheader[6], 16)
+    fnumextrafields = int(inheader[7], 16)
     extrastart = 7
     extraend = extrastart + fnumextrafields
     formversion = re.findall("([\\d]+)", formstring)
@@ -9428,10 +9425,10 @@ def CatFileValidate(infile, fmttype="auto", filestart=0,
     fnumfields = int(inheader[1], 16)
     fhencoding = inheader[2]
     fostype = inheader[3]
-    fnumfiles = int(inheader[4], 16)
+    fpythontype = inheader[4]
+    fnumfiles = int(inheader[5], 16)
     fprechecksumtype = inheader[-2]
     fprechecksum = inheader[-1]
-
     il = 0
     headercheck = ValidateHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
     newfcs = GetHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, True, formatspecs)
