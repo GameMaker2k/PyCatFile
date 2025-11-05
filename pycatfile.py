@@ -8367,7 +8367,7 @@ def UncompressString(infile, formatspecs=__file_format_multi_dict__, filestart=0
 
 
 def UncompressStringAlt(instring, formatspecs=__file_format_multi_dict__, filestart=0):
-    filefp = StringIO()
+    filefp = MkTempFile("", isbytes=False)
     outstring = UncompressString(instring, formatspecs, filestart)
     filefp.write(outstring)
     filefp.seek(0, 0)
@@ -8382,7 +8382,7 @@ def UncompressStringAltFP(fp, formatspecs=__file_format_multi_dict__, filestart=
     fp.seek(filestart, 0)
     if(prechck!="zstd"):
         return UncompressFileAlt(fp, formatspecs, filestart)
-    filefp = StringIO()
+    filefp = MkTempFile("", isbytes=False)
     fp.seek(filestart, 0)
     outstring = UncompressString(fp.read(), formatspecs, 0)
     filefp.write(outstring)
