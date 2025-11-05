@@ -416,9 +416,14 @@ __include_defaults__ = True
 __use_inmemfile__ = True
 __use_spoolfile__ = False
 __use_spooldir__ = tempfile.gettempdir()
-BYTES_PER_MiB = 1024 * 1024
-DEFAULT_SPOOL_MAX = 8 * BYTES_PER_MiB
+BYTES_PER_KiB = 1024
+BYTES_PER_MiB = 1024 * BYTES_PER_KiB
+# Spool: not tiny, but won’t blow up RAM if many are in use
+DEFAULT_SPOOL_MAX = 4 * BYTES_PER_MiB      # 4 MiB per spooled temp file
 __spoolfile_size__ = DEFAULT_SPOOL_MAX
+# Buffer: bigger than stdlib default (16 KiB), but still modest
+DEFAULT_BUFFER_MAX = 256 * BYTES_PER_KiB   # 256 KiB copy buffer
+__filebuff_size__ = DEFAULT_BUFFER_MAX
 __program_name__ = "Py"+__file_format_default__
 __use_env_file__ = True
 __use_ini_file__ = True
@@ -2890,7 +2895,7 @@ class ZlibFile(object):
         """
         if not isinstance(data, (bytes, bytearray, memoryview)):
             raise TypeError("from_bytes() expects a bytes-like object")
-        bio = io.BytesIO(bytes(data) if not isinstance(data, bytes) else data)
+        bio = MkTempFile(bytes(data) if not isinstance(data, bytes) else data)
         return cls(fileobj=bio, mode=mode, **kw)
 
     # compatibility aliases for unwrapping utilities
@@ -2926,7 +2931,7 @@ def compress_bytes(payload, level=6, wbits=15, text=False, **kw):
         out = compress_bytes(b"hello")
         out = compress_bytes(u"hello\n", text=True, encoding="utf-8", newline="\n")
     """
-    bio = io.BytesIO()
+    bio = MkTempFile()
     mode = 'wt' if text else 'wb'
     f = ZlibFile(fileobj=bio, mode=mode, level=level, wbits=wbits, **kw)
     try:
@@ -3348,7 +3353,7 @@ class GzipFile(object):
         """
         if not isinstance(data, (bytes, bytearray, memoryview)):
             raise TypeError("from_bytes() expects a bytes-like object")
-        bio = io.BytesIO(bytes(data) if not isinstance(data, bytes) else data)
+        bio = MkTempFile(bytes(data) if not isinstance(data, bytes) else data)
         return cls(fileobj=bio, mode=mode, **kw)
 
     # compatibility aliases for unwrapping utilities
@@ -3390,7 +3395,7 @@ def gzip_compress_bytes(payload, level=6, text=False, **kw):
     - text=False: 'payload' must be bytes-like; written via GzipFile('wb')
     You can pass newline/encoding/errors to control text encoding.
     """
-    bio = io.BytesIO()
+    bio = MkTempFile()
     mode = 'wt' if text else 'wb'
     gf = GzipFile(fileobj=bio, mode=mode, level=level, **kw)
     try:
@@ -4741,7 +4746,7 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
             cfcontents = UncompressFileAlt(fcontents, formatspecs)
             cfcontents.seek(0, 0)
             fcontents = MkTempFile()
-            shutil.copyfileobj(cfcontents, fcontents)
+            shutil.copyfileobj(cfcontents, fcontents, length=__filebuff_size__)
             cfcontents.close()
             fcontents.seek(0, 0)
     fcontentend = fp.tell()
@@ -4922,7 +4927,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
                 fcontents, formatspecs)
             cfcontents.seek(0, 0)
             fcontents = MkTempFile()
-            shutil.copyfileobj(cfcontents, fcontents)
+            shutil.copyfileobj(cfcontents, fcontents, length=__filebuff_size__)
             cfcontents.close()
             fcontents.seek(0, 0)
             fccs = GetFileChecksum(
@@ -5106,7 +5111,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
                 fcontents, formatspecs)
             cfcontents.seek(0, 0)
             fcontents = MkTempFile()
-            shutil.copyfileobj(cfcontents, fcontents)
+            shutil.copyfileobj(cfcontents, fcontents, length=__filebuff_size__)
             cfcontents.close()
             fcontents.seek(0, 0)
             fccs = GetFileChecksum(
@@ -5521,9 +5526,9 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=
     elif(infile == "-"):
         fp = MkTempFile()
         if(hasattr(sys.stdin, "buffer")):
-            shutil.copyfileobj(sys.stdin.buffer, fp)
+            shutil.copyfileobj(sys.stdin.buffer, fp, length=__filebuff_size__)
         else:
-            shutil.copyfileobj(sys.stdin, fp)
+            shutil.copyfileobj(sys.stdin, fp, length=__filebuff_size__)
         try:
             fp.seek(0, 2)
         except OSError:
@@ -5675,9 +5680,9 @@ def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0
     elif(infile == "-"):
         fp = MkTempFile()
         if(hasattr(sys.stdin, "buffer")):
-            shutil.copyfileobj(sys.stdin.buffer, fp)
+            shutil.copyfileobj(sys.stdin.buffer, fp, length=__filebuff_size__)
         else:
-            shutil.copyfileobj(sys.stdin, fp)
+            shutil.copyfileobj(sys.stdin, fp, length=__filebuff_size__)
         try:
             fp.seek(0, 2)
         except OSError:
@@ -6052,9 +6057,9 @@ def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile
     if(outfile == "-"):
         fp.seek(0, 0)
         if(hasattr(sys.stdout, "buffer")):
-            shutil.copyfileobj(fp, sys.stdout.buffer)
+            shutil.copyfileobj(fp, sys.stdout.buffer, length=__filebuff_size__)
         else:
-            shutil.copyfileobj(fp, sys.stdout)
+            shutil.copyfileobj(fp, sys.stdout, length=__filebuff_size__)
     elif(outfile is None):
         fp.seek(0, 0)
         outvar = fp.read()
@@ -6373,7 +6378,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
         curcompression = "none"
         if not followlink and ftype in data_types:
             with open(fname, "rb") as fpc:
-                copy_opaque(fpc, fcontents, bufsize=1 << 20)  # 1 MiB chunks, opaque copy
+                shutil.copyfileobj(fpc, fcontents, length=__filebuff_size__)
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
                 if(typechecktest is not False):
@@ -6391,7 +6396,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
                         while(ilmin < ilsize):
                             cfcontents = MkTempFile()
                             fcontents.seek(0, 0)
-                            shutil.copyfileobj(fcontents, cfcontents)
+                            shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
                             cfcontents = CompressOpenFileAlt(
@@ -6407,7 +6412,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
                         curcompression = compressionuselist[ilcmin]
                     fcontents.seek(0, 0)
                     cfcontents = MkTempFile()
-                    shutil.copyfileobj(fcontents, cfcontents)
+                    shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressOpenFileAlt(
                         cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
@@ -6423,7 +6428,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
                 return False
             flstatinfo = os.stat(flinkname)
             with open(flinkname, "rb") as fpc:
-                copy_opaque(fpc, fcontents, bufsize=1 << 20)  # 1 MiB chunks, opaque copy
+                shutil.copyfileobj(fpc, fcontents, length=__filebuff_size__)
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
                 if(typechecktest is not False):
@@ -6441,7 +6446,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
                         while(ilmin < ilsize):
                             cfcontents = MkTempFile()
                             fcontents.seek(0, 0)
-                            shutil.copyfileobj(fcontents, cfcontents)
+                            shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
                             cfcontents = CompressOpenFileAlt(
@@ -6457,7 +6462,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
                         curcompression = compressionuselist[ilcmin]
                     fcontents.seek(0, 0)
                     cfcontents = MkTempFile()
-                    shutil.copyfileobj(fcontents, cfcontents)
+                    shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressOpenFileAlt(
                         cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
@@ -6503,9 +6508,9 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
     if(infile == "-"):
         infile = MkTempFile()
         if(hasattr(sys.stdin, "buffer")):
-            shutil.copyfileobj(sys.stdin.buffer, infile)
+            shutil.copyfileobj(sys.stdin.buffer, infile, length=__filebuff_size__)
         else:
-            shutil.copyfileobj(sys.stdin, infile)
+            shutil.copyfileobj(sys.stdin, infile, length=__filebuff_size__)
         infile.seek(0, 0)
         if(not infile):
             return False
@@ -6655,7 +6660,7 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
         curcompression = "none"
         if ftype in data_types:
             fpc = tarfp.extractfile(member)
-            copy_opaque(fpc, fcontents, bufsize=1 << 20)  # 1 MiB chunks, opaque copy
+            shutil.copyfileobj(fpc, fcontents, length=__filebuff_size__, length=__filebuff_size__)
             fpc.close()
             typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
             fcontents.seek(0, 0)
@@ -6674,7 +6679,7 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
                     while(ilmin < ilsize):
                         cfcontents = MkTempFile()
                         fcontents.seek(0, 0)
-                        shutil.copyfileobj(fcontents, cfcontents)
+                        shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
                         fcontents.seek(0, 0)
                         cfcontents.seek(0, 0)
                         cfcontents = CompressOpenFileAlt(
@@ -6690,7 +6695,7 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
                     curcompression = compressionuselist[ilcmin]
                 fcontents.seek(0, 0)
                 cfcontents = MkTempFile()
-                shutil.copyfileobj(fcontents, cfcontents)
+                shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
                 cfcontents.seek(0, 0)
                 cfcontents = CompressOpenFileAlt(
                     cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
@@ -6737,9 +6742,9 @@ def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, com
     if(infile == "-"):
         infile = MkTempFile()
         if(hasattr(sys.stdin, "buffer")):
-            shutil.copyfileobj(sys.stdin.buffer, infile)
+            shutil.copyfileobj(sys.stdin.buffer, infile, length=__filebuff_size__)
         else:
-            shutil.copyfileobj(sys.stdin, infile)
+            shutil.copyfileobj(sys.stdin, infile, length=__filebuff_size__)
         infile.seek(0, 0)
         if(not infile):
             return False
@@ -6910,7 +6915,7 @@ def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, com
                     while(ilmin < ilsize):
                         cfcontents = MkTempFile()
                         fcontents.seek(0, 0)
-                        shutil.copyfileobj(fcontents, cfcontents)
+                        shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
                         fcontents.seek(0, 0)
                         cfcontents.seek(0, 0)
                         cfcontents = CompressOpenFileAlt(
@@ -6923,7 +6928,7 @@ def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, com
                     curcompression = compressionuselist[ilcmin]
                 fcontents.seek(0, 0)
                 cfcontents = MkTempFile()
-                shutil.copyfileobj(fcontents, cfcontents)
+                shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
                 cfcontents.seek(0, 0)
                 cfcontents = CompressOpenFileAlt(
                     cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
@@ -7161,7 +7166,7 @@ if(rarfile_support):
                         while(ilmin < ilsize):
                             cfcontents = MkTempFile()
                             fcontents.seek(0, 0)
-                            shutil.copyfileobj(fcontents, cfcontents)
+                            shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
                             cfcontents = CompressOpenFileAlt(
@@ -7177,7 +7182,7 @@ if(rarfile_support):
                         curcompression = compressionuselist[ilcmin]
                     fcontents.seek(0, 0)
                     cfcontents = MkTempFile()
-                    shutil.copyfileobj(fcontents, cfcontents)
+                    shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressOpenFileAlt(
                         cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
@@ -7351,7 +7356,7 @@ if(py7zr_support):
                         while(ilmin < ilsize):
                             cfcontents = MkTempFile()
                             fcontents.seek(0, 0)
-                            shutil.copyfileobj(fcontents, cfcontents)
+                            shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
                             fcontents.seek(0, 0)
                             cfcontents.seek(0, 0)
                             cfcontents = CompressOpenFileAlt(
@@ -7367,7 +7372,7 @@ if(py7zr_support):
                         curcompression = compressionuselist[ilcmin]
                     fcontents.seek(0, 0)
                     cfcontents = MkTempFile()
-                    shutil.copyfileobj(fcontents, cfcontents)
+                    shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
                     cfcontents.seek(0, 0)
                     cfcontents = CompressOpenFileAlt(
                         cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
@@ -7528,9 +7533,9 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmtt
     if(outfile == "-"):
         fp.seek(0, 0)
         if(hasattr(sys.stdout, "buffer")):
-            shutil.copyfileobj(fp, sys.stdout.buffer)
+            shutil.copyfileobj(fp, sys.stdout.buffer, length=__filebuff_size__)
         else:
-            shutil.copyfileobj(fp, sys.stdout)
+            shutil.copyfileobj(fp, sys.stdout, length=__filebuff_size__)
     elif(outfile is None):
         fp.seek(0, 0)
         outvar = fp.read()
@@ -7621,9 +7626,9 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmtty
     if(outfile == "-"):
         fp.seek(0, 0)
         if(hasattr(sys.stdout, "buffer")):
-            shutil.copyfileobj(fp, sys.stdout.buffer)
+            shutil.copyfileobj(fp, sys.stdout.buffer, length=__filebuff_size__)
         else:
-            shutil.copyfileobj(fp, sys.stdout)
+            shutil.copyfileobj(fp, sys.stdout, length=__filebuff_size__)
     elif(outfile is None):
         fp.seek(0, 0)
         outvar = fp.read()
@@ -7701,9 +7706,9 @@ def AppendFilesWithContentFromTarFileToOutFile(infiles, outfile, fmttype="auto",
     if(outfile == "-"):
         fp.seek(0, 0)
         if(hasattr(sys.stdout, "buffer")):
-            shutil.copyfileobj(fp, sys.stdout.buffer)
+            shutil.copyfileobj(fp, sys.stdout.buffer, length=__filebuff_size__)
         else:
-            shutil.copyfileobj(fp, sys.stdout)
+            shutil.copyfileobj(fp, sys.stdout, length=__filebuff_size__)
     elif(outfile is None):
         fp.seek(0, 0)
         outvar = fp.read()
@@ -7796,9 +7801,9 @@ def AppendFilesWithContentFromZipFileToOutFile(infiles, outfile, fmttype="auto",
     if(outfile == "-"):
         fp.seek(0, 0)
         if(hasattr(sys.stdout, "buffer")):
-            shutil.copyfileobj(fp, sys.stdout.buffer)
+            shutil.copyfileobj(fp, sys.stdout.buffer, length=__filebuff_size__)
         else:
-            shutil.copyfileobj(fp, sys.stdout)
+            shutil.copyfileobj(fp, sys.stdout, length=__filebuff_size__)
     elif(outfile is None):
         fp.seek(0, 0)
         outvar = fp.read()
@@ -7896,9 +7901,9 @@ if(rarfile_support):
         if(outfile == "-"):
             fp.seek(0, 0)
             if(hasattr(sys.stdout, "buffer")):
-                shutil.copyfileobj(fp, sys.stdout.buffer)
+                shutil.copyfileobj(fp, sys.stdout.buffer, length=__filebuff_size__)
             else:
-                shutil.copyfileobj(fp, sys.stdout)
+                shutil.copyfileobj(fp, sys.stdout, length=__filebuff_size__)
         elif(outfile is None):
             fp.seek(0, 0)
             outvar = fp.read()
@@ -7996,9 +8001,9 @@ if(py7zr_support):
         if(outfile == "-"):
             fp.seek(0, 0)
             if(hasattr(sys.stdout, "buffer")):
-                shutil.copyfileobj(fp, sys.stdout.buffer)
+                shutil.copyfileobj(fp, sys.stdout.buffer, length=__filebuff_size__)
             else:
-                shutil.copyfileobj(fp, sys.stdout)
+                shutil.copyfileobj(fp, sys.stdout, length=__filebuff_size__)
         elif(outfile is None):
             fp.seek(0, 0)
             outvar = fp.read()
@@ -9951,9 +9956,9 @@ def CatFileValidate(infile, fmttype="auto", filestart=0,
     elif(infile == "-"):
         fp = MkTempFile()
         if(hasattr(sys.stdin, "buffer")):
-            shutil.copyfileobj(sys.stdin.buffer, fp)
+            shutil.copyfileobj(sys.stdin.buffer, fp, length=__filebuff_size__, length=__filebuff_size__)
         else:
-            shutil.copyfileobj(sys.stdin, fp)
+            shutil.copyfileobj(sys.stdin.buffer, fp, length=__filebuff_size__, length=__filebuff_size__)
         fp.seek(filestart, 0)
         fp = UncompressFileAlt(fp, formatspecs, filestart)
         checkcompressfile = CheckCompressionSubType(fp, formatspecs, filestart, True)
@@ -10301,7 +10306,7 @@ def StackedCatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__fi
     while True:
         if outstartfile >= outfsize:   # stop when function signals False
             break
-        is_valid_file = ArchiveFileValidate(infile, fmttype, outstartfile, formatspecs, seektoend, verbose, True)
+        is_valid_file = CatFileValidate(infile, fmttype, outstartfile, formatspecs, seektoend, verbose, True)
         if is_valid_file is False:   # stop when function signals False
             outretval.append(is_valid_file)
             break
@@ -10778,7 +10783,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
                     while ilmin < ilsize:
                         cfcontents = MkTempFile()
                         fcontents.seek(0, 0)
-                        shutil.copyfileobj(fcontents, cfcontents)
+                        shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
                         fcontents.seek(0, 0)
                         cfcontents.seek(0, 0)
                         cfcontents = CompressOpenFileAlt(
@@ -10796,7 +10801,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
 
                 fcontents.seek(0, 0)
                 cfcontents = MkTempFile()
-                shutil.copyfileobj(fcontents, cfcontents)
+                shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
                 cfcontents.seek(0, 0)
                 cfcontents = CompressOpenFileAlt(
                     cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs
@@ -10908,9 +10913,9 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
     if outfile == "-":
         fp.seek(0, 0)
         if hasattr(sys.stdout, "buffer"):
-            shutil.copyfileobj(fp, sys.stdout.buffer)
+            shutil.copyfileobj(fp, sys.stdout.buffer, length=__filebuff_size__)
         else:
-            shutil.copyfileobj(fp, sys.stdout)
+            shutil.copyfileobj(fp, sys.stdout, length=__filebuff_size__)
     elif outfile is None:
         fp.seek(0, 0)
         outvar = fp.read()
@@ -11019,7 +11024,7 @@ def UnPackCatFile(infile, outdir=None, followlink=False, filestart=0, seekstart=
                         listarrayfiles['ffilelist'][lcfi]['fcontents'])
                 listarrayfiles['ffilelist'][lcfi]['fcontents'].seek(0, 0)
                 shutil.copyfileobj(
-                    listarrayfiles['ffilelist'][lcfi]['fcontents'], fpc)
+                    listarrayfiles['ffilelist'][lcfi]['fcontents'], fpc, length=__filebuff_size__)
                 try:
                     fpc.flush()
                     if(hasattr(os, "sync")):
@@ -11070,7 +11075,7 @@ def UnPackCatFile(infile, outdir=None, followlink=False, filestart=0, seekstart=
                             flinkinfo['fcontents'] = MkTempFile(
                                 flinkinfo['fcontents'])
                         flinkinfo['fcontents'].seek(0, 0)
-                        shutil.copyfileobj(flinkinfo['fcontents'], fpc)
+                        shutil.copyfileobj(flinkinfo['fcontents'], fpc, length=__filebuff_size__)
                         try:
                             fpc.flush()
                             if(hasattr(os, "sync")):
@@ -11149,7 +11154,7 @@ def UnPackCatFile(infile, outdir=None, followlink=False, filestart=0, seekstart=
                             flinkinfo['fcontents'] = MkTempFile(
                                 flinkinfo['fcontents'])
                         flinkinfo['fcontents'].seek(0, 0)
-                        shutil.copyfileobj(flinkinfo['fcontents'], fpc)
+                        shutil.copyfileobj(flinkinfo['fcontents'], fpc, length=__filebuff_size__)
                         try:
                             fpc.flush()
                             if(hasattr(os, "sync")):
@@ -11253,7 +11258,7 @@ def CatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0
     else:
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
             infile = RemoveWindowsPath(infile)
-        listarrayfileslist = ArchiveFileToArray(infile, fmttype, filestart, seekstart, seekend, True, False, False, skipchecksum, formatspecs, seektoend, returnfp)
+        listarrayfileslist = CatFileToArray(infile, fmttype, filestart, seekstart, seekend, True, False, False, skipchecksum, formatspecs, seektoend, returnfp)
     if(not listarrayfileslist):
         return False
     for listarrayfiles in listarrayfileslist:
@@ -11362,9 +11367,9 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
     if(infile == "-"):
         infile = MkTempFile()
         if(hasattr(sys.stdin, "buffer")):
-            shutil.copyfileobj(sys.stdin.buffer, infile)
+            shutil.copyfileobj(sys.stdin.buffer, infile, length=__filebuff_size__)
         else:
-            shutil.copyfileobj(sys.stdin, infile)
+            shutil.copyfileobj(sys.stdin, infile, length=__filebuff_size__)
         infile.seek(0, 0)
         if(not infile):
             return False
@@ -11487,9 +11492,9 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
     if(infile == "-"):
         infile = MkTempFile()
         if(hasattr(sys.stdin, "buffer")):
-            shutil.copyfileobj(sys.stdin.buffer, infile)
+            shutil.copyfileobj(sys.stdin.buffer, infile, length=__filebuff_size__)
         else:
-            shutil.copyfileobj(sys.stdin, infile)
+            shutil.copyfileobj(sys.stdin, infile, length=__filebuff_size__)
         infile.seek(0, 0)
         if(not infile):
             return False
@@ -12169,7 +12174,7 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
         else:
             response = requests.get(rebuilt_url, headers=headers, timeout=(5, 30), stream=True)
         response.raw.decode_content = True
-        shutil.copyfileobj(response.raw, httpfile)
+        shutil.copyfileobj(response.raw, httpfile, length=__filebuff_size__)
 
     # 2) HTTPX branch
     elif usehttp == 'httpx' and havehttpx:
@@ -12181,7 +12186,7 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
             else:
                 response = client.get(rebuilt_url, headers=headers)
             raw_wrapper = RawIteratorWrapper(response.iter_bytes())
-            shutil.copyfileobj(raw_wrapper, httpfile)
+            shutil.copyfileobj(raw_wrapper, httpfile, length=__filebuff_size__)
 
     # 3) Mechanize branch
     elif usehttp == 'mechanize' and havemechanize:
@@ -12200,7 +12205,7 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
 
         # Open the URL and copy the response to httpfile
         response = br.open(rebuilt_url)
-        shutil.copyfileobj(response, httpfile)
+        shutil.copyfileobj(response, httpfile, length=__filebuff_size__)
 
     # 4) Fallback to urllib
     else:
@@ -12213,7 +12218,7 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
         else:
             opener = build_opener()
         response = opener.open(request)
-        shutil.copyfileobj(response, httpfile)
+        shutil.copyfileobj(response, httpfile, length=__filebuff_size__)
 
     # Reset file pointer to the start before returning
     httpfile.seek(0, 0)
@@ -12346,7 +12351,7 @@ def upload_file_to_http_file(
             fileobj.seek(0)
         except Exception:
             pass
-        shutil.copyfileobj(fileobj, buf)
+        shutil.copyfileobj(fileobj, buf, length=__filebuff_size__)
 
         _w('\r\n')
         _w('--' + boundary + '--\r\n')
