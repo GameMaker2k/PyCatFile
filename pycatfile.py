@@ -4239,19 +4239,44 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
     fjsonchecksumtype = HeaderOut[30]
     fjsonchecksum = HeaderOut[31]
     fjsoncontent = {}
-    fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
-    if(fjsonsize > 0):
-        try:
-            fjsoncontent = json.loads(base64.b64decode(fprejsoncontent.encode("UTF-8")).decode("UTF-8"))
-        except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
-            try:
-                fjsoncontent = json.loads(fprejsoncontent)
-            except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
-                fprejsoncontent = ""
-                fjsoncontent = {}
-    else:
-        fprejsoncontent = ""
+    if(fjsontype=="json"):
         fjsoncontent = {}
+        fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+        if(fjsonsize > 0):
+            try:
+                fjsonrawcontent = base64.b64decode(fprejsoncontent.encode("UTF-8")).decode("UTF-8")
+                fjsoncontent = json.loads(base64.b64decode(fprejsoncontent.encode("UTF-8")).decode("UTF-8"))
+            except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+                try:
+                    fjsonrawcontent = fprejsoncontent
+                    fjsoncontent = json.loads(fprejsoncontent)
+                except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+                    fprejsoncontent = ""
+                    fjsonrawcontent = fprejsoncontent 
+                    fjsoncontent = {}
+        else:
+            fprejsoncontent = ""
+            fjsonrawcontent = fprejsoncontent 
+            fjsoncontent = {}
+    elif(fjsontype=="list"):
+        fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+        flisttmp = MkTempFile()
+        flisttmp.write(fprejsoncontent.encode())
+        flisttmp.seek(0)
+        fjsoncontent = ReadFileHeaderData(flisttmp, fjsonlen, delimiter)
+        flisttmp.close()
+        fjsonrawcontent = fjsoncontent
+        if(fjsonlen==1):
+            try:
+                fjsonrawcontent = base64.b64decode(fjsoncontent[0]).decode("UTF-8")
+                fjsoncontent = json.loads(base64.b64decode(fjsoncontent[0]).decode("UTF-8"))
+                fjsonlen = len(fjsoncontent)
+            except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+                try:
+                    fjsonrawcontent = fjsoncontent[0]
+                    fjsoncontent = json.loads(fjsoncontent[0])
+                except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+                    pass
     fp.seek(len(delimiter), 1)
     jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs)
     if(jsonfcs != fjsonchecksum and not skipchecksum):
@@ -4772,7 +4797,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
     fnumextrafieldsize = int(inheader[6], 16)
     fnumextrafields = int(inheader[7], 16)
     fextrafieldslist = []
-    extrastart = 7
+    extrastart = 8
     extraend = extrastart + fnumextrafields
     while(extrastart < extraend):
         fextrafieldslist.append(inheader[extrastart])
@@ -4925,10 +4950,10 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
     else:
         inheader = ReadFileHeaderDataWoSize(
             fp, formatspecs['format_delimiter'])
-    fnumextrafieldsize = int(inheader[5], 16)
-    fnumextrafields = int(inheader[6], 16)
+    fnumextrafieldsize = int(inheader[6], 16)
+    fnumextrafields = int(inheader[7], 16)
     fextrafieldslist = []
-    extrastart = 7
+    extrastart = 8
     extraend = extrastart + fnumextrafields
     while(extrastart < extraend):
         fextrafieldslist.append(inheader[extrastart])
@@ -4947,7 +4972,8 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
     fnumfields = int(inheader[1], 16)
     fhencoding = inheader[2]
     fostype = inheader[3]
-    fnumfiles = int(inheader[4], 16)
+    fpythontype = inheader[4]
+    fnumfiles = int(inheader[5], 16)
     fprechecksumtype = inheader[-2]
     fprechecksum = inheader[-1]
     headercheck = ValidateHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
@@ -9418,7 +9444,7 @@ def CatFileValidate(infile, fmttype="auto", filestart=0,
 
     fnumextrafieldsize = int(inheader[6], 16)
     fnumextrafields = int(inheader[7], 16)
-    extrastart = 7
+    extrastart = 8
     extraend = extrastart + fnumextrafields
     formversion = re.findall("([\\d]+)", formstring)
     fheadsize = int(inheader[0], 16)
