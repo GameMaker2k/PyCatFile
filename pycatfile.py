@@ -4216,7 +4216,6 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
-    fheaderstart = fp.tell()
     if(formatspecs['new_style']):
         HeaderOut = ReadFileHeaderDataBySize(fp, delimiter)
     else:
@@ -4293,8 +4292,6 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
                         fname + " at offset " + str(fheaderstart))
         VerbosePrintOut("'" + fcs + "' != " + "'" + newfcs + "'")
         return False
-    fhend = fp.tell() - 1
-    fcontentstart = fp.tell()
     fcontents = MkTempFile()
     if(fsize > 0 and not listonly):
         if(fcompression == "none" or fcompression == "" or fcompression == "auto"):
@@ -4326,7 +4323,6 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
             shutil.copyfileobj(cfcontents, fcontents, length=__filebuff_size__)
             cfcontents.close()
             fcontents.seek(0, 0)
-    fcontentend = fp.tell()
     if(re.findall("^\\+([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile.replace("+", ""))
         if(abs(fseeknextasnum) == 0):
