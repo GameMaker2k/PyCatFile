@@ -610,8 +610,15 @@ elif __use_json_file__ and not os.path.exists(__config_file__):
 if not __use_ini_file__ and not __include_defaults__:
     __include_defaults__ = True
 if __include_defaults__:
-    add_format(__file_format_multi_dict__, "CatFile", "CatFile", ".arc", "CatFile")
-    add_format(__file_format_multi_dict__, "NeoFile",     "NeoFile",     ".neo", "NeoFile")
+    # Cat / Neko
+    add_format(__file_format_multi_dict__, "CatFile",     "CatFile",     ".cat",     "CatFile")
+    add_format(__file_format_multi_dict__, "NekoFile",    "NekoFile",    ".neko",    "NekoFile")
+    add_format(__file_format_multi_dict__, "ねこファイル", "ねこファイル", ".ねこ",    "NekoFairu")
+    add_format(__file_format_multi_dict__, "ネコファイル", "ネコファイル", ".ネコ",    "NekoFairu")
+    add_format(__file_format_multi_dict__, "네코파일",     "네코파일",     ".네코",    "NekoPa-il")
+    add_format(__file_format_multi_dict__, "고양이파일",   "고양이파일",   ".고양이",  "GoyangiPa-il")
+    add_format(__file_format_multi_dict__, "内酷法伊鲁",   "内酷法伊鲁",   ".内酷",    "NèiKùFǎYīLǔ")
+    add_format(__file_format_multi_dict__, "猫文件",       "猫文件",       ".猫",      "MāoWénjiàn")
 
 # Pick a default if current default key is not present
 if __file_format_default__ not in __file_format_multi_dict__:

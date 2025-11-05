@@ -2,7 +2,7 @@
     "config": {
         "default": "CatFile",
         "proname": "PyCatFile",
-        "includedef": "true",
+        "includedef": true,
         "inmemfile": true,
         "usespoolfile": false,
         "spoolfilesize": 4194304,
@@ -18,7 +18,7 @@
         "extension": ".cat",
         "newstyle": true,
         "advancedlist": true,
-        "altinode": true
+        "altinode": false
     },
     "NekoFile": {
         "len": 8,
@@ -30,7 +30,7 @@
         "extension": ".neko",
         "newstyle": true,
         "advancedlist": true,
-        "altinode": true
+        "altinode": false
     },
     "ねこファイル": {
         "len": 18,
@@ -42,7 +42,7 @@
         "extension": ".ねこ",
         "newstyle": true,
         "advancedlist": true,
-        "altinode": true
+        "altinode": false
     },
     "ネコファイル": {
         "len": 18,
@@ -54,7 +54,7 @@
         "extension": ".ネコ",
         "newstyle": true,
         "advancedlist": true,
-        "altinode": true
+        "altinode": false
     },
     "네코파일": {
         "len": 12,
@@ -66,7 +66,7 @@
         "extension": ".네코",
         "newstyle": true,
         "advancedlist": true,
-        "altinode": true
+        "altinode": false
     },
     "고양이파일": {
         "len": 15,
@@ -78,7 +78,7 @@
         "extension": ".고양이",
         "newstyle": true,
         "advancedlist": true,
-        "altinode": true
+        "altinode": false
     },
     "内酷法伊鲁": {
         "len": 15,
@@ -90,7 +90,7 @@
         "extension": ".内酷",
         "newstyle": true,
         "advancedlist": true,
-        "altinode": true
+        "altinode": false
     },
     "猫文件": {
         "len": 9,
@@ -102,6 +102,6 @@
         "extension": ".猫",
         "newstyle": true,
         "advancedlist": true,
-        "altinode": true
+        "altinode": false
     }
 }
