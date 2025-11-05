@@ -5,7 +5,8 @@
         "includedef": "true",
         "inmemfile": true,
         "usespoolfile": false,
-        "inmemfile": 8388608
+        "spoolfilesize": 8388608,
+        "filebuffsize": 8388608
     },
     "CatFile": {
         "len": 7,
