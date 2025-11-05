@@ -115,7 +115,7 @@ argparser.add_argument("-L", "--level", default=None, help="Specify the compress
 argparser.add_argument("-W", "--wholefile", action="store_true", help="Whole file compression method to use for concatenation.")
 # Checksum and validation
 argparser.add_argument("-v", "--validate", action="store_true", help="Validate archive file checksums.")
-argparser.add_argument("-C", "--checksum", default="crc32", help="Specify the type of checksum to use. The default is crc32.")
+argparser.add_argument("-C", "--checksum", default="md5", help="Specify the type of checksum to use. The default is crc32.")
 argparser.add_argument("-s", "--skipchecksum", action="store_true", help="Skip the checksum check of files.")
 # Permissions and metadata
 argparser.add_argument("-p", "--preserve", action="store_false", help="Do not preserve permissions and timestamps of files.")
