@@ -73,6 +73,17 @@ except ImportError:
     except ImportError:
         import json
 
+testyaml = False
+try:
+    import oyaml as yaml
+    testyaml = True
+except ImportError:
+    try:
+        import yaml
+        testyaml = True
+    except ImportError:
+        testyaml = False
+
 try:
     import configparser
 except ImportError:
@@ -2619,7 +2630,7 @@ class ZlibFile(object):
         scanned_leading = 0  # for tolerant header scan
 
         while True:
-            data = self.file.read(1 << 20)  # 1 MiB blocks
+            data = self.file.read(__filebuff_size__)  # 1 MiB blocks
             if not data:
                 if d is not None:
                     self._spool.write(d.flush())
@@ -2777,7 +2788,7 @@ class ZlibFile(object):
 
         # Buffer and compress in chunks to limit memory
         self._write_buf += data
-        if len(self._write_buf) >= (1 << 20):  # 1 MiB threshold
+        if len(self._write_buf) >= (__filebuff_size__):  # 1 MiB threshold
             chunk = self._compressor.compress(bytes(self._write_buf))
             if chunk:
                 self.file.write(chunk)
@@ -3082,7 +3093,7 @@ class GzipFile(object):
 
         self._spool = tempfile.SpooledTemporaryFile(max_size=self.spool_threshold)
 
-        CHUNK = 1 << 20
+        CHUNK = __filebuff_size__
         pending = b""
         d = None
         absolute_offset = 0
@@ -3245,7 +3256,7 @@ class GzipFile(object):
 
         # Stage and compress in chunks
         self._write_buf += data
-        if len(self._write_buf) >= (1 << 20):  # 1 MiB threshold
+        if len(self._write_buf) >= (__filebuff_size__):  # 1 MiB threshold
             out = self._compressor.compress(bytes(self._write_buf))
             if out:
                 self.file.write(out)
@@ -3698,7 +3709,7 @@ def GetFileChecksum(inbytes, checksumtype="md5", encodedata=True, formatspecs=__
         if CheckSumSupport(algo_key, hashlib_guaranteed):
             h = hashlib.new(algo_key)
             while True:
-                chunk = inbytes.read(1 << 20)
+                chunk = inbytes.read(__filebuff_size__)
                 if not chunk:
                     break
                 if not isinstance(chunk, (bytes, bytearray, memoryview)):
@@ -4150,6 +4161,28 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
             fprejsoncontent = ""
             fjsonrawcontent = fprejsoncontent 
             fjsoncontent = {}
+    elif(testyaml and fjsontype == "yaml"):
+        fjsoncontent = {}
+        fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+        if (fjsonsize > 0):
+            try:
+                # try base64 → utf-8 → YAML
+                fjsonrawcontent = base64.b64decode(fprejsoncontent.encode("UTF-8")).decode("UTF-8")
+                fjsoncontent = yaml.safe_load(fjsonrawcontent) or {}
+            except (binascii.Error, UnicodeDecodeError, yaml.YAMLError):
+                try:
+                    # fall back to treating the bytes as plain text YAML
+                    fjsonrawcontent = fprejsoncontent
+                    fjsoncontent = yaml.safe_load(fjsonrawcontent) or {}
+                except (UnicodeDecodeError, yaml.YAMLError):
+                    # final fallback: empty
+                    fprejsoncontent = ""
+                    fjsonrawcontent = fprejsoncontent
+                    fjsoncontent = {}
+        else:
+            fprejsoncontent = ""
+            fjsonrawcontent = fprejsoncontent
+            fjsoncontent = {}
     elif(fjsontype=="list"):
         fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
         flisttmp = MkTempFile()
@@ -4322,6 +4355,28 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
         else:
             fprejsoncontent = ""
             fjsonrawcontent = fprejsoncontent 
+            fjsoncontent = {}
+    elif(testyaml and fjsontype == "yaml"):
+        fjsoncontent = {}
+        fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+        if (fjsonsize > 0):
+            try:
+                # try base64 → utf-8 → YAML
+                fjsonrawcontent = base64.b64decode(fprejsoncontent.encode("UTF-8")).decode("UTF-8")
+                fjsoncontent = yaml.safe_load(fjsonrawcontent) or {}
+            except (binascii.Error, UnicodeDecodeError, yaml.YAMLError):
+                try:
+                    # fall back to treating the bytes as plain text YAML
+                    fjsonrawcontent = fprejsoncontent
+                    fjsoncontent = yaml.safe_load(fjsonrawcontent) or {}
+                except (UnicodeDecodeError, yaml.YAMLError):
+                    # final fallback: empty
+                    fprejsoncontent = ""
+                    fjsonrawcontent = fprejsoncontent
+                    fjsoncontent = {}
+        else:
+            fprejsoncontent = ""
+            fjsonrawcontent = fprejsoncontent
             fjsoncontent = {}
     elif(fjsontype=="list"):
         fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
@@ -4508,6 +4563,28 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
         else:
             fprejsoncontent = ""
             fjsonrawcontent = fprejsoncontent 
+            fjsoncontent = {}
+    elif(testyaml and fjsontype == "yaml"):
+        fjsoncontent = {}
+        fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+        if (fjsonsize > 0):
+            try:
+                # try base64 → utf-8 → YAML
+                fjsonrawcontent = base64.b64decode(fprejsoncontent.encode("UTF-8")).decode("UTF-8")
+                fjsoncontent = yaml.safe_load(fjsonrawcontent) or {}
+            except (binascii.Error, UnicodeDecodeError, yaml.YAMLError):
+                try:
+                    # fall back to treating the bytes as plain text YAML
+                    fjsonrawcontent = fprejsoncontent
+                    fjsoncontent = yaml.safe_load(fjsonrawcontent) or {}
+                except (UnicodeDecodeError, yaml.YAMLError):
+                    # final fallback: empty
+                    fprejsoncontent = ""
+                    fjsonrawcontent = fprejsoncontent
+                    fjsoncontent = {}
+        else:
+            fprejsoncontent = ""
+            fjsonrawcontent = fprejsoncontent
             fjsoncontent = {}
     elif(fjsontype=="list"):
         fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
@@ -8765,7 +8842,7 @@ def ensure_filelike(infile, mode="rb", use_mmap=False, **adapter_kw):
 
 # ========= copy helpers =========
 
-def fast_copy(infp, outfp, bufsize=1 << 20):
+def fast_copy(infp, outfp, bufsize=__filebuff_size__):
     """
     Efficient copy from any readable file-like to any writable file-like.
     Uses readinto() when available to avoid extra allocations.
@@ -8809,7 +8886,7 @@ def copy_file_to_mmap_dest(src_path, outfp, chunk_size=__spoolfile_size__):
             shutil.copyfileobj(fp, outfp, length=chunk_size)
 
 
-def copy_opaque(src, dst, bufsize=1 << 20, grow_step=64 << 20):
+def copy_opaque(src, dst, bufsize=__filebuff_size__, grow_step=64 << 20):
     """
     Copy opaque bytes from 'src' (any readable file-like) to 'dst'
     (your mmap-backed FileLikeAdapter or any writable file-like).
