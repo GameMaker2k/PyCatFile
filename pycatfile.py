@@ -4209,7 +4209,7 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
                     pass
     fp.seek(len(delimiter), 1)
     jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs)
-    if(jsonfcs != fjsonchecksum and not skipchecksum):
+    if(not hmac.compare_digest(fjsonchecksum, jsonfcs) and not skipchecksum):
         VerbosePrintOut("File JSON Data Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
         VerbosePrintOut("'" + fjsonchecksum + "' != " + "'" + jsonfcs + "'")
@@ -4238,7 +4238,7 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
     newfccs = GetFileChecksum(
         fcontents, HeaderOut[-3].lower(), False, formatspecs)
     fcontents.seek(0, 0)
-    if(fccs != newfccs and not skipchecksum and not listonly):
+    if(not hmac.compare_digest(fccs, newfccs) and not skipchecksum and not listonly):
         VerbosePrintOut("File Content Checksum Error with file " +
                         fname + " at offset " + str(fcontentstart))
         VerbosePrintOut("'" + fccs + "' != " + "'" + newfccs + "'")
@@ -4410,7 +4410,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     fp.seek(len(delimiter), 1)
     fjend = fp.tell() - 1
     jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs)
-    if(jsonfcs != fjsonchecksum and not skipchecksum):
+    if(not hmac.compare_digest(fjsonchecksum, jsonfcs) and not skipchecksum):
         VerbosePrintOut("File JSON Data Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
         VerbosePrintOut("'" + fjsonchecksum + "' != " + "'" + jsonfcs + "'")
@@ -4444,7 +4444,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     newfccs = GetFileChecksum(
         fcontents, HeaderOut[-3].lower(), False, formatspecs)
     fcontents.seek(0, 0)
-    if(fccs != newfccs and not skipchecksum and not listonly):
+    if(not hmac.compare_digest(fccs, newfccs) and not skipchecksum and not listonly):
         VerbosePrintOut("File Content Checksum Error with file " +
                         fname + " at offset " + str(fcontentstart))
         VerbosePrintOut("'" + fccs + "' != " + "'" + newfccs + "'")
@@ -4622,7 +4622,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
                     pass
     fp.seek(len(delimiter), 1)
     jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs)
-    if(jsonfcs != fjsonchecksum and not skipchecksum):
+    if(not hmac.compare_digest(fjsonchecksum, jsonfcs) and not skipchecksum):
         VerbosePrintOut("File JSON Data Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
         VerbosePrintOut("'" + fjsonchecksum + "' != " + "'" + jsonfcs + "'")
@@ -4655,7 +4655,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     fcontents.seek(0, 0)
     newfccs = GetFileChecksum(
         fcontents, HeaderOut[-3].lower(), False, formatspecs)
-    if(fccs != newfccs and not skipchecksum and not listonly):
+    if(not hmac.compare_digest(fccs, newfccs) and not skipchecksum and not listonly):
         VerbosePrintOut("File Content Checksum Error with file " +
                         fname + " at offset " + str(fcontentstart))
         VerbosePrintOut("'" + fccs + "' != " + "'" + newfccs + "'")
@@ -4839,7 +4839,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
             prejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
             fp.seek(len(delimiter), 1)
             prejsonfcs = GetFileChecksum(prejsoncontent, prefjsonchecksumtype, True, formatspecs)
-            if(prejsonfcs != prefjsonchecksum and not skipchecksum):
+            if(not hmac.compare_digest(prefjsonchecksum, prejsonfcs) and not skipchecksum):
                 VerbosePrintOut("File JSON Data Checksum Error with file " +
                                 prefname + " at offset " + str(prefhstart))
                 VerbosePrintOut("'" + prefjsonchecksum + "' != " + "'" + prejsonfcs + "'")
@@ -4847,7 +4847,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
             prenewfcs = GetHeaderChecksum(
                 preheaderdata[:-2], preheaderdata[-4].lower(), True, formatspecs)
             prefcs = preheaderdata[-2]
-            if(prefcs != prenewfcs and not skipchecksum):
+            if(not hmac.compare_digest(prefcs, prenewfcs) and not skipchecksum):
                 VerbosePrintOut("File Header Checksum Error with file " +
                                  prefname + " at offset " + str(prefhstart))
                 VerbosePrintOut("'" + prefcs + "' != " +
@@ -4866,7 +4866,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
                     prefcontents, preheaderdata[-3].lower(), False, formatspecs)
                 prefccs = preheaderdata[-1]
                 pyhascontents = True
-                if(prefccs != prenewfccs and not skipchecksum):
+                if(not hmac.compare_digest(prefccs, prenewfccs) and not skipchecksum):
                     VerbosePrintOut("File Content Checksum Error with file " +
                                     prefname + " at offset " + str(prefcontentstart))
                     VerbosePrintOut("'" + prefccs +
@@ -5000,7 +5000,7 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
             prefprejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
             fp.seek(len(delimiter), 1)
             prejsonfcs = GetFileChecksum(prefprejsoncontent, prefjsonchecksumtype, True, formatspecs)
-            if(prejsonfcs != prefjsonchecksum and not skipchecksum):
+            if(not hmac.compare_digest(prefjsonchecksum, prejsonfcs) and not skipchecksum):
                 VerbosePrintOut("File JSON Data Checksum Error with file " +
                                 prefname + " at offset " + str(prefhstart))
                 VerbosePrintOut("'" + prefjsonchecksum + "' != " + "'" + prejsonfcs + "'")
@@ -5029,7 +5029,7 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
                     prefcontents, preheaderdata[-3].lower(), False, formatspecs)
                 prefccs = preheaderdata[-1]
                 pyhascontents = True
-                if(prefccs != prenewfccs and not skipchecksum):
+                if(not hmac.compare_digest(prefcs, prenewfcs) and not skipchecksum):
                     VerbosePrintOut("File Content Checksum Error with file " +
                                     prefname + " at offset " + str(prefcontentstart))
                     VerbosePrintOut("'" + prefccs +
@@ -9559,7 +9559,7 @@ def CatFileValidate(infile, fmttype="auto", filestart=0,
             VerbosePrintOut(outfname)
             VerbosePrintOut("Record Number " + str(il) + "; File ID " + str(fid) + "; iNode Number " + str(finode))
 
-        if(hmac.compare_digest(infcs, outfcs)):
+        if(hmac.compare_digest(outfcs, infcs)):
             if(verbose):
                 VerbosePrintOut("File Header Checksum Passed at offset " + str(outfhstart))
                 VerbosePrintOut("'" + outfcs + "' == " + "'" + infcs + "'")
@@ -9595,7 +9595,7 @@ def CatFileValidate(infile, fmttype="auto", filestart=0,
             infccs = GetFileChecksum(outfcontents, inheaderdata[-3].lower(), False, formatspecs)
             pyhascontents = True
 
-            if(outfccs == infccs):
+            if(hmac.compare_digest(outfccs, infccs)):
                 if(verbose):
                     VerbosePrintOut("File Content Checksum Passed at offset " + str(outfcontentstart))
                     VerbosePrintOut("'" + outfccs + "' == " + "'" + infccs + "'")
