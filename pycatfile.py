@@ -3740,15 +3740,15 @@ def GetFileChecksum(inbytes, checksumtype="md5", encodedata=True, formatspecs=__
 
     return "0"
 
-def ValidateHeaderChecksum(inlist=None, checksumtype="md5", inchecksum="0", formatspecs=__file_format_dict__):
-    calc = GetHeaderChecksum(inlist, checksumtype, True, formatspecs)
+def ValidateHeaderChecksum(inlist=None, checksumtype="md5", inchecksum="0", formatspecs=__file_format_dict__, saltkey=None):
+    calc = GetHeaderChecksum(inlist, checksumtype, True, formatspecs, saltkey)
     want = (inchecksum or "0").strip().lower()
     if want.startswith("0x"):
         want = want[2:]
     return hmac.compare_digest(want, calc)
 
-def ValidateFileChecksum(infile, checksumtype="md5", inchecksum="0", formatspecs=__file_format_dict__):
-    calc = GetFileChecksum(infile, checksumtype, True, formatspecs)
+def ValidateFileChecksum(infile, checksumtype="md5", inchecksum="0", formatspecs=__file_format_dict__, saltkey=None):
+    calc = GetFileChecksum(infile, checksumtype, True, formatspecs, saltkey)
     want = (inchecksum or "0").strip().lower()
     if want.startswith("0x"):
         want = want[2:]
