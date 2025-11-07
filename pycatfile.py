@@ -3673,7 +3673,7 @@ def _bytes_to_int(b):
 # =========================
 #     Public checksum API
 # =========================
-def GetHeaderChecksum(inlist=None, checksumtype="md5", encodedata=True, formatspecs=__file_format_dict__):
+def GetHeaderChecksum(inlist=None, checksumtype="md5", encodedata=True, formatspecs=__file_format_dict__, saltkey=None):
     """
     Serialize header fields (list/tuple => joined with delimiter + trailing delimiter;
     or a single field) and compute the requested checksum. Returns lowercase hex.
@@ -3685,15 +3685,16 @@ def GetHeaderChecksum(inlist=None, checksumtype="md5", encodedata=True, formatsp
     if encodedata and not isinstance(hdr_bytes, (bytes, bytearray, memoryview)):
         hdr_bytes = _to_bytes(hdr_bytes)
     hdr_bytes = bytes(hdr_bytes)
-
     if CheckSumSupport(algo_key, hashlib_guaranteed):
-         h = hashlib.new(algo_key)
-         h.update(hdr_bytes)
-         return h.hexdigest().lower()
+         if(saltkey is None):
+            h = hashlib.new(algo_key, hdr_bytes)
+        else:
+            h = hmac.new(saltkey, hdr_bytes, digestmod=algo_key)
+        return h.hexdigest().lower()
 
     return "0"
 
-def GetFileChecksum(inbytes, checksumtype="md5", encodedata=True, formatspecs=__file_format_dict__):
+def GetFileChecksum(inbytes, checksumtype="md5", encodedata=True, formatspecs=__file_format_dict__, saltkey=None):
     """
     Accepts bytes/str/file-like.
       - Hashlib algos: streamed in 1 MiB chunks.
@@ -3707,7 +3708,10 @@ def GetFileChecksum(inbytes, checksumtype="md5", encodedata=True, formatspecs=__
         # hashlib
 
         if CheckSumSupport(algo_key, hashlib_guaranteed):
-            h = hashlib.new(algo_key)
+            if(saltkey is None):
+                h = hashlib.new(algo_key)
+            else:
+                h = hmac.new(saltkey, digestmod=algo_key)
             while True:
                 chunk = inbytes.read(__filebuff_size__)
                 if not chunk:
@@ -3728,8 +3732,10 @@ def GetFileChecksum(inbytes, checksumtype="md5", encodedata=True, formatspecs=__
     # one-shot
 
     if CheckSumSupport(algo_key, hashlib_guaranteed):
-        h = hashlib.new(algo_key)
-        h.update(data)
+        if(saltkey is None):
+            h = hashlib.new(algo_key, data)
+        else:
+            h = hmac.new(saltkey, data, digestmod=algo_key)
         return h.hexdigest().lower()
 
     return "0"
