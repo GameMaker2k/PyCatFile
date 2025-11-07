@@ -654,7 +654,7 @@ __version_date_info__ = (2025, 11, 6, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: d2f5e2d130062be70121a9e3633ff5962335321c $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -10145,7 +10145,7 @@ def CatFileArrayToArrayIndex(inarray, returnfp=False):
     return out
 
 
-def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=None,  followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=None, skipchecksum=False, extradata=None, jsondata=None, formatspecs=None, seektoend=False, verbose=False, returnfp=False):
+def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=None, seektoend=False, verbose=False, returnfp=False):
     # ---------- Safe defaults ----------
     if compressionuselist is None:
         compressionuselist = compressionlistalt
@@ -10167,7 +10167,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
         if (infile != "-" and not isinstance(infile, bytes_type)  # bytes is str on Py2
             and not hasattr(infile, "read") and not hasattr(infile, "write")):
             infile = RemoveWindowsPath(infile)
-        listarrayfileslist = CatFileToArray(
+        listarrayfileslist = ArchiveFileToArray(
             infile, "auto", filestart, seekstart, seekend,
             False, True, True, skipchecksum, formatspecs, seektoend, False
         )
@@ -10251,7 +10251,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
         if lenlist != fnumfiles:
             fnumfiles = lenlist
 
-        AppendFileHeader(fp, fnumfiles, listarrayfiles.get('fencoding', 'utf-8'), [], checksumtype[0], formatspecs)
+        AppendFileHeader(fp, fnumfiles, listarrayfiles.get('fencoding', 'utf-8'), listarrayfiles['fextradata'], listarrayfiles['fjsondata'], [checksumtype[0], checksumtype[1]], formatspecs)
 
         # loop counters
         lcfi = 0
@@ -10442,7 +10442,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
 
             AppendFileHeaderWithContent(
                 fp, tmpoutlist, extradata, jsondata, fcontents.read(),
-                [checksumtype[1], checksumtype[2], checksumtype[3]], formatspecs
+                [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs
             )
             try:
                 fcontents.close()
@@ -10488,7 +10488,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             pass
         return True
 
-def RePackMultipleCatFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=None,  followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=None, skipchecksum=False, extradata=None, jsondata=None, formatspecs=None, seektoend=False, verbose=False, returnfp=False):
+def RePackMultipleCatFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=None, seektoend=False, verbose=False, returnfp=False):
     if not isinstance(infiles, list):
         infiles = [infiles]
     returnout = False
@@ -10503,14 +10503,14 @@ def RePackMultipleCatFile(infiles, outfile, fmttype="auto", compression="auto", 
         return True
     return returnout
 
-def RePackCatFileFromString(instr, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=__file_format_dict__, seektoend=False, verbose=False, returnfp=False):
+def RePackCatFileFromString(instr, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=None, seektoend=False, verbose=False, returnfp=False):
     fp = MkTempFile(instr)
     listarrayfiles = RePackCatFile(fp, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, filestart, seekstart, seekend,
                                      checksumtype, skipchecksum, extradata, jsondata, formatspecs, seektoend, verbose, returnfp)
     return listarrayfiles
 
 
-def PackCatFileFromListDir(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=__file_format_dict__, seektoend=False, verbose=False, returnfp=False):
+def PackCatFileFromListDir(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=__file_format_dict__, seektoend=False, verbose=False, returnfp=False):
     outarray = MkTempFile()
     packform = PackCatFile(infiles, outarray, dirlistfromtxt, fmttype, compression, compresswholefile,
                               compressionlevel, compressionuselist, followlink, checksumtype, extradata, formatspecs, verbose, True)
