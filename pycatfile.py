@@ -3686,7 +3686,7 @@ def GetHeaderChecksum(inlist=None, checksumtype="md5", encodedata=True, formatsp
         hdr_bytes = _to_bytes(hdr_bytes)
     hdr_bytes = bytes(hdr_bytes)
     if CheckSumSupport(algo_key, hashlib_guaranteed):
-         if(saltkey is None):
+        if(saltkey is None):
             h = hashlib.new(algo_key, hdr_bytes)
         else:
             h = hmac.new(saltkey, hdr_bytes, digestmod=algo_key)
