@@ -5933,10 +5933,11 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
         ftype = 0
         if(hasattr(os.path, "isjunction") and os.path.isjunction(fname)):
             ftype = 13
-        elif(hasattr(fstatinfo, "st_blocks") and fstatinfo.st_blocks * 512 < fstatinfo.st_size):
-            ftype = 12
         elif(stat.S_ISREG(fpremode)):
-            ftype = 0
+            if(hasattr(fstatinfo, "st_blocks") and fstatinfo.st_blocks * 512 < fstatinfo.st_size):
+                ftype = 12
+            else:
+                ftype = 0
         elif(stat.S_ISLNK(fpremode)):
             ftype = 2
         elif(stat.S_ISCHR(fpremode)):
