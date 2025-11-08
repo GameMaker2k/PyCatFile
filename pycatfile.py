@@ -5930,6 +5930,15 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
             FullSizeFilesAlt += fstatinfo.st_rsize
         except AttributeError:
             FullSizeFilesAlt += fstatinfo.st_size
+        fblksize = 0
+        fblocks = 0
+        fflags = 0
+        if(hasattr(fstatinfo, "st_blksize")):
+            fblksize = int(fstatinfo.st_blksize)
+        if(hasattr(fstatinfo, "st_blocks")):
+            fblocks = int(fstatinfo.st_blocks)
+        if(hasattr(fstatinfo, "st_flags")):
+            fflags = int(fstatinfo.st_flags)
         ftype = 0
         if(hasattr(os.path, "isjunction") and os.path.isjunction(fname)):
             ftype = 13
