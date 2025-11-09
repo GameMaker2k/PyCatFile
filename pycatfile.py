@@ -4325,25 +4325,24 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     finode = int(HeaderOut[24], 16)
     flinkcount = int(HeaderOut[25], 16)
     fdev = int(HeaderOut[26], 16)
-    fdev_minor = int(HeaderOut[27], 16)
-    fdev_major = int(HeaderOut[28], 16)
-    fseeknextfile = HeaderOut[29]
-    fjsontype = HeaderOut[30]
-    fjsonlen = int(HeaderOut[31], 16)
-    fjsonsize = int(HeaderOut[32], 16)
-    fjsonchecksumtype = HeaderOut[33]
-    fjsonchecksum = HeaderOut[34]
-    fextrasize = int(HeaderOut[35], 16)
-    fextrafields = int(HeaderOut[36], 16)
+    frdev = int(HeaderOut[27], 16)
+    fseeknextfile = HeaderOut[28]
+    fjsontype = HeaderOut[29]
+    fjsonlen = int(HeaderOut[30], 16)
+    fjsonsize = int(HeaderOut[31], 16)
+    fjsonchecksumtype = HeaderOut[32]
+    fjsonchecksum = HeaderOut[33]
+    fextrasize = int(HeaderOut[34], 16)
+    fextrafields = int(HeaderOut[35], 16)
     fextrafieldslist = []
-    extrastart = 37
+    extrastart = 36
     extraend = extrastart + fextrafields
     while(extrastart < extraend):
         fextrafieldslist.append(HeaderOut[extrastart])
         extrastart = extrastart + 1
     fvendorfieldslist = []
     fvendorfields = 0;
-    if(len(HeaderOut)>41):
+    if(len(HeaderOut)>40):
         extrastart = extraend
         extraend = len(HeaderOut) - 4
         while(extrastart < extraend):
@@ -4503,7 +4502,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     if(not contentasfile):
         fcontents = fcontents.read()
     outlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fencoding': fencoding, 'fcencoding': fcencoding, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fblksize': fblksize, 'fblocks': fblocks, 'fflags': fflags, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
-               'fdev': fdev, 'fminor': fdev_minor, 'fmajor': fdev_major, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fjsonchecksumtype': fjsonchecksumtype, 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fvendorfields': fvendorfields, 'fvendordata': fvendorfieldslist, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextradata': fextrafieldslist, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fjstart': fjstart, 'fjend': fjend, 'fheaderchecksum': fcs, 'fjsonchecksum': fjsonchecksum, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
+               'fdev': fdev, 'frdev': frdev, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fjsonchecksumtype': fjsonchecksumtype, 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fvendorfields': fvendorfields, 'fvendordata': fvendorfieldslist, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextradata': fextrafieldslist, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fjstart': fjstart, 'fjend': fjend, 'fheaderchecksum': fcs, 'fjsonchecksum': fjsonchecksum, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
     return outlist
 
 
@@ -4551,18 +4550,17 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     finode = int(HeaderOut[24], 16)
     flinkcount = int(HeaderOut[25], 16)
     fdev = int(HeaderOut[26], 16)
-    fdev_minor = int(HeaderOut[27], 16)
-    fdev_major = int(HeaderOut[28], 16)
-    fseeknextfile = HeaderOut[29]
-    fjsontype = HeaderOut[30]
-    fjsonlen = int(HeaderOut[31], 16)
-    fjsonsize = int(HeaderOut[32], 16)
-    fjsonchecksumtype = HeaderOut[33]
-    fjsonchecksum = HeaderOut[34]
-    fextrasize = int(HeaderOut[35], 16)
-    fextrafields = int(HeaderOut[36], 16)
+    frdev = int(HeaderOut[27], 16)
+    fseeknextfile = HeaderOut[28]
+    fjsontype = HeaderOut[29]
+    fjsonlen = int(HeaderOut[30], 16)
+    fjsonsize = int(HeaderOut[31], 16)
+    fjsonchecksumtype = HeaderOut[32]
+    fjsonchecksum = HeaderOut[33]
+    fextrasize = int(HeaderOut[34], 16)
+    fextrafields = int(HeaderOut[35], 16)
     fextrafieldslist = []
-    extrastart = 37
+    extrastart = 36
     extraend = extrastart + fextrafields
     while(extrastart < extraend):
         fextrafieldslist.append(HeaderOut[extrastart])
@@ -4717,7 +4715,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     if(not contentasfile):
         fcontents = fcontents.read()
     outlist = [ftype, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fid,
-               finode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile, fjsoncontent, fextrafieldslist, HeaderOut[-4], HeaderOut[-3], fcontents]
+               finode, flinkcount, fdev, frdev, fseeknextfile, fjsoncontent, fextrafieldslist, HeaderOut[-4], HeaderOut[-3], fcontents]
     return outlist
 
 
@@ -6015,9 +6013,10 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
             fdev = fstatinfo.st_rdev
         except AttributeError:
             fdev = 0
-        getfdev = GetDevMajorMinor(fdev)
-        fdev_minor = getfdev[0]
-        fdev_major = getfdev[1]
+        try:
+            frdev = fstatinfo.st_rdev
+        except AttributeError:
+            frdev = 0
         # Types that should be considered zero-length in the archive context:
         zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
         # Types that have actual data to read:
@@ -6061,8 +6060,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
         except ImportError:
             fgname = ""
         fdev = format(int(fdev), 'x').lower()
-        fdev_minor = format(int(fdev_minor), 'x').lower()
-        fdev_major = format(int(fdev_major), 'x').lower()
+        frdev = format(int(frdev), 'x').lower()
         finode = format(int(finode), 'x').lower()
         flinkcount = format(int(flinkcount), 'x').lower()
         if(hasattr(fstatinfo, "st_file_attributes")):
@@ -6177,7 +6175,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
         fcontents.seek(0, 0)
         ftypehex = format(ftype, 'x').lower()
         tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
+                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))]
         AppendFileHeaderWithContent(
             fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs)
         try:
@@ -6321,12 +6319,11 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
         curfid = curfid + 1
         if(ftype == 2):
             flinkname = member.linkname
+        fdev = format(int("0"), 'x').lower()
         try:
-            fdev = format(int(os.makedev(member.devmajor, member.devminor)), 'x').lower()
+            frdev = format(int(os.makedev(member.devmajor, member.devminor)), 'x').lower()
         except AttributeError:
-            fdev = format(int(MakeDevAlt(member.devmajor, member.devminor)), 'x').lower()
-        fdev_minor = format(int(member.devminor), 'x').lower()
-        fdev_major = format(int(member.devmajor), 'x').lower()
+            frdev = format(int(MakeDevAlt(member.devmajor, member.devminor)), 'x').lower()
         # Types that should be considered zero-length in the archive context:
         zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
         # Types that have actual data to read:
@@ -6408,7 +6405,7 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
         fcontents.seek(0, 0)
         ftypehex = format(ftype, 'x').lower()
         tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
+                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))]
         AppendFileHeaderWithContent(
             fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs)
         try:
@@ -6499,8 +6496,7 @@ def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, com
         fcurinode = format(int(curfid), 'x').lower()
         curfid = curfid + 1
         fdev = format(int(0), 'x').lower()
-        fdev_minor = format(int(0), 'x').lower()
-        fdev_major = format(int(0), 'x').lower()
+        frdev = format(int(0), 'x').lower()
         if(ftype == 5):
             fsize = format(int("0"), 'x').lower()
         elif(ftype == 0):
@@ -6631,7 +6627,7 @@ def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, com
         fcontents.seek(0, 0)
         ftypehex = format(ftype, 'x').lower()
         tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
+                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))]
         AppendFileHeaderWithContent(
             fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs)
         try:
@@ -6747,8 +6743,7 @@ else:
             fcurinode = format(int(curfid), 'x').lower()
             curfid = curfid + 1
             fdev = format(int(0), 'x').lower()
-            fdev_minor = format(int(0), 'x').lower()
-            fdev_major = format(int(0), 'x').lower()
+            frdev = format(int(0), 'x').lower()
             if(ftype == 5):
                 fsize = format(int("0"), 'x').lower()
             elif(ftype == 0):
@@ -6873,7 +6868,7 @@ else:
             fcontents.seek(0, 0)
             ftypehex = format(ftype, 'x').lower()
             tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                          fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
+                          fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))]
             AppendFileHeaderWithContent(
                 fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs)
             try:
@@ -6954,8 +6949,7 @@ else:
             fcurinode = format(int(curfid), 'x').lower()
             curfid = curfid + 1
             fdev = format(int(0), 'x').lower()
-            fdev_minor = format(int(0), 'x').lower()
-            fdev_major = format(int(0), 'x').lower()
+            frdev = format(int(0), 'x').lower()
             if(ftype == 5):
                 fsize = format(int("0"), 'x').lower()
             fatime = format(int(member.creationtime.timestamp()), 'x').lower()
@@ -7055,7 +7049,7 @@ else:
             fcontents.seek(0, 0)
             ftypehex = format(ftype, 'x').lower()
             tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                          fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_minor, fdev_major, "+"+str(len(formatspecs['format_delimiter']))]
+                          fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))]
             AppendFileHeaderWithContent(
                 fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs)
             try:
@@ -7116,16 +7110,15 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, extradata=[], jsond
         finode = format(curfname[22], 'x').lower()
         flinkcount = format(curfname[23], 'x').lower()
         fdev = format(curfname[24], 'x').lower()
-        fdev_minor = format(curfname[25], 'x').lower()
-        fdev_major = format(curfname[26], 'x').lower()
-        fseeknextfile = curfname[27]
-        extradata = curfname[28]
-        fheaderchecksumtype = curfname[29]
-        fcontentchecksumtype = curfname[30]
-        fcontents = curfname[31]
+        frdev = format(curfname[25], 'x').lower()
+        fseeknextfile = curfname[26]
+        extradata = curfname[27]
+        fheaderchecksumtype = curfname[28]
+        fcontentchecksumtype = curfname[29]
+        fcontents = curfname[30]
         fencoding = GetFileEncoding(fcontents, 0, False)[0]
         tmpoutlist = [ftype, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize,
-                      fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, fdev_minor, fdev_major, fseeknextfile]
+                      fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, frdev, fseeknextfile]
         fcontents.seek(0, 0)
         AppendFileHeaderWithContent(
             fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs)
@@ -9743,10 +9736,10 @@ def CatFileValidate(infile, fmttype="auto", filestart=0,
         outfcsize = int(inheaderdata[18], 16)
         fid = int(inheaderdata[23], 16)
         finode = int(inheaderdata[24], 16)
-        outfseeknextfile = inheaderdata[29]
-        outfjsonsize = int(inheaderdata[32], 16)
-        outfjsonchecksumtype = inheaderdata[33]
-        outfjsonchecksum = inheaderdata[34]
+        outfseeknextfile = inheaderdata[28]
+        outfjsonsize = int(inheaderdata[31], 16)
+        outfjsonchecksumtype = inheaderdata[32]
+        outfjsonchecksum = inheaderdata[33]
         outfhend = fp.tell() - 1  # (kept for parity; not used)
         outfjstart = fp.tell()
         # Read JSON bytes; compute checksum on bytes for robustness
@@ -9759,9 +9752,9 @@ def CatFileValidate(infile, fmttype="auto", filestart=0,
         outfjend = fp.tell()
         fp.seek(len(formatspecs['format_delimiter']), 1)
         injsonfcs = GetFileChecksum(outfprejsoncontent_bytes, outfjsonchecksumtype, True, formatspecs)
-        outfextrafields = int(inheaderdata[36], 16)
+        outfextrafields = int(inheaderdata[35], 16)
         extrafieldslist = []
-        extrastart = 37
+        extrastart = 36
         extraend = extrastart + outfextrafields
         outfcs = inheaderdata[-2].lower()
         outfccs = inheaderdata[-1].lower()
