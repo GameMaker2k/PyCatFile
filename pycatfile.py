@@ -2073,7 +2073,7 @@ def MkTempFile(data=None,
     Return a file-like handle with consistent behavior on Py2.7 and Py3.x.
 
     Storage:
-      - inmem=True                       -> BytesIO (bytes) or StringIO (text)
+      - inmem=True                       -> BytesIO (bytes) or StringIO (text), or memfd for bytes if available
       - inmem=False, use_spool=True      -> SpooledTemporaryFile (binary), optionally TextIOWrapper for text
       - inmem=False, use_spool=False     -> NamedTemporaryFile (binary), optionally TextIOWrapper for text
 
@@ -2086,6 +2086,8 @@ def MkTempFile(data=None,
       - On Windows, NamedTemporaryFile(delete=True) keeps the file open and cannot be reopened by other processes.
         Use delete=False if you need to pass the path elsewhere.
       - For text: in-memory StringIO ignores 'newline' (as usual).
+      - When available, memfd is used only for inmem=True and isbytes=True, providing an anonymous in-memory
+        file descriptor (Linux-only). Text in-memory still uses StringIO to preserve newline semantics.
     """
 
     # -- sanitize simple params (avoid None surprises) --
@@ -2119,12 +2121,29 @@ def MkTempFile(data=None,
 
     # -------- In-memory --------
     if inmem:
+        # Use memfd only for bytes, and only where available (Linux, Python 3.8+)
+        if isbytes and hasattr(os, "memfd_create"):
+            flags = 0
+            # Close-on-exec is almost always what you want for temps
+            if hasattr(os, "MFD_CLOEXEC"):
+                flags |= os.MFD_CLOEXEC
+
+            fd = os.memfd_create("MkTempFile", flags)
+            # Binary read/write file-like object backed by RAM
+            f = os.fdopen(fd, "w+b")
+
+            if init is not None:
+                f.write(init)
+            f.seek(0)
+            return f
+
+        # Fallback: pure Python in-memory objects
         if isbytes:
             f = io.BytesIO(init if init is not None else b"")
         else:
             # newline not enforced for StringIO; matches stdlib semantics
             f = io.StringIO(init if init is not None else "")
-        # already positioned at 0 with provided init; ensure rewind for symmetry
+
         f.seek(0)
         return f
 
@@ -2132,7 +2151,6 @@ def MkTempFile(data=None,
     def _wrap_text(handle):
         # For both Py2 & Py3, TextIOWrapper gives consistent newline/encoding behavior
         tw = io.TextIOWrapper(handle, encoding=encoding, newline=newline)
-        # Position at start; if we wrote initial data below, we will rewind after writing
         return tw
 
     # -------- Spooled (RAM then disk) --------
@@ -2141,6 +2159,7 @@ def MkTempFile(data=None,
         bin_mode = "w+b"  # read/write, binary
         b = tempfile.SpooledTemporaryFile(max_size=spool_max, mode=bin_mode, dir=spool_dir)
         f = b if isbytes else _wrap_text(b)
+
         if init is not None:
             f.write(init)
             f.seek(0)
@@ -5953,14 +5972,14 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
         if(hasattr(fstatinfo, "st_flags")):
             fflags = format(int(fstatinfo.st_flags), 'x').lower()
         ftype = 0
-        if(hasattr(os.path, "isjunction") and os.path.isjunction(fname)):
+        if(not followlink and hasattr(os.path, "isjunction") and os.path.isjunction(fname)):
             ftype = 13
         elif(stat.S_ISREG(fpremode)):
             if(hasattr(fstatinfo, "st_blocks") and fstatinfo.st_size > 0 and fstatinfo.st_blocks * 512 < fstatinfo.st_size):
                 ftype = 12
             else:
                 ftype = 0
-        elif(stat.S_ISLNK(fpremode)):
+        elif(not followlink and stat.S_ISLNK(fpremode)):
             ftype = 2
         elif(stat.S_ISCHR(fpremode)):
             ftype = 3
