@@ -657,7 +657,7 @@ __version_date_info__ = (2025, 11, 6, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id: 02113c1ccc2b1bd416e655477699c14de9f87674 $"
+__revision_id__ = "$Id$"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -3763,6 +3763,7 @@ def GetHeaderChecksum(inlist=None, checksumtype="md5", encodedata=True, formatsp
     if encodedata and not isinstance(hdr_bytes, (bytes, bytearray, memoryview)):
         hdr_bytes = _to_bytes(hdr_bytes)
     hdr_bytes = bytes(hdr_bytes)
+    saltkey = _to_bytes(saltkey)
     if CheckSumSupport(algo_key, hashlib_guaranteed):
         if(saltkey is None):
             h = hashlib.new(algo_key, hdr_bytes)
@@ -3780,7 +3781,7 @@ def GetFileChecksum(inbytes, checksumtype="md5", encodedata=True, formatspecs=__
       - Falls back to one-shot for non-file-like inputs.
     """
     algo_key = (checksumtype or "md5").lower()
-
+    saltkey = _to_bytes(saltkey)
     # file-like streaming
     if hasattr(inbytes, "read"):
         # hashlib
@@ -4213,7 +4214,7 @@ def ReadFileHeaderDataWoSize(fp, delimiter=_default_delim(None)):
     return first_two + headerdata
 
 
-def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, saltkey=None):
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
@@ -4305,15 +4306,14 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
                 except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                     pass
     fp.seek(len(delimiter), 1)
-    jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs)
+    jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs, saltkey)
     if(not CheckChecksums(fjsonchecksum, jsonfcs) and not skipchecksum):
         VerbosePrintOut("File JSON Data Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
         VerbosePrintOut("'" + fjsonchecksum + "' != " + "'" + jsonfcs + "'")
         return False
     fp.seek(len(delimiter), 1)
-    newfcs = GetHeaderChecksum(
-        HeaderOut[:-2], HeaderOut[-4].lower(), True, formatspecs)
+    newfcs = GetHeaderChecksum(HeaderOut[:-2], HeaderOut[-4].lower(), True, formatspecs, saltkey)
     HeaderOut.append(fjsoncontent)
     if(fcs != newfcs and not skipchecksum):
         VerbosePrintOut("File Header Checksum Error with file " +
@@ -4332,8 +4332,7 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
         else:
             fp.seek(fcsize, 1)
     fcontents.seek(0, 0)
-    newfccs = GetFileChecksum(
-        fcontents, HeaderOut[-3].lower(), False, formatspecs)
+    newfccs = GetFileChecksum(fcontents, HeaderOut[-3].lower(), False, formatspecs, saltkey)
     fcontents.seek(0, 0)
     if(not CheckChecksums(fccs, newfccs) and not skipchecksum and not listonly):
         VerbosePrintOut("File Content Checksum Error with file " +
@@ -4372,7 +4371,7 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
     return HeaderOut
 
 
-def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, saltkey=None):
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
@@ -4517,7 +4516,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
                     pass
     fp.seek(len(delimiter), 1)
     fjend = fp.tell() - 1
-    jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs)
+    jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs, saltkey)
     if(not CheckChecksums(fjsonchecksum, jsonfcs) and not skipchecksum):
         VerbosePrintOut("File JSON Data Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
@@ -4525,8 +4524,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
         return False
     fcs = HeaderOut[-2].lower()
     fccs = HeaderOut[-1].lower()
-    newfcs = GetHeaderChecksum(
-        HeaderOut[:-2], HeaderOut[-4].lower(), True, formatspecs)
+    newfcs = GetHeaderChecksum(HeaderOut[:-2], HeaderOut[-4].lower(), True, formatspecs, saltkey)
     if(fcs != newfcs and not skipchecksum):
         VerbosePrintOut("File Header Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
@@ -4549,8 +4547,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
             fp.seek(fcsize, 1)
         pyhascontents = False
     fcontents.seek(0, 0)
-    newfccs = GetFileChecksum(
-        fcontents, HeaderOut[-3].lower(), False, formatspecs)
+    newfccs = GetFileChecksum(fcontents, HeaderOut[-3].lower(), False, formatspecs, saltkey)
     fcontents.seek(0, 0)
     if(not CheckChecksums(fccs, newfccs) and not skipchecksum and not listonly):
         VerbosePrintOut("File Content Checksum Error with file " +
@@ -4569,8 +4566,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
             shutil.copyfileobj(cfcontents, fcontents, length=__filebuff_size__)
             cfcontents.close()
             fcontents.seek(0, 0)
-            fccs = GetFileChecksum(
-                fcontents, HeaderOut[-3].lower(), False, formatspecs)
+            fccs = GetFileChecksum(fcontents, HeaderOut[-3].lower(), False, formatspecs, saltkey)
     fcontentend = fp.tell()
     if(re.findall("^\\+([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile.replace("+", ""))
@@ -4597,7 +4593,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     return outlist
 
 
-def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, saltkey=None):
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
@@ -4731,7 +4727,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
                 except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                     pass
     fp.seek(len(delimiter), 1)
-    jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs)
+    jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs, saltkey)
     if(not CheckChecksums(fjsonchecksum, jsonfcs) and not skipchecksum):
         VerbosePrintOut("File JSON Data Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
@@ -4739,8 +4735,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
         return False
     fcs = HeaderOut[-2].lower()
     fccs = HeaderOut[-1].lower()
-    newfcs = GetHeaderChecksum(
-        HeaderOut[:-2], HeaderOut[-4].lower(), True, formatspecs)
+    newfcs = GetHeaderChecksum(HeaderOut[:-2], HeaderOut[-4].lower(), True, formatspecs, saltkey)
     if(fcs != newfcs and not skipchecksum):
         VerbosePrintOut("File Header Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
@@ -4763,8 +4758,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
             fp.seek(fcsize, 1)
         pyhascontents = False
     fcontents.seek(0, 0)
-    newfccs = GetFileChecksum(
-        fcontents, HeaderOut[-3].lower(), False, formatspecs)
+    newfccs = GetFileChecksum(fcontents, HeaderOut[-3].lower(), False, formatspecs, saltkey)
     if(not CheckChecksums(fccs, newfccs) and not skipchecksum and not listonly):
         VerbosePrintOut("File Content Checksum Error with file " +
                         fname + " at offset " + str(fcontentstart))
@@ -4782,8 +4776,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
             shutil.copyfileobj(cfcontents, fcontents, length=__filebuff_size__)
             cfcontents.close()
             fcontents.seek(0, 0)
-            fccs = GetFileChecksum(
-                fcontents, HeaderOut[-3].lower(), False, formatspecs)
+            fccs = GetFileChecksum(fcontents, HeaderOut[-3].lower(), False, formatspecs, saltkey)
     fcontentend = fp.tell()
     if(re.findall("^\\+([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile.replace("+", ""))
@@ -4810,7 +4803,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     return outlist
 
 
-def ReadFileDataWithContent(fp, filestart=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__):
+def ReadFileDataWithContent(fp, filestart=0, listonly=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, saltkey=None):
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
@@ -4839,7 +4832,7 @@ def ReadFileDataWithContent(fp, filestart=0, listonly=False, uncompress=True, sk
     fprechecksumtype = inheader[-2]
     fprechecksum = inheader[-1]
     headercheck = ValidateHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
-    newfcs = GetHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, True, formatspecs)
+    newfcs = GetHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, True, formatspecs, saltkey)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
@@ -4873,8 +4866,7 @@ def ReadFileDataWithContent(fp, filestart=0, listonly=False, uncompress=True, sk
     countnum = 0
     flist = []
     while(countnum < fnumfiles):
-        HeaderOut = ReadFileHeaderDataWithContent(
-            fp, listonly, uncompress, skipchecksum, formatspecs)
+        HeaderOut = ReadFileHeaderDataWithContent(fp, listonly, uncompress, skipchecksum, formatspecs, saltkey)
         if(len(HeaderOut) == 0):
             break
         flist.append(HeaderOut)
@@ -4882,7 +4874,7 @@ def ReadFileDataWithContent(fp, filestart=0, listonly=False, uncompress=True, sk
     return flist
 
 
-def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False):
+def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, saltkey=None, seektoend=False):
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
@@ -5024,7 +5016,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
         fp.seek(fseeknextasnum, 0)
     else:
         return False
-    jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs)
+    jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs, saltkey)
     if(not CheckChecksums(fjsonchecksum, jsonfcs) and not skipchecksum):
         VerbosePrintOut("File JSON Data Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
@@ -5033,7 +5025,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
     fprechecksumtype = inheader[-2]
     fprechecksum = inheader[-1]
     headercheck = ValidateHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
-    newfcs = GetHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, True, formatspecs)
+    newfcs = GetHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, True, formatspecs, saltkey)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
@@ -5069,14 +5061,13 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
             prefjsonchecksum = preheaderdata[31]
             prejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
             fp.seek(len(delimiter), 1)
-            prejsonfcs = GetFileChecksum(prejsoncontent, prefjsonchecksumtype, True, formatspecs)
+            prejsonfcs = GetFileChecksum(prejsoncontent, prefjsonchecksumtype, True, formatspecs, saltkey)
             if(not CheckChecksums(prefjsonchecksum, prejsonfcs) and not skipchecksum):
                 VerbosePrintOut("File JSON Data Checksum Error with file " +
                                 prefname + " at offset " + str(prefhstart))
                 VerbosePrintOut("'" + prefjsonchecksum + "' != " + "'" + prejsonfcs + "'")
                 return False
-            prenewfcs = GetHeaderChecksum(
-                preheaderdata[:-2], preheaderdata[-4].lower(), True, formatspecs)
+            prenewfcs = GetHeaderChecksum(preheaderdata[:-2], preheaderdata[-4].lower(), True, formatspecs, saltkey)
             prefcs = preheaderdata[-2]
             if(not CheckChecksums(prefcs, prenewfcs) and not skipchecksum):
                 VerbosePrintOut("File Header Checksum Error with file " +
@@ -5093,8 +5084,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
             if(prefsize > 0):
                 prefcontents.write(fp.read(prefsize))
                 prefcontents.seek(0, 0)
-                prenewfccs = GetFileChecksum(
-                    prefcontents, preheaderdata[-3].lower(), False, formatspecs)
+                prenewfccs = GetFileChecksum(prefcontents, preheaderdata[-3].lower(), False, formatspecs, saltkey)
                 prefccs = preheaderdata[-1]
                 pyhascontents = True
                 if(not CheckChecksums(prefccs, prenewfccs) and not skipchecksum):
@@ -5124,8 +5114,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
     realidnum = 0
     countnum = seekstart
     while (fp.tell() < CatSizeEnd) if seektoend else (countnum < seekend):
-        HeaderOut = ReadFileHeaderDataWithContentToArray(
-            fp, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
+        HeaderOut = ReadFileHeaderDataWithContentToArray(fp, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey)
         if(len(HeaderOut) == 0):
             break
         HeaderOut.update({'fid': realidnum, 'fidalt': realidnum})
@@ -5136,7 +5125,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
     return outlist
 
 
-def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False):
+def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, saltkey=None, seektoend=False):
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
@@ -5210,7 +5199,7 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
         fp.seek(fseeknextasnum, 0)
     else:
         return False
-    jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs)
+    jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs, saltkey)
     if(not CheckChecksums(fjsonchecksum, jsonfcs) and not skipchecksum):
         VerbosePrintOut("File JSON Data Checksum Error with file " +
                         fname + " at offset " + str(fheaderstart))
@@ -5219,7 +5208,7 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
     fprechecksumtype = inheader[-2]
     fprechecksum = inheader[-1]
     headercheck = ValidateHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
-    newfcs = GetHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, True, formatspecs)
+    newfcs = GetHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, True, formatspecs, saltkey)
     if(not headercheck and not skipchecksum):
         VerbosePrintOut(
             "File Header Checksum Error with file at offset " + str(0))
@@ -5260,14 +5249,13 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
             prefjsonchecksum = preheaderdata[31]
             prefprejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
             fp.seek(len(delimiter), 1)
-            prejsonfcs = GetFileChecksum(prefprejsoncontent, prefjsonchecksumtype, True, formatspecs)
+            prejsonfcs = GetFileChecksum(prefprejsoncontent, prefjsonchecksumtype, True, formatspecs, saltkey)
             if(not CheckChecksums(prefjsonchecksum, prejsonfcs) and not skipchecksum):
                 VerbosePrintOut("File JSON Data Checksum Error with file " +
                                 prefname + " at offset " + str(prefhstart))
                 VerbosePrintOut("'" + prefjsonchecksum + "' != " + "'" + prejsonfcs + "'")
                 return False
-            prenewfcs = GetHeaderChecksum(
-                preheaderdata[:-2], preheaderdata[-4].lower(), True, formatspecs)
+            prenewfcs = GetHeaderChecksum(preheaderdata[:-2], preheaderdata[-4].lower(), True, formatspecs, saltkey)
             prefcs = preheaderdata[-2]
             if(not CheckChecksums(prefcs, prenewfcs) and not skipchecksum):
                 VerbosePrintOut("File Header Checksum Error with file " +
@@ -5286,8 +5274,7 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
                     prefcontents = fp.read(prefsize)
                 else:
                     prefcontents = fp.read(prefcsize)
-                prenewfccs = GetFileChecksum(
-                    prefcontents, preheaderdata[-3].lower(), False, formatspecs)
+                prenewfccs = GetFileChecksum(prefcontents, preheaderdata[-3].lower(), False, formatspecs, saltkey)
                 prefccs = preheaderdata[-1]
                 pyhascontents = True
                 if(not CheckChecksums(prefccs, prenewfccs) and not skipchecksum):
@@ -5317,8 +5304,7 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
     realidnum = 0
     countnum = seekstart
     while (fp.tell() < CatSizeEnd) if seektoend else (countnum < seekend):
-        HeaderOut = ReadFileHeaderDataWithContentToList(
-            fp, listonly, contentasfile, uncompress, skipchecksum, formatspecs)
+        HeaderOut = ReadFileHeaderDataWithContentToList(fp, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey)
         if(len(HeaderOut) == 0):
             break
         outlist.append(HeaderOut)
@@ -5326,7 +5312,7 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
         realidnum = realidnum + 1
     return outlist
 
-def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
+def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False):
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         try:
@@ -5421,7 +5407,7 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=
             else:
                 break
             readfp.seek(oldfppos, 0)
-            ArchiveList.append(ReadFileDataWithContentToArray(readfp, currentfilepos, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, informatspecs, seektoend))
+            ArchiveList.append(ReadFileDataWithContentToArray(readfp, currentfilepos, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, informatspecs, saltkey, seektoend))
             currentfilepos = readfp.tell()
         else:
             infp = UncompressFileAlt(readfp, formatspecs, currentfilepos)
@@ -5443,27 +5429,27 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=
                 else:
                     break
                 infp.seek(oldinfppos, 0)
-                ArchiveList.append(ReadFileDataWithContentToArray(infp, currentinfilepos, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, informatspecs, seektoend))
+                ArchiveList.append(ReadFileDataWithContentToArray(infp, currentinfilepos, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, informatspecs, saltkey, seektoend))
                 currentinfilepos = infp.tell()
             currentfilepos = readfp.tell()
     return ArchiveList
 
 
-def ReadInMultipleFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
+def ReadInMultipleFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False):
     if(isinstance(infile, (list, tuple, ))):
         pass
     else:
         infile = [infile]
     outretval = []
     for curfname in infile:
-        outretval.append(ReadInFileWithContentToArray(curfname, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend))
+        outretval.append(ReadInFileWithContentToArray(curfname, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey, seektoend))
     return outretval
 
-def ReadInMultipleFilesWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
-    return ReadInMultipleFileWithContentToArray(infile, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend)
+def ReadInMultipleFilesWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False):
+    return ReadInMultipleFileWithContentToArray(infile, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey, seektoend)
 
 
-def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
+def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False):
     if(hasattr(infile, "read") or hasattr(infile, "write")):
         fp = infile
         try:
@@ -5558,7 +5544,7 @@ def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0
             else:
                 break
             readfp.seek(oldfppos, 0)
-            ArchiveList.append(ReadFileDataWithContentToList(readfp, currentfilepos, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, informatspecs, seektoend))
+            ArchiveList.append(ReadFileDataWithContentToList(readfp, currentfilepos, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, informatspecs, saltkey, seektoend))
             currentfilepos = readfp.tell()
         else:
             infp = UncompressFileAlt(readfp, formatspecs, currentfilepos)
@@ -5580,24 +5566,24 @@ def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0
                 else:
                     break
                 infp.seek(oldinfppos, 0)
-                ArchiveList.append(ReadFileDataWithContentToList(infp, currentinfilepos, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, informatspecs, seektoend))
+                ArchiveList.append(ReadFileDataWithContentToList(infp, currentinfilepos, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, informatspecs, saltkey, seektoend))
                 currentinfilepos = infp.tell()
             currentfilepos = readfp.tell()
     return ArchiveList
 
 
-def ReadInMultipleFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
+def ReadInMultipleFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False):
     if(isinstance(infile, (list, tuple, ))):
         pass
     else:
         infile = [infile]
     outretval = {}
     for curfname in infile:
-        outretval.append(ReadInFileWithContentToList(curfname, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend))
+        outretval.append(ReadInFileWithContentToList(curfname, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey, seektoend))
     return outretval
 
-def ReadInMultipleFilesWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False):
-    return ReadInMultipleFileWithContentToList(infile, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend)
+def ReadInMultipleFilesWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False):
+    return ReadInMultipleFileWithContentToList(infile, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey, seektoend)
 
 
 def _field_to_bytes(x):
@@ -5651,7 +5637,7 @@ def AppendNullBytes(indata=None, delimiter=__file_format_dict__['format_delimite
 def _hex_lower(n):
     return format(int(n), 'x').lower()
 
-def AppendFileHeader(fp, numfiles, fencoding, extradata=[], jsondata={}, checksumtype=["md5", "md5"], formatspecs=__file_format_dict__):
+def AppendFileHeader(fp, numfiles, fencoding, extradata=[], jsondata={}, checksumtype=["md5", "md5"], formatspecs=__file_format_dict__, saltkey=None):
     """
     Build and write the archive file header.
     Returns the same file-like 'fp' on success, or False on failure.
@@ -5715,10 +5701,10 @@ def AppendFileHeader(fp, numfiles, fencoding, extradata=[], jsondata={}, checksu
     tmpoutlist.append(fjsonsize)
     if(len(jsondata) > 0):
         tmpoutlist.append(checksumtype[1])
-        tmpoutlist.append(GetFileChecksum(fjsoncontent, checksumtype[1], True, formatspecs))
+        tmpoutlist.append(GetFileChecksum(fjsoncontent, checksumtype[1], True, formatspecs, saltkey))
     else:
         tmpoutlist.append("none")
-        tmpoutlist.append(GetFileChecksum(fjsoncontent, "none", True, formatspecs))
+        tmpoutlist.append(GetFileChecksum(fjsoncontent, "none", True, formatspecs, saltkey))
     # Preserve your original "tmpoutlen" computation exactly
     tmpoutlist.append(extrasizelen)
     tmpoutlist.append(extrafields)
@@ -5736,7 +5722,7 @@ def AppendFileHeader(fp, numfiles, fencoding, extradata=[], jsondata={}, checksu
     fnumfilesa += AppendNullByte(checksumtype[0], delimiter)
 
     # 5) inner checksum over fnumfilesa
-    outfileheadercshex = GetFileChecksum(fnumfilesa, checksumtype[0], True, formatspecs)
+    outfileheadercshex = GetFileChecksum(fnumfilesa, checksumtype[0], True, formatspecs, saltkey)
     tmpfileoutstr = fnumfilesa + AppendNullByte(outfileheadercshex, delimiter)
 
     # 6) size of (tmpfileoutstr) excluding one delimiter, per your original math
@@ -5749,7 +5735,7 @@ def AppendFileHeader(fp, numfiles, fencoding, extradata=[], jsondata={}, checksu
         + fnumfilesa
     )
 
-    outfileheadercshex = GetFileChecksum(fnumfilesa, checksumtype[0], True, formatspecs)
+    outfileheadercshex = GetFileChecksum(fnumfilesa, checksumtype[0], True, formatspecs, saltkey)
     fnumfilesa += AppendNullByte(outfileheadercshex, delimiter)
 
     # 8) final total size field (again per your original logic)
@@ -5782,21 +5768,21 @@ def AppendFileHeader(fp, numfiles, fencoding, extradata=[], jsondata={}, checksu
     return fp
 
 
-def MakeEmptyFilePointer(fp, fmttype=__file_format_default__, checksumtype=["md5", "md5"], formatspecs=__file_format_multi_dict__):
+def MakeEmptyFilePointer(fp, fmttype=__file_format_default__, checksumtype=["md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None):
     if(IsNestedDict(formatspecs) and fmttype in formatspecs):
         formatspecs = formatspecs[fmttype]
     elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
         fmttype = __file_format_default__
         formatspecs = formatspecs[fmttype]
-    AppendFileHeader(fp, 0, "UTF-8", [], {}, checksumtype, formatspecs)
+    AppendFileHeader(fp, 0, "UTF-8", [], {}, checksumtype, formatspecs, saltkey)
     return fp
 
 
-def MakeEmptyCatFilePointer(fp, fmttype=__file_format_default__, checksumtype=["md5", "md5"], formatspecs=__file_format_multi_dict__):
-    return MakeEmptyFilePointer(fp, fmttype, checksumtype, formatspecs)
+def MakeEmptyCatFilePointer(fp, fmttype=__file_format_default__, checksumtype=["md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None):
+    return MakeEmptyFilePointer(fp, fmttype, checksumtype, formatspecs, saltkey)
 
 
-def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5"], formatspecs=__file_format_multi_dict__, returnfp=False):
+def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
@@ -5826,7 +5812,7 @@ def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile
         fp = MkTempFile()
     elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = outfile
-        return MakeEmptyFilePointer(fp, fmttype, checksumtype, formatspecs)
+        return MakeEmptyFilePointer(fp, fmttype, checksumtype, formatspecs, saltkey)
     elif(re.findall(__upload_proto_support__, outfile)):
         fp = MkTempFile()
     else:
@@ -5869,11 +5855,11 @@ def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile
         return True
 
 
-def MakeEmptyCatFile(outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5"], formatspecs=__file_format_dict__, returnfp=False):
-    return MakeEmptyFile(outfile, "auto", compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, returnfp)
+def MakeEmptyCatFile(outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, returnfp=False):
+    return MakeEmptyFile(outfile, "auto", compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, returnfp)
 
 
-def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, filecontent="", checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__):
+def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, filecontent="", checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None):
     if(not hasattr(fp, "write")):
         return False
     if (isinstance(extradata, dict) or IsNestedDictAlt(extradata)) and len(extradata) > 0:
@@ -5905,10 +5891,10 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, fi
     tmpoutlist.append(fjsonsize)
     if(len(jsondata) > 0):
         tmpoutlist.append(checksumtype[2])
-        tmpoutlist.append(GetFileChecksum(fjsoncontent, checksumtype[2], True, formatspecs))
+        tmpoutlist.append(GetFileChecksum(fjsoncontent, checksumtype[2], True, formatspecs, saltkey))
     else:
         tmpoutlist.append("none")
-        tmpoutlist.append(GetFileChecksum(fjsoncontent, "none", True, formatspecs))
+        tmpoutlist.append(GetFileChecksum(fjsoncontent, "none", True, formatspecs, saltkey))
     tmpoutlist.append(extrasizelen)
     tmpoutlist.append(extrafields)
     outfileoutstr = AppendNullBytes(
@@ -5923,22 +5909,18 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, fi
     outfileoutstr = outfileoutstr + \
         AppendNullBytes(checksumlist, formatspecs['format_delimiter'])
     nullstrecd = formatspecs['format_delimiter'].encode('UTF-8')
-    outfileheadercshex = GetFileChecksum(
-        outfileoutstr, checksumtype[0], True, formatspecs)
+    outfileheadercshex = GetFileChecksum(outfileoutstr, checksumtype[0], True, formatspecs, saltkey)
     if(len(filecontent) == 0):
-        outfilecontentcshex = GetFileChecksum(
-            filecontent, "none", False, formatspecs)
+        outfilecontentcshex = GetFileChecksum(filecontent, "none", False, formatspecs, saltkey)
     else:
-        outfilecontentcshex = GetFileChecksum(
-            filecontent, checksumtype[1], False, formatspecs)
+        outfilecontentcshex = GetFileChecksum(filecontent, checksumtype[1], False, formatspecs, saltkey)
     tmpfileoutstr = outfileoutstr + \
         AppendNullBytes([outfileheadercshex, outfilecontentcshex],
                         formatspecs['format_delimiter'])
     formheaersize = format(int(len(tmpfileoutstr) - len(formatspecs['format_delimiter'])), 'x').lower()
     outfileoutstr = AppendNullByte(
         formheaersize, formatspecs['format_delimiter']) + outfileoutstr
-    outfileheadercshex = GetFileChecksum(
-        outfileoutstr, checksumtype[0], True, formatspecs)
+    outfileheadercshex = GetFileChecksum(outfileoutstr, checksumtype[0], True, formatspecs, saltkey)
     outfileoutstr = outfileoutstr + \
         AppendNullBytes([outfileheadercshex, outfilecontentcshex],
                         formatspecs['format_delimiter'])
@@ -5956,7 +5938,7 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, fi
         pass
     return fp
 
-def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, verbose=False):
+def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
     if(not hasattr(fp, "write")):
         return False
     advancedlist = formatspecs['use_advanced_list']
@@ -6100,6 +6082,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
         if(ftype == 2):
             flinkname = os.readlink(fname)
             if(not os.path.exists(fname)):
+                return False
         try:
             fdev = fstatinfo.st_rdev
         except AttributeError:
@@ -6267,8 +6250,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
         ftypehex = format(ftype, 'x').lower()
         tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))]
-        AppendFileHeaderWithContent(
-            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs)
+        AppendFileHeaderWithContent(fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, saltkey)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
@@ -6277,7 +6259,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
             pass
     return fp
 
-def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, verbose=False):
+def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
     if(not hasattr(fp, "write")):
         return False
     if(verbose):
@@ -6497,8 +6479,7 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
         ftypehex = format(ftype, 'x').lower()
         tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))]
-        AppendFileHeaderWithContent(
-            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs)
+        AppendFileHeaderWithContent(fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, saltkey)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
@@ -6508,7 +6489,7 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
         fcontents.close()
     return fp
 
-def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, verbose=False):
+def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
     if(not hasattr(fp, "write")):
         return False
     if(verbose):
@@ -6719,8 +6700,7 @@ def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, com
         ftypehex = format(ftype, 'x').lower()
         tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                       fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))]
-        AppendFileHeaderWithContent(
-            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs)
+        AppendFileHeaderWithContent(fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, saltkey)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
@@ -6731,10 +6711,10 @@ def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, com
     return fp
 
 if(not rarfile_support):
-    def AppendFilesWithContentFromRarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, verbose=False):
+    def AppendFilesWithContentFromRarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return False
 else:       
-    def AppendFilesWithContentFromRarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, verbose=False):
+    def AppendFilesWithContentFromRarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         if(not hasattr(fp, "write")):
             return False
         if(verbose):
@@ -6960,8 +6940,7 @@ else:
             ftypehex = format(ftype, 'x').lower()
             tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))]
-            AppendFileHeaderWithContent(
-                fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs)
+            AppendFileHeaderWithContent(fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, saltkey)
             try:
                 fp.flush()
                 if(hasattr(os, "sync")):
@@ -6972,10 +6951,10 @@ else:
         return fp
 
 if(not py7zr_support):
-    def AppendFilesWithContentFromSevenZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, verbose=False):
+    def AppendFilesWithContentFromSevenZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return False
 else:
-    def AppendFilesWithContentFromSevenZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, verbose=False):
+    def AppendFilesWithContentFromSevenZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         if(not hasattr(fp, "write")):
             return False
         if(verbose):
@@ -7141,8 +7120,7 @@ else:
             ftypehex = format(ftype, 'x').lower()
             tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))]
-            AppendFileHeaderWithContent(
-                fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs)
+            AppendFileHeaderWithContent(fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, saltkey)
             try:
                 fp.flush()
                 if(hasattr(os, "sync")):
@@ -7152,7 +7130,7 @@ else:
             fcontents.close()
         return fp
 
-def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, verbose=False):
+def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
     if(not hasattr(fp, "write")):
         return False
     if(verbose):
@@ -7211,17 +7189,16 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, extradata=[], jsond
         tmpoutlist = [ftype, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize,
                       fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, frdev, fseeknextfile]
         fcontents.seek(0, 0)
-        AppendFileHeaderWithContent(
-            fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs)
+        AppendFileHeaderWithContent(fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, saltkey)
     return fp
 
 
-def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, extradata=[], jsondata={}, followlink=False, checksumtype=["md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, verbose=False):
-    inlist = ReadInFileWithContentToList(infile, "auto", 0, 0, False, False, True, False, formatspecs)
-    return AppendListsWithContent(inlist, fp, dirlistfromtxt, extradata, jsondata, followlink, checksumtype, formatspecs, verbose)
+def AppendInFileWithContent(infile, fp, dirlistfromtxt=False, extradata=[], jsondata={}, followlink=False, checksumtype=["md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    inlist = ReadInFileWithContentToList(infile, "auto", 0, 0, False, False, True, False, formatspecs, saltkey, False)
+    return AppendListsWithContent(inlist, fp, dirlistfromtxt, extradata, jsondata, followlink, checksumtype, formatspecs, saltkey, verbose)
 
 
-def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
@@ -7265,8 +7242,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmtt
             fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
         except PermissionError:
             return False
-    AppendFilesWithContent(infiles, fp, dirlistfromtxt, extradata, jsondata, compression,
-                                   compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, formatspecs, verbose)
+    AppendFilesWithContent(infiles, fp, dirlistfromtxt, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, formatspecs, saltkey, verbose)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, compressionuselist, formatspecs)
@@ -7295,12 +7271,12 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmtt
         fp.close()
         return True
 
-def AppendFilesWithContentToStackedOutFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def AppendFilesWithContentToStackedOutFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
     if not isinstance(infiles, list):
         infiles = [infiles]
     returnout = False
     for infileslist in infiles:
-        returnout = AppendFilesWithContentToOutFile(infileslist, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, followlink, checksumtype, formatspecs, verbose, True)
+        returnout = AppendFilesWithContentToOutFile(infileslist, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, followlink, checksumtype, formatspecs, saltkey, verbose, True)
         if(not returnout):
             break
         else:
@@ -7310,7 +7286,7 @@ def AppendFilesWithContentToStackedOutFile(infiles, outfile, dirlistfromtxt=Fals
         return True
     return returnout
 
-def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, extradata=[], jsondata={}, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, extradata=[], jsondata={}, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, verbose=False, saltkey=None, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
@@ -7351,8 +7327,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmtty
             fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
         except PermissionError:
             return False
-    AppendListsWithContent(inlist, fp, dirlistfromtxt, extradata, jsondata, compression,
-                                   compresswholefile, compressionlevel, followlink, checksumtype, formatspecs, verbose)
+    AppendListsWithContent(inlist, fp, dirlistfromtxt, extradata, jsondata, compression, compresswholefile, compressionlevel, followlink, checksumtype, formatspecs, saltkey, verbose)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, compressionuselist, formatspecs)
@@ -7382,7 +7357,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmtty
         fp.close()
         return True
 
-def AppendFilesWithContentFromTarFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def AppendFilesWithContentFromTarFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
@@ -7424,8 +7399,7 @@ def AppendFilesWithContentFromTarFileToOutFile(infiles, outfile, fmttype="auto",
             fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
         except PermissionError:
             return False
-    AppendFilesWithContentFromTarFile(infiles, fp, extradata, jsondata, compression,
-                                   compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, verbose)
+    AppendFilesWithContentFromTarFile(infiles, fp, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, compressionuselist, formatspecs)
@@ -7455,12 +7429,12 @@ def AppendFilesWithContentFromTarFileToOutFile(infiles, outfile, fmttype="auto",
         fp.close()
         return True
 
-def AppendFilesWithContentFromTarFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def AppendFilesWithContentFromTarFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
     if not isinstance(infiles, list):
         infiles = [infiles]
     returnout = False
     for infileslist in infiles:
-        returnout = AppendFilesWithContentFromTarFileToOutFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, True)
+        returnout = AppendFilesWithContentFromTarFileToOutFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, True)
         if(not returnout):
             break
         else:
@@ -7470,7 +7444,7 @@ def AppendFilesWithContentFromTarFileToStackedOutFile(infiles, outfile, fmttype=
         return True
     return returnout
 
-def AppendFilesWithContentFromZipFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def AppendFilesWithContentFromZipFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
         (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
         get_in_ext = os.path.splitext(outfile)
@@ -7512,8 +7486,7 @@ def AppendFilesWithContentFromZipFileToOutFile(infiles, outfile, fmttype="auto",
             fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
         except PermissionError:
             return False
-    AppendFilesWithContentFromZipFile(infiles, fp, extradata, jsondata, compression,
-                                   compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, verbose)
+    AppendFilesWithContentFromZipFile(infiles, fp, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, compressionuselist, formatspecs)
@@ -7543,12 +7516,12 @@ def AppendFilesWithContentFromZipFileToOutFile(infiles, outfile, fmttype="auto",
         fp.close()
         return True
 
-def AppendFilesWithContentFromZipFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def AppendFilesWithContentFromZipFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
     if not isinstance(infiles, list):
         infiles = [infiles]
     returnout = False
     for infileslist in infiles:
-        returnout = AppendFilesWithContentFromZipFileToOutFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, True)
+        returnout = AppendFilesWithContentFromZipFileToOutFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, True)
         if(not returnout):
             break
         else:
@@ -7559,10 +7532,10 @@ def AppendFilesWithContentFromZipFileToStackedOutFile(infiles, outfile, fmttype=
     return returnout
 
 if(not rarfile_support):
-    def AppendFilesWithContentFromRarFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    def AppendFilesWithContentFromRarFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
         return False
 else:
-    def AppendFilesWithContentFromRarFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    def AppendFilesWithContentFromRarFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
         if(IsNestedDict(formatspecs) and fmttype=="auto" and 
             (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
             get_in_ext = os.path.splitext(outfile)
@@ -7604,8 +7577,7 @@ else:
                 fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
             except PermissionError:
                 return False
-        AppendFilesWithContentFromRarFile(infiles, fp, extradata, jsondata, compression,
-                                       compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, verbose)
+        AppendFilesWithContentFromRarFile(infiles, fp, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
         if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
             fp = CompressOpenFileAlt(
                 fp, compression, compressionlevel, compressionuselist, formatspecs)
@@ -7635,12 +7607,12 @@ else:
             fp.close()
             return True
 
-def AppendFilesWithContentFromRarFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def AppendFilesWithContentFromRarFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
     if not isinstance(infiles, list):
         infiles = [infiles]
     returnout = False
     for infileslist in infiles:
-        returnout = AppendFilesWithContentFromRarFileToOutFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, True)
+        returnout = AppendFilesWithContentFromRarFileToOutFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, True)
         if(not returnout):
             break
         else:
@@ -7651,10 +7623,10 @@ def AppendFilesWithContentFromRarFileToStackedOutFile(infiles, outfile, fmttype=
     return returnout
 
 if(not py7zr_support):
-    def AppendFilesWithContentFromSevenZipFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    def AppendFilesWithContentFromSevenZipFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
         return False
 else:
-    def AppendFilesWithContentFromSevenZipFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    def AppendFilesWithContentFromSevenZipFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
         if(IsNestedDict(formatspecs) and fmttype=="auto" and 
             (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
             get_in_ext = os.path.splitext(outfile)
@@ -7696,8 +7668,7 @@ else:
                 fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
             except PermissionError:
                 return False
-        AppendFilesWithContentFromSevenZipFile(infiles, fp, extradata, jsondata, compression,
-                                       compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, verbose)
+        AppendFilesWithContentFromSevenZipFile(infiles, fp, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
         if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
             fp = CompressOpenFileAlt(
                 fp, compression, compressionlevel, compressionuselist, formatspecs)
@@ -7727,12 +7698,12 @@ else:
             fp.close()
             return True
 
-def AppendFilesWithContentFromSevenZipFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+def AppendFilesWithContentFromSevenZipFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
     if not isinstance(infiles, list):
         infiles = [infiles]
     returnout = False
     for infileslist in infiles:
-        returnout = AppendFilesWithContentFromSevenZipFileToOutFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, True)
+        returnout = AppendFilesWithContentFromSevenZipFileToOutFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, True)
         if(not returnout):
             break
         else:
@@ -7742,9 +7713,9 @@ def AppendFilesWithContentFromSevenZipFileToStackedOutFile(infiles, outfile, fmt
         return True
     return returnout
 
-def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, extradata=[], jsondata={}, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-    inlist = ReadInFileWithContentToList(infile, "auto", 0, 0, False, False, True, False, formatspecs)
-    return AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, extradata, jsondata, followlink, checksumtype, formatspecs, verbose, returnfp)
+def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, extradata=[], jsondata={}, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
+    inlist = ReadInFileWithContentToList(infile, "auto", 0, 0, False, False, True, False, formatspecs, saltkey, False)
+    return AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, extradata, jsondata, followlink, checksumtype, formatspecs, saltkey, verbose, returnfp)
 
 
 def PrintPermissionString(fchmode, ftype):
@@ -9485,56 +9456,56 @@ def CheckSumSupport(checkfor, guaranteed=True):
         return False
 
 
-def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
-        return AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, followlink, checksumtype, formatspecs, verbose, returnfp)
+def PackCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
+        return AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, followlink, checksumtype, formatspecs, saltkey, verbose, returnfp)
 
-def PackStackedCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
-        return AppendFilesWithContentToStackedOutFile(infiles, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, followlink, checksumtype, formatspecs, verbose, returnfp)
+def PackStackedCatFile(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
+        return AppendFilesWithContentToStackedOutFile(infiles, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, followlink, checksumtype, formatspecs, saltkey, verbose, returnfp)
 
-def PackCatFileFromDirList(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-    return PackCatFile(infiles, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, extradata, formatspecs, verbose, returnfp)
-
-
-def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-    return AppendFilesWithContentFromTarFileToOutFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, returnfp)
+def PackCatFileFromDirList(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
+    return PackCatFile(infiles, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, extradata, formatspecs, saltkey, verbose, returnfp)
 
 
-def PackCatFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-    return AppendFilesWithContentFromZipFileToOutFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, returnfp)
+def PackCatFileFromTarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
+    return AppendFilesWithContentFromTarFileToOutFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, returnfp)
+
+
+def PackCatFileFromZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
+    return AppendFilesWithContentFromZipFileToOutFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, returnfp)
 
 
 if(not rarfile_support):
-    def PackCatFileFromRarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackCatFileFromRarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
         return False
 else:
-    def PackCatFileFromRarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-        return AppendFilesWithContentFromRarFileToOutFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, returnfp)
+    def PackCatFileFromRarFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
+        return AppendFilesWithContentFromRarFileToOutFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, returnfp)
 
 
 if(not py7zr_support):
-    def PackCatFileFromSevenZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+    def PackCatFileFromSevenZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
         return False
 else:
-    def PackCatFileFromSevenZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
-        return AppendFilesWithContentFromSevenZipFileToOutFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, verbose, returnfp)
+    def PackCatFileFromSevenZipFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
+        return AppendFilesWithContentFromSevenZipFileToOutFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, returnfp)
 
 
-def PackCatFileFromInFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, returnfp=False):
+def PackCatFileFromInFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, 0, True)
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         formatspecs = formatspecs[checkcompressfile]
     if(verbose):
         logging.basicConfig(format="%(message)s", stream=PY_STDOUT_TEXT, level=logging.DEBUG)
     if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-        return PackCatFileFromTarFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, jsondata, formatspecs, verbose, returnfp)
+        return PackCatFileFromTarFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, jsondata, formatspecs, saltkey, verbose, returnfp)
     elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-        return PackCatFileFromZipFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, jsondata, formatspecs, verbose, returnfp)
+        return PackCatFileFromZipFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, jsondata, formatspecs, saltkey, verbose, returnfp)
     elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-        return PackCatFileFromRarFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, jsondata, formatspecs, verbose, returnfp)
+        return PackCatFileFromRarFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, jsondata, formatspecs, saltkey, verbose, returnfp)
     elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-        return PackCatFileFromSevenZipFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, jsondata, formatspecs, verbose, returnfp)
+        return PackCatFileFromSevenZipFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, jsondata, formatspecs, saltkey, verbose, returnfp)
     elif(IsSingleDict(formatspecs) and checkcompressfile == formatspecs['format_magic']):
-        return RePackCatFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, False, 0, 0, checksumtype, False, extradata, jsondata, formatspecs, verbose, returnfp)
+        return RePackCatFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, False, 0, 0, checksumtype, False, extradata, jsondata, formatspecs, saltkey, verbose, returnfp)
     else:
         return False
     return False
@@ -9603,9 +9574,7 @@ def CatFileArrayValidate(listarrayfiles, verbose=False):
             ok = False
     return ok
 
-def CatFileValidate(infile, fmttype="auto", filestart=0,
-                        formatspecs=__file_format_multi_dict__,  # keep default like original
-                        seektoend=False, verbose=False, returnfp=False):
+def CatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
     if(verbose):
         logging.basicConfig(format="%(message)s", stream=PY_STDOUT_TEXT, level=logging.DEBUG)
     if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
@@ -9743,7 +9712,7 @@ def CatFileValidate(infile, fmttype="auto", filestart=0,
     fjsonchecksumtype = inheader[11]
     fjsonchecksum = inheader[12]
     fprejsoncontent = fp.read(fjsonsize)
-    jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs)
+    jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs, saltkey)
     if(fjsonsize > 0):
         if(CheckChecksums(jsonfcs, fjsonchecksum)):
             if(verbose):
@@ -9780,7 +9749,7 @@ def CatFileValidate(infile, fmttype="auto", filestart=0,
         return False
     il = 0
     headercheck = ValidateHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, fprechecksum, formatspecs)
-    newfcs = GetHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, True, formatspecs)
+    newfcs = GetHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, True, formatspecs, saltkey)
     valid_archive = True
     invalid_archive = False
     if(verbose):
@@ -9842,14 +9811,14 @@ def CatFileValidate(infile, fmttype="auto", filestart=0,
             outfprejsoncontent = None
         outfjend = fp.tell()
         fp.seek(len(formatspecs['format_delimiter']), 1)
-        injsonfcs = GetFileChecksum(outfprejsoncontent_bytes, outfjsonchecksumtype, True, formatspecs)
+        injsonfcs = GetFileChecksum(outfprejsoncontent_bytes, outfjsonchecksumtype, True, formatspecs, saltkey)
         outfextrafields = int(inheaderdata[35], 16)
         extrafieldslist = []
         extrastart = 36
         extraend = extrastart + outfextrafields
         outfcs = inheaderdata[-2].lower()
         outfccs = inheaderdata[-1].lower()
-        infcs = GetHeaderChecksum(inheaderdata[:-2], inheaderdata[-4].lower(), True, formatspecs)
+        infcs = GetHeaderChecksum(inheaderdata[:-2], inheaderdata[-4].lower(), True, formatspecs, saltkey)
         if(verbose):
             VerbosePrintOut(outfname)
             VerbosePrintOut("Record Number " + str(il) + "; File ID " + str(fid) + "; iNode Number " + str(finode))
@@ -9884,7 +9853,7 @@ def CatFileValidate(infile, fmttype="auto", filestart=0,
             else:
                 outfcontents = fp.read(outfcsize)
 
-            infccs = GetFileChecksum(outfcontents, inheaderdata[-3].lower(), False, formatspecs)
+            infccs = GetFileChecksum(outfcontents, inheaderdata[-3].lower(), False, formatspecs, saltkey)
             pyhascontents = True
 
             if(CheckChecksums(outfccs, infccs)):
@@ -9929,34 +9898,34 @@ def CatFileValidate(infile, fmttype="auto", filestart=0,
         return False
 
 
-def CatFileValidateFile(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
-    return CatFileValidate(infile, fmttype, filestart, formatspecs, seektoend, verbose, returnfp)
+def CatFileValidateFile(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
+    return CatFileValidate(infile, fmttype, filestart, formatspecs, saltkey, seektoend, verbose, returnfp)
 
 
-def CatFileValidateMultiple(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
+def CatFileValidateMultiple(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
     if(isinstance(infile, (list, tuple, ))):
         pass
     else:
         infile = [infile]
     outretval = True
     for curfname in infile:
-        curretfile = CatFileValidate(curfname, fmttype, filestart, formatspecs, seektoend, verbose, returnfp)
+        curretfile = CatFileValidate(curfname, fmttype, filestart, formatspecs, saltkey, seektoend, verbose, returnfp)
         if(not curretfile):
             outretval = False
     return outretval
 
-def CatFileValidateMultipleFiles(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
-    return CatFileValidateMultiple(infile, fmttype, filestart, formatspecs, seektoend, verbose, returnfp)
+def CatFileValidateMultipleFiles(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
+    return CatFileValidateMultiple(infile, fmttype, filestart, formatspecs, saltkey, seektoend, verbose, returnfp)
 
 
-def StackedCatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
+def StackedCatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
     outretval = []
     outstartfile = filestart
     outfsize = float('inf')
     while True:
         if outstartfile >= outfsize:   # stop when function signals False
             break
-        is_valid_file = CatFileValidate(infile, fmttype, outstartfile, formatspecs, seektoend, verbose, True)
+        is_valid_file = CatFileValidate(infile, fmttype, outstartfile, formatspecs, saltkey, seektoend, verbose, True)
         if is_valid_file is False:   # stop when function signals False
             outretval.append(is_valid_file)
             break
@@ -9973,33 +9942,36 @@ def StackedCatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__fi
     if(returnfp):
         return infile
     else:
-        infile.close()
+        try:
+            infile.close()
+        except AttributeError:
+            pass
         return outretval
     
 
 
-def StackedCatFileValidateFile(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
-    return StackedCatFileValidate(infile, fmttype, filestart, formatspecs, seektoend, verbose, returnfp)
+def StackedCatFileValidateFile(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
+    return StackedCatFileValidate(infile, fmttype, filestart, formatspecs, saltkey, seektoend, verbose, returnfp)
 
 
-def StackedCatFileValidateMultiple(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
+def StackedCatFileValidateMultiple(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
     if(isinstance(infile, (list, tuple, ))):
         pass
     else:
         infile = [infile]
     outretval = True
     for curfname in infile:
-        curretfile = StackedCatFileValidate(curfname, fmttype, filestart, formatspecs, seektoend, verbose, returnfp)
+        curretfile = StackedCatFileValidate(curfname, fmttype, filestart, formatspecs, saltkey, seektoend, verbose, returnfp)
         if(not curretfile):
             outretval = False
     return outretval
 
-def StackedCatFileValidateMultipleFiles(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
-    return StackedCatFileValidateMultiple(infile, fmttype, filestart, formatspecs, seektoend, verbose, returnfp)
+def StackedCatFileValidateMultipleFiles(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
+    return StackedCatFileValidateMultiple(infile, fmttype, filestart, formatspecs, saltkey, seektoend, verbose, returnfp)
 
 
-def CatFileToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
-    outfp = ReadInFileWithContentToArray(infile, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend)
+def CatFileToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, returnfp=False):
+    outfp = ReadInFileWithContentToArray(infile, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey, seektoend)
     if not returnfp:
         for item in outfp:
             fp = item.get('fp')
@@ -10013,26 +9985,26 @@ def CatFileToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, 
     return outfp
 
 
-def MultipleCatFileToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
+def MultipleCatFileToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, returnfp=False):
     if(isinstance(infile, (list, tuple, ))):
         pass
     else:
         infile = [infile]
     outretval = []
     for curfname in infile:
-        outretval.append(CatFileToArray(curfname, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend, returnfp))
+        outretval.append(CatFileToArray(curfname, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey, seektoend, returnfp))
     return outretval
 
-def MultipleCatFilesToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
-    return MultipleCatFileToArray(infile, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend, returnfp)
+def MultipleCatFilesToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, returnfp=False):
+    return MultipleCatFileToArray(infile, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
 
 
-def CatFileStringToArray(instr, filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
+def CatFileStringToArray(instr, filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, returnfp=False):
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True)
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         formatspecs = formatspecs[checkcompressfile]
     fp = MkTempFile(instr)
-    listarrayfiles = CatFileToArray(fp, "auto", filestart, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, seektoend, returnfp)
+    listarrayfiles = CatFileToArray(fp, "auto", filestart, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
     return listarrayfiles
 
 
@@ -10041,9 +10013,8 @@ def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         formatspecs = formatspecs[checkcompressfile]
     fp = MkTempFile()
-    fp = PackCatFileFromTarFile(
-        infile, fp, "auto", True, None, compressionlistalt, "md5", [], formatspecs, False, True)
-    listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, seektoend, returnfp)
+    fp = PackCatFileFromTarFile(infile, fp, "auto", True, None, compressionlistalt, "md5", [], formatspecs, None, False, True)
+    listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
     return listarrayfiles
 
 
@@ -10052,9 +10023,8 @@ def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         formatspecs = formatspecs[checkcompressfile]
     fp = MkTempFile()
-    fp = PackCatFileFromZipFile(
-        infile, fp, "auto", True, None, compressionlistalt, "md5", [], formatspecs, False, True)
-    listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, seektoend, returnfp)
+    fp = PackCatFileFromZipFile(infile, fp, "auto", True, None, compressionlistalt, "md5", [], formatspecs, None, False, True)
+    listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
     return listarrayfiles
 
 
@@ -10068,9 +10038,8 @@ if(rarfile_support):
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         fp = MkTempFile()
-        fp = PackCatFileFromRarFile(
-            infile, fp, "auto", True, None, compressionlistalt, "md5", [], formatspecs, False, True)
-        listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, seektoend, returnfp)
+        fp = PackCatFileFromRarFile(infile, fp, "auto", True, None, compressionlistalt, "md5", [], formatspecs, None, False, True)
+        listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
         return listarrayfiles
 
 if(not py7zr_support):
@@ -10083,13 +10052,12 @@ if(py7zr_support):
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         fp = MkTempFile()
-        fp = PackCatFileFromSevenZipFile(
-            infile, fp, "auto", True, None, compressionlistalt, "md5", [], formatspecs, False, True)
-        listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, seektoend, returnfp)
+        fp = PackCatFileFromSevenZipFile(infile, fp, "auto", True, None, compressionlistalt, "md5", [], formatspecs, None, False, True)
+        listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
         return listarrayfiles
 
 
-def InFileToArray(infile, filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
+def InFileToArray(infile, filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, returnfp=False):
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True)
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         formatspecs = formatspecs[checkcompressfile]
@@ -10102,17 +10070,16 @@ def InFileToArray(infile, filestart=0, seekstart=0, seekend=0, listonly=False, c
     elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
         return SevenZipFileToArray(infile, seekstart, seekend, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
     elif(checkcompressfile == formatspecs['format_magic']):
-        return CatFileToArray(infile, "auto", filestart, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, seektoend, returnfp)
+        return CatFileToArray(infile, "auto", filestart, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
     else:
         return False
     return False
 
 
-def ListDirToArray(infiles, dirlistfromtxt=False, fmttype=__file_format_default__, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, filestart=0, seekstart=0, seekend=0, listonly=False, skipchecksum=False, checksumtype=["md5", "md5", "md5"], extradata=[], formatspecs=__file_format_dict__, verbose=False, seektoend=False, returnfp=False):
+def ListDirToArray(infiles, dirlistfromtxt=False, fmttype=__file_format_default__, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, filestart=0, seekstart=0, seekend=0, listonly=False, saltkey=None, skipchecksum=False, checksumtype=["md5", "md5", "md5"], extradata=[], formatspecs=__file_format_dict__, verbose=False, seektoend=False, returnfp=False):
     outarray = MkTempFile()
-    packform = PackCatFile(infiles, outarray, dirlistfromtxt, fmttype, compression, compresswholefile,
-                              compressionlevel, followlink, checksumtype, extradata, formatspecs, verbose, True)
-    listarrayfiles = CatFileToArray(outarray, "auto", filestart, seekstart, seekend, listonly, True, True, skipchecksum, formatspecs, seektoend, returnfp)
+    packform = PackCatFile(infiles, outarray, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, followlink, checksumtype, extradata, formatspecs, saltkey, verbose, True)
+    listarrayfiles = CatFileToArray(outarray, "auto", filestart, seekstart, seekend, listonly, True, True, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
     return listarrayfiles
 
 
@@ -10234,12 +10201,12 @@ def CatFileArrayToArrayIndex(inarray, returnfp=False):
     return out
 
 
-def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=None, seektoend=False, verbose=False, returnfp=False):
+def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt,  followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=None, saltkey=None, seektoend=False, verbose=False, returnfp=False):
     # ---------- Safe defaults ----------
     if compressionuselist is None:
         compressionuselist = compressionlistalt
     if checksumtype is None:
-        checksumtype = ["md5", "md5", "md5", "md5"]
+        checksumtype = ["md5", "md5", "md5", "md5", "md5"]
     if extradata is None:
         extradata = []
     if jsondata is None:
@@ -10249,15 +10216,17 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
 
     # ---------- Input handling ----------
     if isinstance(infile, dict):
-        infile = [infile]
+        listarrayfileslist = [infile]
     elif isinstance(infile, list):
-        infile = infile
+        listarrayfileslist = infile
     else:
-        infile = [infile]
-    listarrayfileslist = ArchiveFileToArray(
-        infile, "auto", filestart, seekstart, seekend,
-        False, True, True, skipchecksum, formatspecs, seektoend, False
-    )
+        if (infile != "-" and not isinstance(infile, bytes_type)  # bytes is str on Py2
+            and not hasattr(infile, "read") and not hasattr(infile, "write")):
+            infile = RemoveWindowsPath(infile)
+        listarrayfileslist = CatFileToArray(
+            infile, "auto", filestart, seekstart, seekend,
+            False, True, True, skipchecksum, formatspecs, seektoend, False
+        )
 
     # ---------- Format specs selection ----------
     if IsNestedDict(formatspecs) and fmttype in formatspecs:
@@ -10548,10 +10517,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             if(fvendorfields>0 and len(ffvendorfieldslist)>0):
                 extradata.extend(fvendorfields)
 
-            AppendFileHeaderWithContent(
-                fp, tmpoutlist, extradata, jsondata, fcontents.read(),
-                [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs
-            )
+            AppendFileHeaderWithContent(fp, tmpoutlist, extradata, jsondata, fcontents.read(),[checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, saltkey)
             try:
                 fcontents.close()
             except Exception:
@@ -10596,12 +10562,12 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             pass
         return True
 
-def RePackMultipleCatFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=None, seektoend=False, verbose=False, returnfp=False):
+def RePackMultipleCatFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt,  followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=None, saltkey=None, seektoend=False, verbose=False, returnfp=False):
     if not isinstance(infiles, list):
         infiles = [infiles]
     returnout = False
     for infileslist in infiles:
-        returnout = RePackCatFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, filestart, seekstart, seekend, checksumtype, skipchecksum, extradata, jsondata, formatspecs, seektoend, verbose, True)
+        returnout = RePackCatFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, filestart, seekstart, seekend, checksumtype, skipchecksum, extradata, jsondata, formatspecs, saltkey, seektoend, verbose, True)
         if(not returnout):
             break
         else:
@@ -10611,23 +10577,20 @@ def RePackMultipleCatFile(infiles, outfile, fmttype="auto", compression="auto", 
         return True
     return returnout
 
-def RePackCatFileFromString(instr, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=None, seektoend=False, verbose=False, returnfp=False):
+def RePackCatFileFromString(instr, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt,  followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=None, saltkey=None, seektoend=False, verbose=False, returnfp=False):
     fp = MkTempFile(instr)
-    listarrayfiles = RePackCatFile(fp, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, filestart, seekstart, seekend,
-                                     checksumtype, skipchecksum, extradata, jsondata, formatspecs, seektoend, verbose, returnfp)
+    listarrayfiles = RePackCatFile(fp, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, filestart, seekstart, seekend, checksumtype, skipchecksum, extradata, jsondata, formatspecs, saltkey, seektoend, verbose, returnfp)
     return listarrayfiles
 
 
-def PackCatFileFromListDir(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=__file_format_dict__, seektoend=False, verbose=False, returnfp=False):
+def PackCatFileFromListDir(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=__file_format_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
     outarray = MkTempFile()
-    packform = PackCatFile(infiles, outarray, dirlistfromtxt, fmttype, compression, compresswholefile,
-                              compressionlevel, compressionuselist, followlink, checksumtype, extradata, formatspecs, verbose, True)
-    listarrayfiles = RePackCatFile(outarray, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, filestart, seekstart, seekend,
-                                     checksumtype, skipchecksum, extradata, jsondata, formatspecs, seektoend, verbose, returnfp)
+    packform = PackCatFile(infiles, outarray, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, extradata, formatspecs, saltkey, verbose, True)
+    listarrayfiles = RePackCatFile(outarray, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, filestart, seekstart, seekend, checksumtype, skipchecksum, extradata, jsondata, formatspecs, saltkey, seektoend, verbose, returnfp)
     return listarrayfiles
 
 
-def UnPackCatFile(infile, outdir=None, followlink=False, filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, preservepermissions=True, preservetime=True, seektoend=False, verbose=False, returnfp=False):
+def UnPackCatFile(infile, outdir=None, followlink=False, filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, preservepermissions=True, preservetime=True, seektoend=False, verbose=False, returnfp=False):
     if(outdir is not None):
         outdir = RemoveWindowsPath(outdir)
     if(verbose):
@@ -10637,7 +10600,7 @@ def UnPackCatFile(infile, outdir=None, followlink=False, filestart=0, seekstart=
     else:
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
             infile = RemoveWindowsPath(infile)
-        listarrayfiles = CatFileToArray(infile, "auto", filestart, seekstart, seekend, False, True, True, skipchecksum, formatspecs, seektoend, returnfp)
+        listarrayfiles = CatFileToArray(infile, "auto", filestart, seekstart, seekend, False, True, True, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
     if(not listarrayfiles):
         return False
     lenlist = len(listarrayfiles['ffilelist'])
@@ -10873,9 +10836,9 @@ def UnPackCatFile(infile, outdir=None, followlink=False, filestart=0, seekstart=
         return True
 
 
-def UnPackCatFileString(instr, outdir=None, followlink=False, filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, returnfp=False):
+def UnPackCatFileString(instr, outdir=None, followlink=False, filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
     fp = MkTempFile(instr)
-    listarrayfiles = UnPackCatFile(fp, outdir, followlink, filestart, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, returnfp)
+    listarrayfiles = UnPackCatFile(fp, outdir, followlink, filestart, seekstart, seekend, skipchecksum, formatspecs, saltkey, seektoend, verbose, returnfp)
     return listarrayfiles
 
 def ftype_to_str(ftype):
@@ -10893,7 +10856,7 @@ def ftype_to_str(ftype):
     # Default to "file" if unknown
     return mapping.get(ftype, "file")
 
-def CatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, newstyle=False, returnfp=False):
+def CatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, newstyle=False, returnfp=False):
     if(verbose):
         logging.basicConfig(format="%(message)s", stream=PY_STDOUT_TEXT, level=logging.DEBUG)
     if(isinstance(infile, dict)):
@@ -10903,7 +10866,7 @@ def CatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0
     else:
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
             infile = RemoveWindowsPath(infile)
-        listarrayfileslist = CatFileToArray(infile, fmttype, filestart, seekstart, seekend, True, False, False, skipchecksum, formatspecs, seektoend, returnfp)
+        listarrayfileslist = CatFileToArray(infile, fmttype, filestart, seekstart, seekend, True, False, False, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
     if(not listarrayfileslist):
         return False
     for listarrayfiles in listarrayfileslist:
@@ -10949,25 +10912,25 @@ def CatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0
         return True
 
 
-def MultipleCatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
+def MultipleCatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, returnfp=False):
     if(isinstance(infile, (list, tuple, ))):
         pass
     else:
         infile = [infile]
     outretval = {}
     for curfname in infile:
-        outretval[curfname] = CatFileListFiles(infile, fmttype, filestart, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, newstyle, returnfp)
+        outretval[curfname] = CatFileListFiles(infile, fmttype, filestart, seekstart, seekend, skipchecksum, formatspecs, saltkey, seektoend, verbose, newstyle, returnfp)
     return outretval
 
 
-def StackedCatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, newstyle=False, returnfp=False):
+def StackedCatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, newstyle=False, returnfp=False):
     outretval = []
     outstartfile = filestart
     outfsize = float('inf')
     while True:
         if outstartfile >= outfsize:   # stop when function signals False
             break
-        list_file_retu = CatFileListFiles(infile, fmttype, outstartfile, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, newstyle, True)
+        list_file_retu = CatFileListFiles(infile, fmttype, outstartfile, seekstart, seekend, skipchecksum, formatspecs, saltkey, seektoend, verbose, newstyle, True)
         if list_file_retu is False:   # stop when function signals False
             outretval.append(list_file_retu)
         else:
@@ -10983,24 +10946,27 @@ def StackedCatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, se
     if(returnfp):
         return infile
     else:
-        infile.close()
+        try:
+            infile.close()
+        except AttributeError:
+            pass
         return outretval
 
 
-def MultipleStackedCatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
+def MultipleStackedCatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, returnfp=False):
     if(isinstance(infile, (list, tuple, ))):
         pass
     else:
         infile = [infile]
     outretval = {}
     for curfname in infile:
-        outretval[curfname] = StackedCatFileListFiles(curfname, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, seektoend, returnfp)
+        outretval[curfname] = StackedCatFileListFiles(curfname, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
     return outretval
 
 
-def CatFileStringListFiles(instr, filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, verbose=False, newstyle=False, returnfp=False):
+def CatFileStringListFiles(instr, filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, newstyle=False, returnfp=False):
     fp = MkTempFile(instr)
-    listarrayfiles = CatFileListFiles(instr, "auto", filestart, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, newstyle, returnfp)
+    listarrayfiles = CatFileListFiles(instr, "auto", filestart, seekstart, seekend, skipchecksum, formatspecs, saltkey, seektoend, verbose, newstyle, returnfp)
     return listarrayfiles
 
 
@@ -11505,44 +11471,6 @@ def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compress
     listarrayfiles = CatFileListFiles(
         outarray, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, returnfp)
     return listarrayfiles
-
-"""
-PyNeoFile compatibility layer
-"""
-
-def make_empty_file_pointer_neo(fp, fmttype=None, checksumtype='md5', formatspecs=__file_format_multi_dict__, encoding='UTF-8'):
-    return MakeEmptyFilePointer(fp, fmttype, checksumtype, formatspecs)
-
-def make_empty_archive_file_pointer_neo(fp, fmttype=None, checksumtype='md5', formatspecs=__file_format_multi_dict__, encoding='UTF-8'):
-    return make_empty_file_pointer_neo(fp, fmttype, checksumtype, formatspecs, encoding)
-
-def make_empty_file_neo(outfile=None, fmttype=None, checksumtype='md5', formatspecs=__file_format_multi_dict__, encoding='UTF-8', returnfp=False):
-    return MakeEmptyFile(outfile, fmttype, "auto", False, None, compressionlistalt, checksumtype, formatspecs, returnfp)
-
-def make_empty_archive_file_neo(outfile=None, fmttype=None, checksumtype='md5', formatspecs=__file_format_multi_dict__, encoding='UTF-8', returnfp=False):
-    return make_empty_file_neo(outfile, fmttype, checksumtype, formatspecs, encoding, returnfp)
-
-def pack_neo(infiles, outfile=None, formatspecs=__file_format_multi_dict__, checksumtypes=["md5", "md5", "md5", "md5"], encoding="UTF-8", compression="auto", compression_level=None, returnfp=False):
-    return PackCatFile(infiles, outfile, False, "auto", compression, False, compression_level, compressionlistalt, False, checksumtypes, [], {}, formatspecs, False, returnfp)
-
-def archive_to_array_neo(infile, formatspecs=__file_format_multi_dict__, listonly=False, skipchecksum=False, uncompress=True, returnfp=False):
-    return CatFileToArray(infile, "auto", 0, 0, 0, listonly, True, uncompress, skipchecksum, formatspecs, False, returnfp)
-
-def unpack_neo(infile, outdir='.', formatspecs=__file_format_multi_dict__, skipchecksum=False, uncompress=True, returnfp=False):
-    return UnPackCatFile(infile, outdir, False, 0, 0, skipchecksum, formatspecs, True, True, False, False, returnfp)
-
-def repack_neo(infile, outfile=None, formatspecs=__file_format_dict__, checksumtypes=["md5", "md5", "md5", "md5"], compression="auto", compression_level=None, returnfp=False):
-    return RePackCatFile(infile, outfile, "auto", compression, False, compression_level, compressionlistalt, False, 0, 0, checksumtypes, False, [], {}, formatspecs, False, False, returnfp)
-
-def validate_neo(infile, formatspecs=__file_format_multi_dict__, verbose=False, return_details=False, returnfp=False):
-    return CatFileValidate(infile, "auto", formatspecs, False, verbose, returnfp)
-
-def listfiles_neo(infile, formatspecs=__file_format_multi_dict__, advanced=False, include_dirs=True, returnfp=False):
-    return CatFileListFiles(infile, "auto", 0, 0, False, formatspecs, False, True, advanced, returnfp)
-
-def convert_foreign_to_neo(infile, outfile=None, formatspecs=__file_format_multi_dict__, checksumtypes=["md5", "md5", "md5", "md5"], compression="auto", compression_level=None, returnfp=False):
-    intmp = InFileToArray(infile, 0, 0, 0, False, True, False, formatspecs, False, False)
-    return RePackCatFile(intmp, outfile, "auto", compression, False, compression_level, compressionlistalt, False, 0, 0, checksumtypes, False, [], {}, formatspecs, False, False, returnfp)
 
 def detect_cwd(ftp, file_dir):
     """
