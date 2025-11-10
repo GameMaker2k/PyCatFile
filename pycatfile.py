@@ -2066,31 +2066,48 @@ def MkTempFile(data=None,
                prefix=__program_name__,
                delete=True,
                encoding="utf-8",
-               newline=None,      # text mode only; in-memory objects ignore newline semantics
+               newline=None,
+               text_errors="strict",
                dir=None,
                suffix="",
                use_spool=__use_spoolfile__,
+               autoswitch_spool=False,
                spool_max=__spoolfile_size__,
-               spool_dir=__use_spooldir__):
+               spool_dir=__use_spooldir__,
+               reset_to_start=True,
+               memfd_name=None,
+               memfd_allow_sealing=False,
+               memfd_flags_extra=0,
+               on_create=None):
     """
     Return a file-like handle with consistent behavior on Py2.7 and Py3.x.
 
     Storage:
-      - inmem=True                       -> BytesIO (bytes) or StringIO (text), or memfd for bytes if available
-      - inmem=False, use_spool=True      -> SpooledTemporaryFile (binary), optionally TextIOWrapper for text
-      - inmem=False, use_spool=False     -> NamedTemporaryFile (binary), optionally TextIOWrapper for text
+      - inmem=True, usememfd=True, isbytes=True and memfd available
+            -> memfd-backed anonymous file (binary)
+      - inmem=True, otherwise
+            -> BytesIO (bytes) or StringIO (text)
+      - inmem=False, use_spool=True
+            -> SpooledTemporaryFile (binary), optionally TextIOWrapper for text
+      - inmem=False, use_spool=False
+            -> NamedTemporaryFile (binary), optionally TextIOWrapper for text
 
     Text vs bytes:
       - isbytes=True  -> file expects bytes; 'data' must be bytes-like
-      - isbytes=False -> file expects text; 'data' must be text (unicode/str). Newline translation and encoding
-                         apply only for spooled/named files (not BytesIO/StringIO).
+      - isbytes=False -> file expects text; 'data' must be text (unicode/str). Newline translation and
+                         encoding apply only for spooled/named files (not BytesIO/StringIO).
 
     Notes:
-      - On Windows, NamedTemporaryFile(delete=True) keeps the file open and cannot be reopened by other processes.
-        Use delete=False if you need to pass the path elsewhere.
-      - For text: in-memory StringIO ignores 'newline' (as usual).
-      - When available, memfd is used only for inmem=True and isbytes=True, providing an anonymous in-memory
-        file descriptor (Linux-only). Text in-memory still uses StringIO to preserve newline semantics.
+      - On Windows, NamedTemporaryFile(delete=True) keeps the file open and cannot be reopened by
+        other processes. Use delete=False if you need to pass the path elsewhere.
+      - For text: in-memory StringIO ignores 'newline' and 'text_errors' (as usual).
+      - When available, and if usememfd=True, memfd is used only for inmem=True and isbytes=True,
+        providing an anonymous in-memory file descriptor (Linux-only). Text in-memory still uses
+        StringIO to preserve newline semantics.
+      - If autoswitch_spool=True and initial data size exceeds spool_max, in-memory storage is
+        skipped and a spooled file is used instead (if use_spool=True).
+      - If on_create is not None, it is called as on_create(fp, kind) where kind is one of:
+        "memfd", "bytesio", "stringio", "spool", "disk".
     """
 
     # -- sanitize simple params (avoid None surprises) --
@@ -2122,39 +2139,65 @@ def MkTempFile(data=None,
     else:
         init = None
 
+    # Size of init for autoswitch; only meaningful for bytes
+    init_len = len(init) if (init is not None and isbytes) else None
+
     # -------- In-memory --------
     if inmem:
-        # Use memfd only for bytes, and only where available (Linux, Python 3.8+)
-        if usememfd and isbytes and hasattr(os, "memfd_create"):
-            flags = 0
-            # Close-on-exec is almost always what you want for temps
-            if hasattr(os, "MFD_CLOEXEC"):
-                flags |= os.MFD_CLOEXEC
-
-            fd = os.memfd_create(prefix, flags)
-            # Binary read/write file-like object backed by RAM
-            f = os.fdopen(fd, "w+b")
-
-            if init is not None:
-                f.write(init)
-            f.seek(0)
-            return f
-
-        # Fallback: pure Python in-memory objects
-        if isbytes:
-            f = io.BytesIO(init if init is not None else b"")
+        # If autoswitch is enabled and data is larger than spool_max, and
+        # spooling is allowed, skip the in-memory branch and fall through
+        # to the spool/disk logic below.
+        if autoswitch_spool and use_spool and init_len is not None and init_len > spool_max:
+            pass  # fall through to spool/disk sections
         else:
-            # newline not enforced for StringIO; matches stdlib semantics
-            f = io.StringIO(init if init is not None else "")
+            # Use memfd only for bytes, and only where available (Linux, Python 3.8+)
+            if usememfd and isbytes and hasattr(os, "memfd_create"):
+                name = memfd_name or prefix or "MkTempFile"
+                flags = 0
+                # Close-on-exec is almost always what you want for temps
+                if hasattr(os, "MFD_CLOEXEC"):
+                    flags |= os.MFD_CLOEXEC
+                # Optional sealing support if requested and available
+                if memfd_allow_sealing and hasattr(os, "MFD_ALLOW_SEALING"):
+                    flags |= os.MFD_ALLOW_SEALING
+                # Extra custom flags (e.g. hugepage flags) if caller wants them
+                if memfd_flags_extra:
+                    flags |= memfd_flags_extra
 
-        f.seek(0)
-        return f
+                fd = os.memfd_create(name, flags)
+                # Binary read/write file-like object backed by RAM
+                f = os.fdopen(fd, "w+b")
+
+                if init is not None:
+                    f.write(init)
+                if reset_to_start:
+                    f.seek(0)
+
+                if on_create is not None:
+                    on_create(f, "memfd")
+                return f
+
+            # Fallback: pure Python in-memory objects
+            if isbytes:
+                f = io.BytesIO(init if init is not None else b"")
+                kind = "bytesio"
+            else:
+                # newline/text_errors not enforced for StringIO; matches stdlib semantics
+                f = io.StringIO(init if init is not None else "")
+                kind = "stringio"
+
+            if reset_to_start:
+                f.seek(0)
+
+            if on_create is not None:
+                on_create(f, kind)
+            return f
 
     # Helper: wrap a binary file into a text file with encoding/newline
     def _wrap_text(handle):
         # For both Py2 & Py3, TextIOWrapper gives consistent newline/encoding behavior
-        tw = io.TextIOWrapper(handle, encoding=encoding, newline=newline)
-        return tw
+        return io.TextIOWrapper(handle, encoding=encoding,
+                                newline=newline, errors=text_errors)
 
     # -------- Spooled (RAM then disk) --------
     if use_spool:
@@ -2165,17 +2208,30 @@ def MkTempFile(data=None,
 
         if init is not None:
             f.write(init)
+            if reset_to_start:
+                f.seek(0)
+        elif reset_to_start:
             f.seek(0)
+
+        if on_create is not None:
+            on_create(f, "spool")
         return f
 
     # -------- On-disk temp (NamedTemporaryFile) --------
     # Always create binary file; wrap for text if needed for uniform Py2/3 behavior
-    b = tempfile.NamedTemporaryFile(mode="w+b", prefix=prefix, suffix=suffix, dir=dir, delete=delete)
+    b = tempfile.NamedTemporaryFile(mode="w+b", prefix=prefix, suffix=suffix,
+                                    dir=dir, delete=delete)
     f = b if isbytes else _wrap_text(b)
 
     if init is not None:
         f.write(init)
+        if reset_to_start:
+            f.seek(0)
+    elif reset_to_start:
         f.seek(0)
+
+    if on_create is not None:
+        on_create(f, "disk")
     return f
 
 
