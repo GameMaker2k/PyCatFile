@@ -416,7 +416,8 @@ def is_only_nonprintable(var):
 __file_format_multi_dict__ = {}
 __file_format_default__ = "CatFile"
 __include_defaults__ = True
-__use_inmemfile__ = True
+__use_inmem__ = True
+__use_memfd__ = True
 __use_spoolfile__ = False
 __use_spooldir__ = tempfile.gettempdir()
 BYTES_PER_KiB = 1024
@@ -462,7 +463,8 @@ if __use_ini_file__ and os.path.exists(__config_file__):
     __file_format_default__ = decode_unicode_escape(config.get('config', 'default'))
     __program_name__ = decode_unicode_escape(config.get('config', 'proname'))
     __include_defaults__ = config.getboolean('config', 'includedef')
-    __use_inmemfile__ = config.getboolean('config', 'inmemfile')
+    __use_inmem__ = config.getboolean('config', 'useinmem')
+    __use_memfd__ = config.getboolean('config', 'usememfd')
     __use_spoolfile__ = config.getboolean('config', 'usespoolfile')
     __spoolfile_size__ = config.getint('config', 'spoolfilesize')
     # Loop through all sections
@@ -556,8 +558,9 @@ elif __use_json_file__ and os.path.exists(__config_file__):
     cfg_config = cfg.get('config', {}) or {}
     __file_format_default__ = decode_unicode_escape(_get(cfg_config, 'default', ''))
     __program_name__        = decode_unicode_escape(_get(cfg_config, 'proname', ''))
-    __include_defaults__    = _to_bool(_get(cfg_config, 'includedef', False))
-    __use_inmemfile__       = _to_bool(_get(cfg_config, 'inmemfile', False))
+    __include_defaults__    = _to_bool(_get(cfg_config, 'includedef', True))
+    __use_inmem__       = _to_bool(_get(cfg_config, 'useinmem', True))
+    __use_memfd__       = _to_bool(_get(cfg_config, 'usememfd', True))
     __use_spoolfile__       = _to_bool(_get(cfg_config, 'usespoolfile', False))
     __spoolfile_size__       = _to_int(_get(cfg_config, 'spoolfilesize', DEFAULT_SPOOL_MAX))
 
@@ -2058,9 +2061,9 @@ def _normalize_initial_data(data, isbytes, encoding, errors=None):
 
 
 def MkTempFile(data=None,
-               inmem=__use_inmemfile__,
+               inmem=__use_inmem__, usememfd=__use_memfd__,
                isbytes=True,
-               prefix="",
+               prefix=__program_name__,
                delete=True,
                encoding="utf-8",
                newline=None,      # text mode only; in-memory objects ignore newline semantics
@@ -2122,13 +2125,13 @@ def MkTempFile(data=None,
     # -------- In-memory --------
     if inmem:
         # Use memfd only for bytes, and only where available (Linux, Python 3.8+)
-        if isbytes and hasattr(os, "memfd_create"):
+        if usememfd and isbytes and hasattr(os, "memfd_create"):
             flags = 0
             # Close-on-exec is almost always what you want for temps
             if hasattr(os, "MFD_CLOEXEC"):
                 flags |= os.MFD_CLOEXEC
 
-            fd = os.memfd_create("MkTempFile", flags)
+            fd = os.memfd_create(prefix, flags)
             # Binary read/write file-like object backed by RAM
             f = os.fdopen(fd, "w+b")
 

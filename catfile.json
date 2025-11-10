@@ -3,7 +3,8 @@
         "default": "CatFile",
         "proname": "PyCatFile",
         "includedef": true,
-        "inmemfile": true,
+        "useinmem": true,
+        "usememfd": true,
         "usespoolfile": false,
         "spoolfilesize": 4194304,
         "filebuffsize": 262144
