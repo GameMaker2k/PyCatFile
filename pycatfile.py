@@ -3765,7 +3765,7 @@ def GetHeaderChecksum(inlist=None, checksumtype="md5", encodedata=True, formatsp
     hdr_bytes = bytes(hdr_bytes)
     saltkeyval = None
     if(saltkey is not None):
-        skfp = (saltkey, "rb")
+        skfp = open(saltkey, "rb")
         saltkeyval = skfp.read()
         skfp.close()
     if CheckSumSupport(algo_key, hashlib_guaranteed):
@@ -3787,7 +3787,7 @@ def GetFileChecksum(inbytes, checksumtype="md5", encodedata=True, formatspecs=__
     algo_key = (checksumtype or "md5").lower()
     saltkeyval = None
     if(saltkey is not None):
-        skfp = (saltkey, "rb")
+        skfp = open(saltkey, "rb")
         saltkeyval = skfp.read()
         skfp.close()
     # file-like streaming
