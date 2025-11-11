@@ -3763,13 +3763,16 @@ def GetHeaderChecksum(inlist=None, checksumtype="md5", encodedata=True, formatsp
     if encodedata and not isinstance(hdr_bytes, (bytes, bytearray, memoryview)):
         hdr_bytes = _to_bytes(hdr_bytes)
     hdr_bytes = bytes(hdr_bytes)
+    saltkeyval = None
     if(saltkey is not None):
-        saltkey = _to_bytes(saltkey)
+        skfp = (saltkey, "rb")
+        saltkeyval = skfp.read()
+        skfp.close()
     if CheckSumSupport(algo_key, hashlib_guaranteed):
-        if(saltkey is None):
+        if(saltkey is None or saltkeyval is None):
             h = hashlib.new(algo_key, hdr_bytes)
         else:
-            h = hmac.new(saltkey, hdr_bytes, digestmod=algo_key)
+            h = hmac.new(saltkeyval, hdr_bytes, digestmod=algo_key)
         return h.hexdigest().lower()
 
     return "0"
@@ -3782,17 +3785,20 @@ def GetFileChecksum(inbytes, checksumtype="md5", encodedata=True, formatspecs=__
       - Falls back to one-shot for non-file-like inputs.
     """
     algo_key = (checksumtype or "md5").lower()
+    saltkeyval = None
     if(saltkey is not None):
-        saltkey = _to_bytes(saltkey)
+        skfp = (saltkey, "rb")
+        saltkeyval = skfp.read()
+        skfp.close()
     # file-like streaming
     if hasattr(inbytes, "read"):
         # hashlib
 
         if CheckSumSupport(algo_key, hashlib_guaranteed):
-            if(saltkey is None):
+            if(saltkey is None or saltkeyval is None):
                 h = hashlib.new(algo_key)
             else:
-                h = hmac.new(saltkey, digestmod=algo_key)
+                h = hmac.new(saltkeyval, digestmod=algo_key)
             while True:
                 chunk = inbytes.read(__filebuff_size__)
                 if not chunk:
@@ -3813,10 +3819,10 @@ def GetFileChecksum(inbytes, checksumtype="md5", encodedata=True, formatspecs=__
     # one-shot
 
     if CheckSumSupport(algo_key, hashlib_guaranteed):
-        if(saltkey is None):
+        if(saltkey is None or saltkeyval is None):
             h = hashlib.new(algo_key, data)
         else:
-            h = hmac.new(saltkey, data, digestmod=algo_key)
+            h = hmac.new(saltkeyval, data, digestmod=algo_key)
         return h.hexdigest().lower()
 
     return "0"
