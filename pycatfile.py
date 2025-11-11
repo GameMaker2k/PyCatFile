@@ -9947,7 +9947,7 @@ def StackedCatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__fi
         try:
             infile.close()
         except AttributeError:
-            pass
+            return False
         return outretval
     
 
@@ -10951,7 +10951,7 @@ def StackedCatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, se
         try:
             infile.close()
         except AttributeError:
-            pass
+            return False
         return outretval
 
 
