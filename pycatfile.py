@@ -3764,10 +3764,14 @@ def GetHeaderChecksum(inlist=None, checksumtype="md5", encodedata=True, formatsp
         hdr_bytes = _to_bytes(hdr_bytes)
     hdr_bytes = bytes(hdr_bytes)
     saltkeyval = None
-    if(saltkey is not None):
+    if(saltkey is not None and os.path.exists(saltkey
         skfp = open(saltkey, "rb")
         saltkeyval = skfp.read()
         skfp.close()
+    else:
+        saltkey = None
+    if(saltkeyval is None)::
+        saltkey = None
     if CheckSumSupport(algo_key, hashlib_guaranteed):
         if(saltkey is None or saltkeyval is None):
             h = hashlib.new(algo_key, hdr_bytes)
@@ -3786,10 +3790,14 @@ def GetFileChecksum(inbytes, checksumtype="md5", encodedata=True, formatspecs=__
     """
     algo_key = (checksumtype or "md5").lower()
     saltkeyval = None
-    if(saltkey is not None):
+    if(saltkey is not None and os.path.exists(saltkey
         skfp = open(saltkey, "rb")
         saltkeyval = skfp.read()
         skfp.close()
+    else:
+        saltkey = None
+    if(saltkeyval is None)::
+        saltkey = None
     # file-like streaming
     if hasattr(inbytes, "read"):
         # hashlib
