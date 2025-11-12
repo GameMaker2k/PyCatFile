@@ -10219,7 +10219,7 @@ def CatFileArrayToArrayIndex(inarray, returnfp=False):
     return out
 
 
-def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt,  followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=None, saltkey=None, seektoend=False, verbose=False, returnfp=False):
+def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt,  followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=__file_format_multi_dict__, insaltkey=None, outsaltkey=None, seektoend=False, verbose=False, returnfp=False):
     # ---------- Safe defaults ----------
     if compressionuselist is None:
         compressionuselist = compressionlistalt
@@ -10243,7 +10243,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             infile = RemoveWindowsPath(infile)
         listarrayfileslist = ArchiveFileToArray(
             infile, "auto", filestart, seekstart, seekend,
-            False, True, True, skipchecksum, formatspecs, saltkey, seektoend, False
+            False, True, True, skipchecksum, formatspecs, insaltkey, seektoend, False
         )
 
     # ---------- Format specs selection ----------
@@ -10325,7 +10325,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
         if lenlist != fnumfiles:
             fnumfiles = lenlist
 
-        AppendFileHeader(fp, fnumfiles, listarrayfiles.get('fencoding', 'utf-8'), listarrayfiles['fextradata'], listarrayfiles['fjsondata'], [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
+        AppendFileHeader(fp, fnumfiles, listarrayfiles.get('fencoding', 'utf-8'), listarrayfiles['fextradata'], listarrayfiles['fjsondata'], [checksumtype[0], checksumtype[1]], formatspecs, outsaltkey)
 
         # loop counters
         lcfi = 0
@@ -10544,8 +10544,8 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
 
             if(fvendorfields>0 and len(ffvendorfieldslist)>0):
                 extradata.extend(fvendorfields)
-
-            AppendFileHeaderWithContent(fp, tmpoutlist, extradata, jsondata, fcontents.read(),[checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, saltkey)
+            
+            AppendFileHeaderWithContent(fp, tmpoutlist, extradata, jsondata, fcontents.read(),[checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, outsaltkey)
             try:
                 fcontents.close()
             except Exception:
@@ -10590,12 +10590,12 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             pass
         return True
 
-def RePackMultipleCatFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt,  followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=None, saltkey=None, seektoend=False, verbose=False, returnfp=False):
+def RePackMultipleCatFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=__file_format_multi_dict__, insaltkey=None, outsaltkey=None, seektoend=False, verbose=False, returnfp=False):
     if not isinstance(infiles, list):
         infiles = [infiles]
     returnout = False
     for infileslist in infiles:
-        returnout = RePackCatFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, filestart, seekstart, seekend, checksumtype, skipchecksum, extradata, jsondata, formatspecs, saltkey, seektoend, verbose, True)
+        returnout = RePackCatFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, filestart, seekstart, seekend, checksumtype, skipchecksum, extradata, jsondata, formatspecs, insaltkey, outsaltkey, seektoend, verbose, True)
         if(not returnout):
             break
         else:
@@ -10605,9 +10605,9 @@ def RePackMultipleCatFile(infiles, outfile, fmttype="auto", compression="auto", 
         return True
     return returnout
 
-def RePackCatFileFromString(instr, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt,  followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=None, saltkey=None, seektoend=False, verbose=False, returnfp=False):
+def RePackCatFileFromString(instr, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt,  followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=__file_format_multi_dict__, insaltkey=None, outsaltkey=None, seektoend=False, verbose=False, returnfp=False):
     fp = MkTempFile(instr)
-    listarrayfiles = RePackCatFile(fp, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, filestart, seekstart, seekend, checksumtype, skipchecksum, extradata, jsondata, formatspecs, saltkey, seektoend, verbose, returnfp)
+    listarrayfiles = RePackCatFile(fp, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, filestart, seekstart, seekend, checksumtype, skipchecksum, extradata, jsondata, formatspecs, insaltkey, outsaltkey, seektoend, verbose, returnfp)
     return listarrayfiles
 
 
