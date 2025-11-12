@@ -154,7 +154,7 @@ if active_action:
             checkcompressfile = pycatfile.CheckCompressionSubType(
                 input_file, fnamedict, 0, True)
             if((pycatfile.IsNestedDict(fnamedict) and checkcompressfile in fnamedict) or (pycatfile.IsSingleDict(fnamedict) and checkcompressfile==fnamedict['format_magic'])):
-                tmpout = pycatfile.RePackCatFile(input_file, getargs.output, "auto", getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, False, getargs.filestart, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], {}, fnamedict, getargs.secretkey, getargs.verbose, False)
+                tmpout = pycatfile.RePackCatFile(input_file, getargs.output, "auto", getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, False, getargs.filestart, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], {}, fnamedict, getargs.secretkey, getargs.secretkey, getargs.verbose, False)
             else:
                 tmpout = pycatfile.PackCatFileFromInFile(
                     input_file, getargs.output, __file_format_default__, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, [getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum], [], {}, fnamedict, getargs.secretkey, getargs.verbose, False)
@@ -168,21 +168,21 @@ if active_action:
                 input_file, fnamedict, 0, True)
             if((pycatfile.IsNestedDict(fnamedict) and checkcompressfile in fnamedict) or (pycatfile.IsSingleDict(fnamedict) and checkcompressfile==fnamedict['format_magic'])):
                 pycatfile.RePackCatFile(input_file, getargs.output, "auto", getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt,
-                                            False, getargs.filestart, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], {}, fnamedict, getargs.secretkey, getargs.verbose, False)
+                                            False, getargs.filestart, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], {}, fnamedict, getargs.secretkey, getargs.secretkey, getargs.verbose, False)
             else:
                 pycatfile.PackCatFileFromInFile(input_file, getargs.output, __file_format_default__, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, [getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum], [], {}, fnamedict, getargs.secretkey, getargs.verbose, False)
             if(not tmpout):
                 sys.exit(1)
         else:
             pycatfile.RePackCatFile(input_file, getargs.output, "auto", getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt,
-                                        False, getargs.filestart, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], {}, fnamedict, getargs.secretkey, getargs.verbose, False)
+                                        False, getargs.filestart, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], {}, fnamedict, getargs.secretkey, getargs.secretkey, getargs.verbose, False)
     elif active_action == 'extract':
         if getargs.convert:
             checkcompressfile = pycatfile.CheckCompressionSubType(
                 input_file, fnamedict, 0, True)
             tempout = BytesIO()
             if((pycatfile.IsNestedDict(fnamedict) and checkcompressfile in fnamedict) or (pycatfile.IsSingleDict(fnamedict) and checkcompressfile==fnamedict['format_magic'])):
-                tmpout = pycatfile.RePackCatFile(input_file, tempout, "auto", getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, False, getargs.filestart, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], {}, fnamedict, getargs.secretkey, False, False)
+                tmpout = pycatfile.RePackCatFile(input_file, tempout, "auto", getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, False, getargs.filestart, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], {}, fnamedict, getargs.secretkey, getargs.secretkey, False, False)
             else:
                 tmpout = pycatfile.PackCatFileFromInFile(
                     input_file, tempout, __file_format_default__, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, [getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum], [], {}, fnamedict, getargs.secretkey, False, False)
@@ -209,7 +209,7 @@ if active_action:
                 input_file, fnamedict, 0, True)
             tempout = BytesIO()
             if((pycatfile.IsNestedDict(fnamedict) and checkcompressfile in fnamedict) or (pycatfile.IsSingleDict(fnamedict) and checkcompressfile==fnamedict['format_magic'])):
-                tmpout = pycatfile.RePackCatFile(input_file, tempout, "auto", getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, False, getargs.filestart, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], {}, fnamedict, getargs.secretkey, False, False, False)
+                tmpout = pycatfile.RePackCatFile(input_file, tempout, "auto", getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, False, getargs.filestart, 0, 0, [getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum], getargs.skipchecksum, [], {}, fnamedict, getargs.secretkey, getargs.secretkey, False, False, False)
             else:
                 tmpout = pycatfile.PackCatFileFromInFile(
                     input_file, tempout, __file_format_default__, getargs.compression, getargs.wholefile, getargs.level, pycatfile.compressionlistalt, [getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum, getargs.checksum], [], {}, fnamedict, getargs.secretkey, False, False)
