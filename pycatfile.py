@@ -420,6 +420,9 @@ __use_inmem__ = True
 __use_memfd__ = True
 __use_spoolfile__ = False
 __use_spooldir__ = tempfile.gettempdir()
+__use_new_style__ = True
+__use_advanced_list__ = True
+__use_alt_inode__ = False
 BYTES_PER_KiB = 1024
 BYTES_PER_MiB = 1024 * BYTES_PER_KiB
 # Spool: not tiny, but won’t blow up RAM if many are in use
@@ -467,6 +470,9 @@ if __use_ini_file__ and os.path.exists(__config_file__):
     __use_memfd__ = config.getboolean('config', 'usememfd')
     __use_spoolfile__ = config.getboolean('config', 'usespoolfile')
     __spoolfile_size__ = config.getint('config', 'spoolfilesize')
+    __use_new_style__ = config.getboolean('config', 'newstyle')
+    __use_advanced_list__ = config.getboolean('config', 'advancedlist')
+    __use_alt_inode__ = config.getboolean('config', 'altinode')
     # Loop through all sections
     for section in config.sections():
         if section == "config":
@@ -474,8 +480,7 @@ if __use_ini_file__ and os.path.exists(__config_file__):
 
         required_keys = [
             "len", "hex", "ver", "name",
-            "magic", "delimiter", "extension",
-            "newstyle", "advancedlist", "altinode"
+            "magic", "delimiter", "extension"
         ]
 
         # Py2+Py3 compatible key presence check
@@ -495,9 +500,6 @@ if __use_ini_file__ and os.path.exists(__config_file__):
                 'format_hex':         config.get(section, 'hex'),
                 'format_delimiter':   delim,
                 'format_ver':         config.get(section, 'ver'),
-                'new_style':          config.getboolean(section, 'newstyle'),
-                'use_advanced_list':  config.getboolean(section, 'advancedlist'),
-                'use_alt_inode':      config.getboolean(section, 'altinode'),
                 'format_extension':   decode_unicode_escape(config.get(section, 'extension')),
             }
         })
@@ -563,12 +565,14 @@ elif __use_json_file__ and os.path.exists(__config_file__):
     __use_memfd__       = _to_bool(_get(cfg_config, 'usememfd', True))
     __use_spoolfile__       = _to_bool(_get(cfg_config, 'usespoolfile', False))
     __spoolfile_size__       = _to_int(_get(cfg_config, 'spoolfilesize', DEFAULT_SPOOL_MAX))
+    __use_new_style__       = _to_bool(_get(cfg_config, 'usespoolfile', True))
+    __use_advanced_list__       = _to_bool(_get(cfg_config, 'usespoolfile', True))
+    __use_alt_inode__       = _to_bool(_get(cfg_config, 'usespoolfile', False))
 
     # --- iterate format sections (everything except "config") ---
     required_keys = [
         "len", "hex", "ver", "name",
-        "magic", "delimiter", "extension",
-        "newstyle", "advancedlist", "altinode"
+        "magic", "delimiter", "extension"
     ]
 
     for section_name, section in cfg.items():
@@ -586,9 +590,6 @@ elif __use_json_file__ and os.path.exists(__config_file__):
         fmt_hex    = decode_unicode_escape(_get(section, 'hex', ''))
         fmt_ver    = decode_unicode_escape(_get(section, 'ver', ''))
         delim      = decode_unicode_escape(_get(section, 'delimiter', ''))
-        new_style  = _to_bool(_get(section, 'newstyle', False))
-        adv_list   = _to_bool(_get(section, 'advancedlist', False))
-        alt_inode  = _to_bool(_get(section, 'altinode', False))
         extension  = decode_unicode_escape(_get(section, 'extension', ''))
 
         # keep your delimiter validation semantics
@@ -603,9 +604,6 @@ elif __use_json_file__ and os.path.exists(__config_file__):
                 'format_hex':         fmt_hex,
                 'format_delimiter':   delim,
                 'format_ver':         fmt_ver,
-                'new_style':          new_style,
-                'use_advanced_list':  adv_list,
-                'use_alt_inode':      alt_inode,
                 'format_extension':   extension,
             }
         })
@@ -643,9 +641,6 @@ __file_format_len__ = __file_format_multi_dict__[__file_format_default__]['forma
 __file_format_hex__ = __file_format_multi_dict__[__file_format_default__]['format_hex']
 __file_format_delimiter__ = __file_format_multi_dict__[__file_format_default__]['format_delimiter']
 __file_format_ver__ = __file_format_multi_dict__[__file_format_default__]['format_ver']
-__use_new_style__ = __file_format_multi_dict__[__file_format_default__]['new_style']
-__use_advanced_list__ = __file_format_multi_dict__[__file_format_default__]['use_advanced_list']
-__use_alt_inode__ = __file_format_multi_dict__[__file_format_default__]['use_alt_inode']
 __file_format_extension__ = __file_format_multi_dict__[__file_format_default__]['format_extension']
 __file_format_dict__ = __file_format_multi_dict__[__file_format_default__]
 __project__ = __program_name__
@@ -4244,7 +4239,7 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, uncompress=True, skipcheck
     if(not hasattr(fp, "read")):
         return False
     delimiter = formatspecs['format_delimiter']
-    if(formatspecs['new_style']):
+    if(__use_new_style__):
         HeaderOut = ReadFileHeaderDataBySize(fp, delimiter)
     else:
         HeaderOut = ReadFileHeaderDataWoSize(fp, delimiter)
@@ -4402,7 +4397,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
         return False
     delimiter = formatspecs['format_delimiter']
     fheaderstart = fp.tell()
-    if(formatspecs['new_style']):
+    if(__use_new_style__):
         HeaderOut = ReadFileHeaderDataBySize(fp, delimiter)
     else:
         HeaderOut = ReadFileHeaderDataWoSize(fp, delimiter)
@@ -4624,7 +4619,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
         return False
     delimiter = formatspecs['format_delimiter']
     fheaderstart = fp.tell()
-    if(formatspecs['new_style']):
+    if(__use_new_style__):
         HeaderOut = ReadFileHeaderDataBySize(fp, delimiter)
     else:
         HeaderOut = ReadFileHeaderDataWoSize(fp, delimiter)
@@ -4849,7 +4844,7 @@ def ReadFileDataWithContent(fp, filestart=0, listonly=False, uncompress=True, sk
         return False
     if(formdel != formatspecs['format_delimiter']):
         return False
-    if(formatspecs['new_style']):
+    if(__use_new_style__):
         inheader = ReadFileHeaderDataBySize(
             fp, formatspecs['format_delimiter'])
     else:
@@ -4920,7 +4915,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
         return False
     if(formdel != formatspecs['format_delimiter']):
         return False
-    if(formatspecs['new_style']):
+    if(__use_new_style__):
         inheader = ReadFileHeaderDataBySize(
             fp, formatspecs['format_delimiter'])
     else:
@@ -5171,7 +5166,7 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
         return False
     if(formdel != formatspecs['format_delimiter']):
         return False
-    if(formatspecs['new_style']):
+    if(__use_new_style__):
         inheader = ReadFileHeaderDataBySize(
             fp, formatspecs['format_delimiter'])
     else:
@@ -5253,7 +5248,7 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
         il = 0
         while(il < seekstart):
             prefhstart = fp.tell()
-            if(formatspecs['new_style']):
+            if(__use_new_style__):
                 preheaderdata = ReadFileHeaderDataBySize(
                     fp, formatspecs['format_delimiter'])
             else:
@@ -5967,8 +5962,8 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, fi
 def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
     if(not hasattr(fp, "write")):
         return False
-    advancedlist = formatspecs['use_advanced_list']
-    altinode = formatspecs['use_alt_inode']
+    advancedlist = __use_advanced_list__
+    altinode = __use_alt_inode__
     if(verbose):
         logging.basicConfig(format="%(message)s",
                             stream=PY_STDOUT_TEXT, level=logging.DEBUG)
@@ -9719,7 +9714,7 @@ def CatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_form
         return False
     if(formdel != formatspecs['format_delimiter']):
         return False
-    if(formatspecs['new_style']):
+    if(__use_new_style__):
         inheader = ReadFileHeaderDataBySize(fp, formatspecs['format_delimiter'])
     else:
         inheader = ReadFileHeaderDataWoSize(fp, formatspecs['format_delimiter'])
@@ -9805,7 +9800,7 @@ def CatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_form
     # Iterate either until EOF (seektoend) or fixed count
     while (fp.tell() < CatSizeEnd) if seektoend else (il < fnumfiles):
         outfhstart = fp.tell()
-        if(formatspecs['new_style']):
+        if(__use_new_style__):
             inheaderdata = ReadFileHeaderDataBySize(fp, formatspecs['format_delimiter'])
         else:
             inheaderdata = ReadFileHeaderDataWoSize(fp, formatspecs['format_delimiter'])

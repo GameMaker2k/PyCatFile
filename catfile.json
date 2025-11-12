@@ -7,7 +7,10 @@
         "usememfd": true,
         "usespoolfile": false,
         "spoolfilesize": 4194304,
-        "filebuffsize": 262144
+        "filebuffsize": 262144,
+        "advancedlist": true,
+        "altinode": false,
+        "newstyle": true
     },
     "CatFile": {
         "len": 7,
@@ -16,10 +19,7 @@
         "name": "CatFile",
         "magic": "CatFile",
         "delimiter": "\u0000",
-        "extension": ".cat",
-        "newstyle": true,
-        "advancedlist": true,
-        "altinode": false
+        "extension": ".cat"
     },
     "NekoFile": {
         "len": 8,
@@ -28,10 +28,7 @@
         "name": "NekoFile",
         "magic": "NekoFile",
         "delimiter": "\u0000",
-        "extension": ".neko",
-        "newstyle": true,
-        "advancedlist": true,
-        "altinode": false
+        "extension": ".neko"
     },
     "ねこファイル": {
         "len": 18,
@@ -40,10 +37,7 @@
         "name": "NekoFairu",
         "magic": "ねこファイル",
         "delimiter": "\u0000",
-        "extension": ".ねこ",
-        "newstyle": true,
-        "advancedlist": true,
-        "altinode": false
+        "extension": ".ねこ"
     },
     "ネコファイル": {
         "len": 18,
@@ -52,10 +46,7 @@
         "name": "NekoFairu",
         "magic": "ネコファイル",
         "delimiter": "\u0000",
-        "extension": ".ネコ",
-        "newstyle": true,
-        "advancedlist": true,
-        "altinode": false
+        "extension": ".ネコ"
     },
     "네코파일": {
         "len": 12,
@@ -64,10 +55,7 @@
         "name": "NekoPa-il",
         "magic": "네코파일",
         "delimiter": "\u0000",
-        "extension": ".네코",
-        "newstyle": true,
-        "advancedlist": true,
-        "altinode": false
+        "extension": ".네코"
     },
     "고양이파일": {
         "len": 15,
@@ -76,10 +64,7 @@
         "name": "GoyangiPa-il",
         "magic": "고양이파일",
         "delimiter": "\u0000",
-        "extension": ".고양이",
-        "newstyle": true,
-        "advancedlist": true,
-        "altinode": false
+        "extension": ".고양이"
     },
     "内酷法伊鲁": {
         "len": 15,
@@ -88,10 +73,7 @@
         "name": "NeiKuFaYiLu",
         "magic": "内酷法伊鲁",
         "delimiter": "\u0000",
-        "extension": ".内酷",
-        "newstyle": true,
-        "advancedlist": true,
-        "altinode": false
+        "extension": ".内酷"
     },
     "猫文件": {
         "len": 9,
@@ -100,9 +82,6 @@
         "name": "MaoWenjian",
         "magic": "猫文件",
         "delimiter": "\u0000",
-        "extension": ".猫",
-        "newstyle": true,
-        "advancedlist": true,
-        "altinode": false
+        "extension": ".猫"
     }
 }
