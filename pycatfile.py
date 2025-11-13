@@ -444,7 +444,13 @@ if('PYCATFILE_CONFIG_FILE' in os.environ and os.path.exists(os.environ['PYCATFIL
 else:
     prescriptpath = get_importing_script_path()
     if(prescriptpath is not None):
-        scriptconf = os.path.join(os.path.dirname(prescriptpath), __use_ini_name__)
+        if(__use_ini_file__ and not __use_json_file__):
+            scriptconf = os.path.join(os.path.dirname(prescriptpath), __use_ini_name__)
+        elif(__use_json_file__ and not __use_ini_file__):
+            scriptconf = os.path.join(os.path.dirname(prescriptpath), __use_json_name__)
+        else:
+            scriptconf = ""
+            prescriptpath = None
     else:
         scriptconf = ""
 if os.path.exists(scriptconf):
@@ -652,7 +658,7 @@ __version_date_info__ = (2025, 11, 12, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id: 7aaec01a72206a228de14a72ac493120336e9ca3 $"
+__revision_id__ = "$Id$"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -1050,6 +1056,14 @@ def to_ns(timestamp):
 
     # Multiply by 1e9 to get nanoseconds, then cast to int
     return int(seconds * 1000000000)
+
+def format_ns_utc(ts_ns, fmt='%Y-%m-%d %H:%M:%S'):
+    ts_ns = int(ts_ns)
+    sec, ns = divmod(ts_ns, 10**9)
+    dt = datetime.datetime.utcfromtimestamp(sec).replace(microsecond=ns // 1000)
+    base = dt.strftime(fmt)
+    ns_str = "%09d" % ns
+    return base + "." + ns_str
 
 def _split_posix(name):
     """
