@@ -652,7 +652,7 @@ __version_date_info__ = (2025, 11, 12, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: 7aaec01a72206a228de14a72ac493120336e9ca3 $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -4969,8 +4969,8 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
     formversion = re.findall("([\\d]+)", formstring)
     fheadsize = int(inheader[0], 16)
     fnumfields = int(inheader[1], 16)
-    fheadctime = int(inheader[1], 16)
-    fheadmtime = int(inheader[1], 16)
+    fheadctime = int(inheader[2], 16)
+    fheadmtime = int(inheader[3], 16)
     fhencoding = inheader[4]
     fostype = inheader[5]
     fpythontype = inheader[6]
