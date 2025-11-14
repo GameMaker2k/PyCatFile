@@ -24,7 +24,6 @@ import re
 import sys
 import time
 import stat
-import zlib
 import mmap
 import hmac
 import base64
@@ -828,13 +827,19 @@ geturls_headers_googlebot_google_old = {'Referer': "http://google.com/", 'User-A
 
 compressionsupport = []
 try:
-    import gzip
+    try:
+        import compression.gzip as gzip
+    except ImportError:
+        import gzip
     compressionsupport.append("gz")
     compressionsupport.append("gzip")
 except ImportError:
     pass
 try:
-    import bz2
+    try:
+        import compression.bz2 as bz2
+    except ImportError:
+        import bz2
     compressionsupport.append("bz2")
     compressionsupport.append("bzip2")
 except ImportError:
@@ -855,20 +860,20 @@ except ImportError:
     pass
 '''
 try:
-    import zstandard
+    try:
+        import compression.zstd as zstd
+    except ImportError:
+        import pyzstd.zstdfile as zstd
     compressionsupport.append("zst")
     compressionsupport.append("zstd")
     compressionsupport.append("zstandard")
 except ImportError:
-    try:
-        import pyzstd.zstdfile
-        compressionsupport.append("zst")
-        compressionsupport.append("zstd")
-        compressionsupport.append("zstandard")
-    except ImportError:
-        pass
+    pass
 try:
-    import lzma
+    try:
+        import compression.lzma as lzma
+    except ImportError:
+        import lzma
     compressionsupport.append("lzma")
     compressionsupport.append("xz")
 except ImportError:
@@ -878,12 +883,18 @@ except ImportError:
         compressionsupport.append("xz")
     except ImportError:
         pass
-compressionsupport.append("zlib")
-compressionsupport.append("zl")
-compressionsupport.append("zz")
-compressionsupport.append("Z")
-compressionsupport.append("z")
-
+try:
+    try:
+        import compression.zlib as zlib
+    except ImportError:
+        import zlib
+    compressionsupport.append("zlib")
+    compressionsupport.append("zl")
+    compressionsupport.append("zz")
+    compressionsupport.append("Z")
+    compressionsupport.append("z")
+except ImportError:
+    pass
 compressionlist = ['auto']
 compressionlistalt = []
 outextlist = []
@@ -6384,10 +6395,8 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
             if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
                 formatspecs = formatspecs[compresscheck]
             if(compresscheck=="zstd"):
-                if 'zstandard' in sys.modules:
-                    infile = ZstdFile(fileobj=infile, mode="rb")
-                elif 'pyzstd' in sys.modules:
-                    infile = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
+                if 'zstd' in compressionsupport:
+                    infile = zstd.ZstdFile(infile, mode="rb")
                 tarfp = tarfile.open(fileobj=infile, mode="r")
             else:
                 tarfp = tarfile.open(fileobj=infile, mode="r")
@@ -6396,10 +6405,8 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
             if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
                 formatspecs = formatspecs[compresscheck]
             if(compresscheck=="zstd"):
-                if 'zstandard' in sys.modules:
-                    infile = ZstdFile(fileobj=infile, mode="rb")
-                elif 'pyzstd' in sys.modules:
-                    infile = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
+                if 'zstd' in compressionsupport:
+                    infile = zstd.ZstdFile(infile, mode="rb")
                 tarfp = tarfile.open(fileobj=infile, mode="r")
             else:
                 tarfp = tarfile.open(infile, "r")
@@ -8466,10 +8473,8 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, file
             elif(compresscheck == "lz4" and compresscheck in compressionsupport):
                 fp = lz4.frame.open(infile, "rb")
             elif(compresscheck == "zstd" and compresscheck in compressionsupport):
-                if 'zstandard' in sys.modules:
-                    fp = ZstdFile(infile, mode="rb")
-                elif 'pyzstd' in sys.modules:
-                    fp = pyzstd.zstdfile.ZstdFile(infile, mode="rb")
+                if 'zstd' in compressionsupport:
+                    fp = zstd.ZstdFile(infile, mode="rb")
                 else:
                     return Flase
             elif((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
@@ -8586,10 +8591,8 @@ def UncompressFileAlt(fp, formatspecs=__file_format_multi_dict__, filestart=0,
     elif kind in ("lzma","xz") and (("lzma" in compressionsupport) or ("xz" in compressionsupport)):
         wrapped = lzma.LZMAFile(src)
     elif kind == "zstd"   and ("zstd" in compressionsupport or "zstandard" in compressionsupport):
-        if 'zstandard' in sys.modules:
-            wrapped = ZstdFile(fileobj=src, mode="rb")
-        elif 'pyzstd' in sys.modules:
-            wrapped = pyzstd.zstdfile.ZstdFile(fileobj=src, mode="rb")
+        if 'zstd' in compressionsupport:
+            wrapped = zstd.ZstdFile(src, mode="rb")
         else:
             return False
     elif kind == "lz4"    and "lz4"    in compressionsupport:
@@ -8657,10 +8660,8 @@ def UncompressFile(infile, formatspecs=__file_format_multi_dict__, mode="rb",
         elif (compresscheck == "bzip2" and "bzip2" in compressionsupport):
             fp = bz2.open(infile, mode)
         elif (compresscheck == "zstd" and "zstandard" in compressionsupport):
-            if 'zstandard' in sys.modules:
-                fp = ZstdFile(infile, mode=mode)
-            elif 'pyzstd' in sys.modules:
-                fp = pyzstd.zstdfile.ZstdFile(infile, mode=mode)
+            if 'zstd' in compressionsupport:
+                fp = zstd.ZstdFile(infile, mode=mode)
             else:
                 return False
         elif (compresscheck == "lz4" and "lz4" in compressionsupport):
@@ -9429,10 +9430,8 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None,
             outfp = FileLikeAdapter(bz2.open(outfile, mode, compressionlevel), mode="wb")
 
         elif (fextname == ".zst" and "zstandard" in compressionsupport):
-            if 'zstandard' in sys.modules:
-                outfp = FileLikeAdapter(ZstdFile(outfile, mode=mode, level=compressionlevel), mode="wb")
-            elif 'pyzstd' in sys.modules:
-                outfp = FileLikeAdapter(pyzstd.zstdfile.ZstdFile(outfile, mode=mode, level=compressionlevel), mode="wb")
+            if 'zstd' in compressionsupport:
+                outfp = FileLikeAdapter(zstd.ZstdFile(outfile, mode=mode, level=compressionlevel), mode="wb")
             else:
                 return False  # fix: 'Flase' -> False
 
@@ -11072,10 +11071,8 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
             if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
                 formatspecs = formatspecs[compresscheck]
             if(compresscheck=="zstd"):
-                if 'zstandard' in sys.modules:
-                    infile = ZstdFile(fileobj=infile, mode="rb")
-                elif 'pyzstd' in sys.modules:
-                    infile = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
+                if 'zstd' in compressionsupport:
+                    infile = zstd.ZstdFile(infile, mode="rb")
                 tarfp = tarfile.open(fileobj=infile, mode="r")
             else:
                 tarfp = tarfile.open(fileobj=infile, mode="r")
@@ -11084,10 +11081,8 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
             if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
                 formatspecs = formatspecs[compresscheck]
             if(compresscheck=="zstd"):
-                if 'zstandard' in sys.modules:
-                    infile = ZstdFile(fileobj=infile, mode="rb")
-                elif 'pyzstd' in sys.modules:
-                    infile = pyzstd.zstdfile.ZstdFile(fileobj=infile, mode="rb")
+                if 'zstd' in compressionsupport:
+                    infile = zstd.ZstdFile(infile, mode="rb")
                 tarfp = tarfile.open(fileobj=infile, mode="r")
             else:
                 tarfp = tarfile.open(infile, "r")
