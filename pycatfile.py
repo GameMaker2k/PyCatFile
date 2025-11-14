@@ -37,8 +37,8 @@ import zipfile
 import binascii
 import datetime
 import platform
+import collections
 from io import StringIO, BytesIO
-from collections import namedtuple
 import posixpath  # POSIX-safe joins/normpaths
 try:
     from backports import tempfile
@@ -49,12 +49,16 @@ try:
     from http.server import BaseHTTPRequestHandler, HTTPServer
     from socketserver import TCPServer
     from urllib.parse import urlparse, parse_qs
-    import base64
 except ImportError:
     from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
     from SocketServer import TCPServer
     from urlparse import urlparse, parse_qs
-    import base64
+
+try:
+    # Python 3.8+ only
+    from multiprocessing import shared_memory
+except ImportError:
+    shared_memory = None
 
 # FTP Support
 ftpssl = True
@@ -174,7 +178,6 @@ def _ensure_text(s, encoding="utf-8", errors="replace", allow_none=False):
 
     # Handle pathlib.Path & other path-like objects
     try:
-        import os
         if hasattr(os, "fspath"):
             fs = os.fspath(s)
             if isinstance(fs, text_type):
@@ -215,7 +218,6 @@ except ImportError:
 
 # Windows-specific setup
 if os.name == "nt":
-    import io
     def _wrap(stream):
         buf = getattr(stream, "buffer", None)
         is_tty = getattr(stream, "isatty", lambda: False)()
@@ -818,9 +820,9 @@ except Exception:
 geturls_ua_pyfile_python = "Mozilla/5.0 (compatible; {proname}/{prover}; +{prourl})".format(
     proname=__project__, prover=__version__, prourl=__project_url__)
 if(platform.python_implementation() != ""):
-    py_implementation = platform.python_implementation()
+    py_implementation = platform.python_implementation()+str(platform.python_version_tuple()[0])
 if(platform.python_implementation() == ""):
-    py_implementation = "CPython"
+    py_implementation = "CPython"+str(platform.python_version_tuple()[0])
 geturls_ua_pyfile_python_alt = "Mozilla/5.0 ({osver}; {archtype}; +{prourl}) {pyimp}/{pyver} (KHTML, like Gecko) {proname}/{prover}".format(osver=platform.system(
 )+" "+platform.release(), archtype=platform.machine(), prourl=__project_url__, pyimp=py_implementation, pyver=platform.python_version(), proname=__project__, prover=__version__)
 geturls_ua_googlebot_google = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
@@ -2121,7 +2123,7 @@ def MkTempFile(data=None,
                spool_max=__spoolfile_size__,
                spool_dir=__use_spooldir__,
                reset_to_start=True,
-               memfd_name=None,
+               memfd_name=__program_name__,
                memfd_allow_sealing=False,
                memfd_flags_extra=0,
                on_create=None):
@@ -2612,6 +2614,384 @@ def _is_valid_zlib_header(cmf, flg):
     if ((cmf << 8) + flg) % 31 != 0:
         return False
     return True
+
+class SharedMemoryFile(object):
+    """
+    File-like wrapper around multiprocessing.shared_memory.SharedMemory.
+
+    Binary-only API, intended to behave similarly to a regular file opened in
+    'rb', 'wb', or 'r+b' modes (but backed by a fixed-size shared memory block).
+
+    Notes:
+      - Requires Python 3.8+ at runtime to actually use SharedMemory.
+      - On Python 2, importing is fine but constructing will raise RuntimeError.
+      - There is no automatic resizing; buffer size is fixed by SharedMemory.
+      - No real fileno(); this does not represent an OS-level file descriptor.
+      - For text mode, wrap this with io.TextIOWrapper on Python 3:
+            f = SharedMemoryFile(...)
+            tf = io.TextIOWrapper(f, encoding="utf-8")
+    """
+
+    def __init__(self, shm=None, name=None, create=False, size=0,
+                 mode='r+b', offset=0, unlink_on_close=False):
+        """
+        Parameters:
+          shm   : existing SharedMemory object (preferred).
+          name  : name of shared memory block (for attach or create).
+          create: if True, create new SharedMemory; else attach existing.
+          size  : size in bytes (required when create=True).
+          mode  : like 'rb', 'wb', 'r+b', 'ab' (binary only; 't' not supported).
+          offset: starting offset within the shared memory buffer.
+          unlink_on_close: if True, call shm.unlink() when close() is called.
+
+        Usage examples:
+
+            # Create new block and file-like wrapper
+            f = SharedMemoryFile(name=None, create=True, size=4096, mode='r+b')
+
+            # Attach to existing shared memory by name
+            f = SharedMemoryFile(name="xyz", create=False, mode='r+b')
+
+            # Wrap an existing SharedMemory object
+            shm = shared_memory.SharedMemory(create=True, size=1024)
+            f = SharedMemoryFile(shm=shm, mode='r+b')
+        """
+        if shared_memory is None:
+            # No SharedMemory available on this interpreter
+            raise RuntimeError("multiprocessing.shared_memory.SharedMemory "
+                               "is not available on this Python version")
+
+        if 't' in mode:
+            raise ValueError("SharedMemoryFile is binary-only; "
+                             "wrap it with io.TextIOWrapper for text")
+
+        self.mode = mode
+        self._closed = False
+        self._unlinked = False
+        self._unlink_on_close = bool(unlink_on_close)
+
+        if shm is not None:
+            self._shm = shm
+        else:
+            # name may be None when create=True
+            self._shm = shared_memory.SharedMemory(name=name, create=create, size=size)
+
+        self._buf = self._shm.buf
+        self._base_offset = int(offset)
+        if self._base_offset < 0 or self._base_offset > len(self._buf):
+            raise ValueError("offset out of range")
+
+        # We treat the accessible region as [base_offset, len(buf))
+        self._size = len(self._buf) - self._base_offset
+        self._pos = 0  # logical file position within that region
+
+    # ---------- basic properties ----------
+
+    @property
+    def name(self):
+        # SharedMemory name (may be None for anonymous)
+        return getattr(self._shm, "name", None)
+
+    @property
+    def closed(self):
+        return self._closed
+
+    def readable(self):
+        return ('r' in self.mode) or ('+' in self.mode)
+
+    def writable(self):
+        return any(ch in self.mode for ch in ('w', 'a', '+'))
+
+    def seekable(self):
+        return True
+
+    # ---------- core helpers ----------
+
+    def _check_closed(self):
+        if self._closed:
+            raise ValueError("I/O operation on closed SharedMemoryFile")
+
+    def _clamp_pos(self, pos):
+        if pos < 0:
+            return 0
+        if pos > self._size:
+            return self._size
+        return pos
+
+    def _region_bounds(self):
+        """Return (start, end) absolute indices into the SharedMemory buffer."""
+        start = self._base_offset + self._pos
+        end = self._base_offset + self._size
+        return start, end
+
+    # ---------- positioning ----------
+
+    def seek(self, offset, whence=0):
+        """
+        Seek to a new file position.
+
+        whence: 0 = from start, 1 = from current, 2 = from end.
+        """
+        self._check_closed()
+        offset = int(offset)
+        whence = int(whence)
+
+        if whence == 0:   # from start
+            new_pos = offset
+        elif whence == 1: # from current
+            new_pos = self._pos + offset
+        elif whence == 2: # from end
+            new_pos = self._size + offset
+        else:
+            raise ValueError("invalid whence (expected 0, 1, or 2)")
+
+        self._pos = self._clamp_pos(new_pos)
+        return self._pos
+
+    def tell(self):
+        return self._pos
+
+    # ---------- reading ----------
+
+    def read(self, size=-1):
+        """
+        Read up to 'size' bytes (or to EOF if size<0 or None).
+        Returns bytes (py3) or str (py2).
+        """
+        self._check_closed()
+        if not self.readable():
+            raise IOError("SharedMemoryFile not opened for reading")
+
+        if size is None or size < 0:
+            size = self._size - self._pos
+        else:
+            size = int(size)
+            if size < 0:
+                size = 0
+
+        if size == 0:
+            return b'' if not PY2 else ''
+
+        start, end_abs = self._region_bounds()
+        available = end_abs - (self._base_offset + self._pos)
+        if available <= 0:
+            return b'' if not PY2 else ''
+
+        size = min(size, available)
+
+        abs_start = self._base_offset + self._pos
+        abs_end = abs_start + size
+
+        chunk = self._buf[abs_start:abs_end]
+        if PY2:
+            data = bytes(chunk)  # bytes() -> str in py2
+        else:
+            data = bytes(chunk)
+
+        self._pos += len(data)
+        return data
+
+    def readline(self, size=-1):
+        """
+        Read a single line (ending with '\\n' or EOF).
+        If size >= 0, at most that many bytes are returned.
+        """
+        self._check_closed()
+        if not self.readable():
+            raise IOError("SharedMemoryFile not opened for reading")
+
+        # Determine maximum bytes we can scan
+        start, end_abs = self._region_bounds()
+        remaining = end_abs - (self._base_offset + self._pos)
+        if remaining <= 0:
+            return b'' if not PY2 else ''
+
+        if size is not None and size >= 0:
+            size = int(size)
+            max_len = min(size, remaining)
+        else:
+            max_len = remaining
+
+        abs_start = self._base_offset + self._pos
+        abs_max = abs_start + max_len
+
+        # Work on a local bytes slice for easy .find()
+        if PY2:
+            buf_bytes = bytes(self._buf[abs_start:abs_max])
+        else:
+            buf_bytes = bytes(self._buf[abs_start:abs_max])
+
+        idx = buf_bytes.find(b'\n')
+        if idx == -1:
+            # No newline; read entire chunk
+            line_bytes = buf_bytes
+        else:
+            line_bytes = buf_bytes[:idx + 1]
+
+        self._pos += len(line_bytes)
+
+        if PY2:
+            return line_bytes  # already str
+        return line_bytes
+
+    def readinto(self, b):
+        """
+        Read bytes into a pre-allocated writable buffer (bytearray/memoryview).
+        Returns number of bytes read.
+        """
+        self._check_closed()
+        if not self.readable():
+            raise IOError("SharedMemoryFile not opened for reading")
+
+        # Normalize target buffer
+        if isinstance(b, memoryview):
+            mv = b
+        else:
+            mv = memoryview(b)
+
+        size = len(mv)
+        if size <= 0:
+            return 0
+
+        start, end_abs = self._region_bounds()
+        remaining = end_abs - (self._base_offset + self._pos)
+        if remaining <= 0:
+            return 0
+
+        size = min(size, remaining)
+
+        abs_start = self._base_offset + self._pos
+        abs_end = abs_start + size
+
+        mv[:size] = self._buf[abs_start:abs_end]
+        self._pos += size
+        return size
+
+    # ---------- writing ----------
+
+    def write(self, data):
+        """
+        Write bytes-like object to the shared memory region.
+
+        Returns number of bytes written. Will raise if not opened writable
+        or if writing would overflow the fixed-size region.
+        """
+        self._check_closed()
+        if not self.writable():
+            raise IOError("SharedMemoryFile not opened for writing")
+
+        if isinstance(data, memoryview):
+            data = bytes(data)
+        elif isinstance(data, bytearray):
+            data = bytes(data)
+
+        if not isinstance(data, binary_types):
+            raise TypeError("write() expects a bytes-like object")
+
+        data_len = len(data)
+        if data_len == 0:
+            return 0
+
+        # Handle "append" semantics roughly: start from end on first write
+        if 'a' in self.mode and self._pos == 0:
+            # Move to logical end of region
+            self._pos = self._size
+
+        start, end_abs = self._region_bounds()
+        remaining = end_abs - (self._base_offset + self._pos)
+        if data_len > remaining:
+            raise IOError("write would overflow SharedMemory region (need %d, have %d)"
+                          % (data_len, remaining))
+
+        abs_start = self._base_offset + self._pos
+        abs_end = abs_start + data_len
+
+        self._buf[abs_start:abs_end] = data
+        self._pos += data_len
+        return data_len
+
+    def flush(self):
+        """
+        No-op for shared memory; provided for file-like compatibility.
+        """
+        self._check_closed()
+        # nothing to flush
+
+    # ---------- unlink / close / context manager ----------
+
+    def unlink(self):
+        """
+        Unlink (destroy) the underlying shared memory block.
+
+        After unlink(), new processes cannot attach via name.
+        Existing attachments (including this one) can continue to use
+        the memory until they close() it.
+
+        This is idempotent: calling it more than once is safe.
+        """
+        if self._unlinked:
+            return
+
+        try:
+            self._shm.unlink()
+        except AttributeError:
+            # Should not happen on normal Python 3.8+,
+            # but keep a clear error if it does.
+            raise RuntimeError("Underlying SharedMemory object "
+                               "does not support unlink()")
+
+        self._unlinked = True
+
+    def close(self):
+        if self._closed:
+            return
+        self._closed = True
+
+        # Optionally unlink on close if requested
+        if self._unlink_on_close and not self._unlinked:
+            try:
+                self.unlink()
+            except Exception:
+                # best-effort; close anyway
+                pass
+
+        try:
+            self._shm.close()
+        except Exception:
+            pass
+
+    def __enter__(self):
+        self._check_closed()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    # ---------- iteration ----------
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        line = self.readline()
+        if (not line) or len(line) == 0:
+            raise StopIteration
+        return line
+
+    if PY2:
+        next = __next__
+
+    # ---------- misc helpers ----------
+
+    def fileno(self):
+        """
+        There is no real OS-level file descriptor; raise OSError for APIs
+        that require a fileno().
+        """
+        raise OSError("SharedMemoryFile does not have a real fileno()")
+
+    def isatty(self):
+        return False
 
 # ---------- Main class ----------
 class ZlibFile(object):
@@ -4504,7 +4884,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
         extrastart = extrastart + 1
     fvendorfieldslist = []
     fvendorfields = 0;
-    if(len(HeaderOut)>extraend):
+    if((len(HeaderOut) - 4)>extraend):
         extrastart = extraend
         extraend = len(HeaderOut) - 4
         while(extrastart < extraend):
@@ -4993,7 +5373,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
                 pass
     fvendorfieldslist = []
     fvendorfields = 0;
-    if(len(inheader)>extraend):
+    if((len(inheader) - 2)>extraend):
         extrastart = extraend
         extraend = len(inheader) - 2
         while(extrastart < extraend):
@@ -5801,7 +6181,7 @@ def AppendFileHeader(fp, numfiles, fencoding, extradata=[], jsondata={}, checksu
     else:
         fctime = format(int(to_ns(time.time())), 'x').lower()
     # Serialize the first group
-    fnumfilesa = AppendNullBytes([tmpoutlenhex, fctime, fctime, fencoding, platform.system(), py_implementation, __program_name__, fnumfiles_hex, "+"+str(len(formatspecs['format_delimiter']))], delimiter)
+    fnumfilesa = AppendNullBytes([tmpoutlenhex, fctime, fctime, fencoding, platform.system(), py_implementation, __program_name__+str(__version_info__[0]), fnumfiles_hex, "+"+str(len(formatspecs['format_delimiter']))], delimiter)
     # Append tmpoutlist
     fnumfilesa += AppendNullBytes(tmpoutlist, delimiter)
     # Append extradata items if any
@@ -13597,7 +13977,6 @@ def run_http_file_server(fileobj, url, on_progress=None, backlog=5):
             if not ah or not ah.strip().lower().startswith("basic "):
                 return False
             try:
-                import base64
                 b64 = ah.strip().split(" ", 1)[1]
                 raw = base64.b64decode(_to_bytes(b64))
                 try: raw_txt = raw.decode("utf-8")
