@@ -145,6 +145,15 @@ try:
 except Exception:
     PATH_TYPES = (basestring,)
 
+def running_interactively():
+    main = sys.modules.get("__main__")
+    no_main_file = not hasattr(main, "__file__")
+    interactive_flag = bool(getattr(sys.flags, "interactive", 0))
+    return no_main_file or interactive_flag
+
+if running_interactively():
+    logging.basicConfig(format="%(message)s", stream=PY_STDOUT_TEXT, level=logging.DEBUG)
+
 def _ensure_text(s, encoding="utf-8", errors="replace", allow_none=False):
     """
     Normalize any input to text_type (unicode on Py2, str on Py3).
