@@ -47,11 +47,9 @@ except ImportError:
 
 try:
     from http.server import BaseHTTPRequestHandler, HTTPServer
-    from socketserver import TCPServer
     from urllib.parse import urlparse, parse_qs
 except ImportError:
     from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-    from SocketServer import TCPServer
     from urlparse import urlparse, parse_qs
 
 try:
@@ -884,16 +882,14 @@ try:
     try:
         import compression.lzma as lzma
     except ImportError:
-        import lzma
+        try:
+            import lzma
+        except ImportError:
+            from backports import lzma
     compressionsupport.append("lzma")
     compressionsupport.append("xz")
 except ImportError:
-    try:
-        from backports import lzma
-        compressionsupport.append("lzma")
-        compressionsupport.append("xz")
-    except ImportError:
-        pass
+    pass
 try:
     try:
         import compression.zlib as zlib
