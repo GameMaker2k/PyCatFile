@@ -108,7 +108,7 @@ argparser = argparse.ArgumentParser(description="Manipulate archive files.", con
 # Version information
 argparser.add_argument("-V", "--version", action="version", version=__program_name__ + " " + __version__)
 # Input and output specifications
-argparser.add_argument("-i", "--input", help="Specify the file(s) to concatenate or the archive file to extract.", required=True)
+argparser.add_argument("-i", "--input", nargs="+", help="Specify the file(s) to concatenate or the archive file to extract.", required=True)
 argparser.add_argument("-o", "--output", default=None, help="Specify the name for the extracted or output archive files.")
 # Operations
 argparser.add_argument("-c", "--create", action="store_true", help="Perform only the concatenation operation.")

@@ -6498,16 +6498,29 @@ def AppendFilesWithContentToList(infiles, dirlistfromtxt=False, extradata=[], js
     advancedlist = __use_advanced_list__
     altinode = __use_alt_inode__
     infilelist = []
-    if(infiles == "-"):
+    if(not dirlistfromtxt and not isinstance(infiles, (list, tuple, )) and infiles == "-"):
         for line in PY_STDIN_TEXT:
             infilelist.append(line.strip())
         infilelist = list(filter(None, infilelist))
-    elif(infiles != "-" and dirlistfromtxt and os.path.exists(infiles) and (os.path.isfile(infiles) or infiles == os.devnull)):
-        if(not os.path.exists(infiles) or not os.path.isfile(infiles)):
-            return False
-        with UncompressFile(infiles, formatspecs, "r") as finfile:
-            for line in finfile:
-                infilelist.append(line.strip())
+    if(not dirlistfromtxt and isinstance(infiles, (list, tuple, )) and len(infiles)==1 and infiles[0] == "-"):
+        for line in PY_STDIN_TEXT:
+            infilelist.append(line.strip())
+        infilelist = list(filter(None, infilelist))
+    elif(dirlistfromtxt):
+        if(not isinstance(infiles, (list, tuple, ))):
+            infiles = [infiles]
+        if(isinstance(infiles, (list, tuple, ))):
+            for fileloc in infiles:
+                if(fileloc == "-"):
+                    for line in PY_STDIN_TEXT:
+                        infilelist.append(line.strip())
+                else:
+                    if(not os.path.exists(fileloc) or not os.path.isfile(fileloc)):
+                        return False
+                    else:
+                        with UncompressFile(fileloc, formatspecs, "r") as finfile:
+                            for line in finfile:
+                                infilelist.append(line.strip())
         infilelist = list(filter(None, infilelist))
     else:
         if(isinstance(infiles, (list, tuple, ))):
@@ -6843,7 +6856,7 @@ def AppendFilesWithContentFromTarFileToList(infile, extradata=[], jsondata={}, c
     inodetofile = {}
     filetoinode = {}
     inodetoforminode = {}
-    if(infile == "-"):
+    if(not isinstance(infile, (list, tuple, )) and infile == "-"):
         infile = MkTempFile()
         shutil.copyfileobj(PY_STDIN_BUF, infile, length=__filebuff_size__)
         infile.seek(0, 0)
@@ -7069,7 +7082,7 @@ def AppendFilesWithContentFromZipFileToList(infile, extradata=[], jsondata={}, c
     inodetofile = {}
     filetoinode = {}
     inodetoforminode = {}
-    if(infile == "-"):
+    if(not isinstance(infile, (list, tuple, )) and infile == "-"):
         infile = MkTempFile()
         shutil.copyfileobj(PY_STDIN_BUF, infile, length=__filebuff_size__)
         infile.seek(0, 0)
@@ -10199,7 +10212,7 @@ def CatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_form
         if(not fp):
             return False
         fp.seek(filestart, 0)
-    elif(infile == "-"):
+    elif(not isinstance(infile, (list, tuple, )) and infile == "-"):
         fp = MkTempFile()
         shutil.copyfileobj(PY_STDIN_BUF, fp, length=__filebuff_size__)
         fp.seek(filestart, 0)
@@ -11576,7 +11589,7 @@ def CatFileStringListFiles(instr, filestart=0, seekstart=0, seekend=0, skipcheck
 
 
 def TarFileListFiles(infile, verbose=False, returnfp=False):
-    if(infile == "-"):
+    if(not isinstance(infile, (list, tuple, )) and infile == "-"):
         infile = MkTempFile()
         shutil.copyfileobj(PY_STDIN_BUF, infile, length=__filebuff_size__)
         infile.seek(0, 0)
@@ -11692,7 +11705,7 @@ def TarFileListFiles(infile, verbose=False, returnfp=False):
 
 
 def ZipFileListFiles(infile, verbose=False, returnfp=False):
-    if(infile == "-"):
+    if(not isinstance(infile, (list, tuple, )) and infile == "-"):
         infile = MkTempFile()
         shutil.copyfileobj(PY_STDIN_BUF, infile, length=__filebuff_size__)
         infile.seek(0, 0)
