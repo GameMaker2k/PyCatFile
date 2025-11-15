@@ -5104,6 +5104,15 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     while(extrastart < extraend):
         fextrafieldslist.append(HeaderOut[extrastart])
         extrastart = extrastart + 1
+    fvendorfieldslist = []
+    fvendorfields = 0;
+    if((len(HeaderOut) - 4)>extraend):
+        extrastart = extraend
+        extraend = len(HeaderOut) - 4
+        while(extrastart < extraend):
+            fvendorfieldslist.append(HeaderOut[extrastart])
+            extrastart = extrastart + 1
+            fvendorfields = fvendorfields + 1
     if(fextrafields==1):
         try:
             fextrafieldslist = json.loads(base64.b64decode(fextrafieldslist[0]).decode("UTF-8"))
@@ -5113,6 +5122,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
                 fextrafieldslist = json.loads(fextrafieldslist[0])
             except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                 pass
+    fjstart = fp.tell()
     if(fjsontype=="json"):
         fjsoncontent = {}
         fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
@@ -5179,6 +5189,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
                 except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                     pass
     fp.seek(len(delimiter), 1)
+    fjend = fp.tell() - 1
     jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs, saltkey)
     if(not CheckChecksums(fjsonchecksum, jsonfcs) and not skipchecksum):
         VerbosePrintOut("File JSON Data Checksum Error with file " +
@@ -5211,6 +5222,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
         pyhascontents = False
     fcontents.seek(0, 0)
     newfccs = GetFileChecksum(fcontents, HeaderOut[-3].lower(), False, formatspecs, saltkey)
+    fcontents.seek(0, 0)
     if(not CheckChecksums(fccs, newfccs) and not skipchecksum and not listonly):
         VerbosePrintOut("File Content Checksum Error with file " +
                         fname + " at offset " + str(fcontentstart))
@@ -5250,8 +5262,8 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     fcontents.seek(0, 0)
     if(not contentasfile):
         fcontents = fcontents.read()
-    outlist = [ftype, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame, fgid, fgname, fid,
-               finode, flinkcount, fdev, frdev, fseeknextfile, fjsoncontent, fextrafieldslist, HeaderOut[-4], HeaderOut[-3], fcontents]
+    outlist = {'fheaders': [ftype, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
+               fcsize, fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, frdev, fseeknextfile], 'fextradata': fextrafieldslist, 'fjsoncontent': fjsoncontent, 'fcontents': fcontents, 'fjsonchecksumtype': fjsonchecksumtype, 'fheaderchecksumtype': HeaderOut[-4].lower(), 'fcontentchecksumtype': HeaderOut[-3].lower()}
     return outlist
 
 
@@ -5634,19 +5646,98 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
                 fextrafieldslist = json.loads(fextrafieldslist[0])
             except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                 pass
+    fvendorfieldslist = []
+    fvendorfields = 0;
+    if((len(inheader) - 2)>extraend):
+        extrastart = extraend
+        extraend = len(inheader) - 2
+        while(extrastart < extraend):
+            fvendorfieldslist.append(HeaderOut[extrastart])
+            extrastart = extrastart + 1
+            fvendorfields = fvendorfields + 1
     formversion = re.findall("([\\d]+)", formstring)
     fheadsize = int(inheader[0], 16)
     fnumfields = int(inheader[1], 16)
+    fheadctime = int(inheader[2], 16)
+    fheadmtime = int(inheader[3], 16)
+    fhencoding = inheader[4]
+    fostype = inheader[5]
+    fpythontype = inheader[6]
+    fprojectname = inheader[7]
     fnumfiles = int(inheader[8], 16)
-    fseeknextfile = inheaderdata[9]
-    fjsontype = int(inheader[10], 16)
+    fseeknextfile = inheader[9]
+    fjsontype = inheader[10]
     fjsonlen = int(inheader[11], 16)
     fjsonsize = int(inheader[12], 16)
     fjsonchecksumtype = inheader[13]
     fjsonchecksum = inheader[14]
     fjsoncontent = {}
     fjstart = fp.tell()
-    fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+    if(fjsontype=="json"):
+        fjsoncontent = {}
+        fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+        if(fjsonsize > 0):
+            try:
+                fjsonrawcontent = base64.b64decode(fprejsoncontent.encode("UTF-8")).decode("UTF-8")
+                fjsoncontent = json.loads(base64.b64decode(fprejsoncontent.encode("UTF-8")).decode("UTF-8"))
+            except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+                try:
+                    fjsonrawcontent = fprejsoncontent
+                    fjsoncontent = json.loads(fprejsoncontent)
+                except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+                    fprejsoncontent = ""
+                    fjsonrawcontent = fprejsoncontent 
+                    fjsoncontent = {}
+        else:
+            fprejsoncontent = ""
+            fjsonrawcontent = fprejsoncontent 
+            fjsoncontent = {}
+    elif(testyaml and fjsontype == "yaml"):
+        fjsoncontent = {}
+        fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+        if (fjsonsize > 0):
+            try:
+                # try base64 → utf-8 → YAML
+                fjsonrawcontent = base64.b64decode(fprejsoncontent.encode("UTF-8")).decode("UTF-8")
+                fjsoncontent = yaml.safe_load(fjsonrawcontent) or {}
+            except (binascii.Error, UnicodeDecodeError, yaml.YAMLError):
+                try:
+                    # fall back to treating the bytes as plain text YAML
+                    fjsonrawcontent = fprejsoncontent
+                    fjsoncontent = yaml.safe_load(fjsonrawcontent) or {}
+                except (UnicodeDecodeError, yaml.YAMLError):
+                    # final fallback: empty
+                    fprejsoncontent = ""
+                    fjsonrawcontent = fprejsoncontent
+                    fjsoncontent = {}
+        else:
+            fprejsoncontent = ""
+            fjsonrawcontent = fprejsoncontent
+            fjsoncontent = {}
+    elif(not testyaml and fjsontype == "yaml"):
+        fjsoncontent = {}
+        fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+        fprejsoncontent = ""
+        fjsonrawcontent = fprejsoncontent
+    elif(fjsontype=="list"):
+        fprejsoncontent = fp.read(fjsonsize).decode("UTF-8")
+        flisttmp = MkTempFile()
+        flisttmp.write(fprejsoncontent.encode())
+        flisttmp.seek(0)
+        fjsoncontent = ReadFileHeaderData(flisttmp, fjsonlen, delimiter)
+        flisttmp.close()
+        fjsonrawcontent = fjsoncontent
+        if(fjsonlen==1):
+            try:
+                fjsonrawcontent = base64.b64decode(fjsoncontent[0]).decode("UTF-8")
+                fjsoncontent = json.loads(base64.b64decode(fjsoncontent[0]).decode("UTF-8"))
+                fjsonlen = len(fjsoncontent)
+            except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+                try:
+                    fjsonrawcontent = fjsoncontent[0]
+                    fjsoncontent = json.loads(fjsoncontent[0])
+                except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
+                    pass
     fjend = fp.tell()
     if(re.findall("^\\+([0-9]+)", fseeknextfile)):
         fseeknextasnum = int(fseeknextfile.replace("+", ""))
@@ -6407,9 +6498,7 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, fi
         pass
     return fp
 
-def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-    if(not hasattr(fp, "write")):
-        return False
+def AppendFilesWithContentToList(infiles, dirlistfromtxt=False, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
     advancedlist = __use_advanced_list__
     altinode = __use_alt_inode__
     infilelist = []
@@ -6451,16 +6540,8 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
     inodetofile = {}
     filetoinode = {}
     inodetoforminode = {}
-    numfiles = int(len(GetDirList))
-    fnumfiles = format(numfiles, 'x').lower()
-    AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
-    try:
-        fp.flush()
-        if(hasattr(os, "sync")):
-            os.fsync(fp.fileno())
-    except (io.UnsupportedOperation, AttributeError, OSError):
-        pass
     FullSizeFilesAlt = 0
+    tmpoutlist = []
     for curfname in GetDirList:
         fencoding = "UTF-8"
         if(re.findall("^[.|/]", curfname)):
@@ -6635,7 +6716,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
                 if(typechecktest is not False):
-                    typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=True)
+                    typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=False)
                     fcontents.seek(0, 0)
                 fcencoding = GetFileEncoding(fcontents, 0, False)[0]
                 if(typechecktest is False and not compresswholefile):
@@ -6684,7 +6765,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
                 if(typechecktest is not False):
-                    typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=True)
+                    typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=False)
                     fcontents.seek(0, 0)
                 fcencoding = GetFileEncoding(fcontents, 0, False)[0]
                 if(typechecktest is False and not compresswholefile):
@@ -6728,10 +6809,29 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
         if(fcompression == "none"):
             fcompression = ""
         fcontents.seek(0, 0)
+        if(not contentasfile):
+            fcontents = fcontents.read()
         ftypehex = format(ftype, 'x').lower()
-        tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))]
-        AppendFileHeaderWithContent(fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, saltkey)
+        tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
+                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+    return tmpoutlist
+
+def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    GetDirList = AppendFilesWithContentToList(infiles, dirlistfromtxt, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, followlink, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+    if(not hasattr(fp, "write")):
+        return False
+    numfiles = int(len(GetDirList))
+    fnumfiles = format(numfiles, 'x').lower()
+    AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
+    try:
+        fp.flush()
+        if(hasattr(os, "sync")):
+            os.fsync(fp.fileno())
+    except (io.UnsupportedOperation, AttributeError, OSError):
+        pass
+    for curfname in GetDirList:
+        tmpoutlist = curfname['fheaders']
+        AppendFileHeaderWithContent(fp, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
@@ -6740,9 +6840,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
             pass
     return fp
 
-def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-    if(not hasattr(fp, "write")):
-        return False
+def AppendFilesWithContentFromTarFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
     curinode = 0
     curfid = 0
     inodelist = []
@@ -6801,14 +6899,7 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
                 tarfp = tarfile.open(infile, "r")
     except FileNotFoundError:
         return False
-    numfiles = int(len(tarfp.getmembers()))
-    AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
-    try:
-        fp.flush()
-        if(hasattr(os, "sync")):
-            os.fsync(fp.fileno())
-    except (io.UnsupportedOperation, AttributeError, OSError):
-        pass
+    tmpoutlist = []
     for member in sorted(tarfp.getmembers(), key=lambda x: x.name):
         fencoding = "UTF-8"
         if(re.findall("^[.|/]", member.name)):
@@ -6821,14 +6912,8 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
         ffullmode = member.mode
         flinkcount = 0
         fblksize = 0
-        if(hasattr(fstatinfo, "st_blksize")):
-            fblksize = format(int(fstatinfo.st_blksize), 'x').lower()
         fblocks = 0
-        if(hasattr(fstatinfo, "st_blocks")):
-            fblocks = format(int(fstatinfo.st_blocks), 'x').lower()
         fflags = 0
-        if(hasattr(fstatinfo, "st_flags")):
-            fflags = format(int(fstatinfo.st_flags), 'x').lower()
         ftype = 0
         if(member.isreg()):
             ffullmode = member.mode + stat.S_IFREG
@@ -6906,7 +6991,7 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
             typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
             fcontents.seek(0, 0)
             if(typechecktest is not False):
-                typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=True)
+                typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
             fcencoding = GetFileEncoding(fcontents, 0, False)[0]
             if(typechecktest is False and not compresswholefile):
@@ -6950,22 +7035,38 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
         if(fcompression == "none"):
             fcompression = ""
         fcontents.seek(0, 0)
+        if(not contentasfile):
+            fcontents = fcontents.read()
         ftypehex = format(ftype, 'x').lower()
-        tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))]
-        AppendFileHeaderWithContent(fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, saltkey)
+        tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
+                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+    return tmpoutlist
+
+def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    if(not hasattr(fp, "write")):
+        return False
+    GetDirList = AppendFilesWithContentFromTarFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+    numfiles = int(len(GetDirList))
+    fnumfiles = format(numfiles, 'x').lower()
+    AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
+    try:
+        fp.flush()
+        if(hasattr(os, "sync")):
+            os.fsync(fp.fileno())
+    except (io.UnsupportedOperation, AttributeError, OSError):
+        pass
+    for curfname in GetDirList:
+        tmpoutlist = curfname['fheaders']
+        AppendFileHeaderWithContent(fp, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
                 os.fsync(fp.fileno())
         except (io.UnsupportedOperation, AttributeError, OSError):
             pass
-        fcontents.close()
     return fp
 
-def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-    if(not hasattr(fp, "write")):
-        return False
+def AppendFilesWithContentFromZipFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
     curinode = 0
     curfid = 0
     inodelist = []
@@ -6998,14 +7099,7 @@ def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, com
     ziptest = zipfp.testzip()
     if(ziptest):
         VerbosePrintOut("Bad file found!")
-    numfiles = int(len(zipfp.infolist()))
-    AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
-    try:
-        fp.flush()
-        if(hasattr(os, "sync")):
-            os.fsync(fp.fileno())
-    except (io.UnsupportedOperation, AttributeError, OSError):
-        pass
+    tmpoutlist = []
     for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
         fencoding = "UTF-8"
         if(re.findall("^[.|/]", member.filename)):
@@ -7021,14 +7115,8 @@ def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, com
             fpremode = int(stat.S_IFREG | 0x1b6)
         flinkcount = 0
         fblksize = 0
-        if(hasattr(fstatinfo, "st_blksize")):
-            fblksize = format(int(fstatinfo.st_blksize), 'x').lower()
         fblocks = 0
-        if(hasattr(fstatinfo, "st_blocks")):
-            fblocks = format(int(fstatinfo.st_blocks), 'x').lower()
         fflags = 0
-        if(hasattr(fstatinfo, "st_flags")):
-            fflags = format(int(fstatinfo.st_flags), 'x').lower()
         ftype = 0
         if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
             ftype = 5
@@ -7168,26 +7256,44 @@ def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, com
         if(fcompression == "none"):
             fcompression = ""
         fcontents.seek(0, 0)
+        if(not contentasfile):
+            fcontents = fcontents.read()
         ftypehex = format(ftype, 'x').lower()
-        tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                      fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))]
-        AppendFileHeaderWithContent(fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, saltkey)
+        tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
+                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+    return tmpoutlist
+
+def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    if(not hasattr(fp, "write")):
+        return False
+    GetDirList = AppendFilesWithContentFromZipFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+    numfiles = int(len(GetDirList))
+    fnumfiles = format(numfiles, 'x').lower()
+    AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
+    try:
+        fp.flush()
+        if(hasattr(os, "sync")):
+            os.fsync(fp.fileno())
+    except (io.UnsupportedOperation, AttributeError, OSError):
+        pass
+    for curfname in GetDirList:
+        tmpoutlist = curfname['fheaders']
+        AppendFileHeaderWithContent(fp, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
                 os.fsync(fp.fileno())
         except (io.UnsupportedOperation, AttributeError, OSError):
             pass
-        fcontents.close()
     return fp
 
 if(not rarfile_support):
+    def AppendFilesWithContentFromRarFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+        return False
     def AppendFilesWithContentFromRarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return False
-else:       
-    def AppendFilesWithContentFromRarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-        if(not hasattr(fp, "write")):
-            return False
+else:
+    def AppendFilesWithContentFromRarFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         curinode = 0
         curfid = 0
         inodelist = []
@@ -7202,20 +7308,7 @@ else:
         rartest = rarfp.testrar()
         if(rartest):
             VerbosePrintOut("Bad file found!")
-        numfiles = int(len(rarfp.infolist()))
-        AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
-        try:
-            fp.flush()
-            if(hasattr(os, "sync")):
-                os.fsync(fp.fileno())
-        except (io.UnsupportedOperation, AttributeError, OSError):
-            pass
-        try:
-            fp.flush()
-            if(hasattr(os, "sync")):
-                os.fsync(fp.fileno())
-        except (io.UnsupportedOperation, AttributeError, OSError):
-            pass
+        tmpoutlist = []
         for member in sorted(rarfp.infolist(), key=lambda x: x.filename):
             is_unix = False
             is_windows = False
@@ -7260,14 +7353,8 @@ else:
             fcsize = format(int(0), 'x').lower()
             flinkcount = 0
             fblksize = 0
-            if(hasattr(fstatinfo, "st_blksize")):
-                fblksize = format(int(fstatinfo.st_blksize), 'x').lower()
             fblocks = 0
-            if(hasattr(fstatinfo, "st_blocks")):
-                fblocks = format(int(fstatinfo.st_blocks), 'x').lower()
             fflags = 0
-            if(hasattr(fstatinfo, "st_flags")):
-                fflags = format(int(fstatinfo.st_flags), 'x').lower()
             ftype = 0
             if(member.is_file()):
                 ftype = 0
@@ -7405,24 +7492,43 @@ else:
             if(fcompression == "none"):
                 fcompression = ""
             fcontents.seek(0, 0)
+            if(not contentasfile):
+                fcontents = fcontents.read()
             ftypehex = format(ftype, 'x').lower()
-            tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                          fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))]
-            AppendFileHeaderWithContent(fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, saltkey)
+            tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
+                               fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+        return tmpoutlist
+    def AppendFilesWithContentFromRarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+        if(not hasattr(fp, "write")):
+            return False
+        GetDirList = AppendFilesWithContentFromRarFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+        numfiles = int(len(GetDirList))
+        fnumfiles = format(numfiles, 'x').lower()
+        AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
+        try:
+            fp.flush()
+            if(hasattr(os, "sync")):
+                os.fsync(fp.fileno())
+        except (io.UnsupportedOperation, AttributeError, OSError):
+            pass
+        for curfname in GetDirList:
+            tmpoutlist = curfname['fheaders']
+            AppendFileHeaderWithContent(fp, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
             try:
                 fp.flush()
                 if(hasattr(os, "sync")):
                     os.fsync(fp.fileno())
             except (io.UnsupportedOperation, AttributeError, OSError):
                 pass
-            fcontents.close()
         return fp
 
 if(not py7zr_support):
+    def AppendFilesWithContentFromSevenZipFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+        return False
     def AppendFilesWithContentFromSevenZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return False
 else:
-    def AppendFilesWithContentFromSevenZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    def AppendFilesWithContentFromSevenZipFile(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         if(not hasattr(fp, "write")):
             return False
         formver = formatspecs['format_ver']
@@ -7441,14 +7547,7 @@ else:
         sztestalt = szpfp.test()
         if(sztestalt):
             VerbosePrintOut("Bad file found!")
-        numfiles = int(len(szpfp.list()))
-        AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
-        try:
-            fp.flush()
-            if(hasattr(os, "sync")):
-                os.fsync(fp.fileno())
-        except (io.UnsupportedOperation, AttributeError, OSError):
-            pass
+        tmpoutlist = []
         for member in sorted(szpfp.list(), key=lambda x: x.filename):
             fencoding = "UTF-8"
             if(re.findall("^[.|/]", member.filename)):
@@ -7582,17 +7681,34 @@ else:
             if(fcompression == "none"):
                 fcompression = ""
             fcontents.seek(0, 0)
+            if(not contentasfile):
+                fcontents = fcontents.read()
             ftypehex = format(ftype, 'x').lower()
-            tmpoutlist = [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                          fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))]
-            AppendFileHeaderWithContent(fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, saltkey)
+            tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
+                               fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+        return tmpoutlist
+    def AppendFilesWithContentFromSevenZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+        if(not hasattr(fp, "write")):
+            return False
+        GetDirList = AppendFilesWithContentFromSevenZipFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+        numfiles = int(len(GetDirList))
+        fnumfiles = format(numfiles, 'x').lower()
+        AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
+        try:
+            fp.flush()
+            if(hasattr(os, "sync")):
+                os.fsync(fp.fileno())
+        except (io.UnsupportedOperation, AttributeError, OSError):
+            pass
+        for curfname in GetDirList:
+            tmpoutlist = curfname['fheaders']
+            AppendFileHeaderWithContent(fp, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
             try:
                 fp.flush()
                 if(hasattr(os, "sync")):
                     os.fsync(fp.fileno())
             except (io.UnsupportedOperation, AttributeError, OSError):
                 pass
-            fcontents.close()
         return fp
 
 def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
