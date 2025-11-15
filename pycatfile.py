@@ -7523,14 +7523,53 @@ else:
         return fp
 
 if(not py7zr_support):
+    def sevenzip_readall(infile, **kwargs):
+        return False
+else:
+    class _MemoryIO(py7zr.Py7zIO):
+        """In-memory file object used by py7zr's factory API."""
+        def __init__(self):
+            self._buf = bytearray()
+        def write(self, data):
+            # py7zr will call this repeatedly with chunks
+            self._buf.extend(data)
+        def read(self, size=None):
+            if size is None:
+                return bytes(self._buf)
+            return bytes(self._buf[:size])
+        def seek(self, offset, whence=0):
+            # we don't really need seeking for your use case
+            return 0
+        def flush(self):
+            pass
+        def size(self):
+            return len(self._buf)
+    class _MemoryFactory(py7zr.WriterFactory):
+        """Factory that creates _MemoryIO objects and keeps them by filename."""
+        def __init__(self):
+            self.files = {}
+        def create(self, filename: str) -> py7zr.Py7zIO:
+            io_obj = _MemoryIO()
+            self.files[filename] = io_obj
+            return io_obj
+    def sevenzip_readall(infile, **kwargs):
+        """
+        Replacement for SevenZipFile.readall() using the new py7zr API.
+
+        Returns: dict[filename -> _MemoryIO]
+        """
+        factory = _MemoryFactory()
+        with py7zr.SevenZipFile(infile, mode="r", **kwargs) as archive:
+            archive.extractall(factory=factory)
+        return factory.files
+
+if(not py7zr_support):
     def AppendFilesWithContentFromSevenZipFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return False
     def AppendFilesWithContentFromSevenZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return False
 else:
-    def AppendFilesWithContentFromSevenZipFile(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-        if(not hasattr(fp, "write")):
-            return False
+    def AppendFilesWithContentFromSevenZipFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         formver = formatspecs['format_ver']
         fileheaderver = str(int(formver.replace(".", "")))
         curinode = 0
@@ -7542,7 +7581,10 @@ else:
         if(not os.path.exists(infile) or not os.path.isfile(infile)):
             return False
         szpfp = py7zr.SevenZipFile(infile, mode="r")
-        file_content = szpfp.readall()
+        try:
+            file_content = szpfp.readall()
+        except AttributeError:
+            file_content = sevenzip_readall(infile)
         #sztest = szpfp.testzip()
         sztestalt = szpfp.test()
         if(sztestalt):
@@ -7565,14 +7607,8 @@ else:
             fcsize = format(int(0), 'x').lower()
             flinkcount = 0
             fblksize = 0
-            if(hasattr(fstatinfo, "st_blksize")):
-                fblksize = format(int(fstatinfo.st_blksize), 'x').lower()
             fblocks = 0
-            if(hasattr(fstatinfo, "st_blocks")):
-                fblocks = format(int(fstatinfo.st_blocks), 'x').lower()
             fflags = 0
-            if(hasattr(fstatinfo, "st_flags")):
-                fflags = format(int(fstatinfo.st_flags), 'x').lower()
             ftype = 0
             if(member.is_directory):
                 ftype = 5
@@ -7639,7 +7675,10 @@ else:
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
                 fcencoding = GetFileEncoding(fcontents, 0, False)[0]
-                file_content[member.filename].close()
+                try:
+                    file_content[member.filename].close()
+                except AttributeError:
+                    pass
                 if(typechecktest is False and not compresswholefile):
                     fcontents.seek(0, 2)
                     ucfsize = fcontents.tell()
@@ -11914,7 +11953,10 @@ if(py7zr_support):
         lcfi = 0
         returnval = {}
         szpfp = py7zr.SevenZipFile(infile, mode="r")
-        file_content = szpfp.readall()
+        try:
+            file_content = szpfp.readall()
+        except AttributeError:
+            file_content = sevenzip_readall(infile)
         #sztest = szpfp.testzip()
         sztestalt = szpfp.test()
         if(sztestalt):
@@ -11958,7 +12000,10 @@ if(py7zr_support):
                     printfname = member.filename
                 if(ftype == 0):
                     fsize = len(file_content[member.filename].read())
-                    file_content[member.filename].close()
+                    try:
+                        file_content[member.filename].close()
+                    except AttributeError:
+                        pass
                 try:
                     fuid = int(os.getuid())
                 except (KeyError, AttributeError):
