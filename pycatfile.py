@@ -6924,7 +6924,7 @@ def AppendFilesWithContentFromTarFileToList(infile, extradata=[], jsondata={}, c
         fblocks = 0
         fflags = 0
         ftype = 0
-        if(member.isreg()):
+        if(member.isreg() or member.isfile()):
             ffullmode = member.mode + stat.S_IFREG
             ftype = 0
         elif(member.islnk()):
@@ -7129,9 +7129,13 @@ def AppendFilesWithContentFromZipFileToList(infile, extradata=[], jsondata={}, c
         ftype = 0
         if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
             ftype = 5
+        elif ((hasattr(member, "symlink") and member.symlink())):
+            ftype = 2
         else:
             ftype = 0
         flinkname = ""
+        if(ftype==2):
+            flinkname = zipfp.read(member.filename).decode("UTF-8")
         fcurfid = format(int(curfid), 'x').lower()
         fcurinode = format(int(curfid), 'x').lower()
         curfid = curfid + 1
@@ -7157,6 +7161,10 @@ def AppendFilesWithContentFromZipFileToList(infile, extradata=[], jsondata={}, c
                 fmode = format(int(stat.S_IFDIR | 0x1ff), 'x').lower()
                 fchmode = stat.S_IMODE(int(stat.S_IFDIR | 0x1ff))
                 ftypemod = stat.S_IFMT(int(stat.S_IFDIR | 0x1ff))
+            elif ((hasattr(member, "symlink") and member.symlink()) or member.filename.endswith('/')):
+                fmode = format(int(stat.S_IFREG | 0x1b6), 'x').lower()
+                fchmode = stat.S_IMODE(int(stat.S_IFREG | 0x1b6))
+                ftypemod = stat.S_IFMT(int(stat.S_IFREG | 0x1b6))
             else:
                 fmode = format(int(stat.S_IFREG | 0x1b6), 'x').lower()
                 fchmode = stat.S_IMODE(int(stat.S_IFREG | 0x1b6))
@@ -7165,6 +7173,17 @@ def AppendFilesWithContentFromZipFileToList(infile, extradata=[], jsondata={}, c
             fwinattributes = format(int(zipinfo.external_attr & 0xFFFF), 'x').lower()
             fmode = format(int((zipinfo.external_attr >> 16) & 0xFFFF), 'x').lower()
             prefmode = int((zipinfo.external_attr >> 16) & 0xFFFF)
+            if(prefmode==0):
+                fmode = 0
+                prefmode = 0
+            else:
+                file_type = prefmode & 0xF000
+                if(file_type not in (stat.S_IFREG, stat.S_IFDIR, stat.S_IFLNK)):
+                    fmode = 0
+                    prefmode = 0
+                if((mode & 0x1FF) == 0):
+                    fmode = 0
+                    prefmode = 0
             if (prefmode == 0):
                 if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
                     fmode = format(int(stat.S_IFDIR | 0x1ff), 'x').lower()
@@ -7611,7 +7630,10 @@ else:
                 fpremode = int(stat.S_IFREG | 0x1b6)
             elif(member.is_directory):
                 fpremode = int(stat.S_IFDIR | 0x1ff)
-            fwinattributes = format(int(0), 'x').lower()
+            try:
+                fwinattributes = format(int(member.attributes & 0xFFFF), 'x').lower()
+            except AttributeError:
+                fwinattributes = format(int(0), 'x').lower()
             fcompression = ""
             fcsize = format(int(0), 'x').lower()
             flinkcount = 0
@@ -7647,6 +7669,13 @@ else:
                     int(stat.S_IMODE(int(stat.S_IFREG | 0x1b6))), 'x').lower()
                 ftypemod = format(
                     int(stat.S_IFMT(int(stat.S_IFREG | 0x1b6))), 'x').lower()
+            try:
+                ffullmode = member.posix_mode
+                fmode = format(int(ffullmode), 'x').lower()
+                fchmode = format(int(stat.S_IMODE(ffullmode)), 'x').lower()
+                ftypemod = format(int(stat.S_IFMT(ffullmode)), 'x').lower()
+            except AttributeError:
+                pass
             try:
                 fuid = format(int(os.getuid()), 'x').lower()
             except (KeyError, AttributeError):
@@ -11649,7 +11678,7 @@ def TarFileListFiles(infile, formatspecs=__file_format_multi_dict__, verbose=Fal
         ffullmode = member.mode
         flinkcount = 0
         ftype = 0
-        if(member.isreg()):
+        if(member.isreg() or member.isfile()):
             ffullmode = member.mode + stat.S_IFREG
             ftype = 0
         elif(member.islnk()):
@@ -11740,35 +11769,59 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
     for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
         zipinfo = zipfp.getinfo(member.filename)
         if(zipinfo.create_system == 0 or zipinfo.create_system == 10):
-            fwinattributes = int(zipinfo.external_attr)
+            fwinattributes = int(zipinfo.external_attr & 0xFFFF)
             if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
                 fmode = int(stat.S_IFDIR | 0x1ff)
-                fchmode = int(stat.S_IMODE(int(stat.S_IFDIR | 0x1ff)))
-                ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR | 0x1ff)))
+                fchmode = stat.S_IMODE(int(stat.S_IFDIR | 0x1ff))
+                ftypemod = stat.S_IFMT(int(stat.S_IFDIR | 0x1ff))
+            elif ((hasattr(member, "symlink") and member.symlink()) or member.filename.endswith('/')):
+                fmode = int(stat.S_IFREG | 0x1b6)
+                fchmode = stat.S_IMODE(int(stat.S_IFREG | 0x1b6))
+                ftypemod = stat.S_IFMT(int(stat.S_IFREG | 0x1b6))
             else:
                 fmode = int(stat.S_IFREG | 0x1b6)
-                fchmode = int(stat.S_IMODE(fmode))
-                ftypemod = int(stat.S_IFMT(fmode))
+                fchmode = stat.S_IMODE(int(stat.S_IFREG | 0x1b6))
+                ftypemod = stat.S_IFMT(int(stat.S_IFREG | 0x1b6))
         elif(zipinfo.create_system == 3):
-            fwinattributes = int(0)
-            try:
-                fmode = int(zipinfo.external_attr)
-                fchmode = stat.S_IMODE(fmode)
-                ftypemod = stat.S_IFMT(fmode)
-            except OverflowError:
-                fmode = int(zipinfo.external_attr >> 16)
-                fchmode = stat.S_IMODE(fmode)
-                ftypemod = stat.S_IFMT(fmode)
+            fwinattributes = int(zipinfo.external_attr & 0xFFFF)
+            fmode = int((zipinfo.external_attr >> 16) & 0xFFFF)
+            prefmode = int((zipinfo.external_attr >> 16) & 0xFFFF)
+            if(prefmode==0):
+                fmode = 0
+                prefmode = 0
+            else:
+                file_type = prefmode & 0xF000
+                if(file_type not in (stat.S_IFREG, stat.S_IFDIR, stat.S_IFLNK)):
+                    fmode = 0
+                    prefmode = 0
+                if((mode & 0x1FF) == 0):
+                    fmode = 0
+                    prefmode = 0
+            if (prefmode == 0):
+                if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
+                    fmode = int(stat.S_IFDIR | 0x1ff)
+                    prefmode = int(stat.S_IFDIR | 0x1ff)
+                    fchmode = stat.S_IMODE(prefmode)
+                    ftypemod = stat.S_IFMT(prefmode)
+                else:
+                    fmode = int(stat.S_IFREG | 0x1b6)
+                    prefmode = int(stat.S_IFREG | 0x1b6)
+                    fchmode = stat.S_IMODE(prefmode)
+                    ftypemod = stat.S_IFMT(prefmode)
+            fchmode = stat.S_IMODE(prefmode)
+            ftypemod = stat.S_IFMT(prefmode)
         else:
-            fwinattributes = int(0)
+            fwinattributes = int(zipinfo.external_attr & 0xFFFF)
             if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
                 fmode = int(stat.S_IFDIR | 0x1ff)
-                fchmode = int(stat.S_IMODE(int(stat.S_IFDIR | 0x1ff)))
-                ftypemod = int(stat.S_IFMT(int(stat.S_IFDIR | 0x1ff)))
+                prefmode = int(stat.S_IFDIR | 0x1ff)
+                fchmode = stat.S_IMODE(prefmode)
+                ftypemod = stat.S_IFMT(prefmode)
             else:
                 fmode = int(stat.S_IFREG | 0x1b6)
-                fchmode = int(stat.S_IMODE(fmode))
-                ftypemod = int(stat.S_IFMT(fmode))
+                prefmode = int(stat.S_IFREG | 0x1b6)
+                fchmode = stat.S_IMODE(prefmode)
+                ftypemod = stat.S_IFMT(prefmode)
         returnval.update({lcfi: member.filename})
         if(not verbose):
             VerbosePrintOut(member.filename)
@@ -11782,10 +11835,17 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
             if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
                 ftype = 5
                 permissionstr = "d" + permissionstr
+            elif ((hasattr(member, "symlink") and member.symlink())):
+                ftype = 2
+                permissionstr = "l" + permissionstr
             else:
                 ftype = 0
                 permissionstr = "-" + permissionstr
             printfname = member.filename
+            if(ftype==2):
+                flinkname = zipfp.read(member.filename).decode("UTF-8")
+            if(ftype==2):
+                printfname = member.filename + " -> " + flinkname
             try:
                 fuid = int(os.getuid())
             except (KeyError, AttributeError):
@@ -12001,6 +12061,13 @@ if(py7zr_support):
                 fmode = int(stat.S_IFLNK | 0x1b6)
                 fchmode = int(stat.S_IMODE(int(stat.S_IFLNK | 0x1b6)))
                 ftypemod = int(stat.S_IFMT(int(stat.S_IFLNK | 0x1b6)))
+            try:
+                ffullmode = member.posix_mode
+                fmode = format(int(ffullmode), 'x').lower()
+                fchmode = format(int(stat.S_IMODE(ffullmode)), 'x').lower()
+                ftypemod = format(int(stat.S_IFMT(ffullmode)), 'x').lower()
+            except AttributeError:
+                pass
             returnval.update({lcfi: member.filename})
             if(not verbose):
                 VerbosePrintOut(member.filename)
