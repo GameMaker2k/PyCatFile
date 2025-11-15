@@ -79,7 +79,7 @@ pymodule[
 pymodule['platforms'] = 'OS Independent'
 pymodule['zipsafe'] = True
 pymodule['pymodules'] = ['pycatfile']
-pymodule['scripts'] = ['catfile.py', 'neocatfile.py', 'catneofile.py']
+pymodule['scripts'] = ['catfile.py']
 pymodule['classifiers'] = [
     'Development Status :: 5 - Production/Stable',
     'Intended Audience :: Developers',
