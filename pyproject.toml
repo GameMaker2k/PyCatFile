@@ -1,14 +1,14 @@
 [project]
     name = "PyCatFile"
-    version = "0.27.4"
+    version = "0.27.6"
     readme = "README.md"
     license = { text = "BSD-3-Clause" }
     keywords = []
     description = "A tar like file format name archivefile."
     authors = [
-        { name = "Kazuhika Kitsune-chan", email = "kazuki.suzuki.fox@gmail.com" },
-        { name = "Kazuhana Neko-chan", email = "kazuki.suzuki.cat@gmail.com" },
-        { name = "Kazuki Neko-kun", email = "kazuki.suzuki.wa@gmail.com" },
+        { name = "Himari Kitsune-chan", email = "kazuki.suzuki.fox@gmail.com" },
+        { name = "Ouka Neko-chan", email = "kazuki.suzuki.cat@gmail.com" },
+        { name = "Tsukiumi Neko-kun", email = "kazuki.suzuki.wa@gmail.com" },
         { name = "Kazuki Suzuki Neko-kun", email = "kazuki.suzuki.sadeghi@gmail.com" },
         { name = "Game Maker 2k", email = "gamemaker2k@gmail.com" },
     ]
