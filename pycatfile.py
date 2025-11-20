@@ -7229,6 +7229,9 @@ def AppendFilesWithContentFromZipFileToList(infile, extradata=[], jsondata={}, c
             fcontents.write(zipfp.read(member.filename))
             typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
             fcontents.seek(0, 0)
+            if(typechecktest is not False):
+                typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=False)
+                fcontents.seek(0, 0)
             fcencoding = GetFileEncoding(fcontents, 0, False)[0]
             if(typechecktest is False and not compresswholefile):
                 fcontents.seek(0, 2)
@@ -7462,6 +7465,9 @@ else:
                 fcontents.write(rarfp.read(member.filename))
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
+                if(typechecktest is not False):
+                    typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=False)
+                    fcontents.seek(0, 0)
                 fcencoding = GetFileEncoding(fcontents, 0, False)[0]
                 if(typechecktest is False and not compresswholefile):
                     fcontents.seek(0, 2)
@@ -7696,6 +7702,9 @@ else:
                 fcontents.seek(0, 0)
                 typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
                 fcontents.seek(0, 0)
+                if(typechecktest is not False):
+                    typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=False)
+                    fcontents.seek(0, 0)
                 fcencoding = GetFileEncoding(fcontents, 0, False)[0]
                 try:
                     file_content[member.filename].close()
@@ -10997,6 +11006,10 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             # detect/possibly recompress per-file (only if not already compressed and not compresswholefile)
             typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
             fcontents.seek(0, 0)
+
+            if(typechecktest is not False):
+                typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=False)
+                fcontents.seek(0, 0)
 
             # get fcencoding once here
             fcencoding = GetFileEncoding(fcontents, 0, False)[0]
