@@ -6174,6 +6174,27 @@ def AppendNullBytes(indata=None, delimiter=__file_format_dict__['format_delimite
 def _hex_lower(n):
     return format(int(n), 'x').lower()
 
+def system_and_major():
+    info = platform.uname()
+
+    # Python 3: info is a namedtuple with .system / .release
+    # Python 2: info is a plain tuple (system, node, release, version, machine, processor)
+    try:
+        system = info.system
+        release = info.release
+    except AttributeError:
+        # Fallback for Python 2
+        system = info[0]
+        release = info[2]
+
+    # Find the first run of digits in the release string
+    m = re.search(r'\d+', release)
+    if m:
+        major = m.group(0)  # e.g. '11' or '6'
+        return u"%s%s" % (system, major)  # unicode-safe in Py2
+    else:
+        return system
+
 def AppendFileHeader(fp, numfiles, fencoding, extradata=[], jsondata={}, checksumtype=["md5", "md5"], formatspecs=__file_format_dict__, saltkey=None):
     """
     Build and write the archive file header.
@@ -6252,7 +6273,7 @@ def AppendFileHeader(fp, numfiles, fencoding, extradata=[], jsondata={}, checksu
     else:
         fctime = format(int(to_ns(time.time())), 'x').lower()
     # Serialize the first group
-    fnumfilesa = AppendNullBytes([tmpoutlenhex, fctime, fctime, fencoding, platform.system(), py_implementation, __program_name__+str(__version_info__[0]), fnumfiles_hex, "+"+str(len(formatspecs['format_delimiter']))], delimiter)
+    fnumfilesa = AppendNullBytes([tmpoutlenhex, fctime, fctime, fencoding, system_and_major(), py_implementation, __program_name__+str(__version_info__[0]), fnumfiles_hex, "+"+str(len(formatspecs['format_delimiter']))], delimiter)
     # Append tmpoutlist
     fnumfilesa += AppendNullBytes(tmpoutlist, delimiter)
     # Append extradata items if any
