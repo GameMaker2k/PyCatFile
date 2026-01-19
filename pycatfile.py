@@ -12531,8 +12531,14 @@ def download_file_from_http_file(url, headers=None, usehttp=__use_http_lib__):
     if headers is None:
         headers = {}
     urlparts = urlparse(url)
-    username = unquote(urlparts.username)
-    password = unquote(urlparts.password)
+    if(urlparts.username is not None):
+        username = unquote(urlparts.username)
+    else:
+        username = None
+    if(urlparts.password is not None):
+        password = unquote(urlparts.password)
+    else:
+        password = None
 
     # Rebuild URL without username and password
     netloc = urlparts.hostname or ''
