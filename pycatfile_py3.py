@@ -8440,7 +8440,7 @@ def CheckCompressionType(infile, formatspecs=__file_format_multi_dict__, filesta
 def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, filestart=0, closefp=True):
     compresscheck = CheckCompressionType(infile, formatspecs, filestart, False)
     curloc = filestart
-    if(not compresscheck):
+    if(not compresscheck and isinstance(infile, (str, bytes, os.PathLike))):
         fextname = os.path.splitext(infile)[1]
         if(fextname == ".gz"):
             compresscheck = "gzip"
