@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""catfile.py (Python 3 only)
+'''
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the Revised BSD License.
 
-CLI wrapper for the pycatfile module.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    Revised BSD License for more details.
 
-This version keeps the original CLI behavior and call wiring, while removing
-Python 2 compatibility remnants and tightening a few small implementation details.
-"""
+    Copyright 2018-2026 Cool Dude 2k - http://idb.berlios.de/
+    Copyright 2018-2026 Game Maker 2k - http://intdb.sourceforge.net/
+    Copyright 2018-2026 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
+
+    $FileInfo: catfile_py3.py - Last Update: 2/3/2026 Ver. 0.28.0 RC 1 - Author: cooldude2k $
+'''
 
 from __future__ import annotations
 

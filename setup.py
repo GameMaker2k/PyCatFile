@@ -9,11 +9,11 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     Revised BSD License for more details.
 
-    Copyright 2016-2024 Cool Dude 2k - http://idb.berlios.de/
-    Copyright 2016-2024 Game Maker 2k - http://intdb.sourceforge.net/
-    Copyright 2016-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
+    Copyright 2018-2026 Cool Dude 2k - http://idb.berlios.de/
+    Copyright 2018-2026 Game Maker 2k - http://intdb.sourceforge.net/
+    Copyright 2018-2026 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: setup.py - Last Update: 8/26/2025 Ver. 0.21.4 RC 1 - Author: cooldude2k $
+    $FileInfo: setup.py - Last Update: 2/3/2026 Ver. 0.28.0 RC 1 - Author: cooldude2k $
 '''
 
 import os
@@ -78,8 +78,8 @@ pymodule[
     'longdescription'] = 'A tar like file format name catfile after unix cat command (concatenate files) .'
 pymodule['platforms'] = 'OS Independent'
 pymodule['zipsafe'] = True
-pymodule['pymodules'] = ['pycatfile']
-pymodule['scripts'] = ['catfile.py']
+pymodule['pymodules'] = ['pycatfile', 'pycatfile_py3']
+pymodule['scripts'] = ['catfile.py', 'catfile_py3.py']
 pymodule['classifiers'] = [
     'Development Status :: 5 - Production/Stable',
     'Intended Audience :: Developers',

@@ -10,11 +10,11 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     Revised BSD License for more details.
 
-    Copyright 2018-2024 Cool Dude 2k - http://idb.berlios.de/
-    Copyright 2018-2024 Game Maker 2k - http://intdb.sourceforge.net/
-    Copyright 2018-2024 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
+    Copyright 2018-2026 Cool Dude 2k - http://idb.berlios.de/
+    Copyright 2018-2026 Game Maker 2k - http://intdb.sourceforge.net/
+    Copyright 2018-2026 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: catfile.py - Last Update: 11/19/2025 Ver. 0.27.6 RC 1 - Author: cooldude2k $
+    $FileInfo: catfile.py - Last Update: 2/3/2026 Ver. 0.28.0 RC 1  - Author: cooldude2k $
 '''
 
 from __future__ import absolute_import, division, print_function, unicode_literals, generators, with_statement, nested_scopes
