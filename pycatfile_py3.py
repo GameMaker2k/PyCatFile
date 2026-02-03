@@ -66,6 +66,13 @@ except Exception:
         value = int.from_bytes(raw_bytes, 'big')
         return value >> (num_bytes * 8 - k)
 
+# Optional Bluetooth RFCOMM support: works via stdlib on Linux (AF_BLUETOOTH/BTPROTO_RFCOMM)
+# and via PyBluez if installed.
+try:
+    import bluetooth as _pybluez  # type: ignore
+except Exception:
+    _pybluez = None
+
 defcert = None
 try:
     import certifi
