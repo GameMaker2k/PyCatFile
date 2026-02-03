@@ -15,7 +15,7 @@ import os
 import sys
 from io import BytesIO, StringIO  # noqa: F401  (kept for parity with original)
 
-import pycatfile
+import pycatfile_py3 as pycatfile
 
 # Text streams (as provided by Python)
 PY_STDIN_TEXT = sys.stdin
