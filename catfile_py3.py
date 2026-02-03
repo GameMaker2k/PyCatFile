@@ -2,41 +2,34 @@
 # -*- coding: utf-8 -*-
 """catfile.py (Python 3 only)
 
-This script is part of the catfile/pycatfile project.
+CLI wrapper for the pycatfile module.
 
-This refactor removes Python 2 compatibility code paths while preserving the
-original CLI behavior and wiring into `pycatfile`.
+This version keeps the original CLI behavior and call wiring, while removing
+Python 2 compatibility remnants and tightening a few small implementation details.
 """
+
+from __future__ import annotations
 
 import argparse
 import binascii
 import logging
 import os
 import sys
-from io import BytesIO, StringIO  # noqa: F401  (kept for parity with original)
+from io import BytesIO
+from typing import Optional, Dict, Any
 
 import pycatfile_py3 as pycatfile
 
-# Text streams (as provided by Python)
-PY_STDIN_TEXT = sys.stdin
-PY_STDOUT_TEXT = sys.stdout
-PY_STDERR_TEXT = sys.stderr
-
-# Binary-friendly streams (.buffer exists on Python 3 text streams)
-PY_STDIN_BUF = sys.stdin.buffer
-PY_STDOUT_BUF = sys.stdout.buffer
-PY_STDERR_BUF = sys.stderr.buffer
-
 # Keep original behavior: log to stdout with simple message format.
-logging.basicConfig(format="%(message)s", stream=PY_STDOUT_TEXT, level=logging.DEBUG)
+logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG)
 
-# Unix SIGPIPE handling (matches original intent: exit cleanly on broken pipe)
+# Unix SIGPIPE handling (exit cleanly on broken pipe).
 if os.name != "nt":
     import signal
 
     if hasattr(signal, "SIGPIPE"):
 
-        def _sigpipe_handler(signum, frame):
+        def _sigpipe_handler(signum, frame):  # noqa: ARG001
             pycatfile.VerbosePrintOut("Received SIGPIPE, exiting gracefully.", "info")
             raise SystemExit(0)
 
@@ -91,7 +84,7 @@ def _build_argparser() -> argparse.ArgumentParser:
     # Operations
     p.add_argument("-c", "--create", action="store_true", help="Perform only the concatenation operation.")
     p.add_argument("-e", "--extract", action="store_true", help="Perform only the extraction operation.")
-    p.add_argument("-t", "--convert", action="store_true", help="Convert a tar/zip/rar/7zip file to a archive file.")
+    p.add_argument("-t", "--convert", action="store_true", help="Convert a tar/zip/rar/7zip file to an archive file.")
     p.add_argument("-r", "--repack", action="store_true", help="Re-concatenate files, fixing checksum errors if any.")
     p.add_argument("-S", "--filestart", type=int, default=0, help="Start reading file at.")
 
@@ -128,7 +121,7 @@ def _build_argparser() -> argparse.ArgumentParser:
     return p
 
 
-def _resolve_format(getargs):
+def _resolve_format(getargs: argparse.Namespace) -> Any:
     """Compute the format dict exactly as the original script did."""
     global __file_format_default__  # keep parity with original module-level behavior
 
@@ -158,7 +151,7 @@ def _resolve_format(getargs):
     return fnamedict
 
 
-def main(argv=None) -> int:
+def main(argv: Optional[list[str]] = None) -> int:
     argparser = _build_argparser()
     getargs = argparser.parse_args(argv)
 
@@ -174,7 +167,6 @@ def main(argv=None) -> int:
         # Preserve original behavior: do nothing if no action flag is set.
         return 0
 
-    # Execute the appropriate functions based on determined actions and arguments
     if active_action == "create":
         if getargs.convert:
             checkcompressfile = pycatfile.CheckCompressionSubType(input_file, fnamedict, 0, True)
@@ -251,7 +243,6 @@ def main(argv=None) -> int:
                 (pycatfile.IsNestedDict(fnamedict) and checkcompressfile in fnamedict)
                 or (pycatfile.IsSingleDict(fnamedict) and checkcompressfile == fnamedict["format_magic"])
             ):
-                # NOTE: original script forgot to store the return value (tmpout) here.
                 tmpout = pycatfile.RePackCatFile(
                     input_file,
                     getargs.output,

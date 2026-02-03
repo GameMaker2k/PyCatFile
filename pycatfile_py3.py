@@ -1,287 +1,3 @@
-from typing import Any, Optional, Union
-
-MB = MB
-
-__all__ = [
-    'AppendFileHeader',
-    'AppendFileHeaderWithContent',
-    'AppendFilesWithContent',
-    'AppendFilesWithContentFromRarFileToStackedOutFile',
-    'AppendFilesWithContentFromSevenZipFileToStackedOutFile',
-    'AppendFilesWithContentFromTarFile',
-    'AppendFilesWithContentFromTarFileToList',
-    'AppendFilesWithContentFromTarFileToOutFile',
-    'AppendFilesWithContentFromTarFileToStackedOutFile',
-    'AppendFilesWithContentFromZipFile',
-    'AppendFilesWithContentFromZipFileToList',
-    'AppendFilesWithContentFromZipFileToOutFile',
-    'AppendFilesWithContentFromZipFileToStackedOutFile',
-    'AppendFilesWithContentToList',
-    'AppendFilesWithContentToOutFile',
-    'AppendFilesWithContentToStackedOutFile',
-    'AppendInFileWithContent',
-    'AppendInFileWithContentToOutFile',
-    'AppendListsWithContent',
-    'AppendListsWithContentToOutFile',
-    'AppendNullByte',
-    'AppendNullBytes',
-    'AppendReadInFileWithContent',
-    'AppendReadInFileWithContentToList',
-    'AppendReadInFileWithContentToOutFile',
-    'AppendReadInFileWithContentToStackedOutFile',
-    'AppendReadInMultipleFileWithContentToList',
-    'AppendReadInMultipleFilesWithContentToList',
-    'CatFileArrayToArrayIndex',
-    'CatFileArrayValidate',
-    'CatFileListFiles',
-    'CatFileStringListFiles',
-    'CatFileStringToArray',
-    'CatFileToArray',
-    'CatFileValidate',
-    'CatFileValidateFile',
-    'CatFileValidateMultiple',
-    'CatFileValidateMultipleFiles',
-    'BzipCompressData',
-    'BzipDecompressData',
-    'CheckChecksums',
-    'CheckCompressionSubType',
-    'CheckCompressionType',
-    'CheckCompressionTypeFromBytes',
-    'CheckCompressionTypeFromString',
-    'CheckSumSupport',
-    'CompressOpenFile',
-    'CompressOpenFileAlt',
-    'DetectTarBombFoxFileArray',
-    'DevToMajorMinor',
-    'GetBinaryFileType',
-    'GetDataFromArray',
-    'GetDataFromArrayAlt',
-    'GetDevMajorMinor',
-    'GetFileChecksum',
-    'GetFileEncoding',
-    'GetFileEncodingFromString',
-    'GetHeaderChecksum',
-    'GetKeyByFormatExtension',
-    'GetTotalSize',
-    'GzipCompressData',
-    'GzipDecompressData',
-    'InFileListFile',
-    'InFileListFiles',
-    'InFileToArray',
-    'IsNestedDict',
-    'IsNestedDictAlt',
-    'IsSingleDict',
-    'ListDir',
-    'ListDirAdvanced',
-    'ListDirListFiles',
-    'ListDirToArray',
-    'MajorMinorToDev',
-    'MakeDevAlt',
-    'MakeEmptyCatFile',
-    'MakeEmptyCatFilePointer',
-    'MakeEmptyFile',
-    'MakeEmptyFilePointer',
-    'MkTempFile',
-    'MultipleCatFileListFiles',
-    'MultipleCatFileToArray',
-    'MultipleCatFilesToArray',
-    'MultipleStackedCatFileListFiles',
-    'NormalizeRelativePath',
-    'PackCatFile',
-    'PackCatFileFromDirList',
-    'PackCatFileFromInFile',
-    'PackCatFileFromListDir',
-    'PackCatFileFromTarFile',
-    'PackCatFileFromZipFile',
-    'PackStackedCatFile',
-    'PrependPath',
-    'PrintPermissionString',
-    'PrintPermissionStringAlt',
-    'RarFileCheck',
-    'RarFileListFile',
-    'RePackCatFile',
-    'RePackCatFileFromString',
-    'RePackMultipleCatFile',
-    'ReadFileDataWithContent',
-    'ReadFileDataWithContentToArray',
-    'ReadFileDataWithContentToList',
-    'ReadFileHeaderData',
-    'ReadFileHeaderDataBySize',
-    'ReadFileHeaderDataWithContent',
-    'ReadFileHeaderDataWithContentToArray',
-    'ReadFileHeaderDataWithContentToList',
-    'ReadFileHeaderDataWoSize',
-    'ReadInFileWithContentToArray',
-    'ReadInFileWithContentToList',
-    'ReadInMultipleFileWithContentToArray',
-    'ReadInMultipleFileWithContentToList',
-    'ReadInMultipleFilesWithContentToArray',
-    'ReadInMultipleFilesWithContentToList',
-    'ReadTillNullByte',
-    'ReadTillNullByteAlt',
-    'ReadTillNullByteByNum',
-    'ReadTillNullByteOld',
-    'ReadUntilNullByte',
-    'ReadUntilNullByteAlt',
-    'ReadUntilNullByteByNum',
-    'ReadUntilNullByteOld',
-    'RemoveWindowsPath',
-    'SeekToEndOfFile',
-    'SevenZipFileCheck',
-    'SevenZipFileListFile',
-    'StackedCatFileListFiles',
-    'StackedCatFileValidate',
-    'StackedCatFileValidateFile',
-    'StackedCatFileValidateMultiple',
-    'StackedCatFileValidateMultipleFiles',
-    'TarFileCheck',
-    'TarFileListFile',
-    'TarFileListFiles',
-    'TarFileToArray',
-    'UnPackCatFile',
-    'UnPackCatFileString',
-    'UncompressBytes',
-    'UncompressBytesAlt',
-    'UncompressBytesAltFP',
-    'UncompressFile',
-    'UncompressFileAlt',
-    'UncompressString',
-    'UncompressStringAlt',
-    'UncompressStringAltFP',
-    'ValidateFileChecksum',
-    'ValidateHeaderChecksum',
-    'VerbosePrintOut',
-    'VerbosePrintOutReturn',
-    'ZipFileCheck',
-    'ZipFileListFile',
-    'ZipFileListFiles',
-    'ZipFileToArray',
-    '_advance',
-    '_as_bytes_like',
-    '_auth_msg',
-    '_b64url_decode',
-    '_b64url_encode',
-    '_basic_ok',
-    '_build_auth_blob_legacy',
-    '_build_ssl_context',
-    '_build_table',
-    '_byte_at',
-    '_bytes_to_int',
-    '_coerce_bytes',
-    '_connect_stream',
-    '_decode_text',
-    '_default_delim',
-    '_delim_bytes',
-    '_discover_len_and_reset',
-    '_enable_keepalive',
-    '_ensure_text',
-    '_expect_delimiter',
-    '_extract_base_fp',
-    '_field_to_bytes',
-    '_guess_filename',
-    '_gzip_compress',
-    '_gzip_decompress',
-    '_gzip_decompress_multimember',
-    '_headers_dict_from_response',
-    '_hex_lower',
-    '_hex_pad',
-    '_int_or_none',
-    '_is_abs_like',
-    '_is_hexish',
-    '_is_valid_zlib_header',
-    '_iter_bytes',
-    '_maybe_make_mmap',
-    '_mv_tobytes',
-    '_normalize_initial_data',
-    '_pace_rate',
-    '_parse_auth_blob_legacy',
-    '_parse_headers_from_qs',
-    '_parse_http_url',
-    '_parse_net_url',
-    '_pick_expected_len',
-    '_pick_expected_sha',
-    '_progress_tick',
-    '_qflag',
-    '_qnum',
-    '_qstr',
-    '_quote_path_for_wire',
-    '_read_exact',
-    '_recv_line',
-    '_reflect',
-    '_resolves_outside',
-    '_rewrite_url_without_auth',
-    '_serialize_header_fields',
-    '_split_posix',
-    '_ssl_available',
-    '_ssl_wrap_socket',
-    '_stream_copy_and_verify',
-    '_strip_quotes',
-    '_to_bytes',
-    '_to_text',
-    '_unquote_path_from_wire',
-    'add_format',
-    'build_auth_blob_v1',
-    'check_version_number',
-    'compress_bytes',
-    'copy_file_to_mmap_dest',
-    'copy_opaque',
-    'crc_generic',
-    'create_alias_function',
-    'create_alias_function_alt',
-    'decompress_bytes',
-    'detect_cwd',
-    'download_file_from_ftp_file',
-    'download_file_from_ftp_string',
-    'download_file_from_ftps_file',
-    'download_file_from_ftps_string',
-    'download_file_from_http_file',
-    'download_file_from_http_file_alt',
-    'download_file_from_http_string',
-    'download_file_from_internet_file',
-    'download_file_from_internet_string',
-    'download_file_from_internet_uncompress_file',
-    'download_file_from_internet_uncompress_string',
-    'ensure_filelike',
-    'fast_copy',
-    'format_ns_utc',
-    'ftype_to_str',
-    'get_default_threads',
-    'get_importing_script_path',
-    'gzip_compress_bytes',
-    'gzip_decompress_bytes',
-    'gzip_decompress_bytes_all_members',
-    'gzip_decompress_bytes_first_member',
-    'is_only_nonprintable',
-    'open_adapter',
-    'read_until_delimiter',
-    'read_until_n_delimiters',
-    'recv_to_fileobj',
-    'recv_via_http',
-    'recv_via_url',
-    'run_http_file_server',
-    'run_tcp_file_server',
-    'run_udp_file_server',
-    'running_interactively',
-    'send_from_fileobj',
-    'send_via_http',
-    'send_via_url',
-    'system_and_major',
-    'to_ns',
-    'to_text',
-    'upload_file_to_ftp_file',
-    'upload_file_to_ftp_string',
-    'upload_file_to_ftps_file',
-    'upload_file_to_ftps_string',
-    'upload_file_to_http_file',
-    'upload_file_to_internet_compress_file',
-    'upload_file_to_internet_compress_string',
-    'upload_file_to_internet_file',
-    'upload_file_to_internet_string',
-    'verify_auth_blob_v1',
-    'version_check',
-    'versiontuple'
-]
-
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
@@ -314,10 +30,6 @@ import shutil
 import socket
 import struct
 import hashlib
-
-
-_RE_BASE_NUM = re.compile(r"(.*?)(\d+)")
-_RE_DIGITS = re.compile(r"\d+")
 import inspect
 import logging
 import zipfile
@@ -378,6 +90,7 @@ basestring = str
 unicode = str
 long = int
 file = IOBase
+PY2 = False
 
 text_type = str
 bytes_type = bytes
@@ -438,10 +151,71 @@ def _ensure_text(s, encoding="utf-8", errors="replace", allow_none=False):
 
     return text_type(s)
 
-def to_text(s: Any, encoding: str = "utf-8", errors: str = "ignore") -> str:
-    """Backward-compatible wrapper returning a text string.
+def _to_text(s, encoding="utf-8", errors="replace", normalize=None, prefer_surrogates=False):
+    """
+    Coerce `s` to a text/unicode string safely.
 
-    Keeps legacy behavior: None -> "" and bytes-like decoded with given policy.
+    Args:
+      s: Any object (bytes/bytearray/memoryview/str/unicode/other).
+      encoding: Used when decoding bytes-like objects (default: 'utf-8').
+      errors: Decoding error policy (default: 'replace').
+              Consider 'surrogateescape' when you need byte-preserving round-trip on Py3.
+      normalize: Optional unicode normalization form, e.g. 'NFC', 'NFKC', 'NFD', 'NFKD'.
+      prefer_surrogates: If True on Py3 and errors is the default, use 'surrogateescape'
+                         to preserve undecodable bytes.
+
+    Returns:
+      A text string (unicode on Py2, str on Py3).
+    """
+    # Fast path: already text
+    if isinstance(s, unicode):
+        out = s
+    else:
+        # Bytes-like → decode
+        if isinstance(s, (bytes, bytearray, memoryview)):
+            b = s if isinstance(s, (bytes, bytearray)) else bytes(s)
+            # Prefer surrogateescape on Py3 if requested (keeps raw bytes round-tripable)
+            eff_errors = errors
+            if prefer_surrogates and errors == "replace":
+                try:
+                    # Only available on Py3
+                    "".encode("utf-8", "surrogateescape")
+                    eff_errors = "surrogateescape"
+                except LookupError:
+                    pass
+            try:
+                out = b.decode(encoding, eff_errors)
+            except Exception:
+                # Last-resort: decode with 'latin-1' to avoid exceptions
+                out = b.decode("latin-1", "replace")
+        else:
+            # Not bytes-like: stringify
+            try:
+                # Py2: many objects implement __unicode__
+                if hasattr(s, "__unicode__"):
+                    out = s.__unicode__()  # noqa: E1101 (only on Py2 objects)
+                else:
+                    out = unicode(s)
+            except Exception:
+                # Fallback to repr() if object’s __str__/__unicode__ is broken
+                out = unicode(repr(s))
+
+    # Optional normalization
+    if normalize:
+        try:
+            import unicodedata
+            out = unicodedata.normalize(normalize, out)
+        except Exception:
+            # Keep original if normalization fails
+            pass
+
+    return out
+
+def to_text(s, encoding="utf-8", errors="ignore"):
+    """Backward-compatible text coercion.
+
+    Keeps legacy behavior: None -> "".
+    Delegates to _to_text() for robust handling of bytes/path-like objects.
     """
     if s is None:
         return ""
@@ -564,23 +338,17 @@ from urllib.request import Request, build_opener, HTTPBasicAuthHandler
 from urllib.parse import urlparse
 
 def get_importing_script_path():
-    # Inspect the stack and get the frame of the caller
-    stack = inspect.stack()
-    for frame_info in stack:
-        # In Python 2, frame_info is a tuple; in Python 3, it's a named tuple
-        filename = frame_info[1] if isinstance(frame_info, tuple) else frame_info.filename
+    """Best-effort path of the importing (caller) script, or None."""
+    for frame_info in inspect.stack():
+        filename = frame_info.filename
         if filename != __file__:  # Ignore current module's file
             return os.path.abspath(filename)
     return None
 
 def get_default_threads():
-    """Returns the number of CPU threads available, or 1 if unavailable."""
-    try:
-        cpu_threads = os.cpu_count()
-        return cpu_threads if cpu_threads is not None else 1
-    except AttributeError:
-        # os.cpu_count() might not be available in some environments
-        return 1
+    """Return the number of CPU threads available, or 1 if unavailable."""
+    n = os.cpu_count()
+    return n if n is not None else 1
 
 def add_format(reg, key, magic, ext, name=None, ver="001",
                new_style=True, use_advanced_list=True, use_alt_inode=False, delim="\x00"):
@@ -614,29 +382,13 @@ if((__use_http_lib__ == "httpx" or __use_http_lib__ == "requests") and not haveh
     __use_http_lib__ = "urllib"
 # Define a function to check if var contains only non-printable chars
 all_np_chars = [chr(i) for i in range(128)]
-def is_only_nonprintable(var):
-    """True if every character is non-printable (Py2/3-safe, handles bytes)."""
+def is_only_nonprintable(var) -> bool:
+    """True if every character is non-printable (handles bytes via to_text)."""
     if var is None:
         return True
     s = to_text(var)
-    # In Py2, some unicode categories behave differently; isprintable is Py3-only.
-    # We'll implement a portable check: letters, numbers, punctuation, and common whitespace are printable.
-    try:
-        # Py3 fast path
-        return all(not ch.isprintable() for ch in s)
-    except AttributeError:
-        # Py2 path
-        import unicodedata
-        def _is_printable(ch):
-            cat = unicodedata.category(ch)
-            # Categories starting with 'C' are control/non-assigned/surrogates
-            if cat.startswith('C'):
-                return False
-            # treat space and common whitespace as printable
-            if ch in u"\t\n\r\x0b\x0c ":
-                return True
-            return True
-        return all(not _is_printable(ch) for ch in s)
+    return all(not ch.isprintable() for ch in s)
+
 __file_format_multi_dict__ = {}
 __file_format_default__ = "CatFile"
 __include_defaults__ = True
@@ -745,12 +497,8 @@ elif __use_json_file__ and os.path.exists(__config_file__):
     with open(__config_file__, 'rb') as f:
         raw = f.read()
 
-    # Ensure we get a unicode string for json.loads on both Py2 and Py3
-    if sys.version_info[0] < 3:
-        text = raw.decode('utf-8')  # Py2 bytes -> unicode
-    else:
-        text = raw if isinstance(raw, str) else raw.decode('utf-8')
-
+    # Ensure we get a text string for json.loads (Py3-only)
+    text = raw.decode('utf-8', 'replace')
     cfg = json.loads(text)
 
     # --- helpers: coerce + decode like your INI path ---
@@ -883,7 +631,7 @@ __version_date_info__ = (2025, 11, 19, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id: 62f542c75dbb63ebbe7f708228d38f89f5a4fed6 $"
+__revision_id__ = "$Id: a75269d174e21d93a244ba64e716025624059d7a $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -1020,7 +768,7 @@ CATEGORY_ORDER = [
 ]
 
 # Robust bitness detection
-# Works on Py2 & Py3, all platforms
+# Works across platforms
 
 # Python interpreter bitness
 PyBitness = "64" if struct.calcsize("P") * 8 == 64 else ("64" if sys.maxsize > 2**32 else "32")
@@ -1188,7 +936,7 @@ _LEVEL_BY_NAME = {
 
 def VerbosePrintOut(dbgtxt, outtype="log", dbgenable=True, dgblevel=20, **kwargs):
     """
-    Python 2/3-safe logging switchboard.
+    Python 3-only logging switchboard.
 
     Args:
         dbgtxt: message to emit (any object; coerced to text).
@@ -1265,7 +1013,7 @@ def to_ns(timestamp):
     """
     Convert a second-resolution timestamp (int or float)
     into a nanosecond timestamp (int) by zero-padding.
-    Works in Python 2 and Python 3.
+    Works in Python 3.
     """
     try:
         # Convert incoming timestamp to float so it works for int or float
@@ -1343,7 +1091,7 @@ def _resolves_outside(parent, target):
     base_slash = base if base.endswith(u"/") else (base + u"/")
     return not (cand == base or cand.startswith(base_slash))
 
-def _to_bytes(data: Any, encoding: str = "utf-8", errors: str = "strict") -> bytes:
+def _to_bytes(data, encoding="utf-8", errors="strict"):
     """
     Robustly coerce `data` to bytes:
       - None -> b""
@@ -1385,91 +1133,22 @@ def _to_bytes(data: Any, encoding: str = "utf-8", errors: str = "strict") -> byt
     return (data if isinstance(data, unicode) else str(data)).encode(encoding, errors)
 
 
-def _to_text(s: Any, encoding: str = "utf-8", errors: str = "replace", normalize: Optional[str] = None, prefer_surrogates: bool = False) -> str:
-    """
-    Coerce `s` to a text/unicode string safely.
 
-    Args:
-      s: Any object (bytes/bytearray/memoryview/str/unicode/other).
-      encoding: Used when decoding bytes-like objects (default: 'utf-8').
-      errors: Decoding error policy (default: 'replace').
-              Consider 'surrogateescape' when you need byte-preserving round-trip on Py3.
-      normalize: Optional unicode normalization form, e.g. 'NFC', 'NFKC', 'NFD', 'NFKD'.
-      prefer_surrogates: If True on Py3 and errors is the default, use 'surrogateescape'
-                         to preserve undecodable bytes.
 
-    Returns:
-      A text string (unicode on Py2, str on Py3).
-    """
-    # Fast path: already text
-    if isinstance(s, unicode):
-        out = s
-    else:
-        # Bytes-like → decode
-        if isinstance(s, (bytes, bytearray, memoryview)):
-            b = s if isinstance(s, (bytes, bytearray)) else bytes(s)
-            # Prefer surrogateescape on Py3 if requested (keeps raw bytes round-tripable)
-            eff_errors = errors
-            if prefer_surrogates and errors == "replace":
-                try:
-                    # Only available on Py3
-                    "".encode("utf-8", "surrogateescape")
-                    eff_errors = "surrogateescape"
-                except LookupError:
-                    pass
-            try:
-                out = b.decode(encoding, eff_errors)
-            except Exception:
-                # Last-resort: decode with 'latin-1' to avoid exceptions
-                out = b.decode("latin-1", "replace")
-        else:
-            # Not bytes-like: stringify
-            try:
-                # Py2: many objects implement __unicode__
-                if hasattr(s, "__unicode__"):
-                    out = s.__unicode__()  # noqa: E1101 (only on Py2 objects)
-                else:
-                    out = unicode(s)
-            except Exception:
-                # Fallback to repr() if object’s __str__/__unicode__ is broken
-                out = unicode(repr(s))
-
-    # Optional normalization
-    if normalize:
-        try:
-            import unicodedata
-            out = unicodedata.normalize(normalize, out)
-        except Exception:
-            # Keep original if normalization fails
-            pass
-
-    return out
 
 def _quote_path_for_wire(path_text):
-    # Percent-encode as UTF-8; return ASCII bytes text
-    try:
-        from urllib.parse import quote
-        return quote(path_text.encode('utf-8'))
-    except Exception:
-        try:
-            from urllib import quote as _q
-            return _q(path_text.encode('utf-8'))
-        except Exception:
-            return ''.join(ch for ch in path_text if ord(ch) < 128)
+    """Percent-encode as UTF-8 for safe transport over the wire."""
+    from urllib.parse import quote
+    return quote(_to_text(path_text).encode("utf-8"))
 
 def _unquote_path_from_wire(s_bytes):
-    # s_bytes: bytes → return text/unicode
-    try:
-        from urllib.parse import unquote
-        txt = unquote(s_bytes.decode('ascii', 'replace'))
-        return _to_text(txt)
-    except Exception:
-        try:
-            from urllib import unquote as _uq
-            txt = _uq(s_bytes.decode('ascii', 'replace'))
-            return _to_text(txt)
-        except Exception:
-            return _to_text(s_bytes)
+    """Reverse of _quote_path_for_wire: bytes/str -> text."""
+    from urllib.parse import unquote
+    if isinstance(s_bytes, (bytes, bytearray, memoryview)):
+        s = bytes(s_bytes).decode("ascii", "replace")
+    else:
+        s = _to_text(s_bytes)
+    return _to_text(unquote(s))
 
 def _recv_line(sock, maxlen=4096, timeout=None):
     """TCP: read a single LF-terminated line (bytes). Returns None on timeout/EOF."""
@@ -1813,11 +1492,7 @@ def _guess_filename(url, filename):
     return base or 'CatFile'+__file_format_extension__
 
 # ---- progress + rate limiting helpers ----
-try:
-    monotonic = time.monotonic  # Py3
-except Exception:
-    # Py2 fallback: time.time() is good enough for coarse throttling
-    monotonic = time.time
+monotonic = time.monotonic
 
 def _progress_tick(now_bytes, total_bytes, last_ts, last_bytes, rate_limit_bps, min_interval=0.1):
     """
@@ -2258,14 +1933,14 @@ def _as_bytes_like(data):
         return bytes(data)
     return None
 
-def _normalize_initial_data(data, isbytes, encoding, errors="strict"):
-    """Normalize initial in-memory data for file-like wrappers.
-
-    - If isbytes=True: accept any bytes-like object or str (encoded with encoding/errors) and return bytes.
-    - If isbytes=False: accept str or bytes-like (decoded with encoding/errors) and return str.
-
-    This is the Python 3-only implementation (Python 2 support removed).
+def _normalize_initial_data(data, isbytes, encoding, errors=None):
     """
+    Return bytes (if isbytes) or text (unicode on Py2, str on Py3).
+    Py2-safe signature (no keyword-only args).
+    """
+    if errors is None:
+        errors = "strict"
+
     if data is None:
         return None
 
@@ -2273,19 +1948,37 @@ def _normalize_initial_data(data, isbytes, encoding, errors="strict"):
         b = _as_bytes_like(data)
         if b is not None:
             return b
-        if isinstance(data, str):
-            return data.encode(encoding, errors)
-        raise TypeError(
-            "data must be bytes-like or text for isbytes=True (got %r)" % (type(data),)
-        )
+        if PY2:
+            # Py2: 'unicode' -> encode; 'str' is already bytes
+            if isinstance(data, unicode_type):
+                return data.encode(encoding, errors)
+            if isinstance(data, str):
+                return data
+        else:
+            # Py3: text -> encode
+            if isinstance(data, str):
+                return data.encode(encoding, errors)
+        raise TypeError("data must be bytes-like or text for isbytes=True (got %r)" % (type(data),))
+    else:
+        # text mode
+        if PY2:
+            if isinstance(data, unicode_type):
+                return data
+            b = _as_bytes_like(data)
+            if b is not None:
+                return b.decode(encoding, errors)
+            if isinstance(data, str):
+                # Py2 str -> decode
+                return data.decode(encoding, errors)
+            raise TypeError("data must be unicode or bytes-like for text mode (got %r)" % (type(data),))
+        else:
+            if isinstance(data, str):
+                return data
+            b = _as_bytes_like(data)
+            if b is not None:
+                return b.decode(encoding, errors)
+            raise TypeError("data must be str or bytes-like for text mode (got %r)" % (type(data),))
 
-    # text mode
-    if isinstance(data, str):
-        return data
-    b = _as_bytes_like(data)
-    if b is not None:
-        return b.decode(encoding, errors)
-    raise TypeError("data must be str or bytes-like for text mode (got %r)" % (type(data),))
 
 def MkTempFile(data=None,
                inmem=__use_inmem__, usememfd=__use_memfd__,
@@ -2469,7 +2162,7 @@ def RemoveWindowsPath(dpath):
     """
     if not dpath:
         return ""
-    if dpath.lower().startswith("file://"):
+    if re.match("^file://", dpath, re.IGNORECASE):
         # Normalize to file:/// if it's a local path (no host)
         if dpath.lower().startswith("file://") and not dpath.lower().startswith("file:///"):
             # insert the extra slash
@@ -2491,7 +2184,7 @@ def NormalizeRelativePath(inpath):
     """
     Ensures the path is relative unless it is absolute. Prepares consistent relative paths.
     """
-    if inpath.lower().startswith("file://"):
+    if re.match("^file://", inpath, re.IGNORECASE):
         # Normalize to file:/// if it's a local path (no host)
         if inpath.lower().startswith("file://") and not inpath.lower().startswith("file:///"):
             # insert the extra slash
@@ -2554,7 +2247,7 @@ def ListDir(dirpath, followlink=False, duplicates=False, include_regex=None, exc
     include_pattern = re.compile(include_regex) if include_regex else None
     exclude_pattern = re.compile(exclude_regex) if exclude_regex else None
     for mydirfile in dirpath:
-        if mydirfile.lower().startswith("file://"):
+        if re.match("^file://", mydirfile, re.IGNORECASE):
             # Normalize to file:/// if it's a local path (no host)
             if mydirfile.lower().startswith("file://") and not mydirfile.lower().startswith("file:///"):
                 # insert the extra slash
@@ -2631,7 +2324,7 @@ def ListDirAdvanced(dirpath, followlink=False, duplicates=False, include_regex=N
     include_pattern = re.compile(include_regex) if include_regex else None
     exclude_pattern = re.compile(exclude_regex) if exclude_regex else None
     for mydirfile in dirpath:
-        if mydirfile.lower().startswith("file://"):
+        if re.match("^file://", mydirfile, re.IGNORECASE):
             # Normalize to file:/// if it's a local path (no host)
             if mydirfile.lower().startswith("file://") and not mydirfile.lower().startswith("file:///"):
                 # insert the extra slash
@@ -2766,10 +2459,17 @@ def create_alias_function(prefix, base_name, suffix, target_function, positional
     # Add the new function to the global namespace
     globals()[function_name] = alias_function
 
-binary_types = (bytes, bytearray, memoryview)
+if PY2:
+    binary_types = (str, bytearray, buffer)  # noqa: F821 (buffer in Py2)
+else:
+    binary_types = (bytes, bytearray, memoryview)
+
+
 # ---------- Helpers (same semantics as your snippet) ----------
 def _byte_at(b, i):
-    """Return int value of byte at index i."""
+    """Return int value of byte at index i for both Py2 and Py3."""
+    if PY2:
+        return ord(b[i:i+1])
     return b[i]
 
 def _is_valid_zlib_header(cmf, flg):
@@ -2942,12 +2642,12 @@ class SharedMemoryFile(object):
                 size = 0
 
         if size == 0:
-            return b''
+            return b'' if not PY2 else ''
 
         start, end_abs = self._region_bounds()
         available = end_abs - (self._base_offset + self._pos)
         if available <= 0:
-            return b''
+            return b'' if not PY2 else ''
 
         size = min(size, available)
 
@@ -2955,7 +2655,11 @@ class SharedMemoryFile(object):
         abs_end = abs_start + size
 
         chunk = self._buf[abs_start:abs_end]
-        data = bytes(chunk)
+        if PY2:
+            data = bytes(chunk)  # bytes() -> str in py2
+        else:
+            data = bytes(chunk)
+
         self._pos += len(data)
         return data
 
@@ -2972,7 +2676,7 @@ class SharedMemoryFile(object):
         start, end_abs = self._region_bounds()
         remaining = end_abs - (self._base_offset + self._pos)
         if remaining <= 0:
-            return b''
+            return b'' if not PY2 else ''
 
         if size is not None and size >= 0:
             size = int(size)
@@ -2984,7 +2688,11 @@ class SharedMemoryFile(object):
         abs_max = abs_start + max_len
 
         # Work on a local bytes slice for easy .find()
-        buf_bytes = bytes(self._buf[abs_start:abs_max])
+        if PY2:
+            buf_bytes = bytes(self._buf[abs_start:abs_max])
+        else:
+            buf_bytes = bytes(self._buf[abs_start:abs_max])
+
         idx = buf_bytes.find(b'\n')
         if idx == -1:
             # No newline; read entire chunk
@@ -2994,7 +2702,10 @@ class SharedMemoryFile(object):
 
         self._pos += len(line_bytes)
 
+        if PY2:
+            return line_bytes  # already str
         return line_bytes
+
     def readinto(self, b):
         """
         Read bytes into a pre-allocated writable buffer (bytearray/memoryview).
@@ -3139,6 +2850,9 @@ class SharedMemoryFile(object):
             raise StopIteration
         return line
 
+    if PY2:
+        next = __next__
+
     # ---------- misc helpers ----------
 
     def fileno(self):
@@ -3182,6 +2896,9 @@ class ZlibFile(object):
 
         if 'b' not in mode and 't' not in mode:
             mode += 'b'  # default to binary
+        if 'x' in mode and PY2:
+            raise ValueError("Exclusive creation mode 'x' is not supported on Python 2")
+
         self.file_path = file_path
         self.file = None
         self._external_fp = (fileobj is not None)
@@ -3399,6 +3116,9 @@ class ZlibFile(object):
             raise StopIteration
         return line
 
+    if PY2:
+        next = __next__
+
     def seek(self, offset, whence=0):
         if self.closed:
             raise ValueError("I/O operation on closed file")
@@ -3437,8 +3157,12 @@ class ZlibFile(object):
                 raise TypeError("write() expects bytes-like in binary mode")
 
         # Normalize to bytes for Py2/3 edge cases
-        if isinstance(data, memoryview):
-            data = data.tobytes()# Buffer and compress in chunks to limit memory
+        if (not PY2) and isinstance(data, memoryview):
+            data = data.tobytes()
+        elif PY2 and isinstance(data, bytearray):
+            data = bytes(data)
+
+        # Buffer and compress in chunks to limit memory
         self._write_buf += data
         if len(self._write_buf) >= (__filebuff_size__):  # 1 MiB threshold
             chunk = self._compressor.compress(bytes(self._write_buf))
@@ -3659,6 +3383,9 @@ class GzipFile(object):
 
         if 'b' not in mode and 't' not in mode:
             mode += 'b'
+        if 'x' in mode and PY2:
+            raise ValueError("Exclusive creation mode 'x' not supported on Python 2")
+
         self.file_path = file_path
         self.file = fileobj
         self.mode = mode
@@ -3857,6 +3584,9 @@ class GzipFile(object):
             raise StopIteration
         return line
 
+    if PY2:
+        next = __next__
+
     def seek(self, offset, whence=0):
         if self.closed:
             raise ValueError("I/O operation on closed file")
@@ -3895,8 +3625,12 @@ class GzipFile(object):
                 raise TypeError("write() expects bytes-like in binary mode")
 
         # Normalize Py3 memoryview and Py2 bytearray
-        if isinstance(data, memoryview):
-            data = data.tobytes()# Stage and compress in chunks
+        if (not PY2) and isinstance(data, memoryview):
+            data = data.tobytes()
+        elif PY2 and isinstance(data, bytearray):
+            data = bytes(data)
+
+        # Stage and compress in chunks
         self._write_buf += data
         if len(self._write_buf) >= (__filebuff_size__):  # 1 MiB threshold
             out = self._compressor.compress(bytes(self._write_buf))
@@ -4485,7 +4219,7 @@ class _DelimiterReader(object):
     """
     _PB_ATTR = "_read_until_delim_pushback"
 
-    def __init__(self, fp, delimiter, chunk_size=8192, max_read=64 * MB):
+    def __init__(self, fp, delimiter, chunk_size=8192, max_read=64 * 1024 * 1024):
         if not hasattr(fp, "read"):
             raise ValueError("fp must be a readable file-like object")
 
@@ -4645,7 +4379,7 @@ def read_until_delimiter(fp,
     Py2/3 compatible (no keyword-only args).
     """
     if max_read is None:
-        max_read = 64 * MB
+        max_read = 64 * 1024 * 1024
     if chunk_size is None:
         chunk_size = 8192
     if errors is None:
@@ -4671,7 +4405,7 @@ def read_until_n_delimiters(fp,
     Py2/3 compatible (no keyword-only args).
     """
     if max_read is None:
-        max_read = 64 * MB
+        max_read = 64 * 1024 * 1024
     if chunk_size is None:
         chunk_size = 8192
     if errors is None:
@@ -4688,35 +4422,35 @@ def read_until_n_delimiters(fp,
 # ========= back-compat wrappers (your original names) =========
 def ReadTillNullByteOld(fp, delimiter=_default_delim(None)):
     # emulate byte-by-byte via chunk_size=1; decode with 'replace' like your Alt
-    return read_until_delimiter(fp, delimiter, max_read=64 * MB, chunk_size=1,
+    return read_until_delimiter(fp, delimiter, max_read=64 * 1024 * 1024, chunk_size=1,
                                 decode=True, errors="replace")
 
 def ReadUntilNullByteOld(fp, delimiter=_default_delim(None)):
     return ReadTillNullByteOld(fp, delimiter)
 
-def ReadTillNullByteAlt(fp, delimiter=_default_delim(None), chunk_size=1024, max_read=64 * MB):
+def ReadTillNullByteAlt(fp, delimiter=_default_delim(None), chunk_size=1024, max_read=64 * 1024 * 1024):
     return read_until_delimiter(fp, delimiter, max_read=max_read, chunk_size=chunk_size,
                                 decode=True, errors="replace")
 
-def ReadUntilNullByteAlt(fp, delimiter=_default_delim(None), chunk_size=1024, max_read=64 * MB):
+def ReadUntilNullByteAlt(fp, delimiter=_default_delim(None), chunk_size=1024, max_read=64 * 1024 * 1024):
     return ReadTillNullByteAlt(fp, delimiter, chunk_size, max_read)
 
-def ReadTillNullByte(fp, delimiter=_default_delim(None), max_read=64 * MB):
+def ReadTillNullByte(fp, delimiter=_default_delim(None), max_read=64 * 1024 * 1024):
     return read_until_delimiter(fp, delimiter, max_read=max_read, chunk_size=8192,
                                 decode=True, errors="strict")
 
-def ReadUntilNullByte(fp, delimiter=_default_delim(None), max_read=64 * MB):
+def ReadUntilNullByte(fp, delimiter=_default_delim(None), max_read=64 * 1024 * 1024):
     return ReadTillNullByte(fp, delimiter, max_read)
 
 def ReadTillNullByteByNum(fp, delimiter=_default_delim(None), num_delimiters=1,
-                          chunk_size=1024, max_read=64 * MB):
+                          chunk_size=1024, max_read=64 * 1024 * 1024):
     # Return list of text parts; **pad to N** to avoid IndexError in rigid parsers
     return read_until_n_delimiters(fp, delimiter, num_delimiters,
                                    max_read=max_read, chunk_size=chunk_size,
                                    decode=True, errors="replace", pad_to_n=True)
 
 def ReadUntilNullByteByNum(fp, delimiter=_default_delim(None), num_delimiters=1,
-                           chunk_size=1024, max_read=64 * MB):
+                           chunk_size=1024, max_read=64 * 1024 * 1024):
     return ReadTillNullByteByNum(fp, delimiter, num_delimiters, chunk_size, max_read)
 
 
@@ -5647,7 +5381,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
         VerbosePrintOut("'" + fprechecksum + "' != " +
                         "'" + newfcs + "'")
         return False
-    formversions = _RE_BASE_NUM.search(formstring).groups()
+    formversions = re.search('(.*?)(\\d+)', formstring).groups()
     fcompresstype = ""
     outlist = {'fnumfiles': fnumfiles, 'ffilestart': filestart, 'fformat': formversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fmtime': fheadmtime, 'fctime': fheadctime, 'fversion': formversions[1], 'fostype': fostype, 'fprojectname': fprojectname, 'fimptype': fpythontype, 'fheadersize': fheadsize, 'fsize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fseeknextfile': fseeknextfile, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'fjsonchecksumtype': fjsonchecksumtype, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fjstart': fjstart, 'fjend': fjend, 'fjsonchecksum': fjsonchecksum, 'frawheader': [formstring] + inheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextradata': fextrafieldslist, 'fvendorfields': fvendorfields, 'fvendordata': fvendorfieldslist, 'ffilelist': []}
     if (seekstart < 0) or (seekstart > fnumfiles):
@@ -5910,7 +5644,7 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
         VerbosePrintOut("'" + fprechecksum + "' != " +
                         "'" + newfcs + "'")
         return False
-    formversions = _RE_BASE_NUM.search(formstring).groups()
+    formversions = re.search('(.*?)(\\d+)', formstring).groups()
     outlist = []
     if (seekstart < 0) or (seekstart > fnumfiles):
         seekstart = 0
@@ -6346,7 +6080,7 @@ def system_and_major():
         release = info[2]
 
     # Find the first run of digits in the release string
-    m = _RE_DIGITS.search(release)
+    m = re.search(r'\d+', release)
     if m:
         major = m.group(0)  # e.g. '11' or '6'
         return u"%s%s" % (system, major)  # unicode-safe in Py2
@@ -9782,7 +9516,7 @@ class FileLikeAdapter(object):
             n = len(self._mm) - self._pos
         end = min(self._pos + n, len(self._mm))
         if end <= self._pos:
-            return b""
+            return b"" if not PY2 else bytes_type()
         out = bytes(self._mm[self._pos:end])
         self._pos = end
         return out
@@ -9844,6 +9578,9 @@ class FileLikeAdapter(object):
         if not line:
             raise StopIteration
         return line
+
+    if PY2:
+        next = __next__
 
     # ---- writes ----
     def write(self, b):
@@ -10274,7 +10011,7 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None,
 
     fbasename, fextname = os.path.splitext(outfile)
     compressionlevel = 9 if compressionlevel is None else int(compressionlevel)
-    mode = "wb"
+    mode = "w" if PY2 else "wb"
 
     try:
         # Uncompressed branch
@@ -10291,7 +10028,11 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None,
 
         # Compressed branches (unchanged openers; all wrapped)
         elif (fextname == ".gz" and "gzip" in compressionsupport):
-            outfp = FileLikeAdapter(gzip.open(outfile, mode, compressionlevel), mode="wb")
+            if PY2:
+                outfp = FileLikeAdapter(GzipFile(outfile, mode=mode, level=compressionlevel), mode="wb")
+            else:
+                outfp = FileLikeAdapter(gzip.open(outfile, mode, compressionlevel), mode="wb")
+
         elif (fextname == ".bz2" and "bzip2" in compressionsupport):
             outfp = FileLikeAdapter(bz2.open(outfile, mode, compressionlevel), mode="wb")
 
@@ -12827,7 +12568,7 @@ def upload_file_to_http_file(
         return (200 <= resp.status_code < 300)
 
     # ========== 2) httpx (Py3 only) ==========
-    if usehttp == 'httpx' and havehttpx:
+    if usehttp == 'httpx' and havehttpx and not PY2:
         import httpx
         auth = (username, password) if (username or password) else None
 
@@ -12899,7 +12640,8 @@ def upload_file_to_http_file(
         hdrs.update(headers)
         req = Request(rebuilt_url, data=data)
         # method override for Py3; Py2 Request ignores 'method' kw
-        req.method = method  # method override
+        if not PY2:
+            req.method = method  # type: ignore[attr-defined]
     else:
         # raw body
         try:
@@ -12910,7 +12652,8 @@ def upload_file_to_http_file(
         hdrs = {'Content-Type': content_type}
         hdrs.update(headers)
         req = Request(rebuilt_url, data=data)
-        req.method = method  # method override
+        if not PY2:
+            req.method = method  # type: ignore[attr-defined]
 
     for k, v in hdrs.items():
         req.add_header(k, v)
@@ -13507,7 +13250,7 @@ def send_from_fileobj(fileobj, host, port=3124, proto="tcp", timeout=None,
                 if start_pos is not None:
                     try: fileobj.seek(start_pos, os.SEEK_SET)
                     except Exception: pass
-                _HSZ = MB
+                _HSZ = 1024 * 1024
                 while True:
                     blk = fileobj.read(_HSZ)
                     if not blk: break
@@ -13638,7 +13381,7 @@ def send_from_fileobj(fileobj, host, port=3124, proto="tcp", timeout=None,
                 cur = fileobj.tell()
                 if start_pos is not None:
                     fileobj.seek(start_pos, os.SEEK_SET)
-                _HSZ = MB
+                _HSZ = 1024 * 1024
                 while True:
                     blk = fileobj.read(_HSZ)
                     if not blk: break
@@ -13911,7 +13654,7 @@ def recv_to_fileobj(fileobj, host="", port=3124, proto="tcp", timeout=None,
                     cur = fileobj.tell(); fileobj.seek(0)
                 except Exception:
                     cur = None
-                h = hashlib.sha256(); _HSZ = MB
+                h = hashlib.sha256(); _HSZ = 1024 * 1024
                 while True:
                     blk = fileobj.read(_HSZ)
                     if not blk: break
@@ -14103,7 +13846,7 @@ def run_tcp_file_server(fileobj, url, on_progress=None):
             if start_pos is not None:
                 try: fileobj.seek(start_pos, os.SEEK_SET)
                 except Exception: pass
-            _HSZ = MB
+            _HSZ = 1024 * 1024
             while True:
                 blk = fileobj.read(_HSZ)
                 if not blk: break
@@ -14302,7 +14045,7 @@ def run_udp_file_server(fileobj, url, on_progress=None):
             if start_pos is not None:
                 try: fileobj.seek(start_pos, os.SEEK_SET)
                 except Exception: pass
-            _HSZ = MB
+            _HSZ = 1024 * 1024
             while True:
                 blk = fileobj.read(_HSZ)
                 if not blk: break
@@ -14452,7 +14195,7 @@ def run_http_file_server(fileobj, url, on_progress=None, backlog=5):
             if start_pos is not None:
                 try: fileobj.seek(start_pos, os.SEEK_SET)
                 except Exception: pass
-            _HSZ = MB
+            _HSZ = 1024 * 1024
             while True:
                 blk = fileobj.read(_HSZ)
                 if not blk: break
@@ -14728,7 +14471,7 @@ def run_tcp_file_server(fileobj, url, on_progress=None):
             if start_pos is not None:
                 try: fileobj.seek(start_pos, os.SEEK_SET)
                 except Exception: pass
-            _HSZ = MB
+            _HSZ = 1024 * 1024
             while True:
                 blk = fileobj.read(_HSZ)
                 if not blk: break
@@ -15087,7 +14830,7 @@ def recv_to_fileobj(fileobj, host="", port=0, proto="tcp", timeout=None,
                     cur = fileobj.tell(); fileobj.seek(0)
                 except Exception:
                     cur = None
-                h = hashlib.sha256(); _HSZ = MB
+                h = hashlib.sha256(); _HSZ = 1024 * 1024
                 while True:
                     blk = fileobj.read(_HSZ)
                     if not blk: break
@@ -15277,7 +15020,7 @@ def run_udp_file_server(fileobj, url, on_progress=None):
             if start_pos is not None:
                 try: fileobj.seek(start_pos, os.SEEK_SET)
                 except Exception: pass
-            _HSZ = MB
+            _HSZ = 1024 * 1024
             while True:
                 blk = fileobj.read(_HSZ)
                 if not blk: break
