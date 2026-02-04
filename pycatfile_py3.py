@@ -15076,6 +15076,267 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
         return _udp_quic_send(fileobj, host, port, **kwargs)
     return _udp_seq_send(fileobj, host, port, **kwargs)
 
+def _udp_raw_send(fileobj, host, port, **kwargs):
+    logger = _logger_from_kwargs(kwargs)
+    addr = (host or "127.0.0.1", int(port))
+
+    # ---- normalize bool-ish flags (URL query values may be strings) ----
+    handshake = _kw_bool(kwargs.get("handshake", True), True)
+    raw_ack = _kw_bool(kwargs.get("raw_ack", False), False)
+    raw_meta = _kw_bool(kwargs.get("raw_meta", True), True)
+    raw_sha = _kw_bool(kwargs.get("raw_sha", False), False)
+    wait = _kw_bool(kwargs.get("wait", True), True) or _kw_bool(kwargs.get("connect_wait", False), False)
+
+    verbose = _kw_bool(kwargs.get("verbose", False), False)
+
+    def _log(msg):
+        _net_log(verbose, msg, logger=logger)
+
+    # ---- numeric params ----
+    try:
+        chunk = int(kwargs.get("chunk", 1200))
+    except Exception:
+        chunk = 1200
+    if chunk < 256:
+        chunk = 256
+
+    try:
+        wt = kwargs.get("wait_timeout", None)
+        wt = float(wt) if wt is not None else None
+    except Exception:
+        wt = None
+
+    try:
+        hello_iv = float(kwargs.get("hello_interval", 0.1) or 0.1)
+    except Exception:
+        hello_iv = 0.1
+    if hello_iv <= 0:
+        hello_iv = 0.1
+
+    # ---- compute total remaining length (for META and/or HASH) ----
+    total_len = None
+    pos = None
+    if raw_meta or raw_sha:
+        try:
+            pos = fileobj.tell()
+            fileobj.seek(0, os.SEEK_END)
+            end = fileobj.tell()
+            fileobj.seek(pos, os.SEEK_SET)
+            total_len = int(end - pos)
+            if total_len < 0:
+                total_len = None
+        except Exception:
+            total_len = None
+            try:
+                if pos is not None:
+                    fileobj.seek(pos, os.SEEK_SET)
+            except Exception:
+                pass
+
+    # ---- precompute expected hash (optional) ----
+    expected_hex = None
+    raw_hash = (kwargs.get("raw_hash", "sha256") or "sha256").lower()
+    if raw_sha and total_len is not None:
+        try:
+            h = hashlib.sha256() if raw_hash != "md5" else hashlib.md5()
+            cur = fileobj.tell()
+            while True:
+                b = fileobj.read(65536)
+                if not b:
+                    break
+                h.update(_to_bytes(b))
+            expected_hex = h.hexdigest()
+            fileobj.seek(cur, os.SEEK_SET)
+        except Exception:
+            expected_hex = None
+            try:
+                if pos is not None:
+                    fileobj.seek(pos, os.SEEK_SET)
+            except Exception:
+                pass
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    try:
+        # ---- handshake / wait-for-receiver ----
+        tok = kwargs.get("token")
+        tok = _hs_token() if tok is None else _to_bytes(tok)
+
+        if wait:
+            start_t = time.time()
+            while True:
+                if wt is not None and wt >= 0 and (time.time() - start_t) >= wt:
+                    _log("UDP raw: wait_timeout reached; no receiver READY")
+                    try:
+                        sock.close()
+                    except Exception:
+                        pass
+                    return False
+
+                # announce
+                if handshake:
+                    try:
+                        sock.sendto(b"HELLO " + tok + b"\n", addr)
+                    except Exception:
+                        pass
+
+                if raw_meta and total_len is not None:
+                    try:
+                        sock.sendto(b"META " + str(total_len).encode("ascii") + b"\n", addr)
+                    except Exception:
+                        pass
+
+                if raw_sha and expected_hex:
+                    try:
+                        sock.sendto(b"HASH " + raw_hash.encode("ascii") + b" " + expected_hex.encode("ascii") + b"\n", addr)
+                    except Exception:
+                        pass
+
+                # wait briefly for READY
+                try:
+                    sock.settimeout(hello_iv)
+                except Exception:
+                    pass
+
+                try:
+                    pkt, _a = sock.recvfrom(1024)
+                    if pkt.startswith(b"READY"):
+                        # READY or READY <token>
+                        if b" " in pkt:
+                            rt = pkt.split(None, 1)[1].strip()
+                            if rt and rt != tok:
+                                continue
+                        _log("UDP raw: received READY from receiver")
+                        break
+                except socket.timeout:
+                    continue
+                except Exception:
+                    continue
+        else:
+            # if not waiting, still send META/HASH once up front
+            if handshake:
+                try:
+                    sock.sendto(b"HELLO " + tok + b"\n", addr)
+                except Exception:
+                    pass
+            if raw_meta and total_len is not None:
+                try:
+                    sock.sendto(b"META " + str(total_len).encode("ascii") + b"\n", addr)
+                except Exception:
+                    pass
+            if raw_sha and expected_hex:
+                try:
+                    sock.sendto(b"HASH " + raw_hash.encode("ascii") + b" " + expected_hex.encode("ascii") + b"\n", addr)
+                except Exception:
+                    pass
+
+        # ---- send data ----
+        if raw_ack:
+            # sliding window retransmit
+            try:
+                ack_to = float(kwargs.get("raw_ack_timeout", 0.5) or 0.5)
+            except Exception:
+                ack_to = 0.5
+            try:
+                retries_max = int(kwargs.get("raw_ack_retries", 40) or 40)
+            except Exception:
+                retries_max = 40
+            try:
+                win = int(kwargs.get("raw_ack_window", 1) or 1)
+            except Exception:
+                win = 1
+            if win < 1:
+                win = 1
+
+            try:
+                sock.settimeout(ack_to)
+            except Exception:
+                pass
+
+            def _make_pkt(seq, data):
+                return b"PKT " + str(seq).encode("ascii") + b" " + _to_bytes(data)
+
+            base_seq = 0
+            next_seq = 0
+            pkts = {}
+            eof = False
+            timeout_tries = 0
+
+            while True:
+                # fill window
+                while (not eof) and next_seq < base_seq + win:
+                    data = fileobj.read(chunk)
+                    if not data:
+                        eof = True
+                        break
+                    pkt = _make_pkt(next_seq, data)
+                    pkts[next_seq] = pkt
+                    try:
+                        sock.sendto(pkt, addr)
+                    except Exception:
+                        pass
+                    next_seq += 1
+
+                if eof and base_seq == next_seq:
+                    break
+
+                try:
+                    apkt, _a = sock.recvfrom(1024)
+                    if apkt.startswith(b"ACK "):
+                        try:
+                            aseq = int(apkt.split()[1])
+                        except Exception:
+                            aseq = -1
+                        new_base = aseq + 1
+                        if new_base > base_seq:
+                            for s in list(pkts.keys()):
+                                if s < new_base:
+                                    pkts.pop(s, None)
+                            base_seq = new_base
+                            timeout_tries = 0
+                except socket.timeout:
+                    timeout_tries += 1
+                    if retries_max >= 0 and timeout_tries >= retries_max:
+                        _log("UDP raw: too many ACK timeouts, giving up")
+                        return False
+                    # retransmit all in-flight
+                    for s in range(base_seq, next_seq):
+                        pkt = pkts.get(s)
+                        if pkt is None:
+                            continue
+                        try:
+                            sock.sendto(pkt, addr)
+                        except Exception:
+                            pass
+                except Exception:
+                    # treat as timeout-ish
+                    timeout_tries += 1
+
+        else:
+            # legacy raw: just send datagrams
+            while True:
+                data = fileobj.read(chunk)
+                if not data:
+                    break
+                try:
+                    sock.sendto(_to_bytes(data), addr)
+                except Exception:
+                    pass
+
+        # ---- finish ----
+        try:
+            sock.sendto(b"DONE", addr)
+        except Exception:
+            pass
+
+        return True
+
+    finally:
+        try:
+            sock.close()
+        except Exception:
+            pass
+
 def _udp_raw_recv(fileobj, host, port, **kwargs):
     logger = _logger_from_kwargs(kwargs)
     addr = (host or "", int(port))
