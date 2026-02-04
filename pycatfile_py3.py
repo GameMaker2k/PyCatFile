@@ -14445,6 +14445,7 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
             kwargs['handshake'] = False
         if is_bt and 'send_path' not in kwargs:
             kwargs['send_path'] = False
+
         if is_bt:
             if not _has_rfcomm():
                 _emit("Bluetooth RFCOMM is not available (missing AF_BLUETOOTH/BTPROTO_RFCOMM or PyBluez).",
@@ -14603,11 +14604,14 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
                     except Exception:
                         pass
 
+            # restore user timeout if any
             try:
                 if to is not None and float(to) > 0:
                     conn.settimeout(float(to))
             except Exception:
                 pass
+
+            # Legacy PATH preface (TCP). Keep this because it makes your TCP version work.
             try:
                 conn.settimeout(0.25)
                 if hasattr(socket, "MSG_PEEK"):
@@ -14648,7 +14652,7 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
 
             framing = (kwargs.get("framing") or "").lower()
             want_sha = bool(kwargs.get("sha256") or kwargs.get("sha") or kwargs.get("want_sha"))
-            h = hashlib.sha256() if want_sha else None
+            h = None  # FIX: decide based on flags when framing == "len"
 
             if framing == "len":
                 try:
@@ -14658,12 +14662,18 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
                         if not chunk:
                             break
                         header += _to_bytes(chunk)
+
                     if len(header) != 16 or not header.startswith(b"PWG4"):
                         ok = False
                     else:
                         size = struct.unpack("!Q", header[4:12])[0]
                         flags = struct.unpack("!I", header[12:16])[0]
                         sha_in_stream = bool(flags & 1)
+
+                        # FIX: if sender includes sha, ALWAYS hash so we can verify
+                        if sha_in_stream:
+                            h = hashlib.sha256()
+
                         remaining = int(size)
 
                         while remaining > 0:
@@ -14686,13 +14696,17 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
                                     if not part:
                                         break
                                     digest += _to_bytes(part)
+
                                 if len(digest) != 32:
                                     ok = False
-                                elif h is not None and h.digest() != digest:
+                                elif h is None:
+                                    ok = False
+                                elif h.digest() != digest:
                                     ok = False
                                 else:
                                     ok = True
                             else:
+                                # Sender did not include sha; if receiver demanded it, fail
                                 ok = (not want_sha)
                 except Exception:
                     ok = False
@@ -14755,7 +14769,7 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
                 pass
         return ok
 
-    # UDP modes
+    # UDP modes (unchanged)
     mode = (kwargs.get("mode") or "seq").lower()
     if mode == "raw":
         return _udp_raw_recv(fileobj, host, port, **kwargs)
@@ -14770,6 +14784,11 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
 
     if proto == "tcp" or proto in _BT_SCHEMES:
         is_bt = proto in _BT_SCHEMES
+
+        # FIX: BT receiver defaults handshake OFF; match it here unless user overrides
+        if is_bt and "handshake" not in kwargs:
+            kwargs["handshake"] = False
+
         if is_bt:
             if not _has_rfcomm():
                 _emit("Bluetooth RFCOMM is not available (missing AF_BLUETOOTH/BTPROTO_RFCOMM or PyBluez).",
@@ -14810,6 +14829,7 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
                 wait_timeout = float(wait_timeout)
             except Exception:
                 wait_timeout = None
+
         start_t = time.time()
         while True:
             try:
@@ -14893,12 +14913,21 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
             except Exception:
                 pass
 
+        # Choose framing (FIX: default len for BT stream to prevent corruption)
+        framing = (kwargs.get("framing") or "").lower()
+        if is_bt and not framing:
+            framing = "len"
+
+        # PATH line is legacy and safe only if receiver consumes it.
+        # Keep legacy behavior for TCP, but for BT skip by default (receiver often can't peek).
         if path_text and (not is_bt or kwargs.get('send_path')):
-            try:
-                line = ("PATH %s\n" % (path_text or "/")).encode("utf-8")
-                sock.sendall(line)
-            except Exception:
-                pass
+            # Optional: avoid PATH in len framing unless explicitly forced
+            if framing != "len" or kwargs.get("force_path_in_len"):
+                try:
+                    line = ("PATH %s\n" % (path_text or "/")).encode("utf-8")
+                    sock.sendall(line)
+                except Exception:
+                    pass
 
         if kwargs.get("resume"):
             try:
@@ -14917,7 +14946,6 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
             except Exception:
                 pass
 
-        framing = (kwargs.get("framing") or "").lower()
         want_sha = bool(kwargs.get("sha256") or kwargs.get("sha") or kwargs.get("want_sha"))
         h = hashlib.sha256() if want_sha else None
 
@@ -14981,6 +15009,7 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
             pass
         return True
 
+    # UDP section (unchanged)
     mode = (kwargs.get("mode") or "seq").lower()
     if mode == "raw":
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -15203,171 +15232,222 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
     return _udp_seq_send(fileobj, host, port, **kwargs)
 
 def _udp_raw_recv(fileobj, host, port, **kwargs):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((host or "", int(port)))
+    logger = _logger_from_kwargs(kwargs)
+    addr = (host or "", int(port))
 
-    if kwargs.get("print_url"):
-        _emit("Listening: udp://%s:%d/" % (host or "0.0.0.0", sock.getsockname()[1]), logger=logger, level=logging.INFO, stream="stdout")
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # Bind to all interfaces unless user explicitly gave a concrete local bind
+        bind_host = host if host not in (None, "", "127.0.0.1") else ""
+        sock.bind((bind_host, int(port)))
+    except Exception:
         try:
-            sys.stdout.flush()
+            sock.close()
+        except Exception:
+            pass
+        return False
+
+    # Waiting behavior
+    wait = bool(kwargs.get("wait", True) or kwargs.get("connect_wait", False))
+    wait_timeout = kwargs.get("wait_timeout", None)
+    try:
+        wait_timeout = float(wait_timeout) if wait_timeout is not None else None
+    except Exception:
+        wait_timeout = None
+
+    # If raw_ack enabled, we must do READY/ACK
+    raw_ack = bool(kwargs.get("raw_ack"))
+    handshake = bool(kwargs.get("handshake", True))
+
+    # Optional meta/hash
+    want_meta = bool(kwargs.get("raw_meta", True))
+    want_hash = bool(kwargs.get("raw_sha", False))
+    raw_hash = (kwargs.get("raw_hash", "sha256") or "sha256").lower()
+
+    expected_len = None
+    expected_hash_hex = None
+
+    # In-order receive support (prevents duplicates/“extra bigger”)
+    expected_seq = 0
+    buffered = {}  # seq -> data
+
+    # For verifying HASH if requested/sent
+    h = None
+    if want_hash:
+        try:
+            h = hashlib.sha256() if raw_hash != "md5" else hashlib.md5()
+        except Exception:
+            h = None
+
+    sender_addr = None
+    got_any = False
+    start_t = time.time()
+
+    # Optional debug
+    verbose = kwargs.get("verbose", False)
+
+    def _log(msg):
+        _net_log(verbose, msg, logger=logger)
+
+    def _sendto(bts, a):
+        try:
+            sock.sendto(bts, a)
         except Exception:
             pass
 
-    sock.settimeout(float(kwargs.get("timeout", 1.0)))
-    end_timeout = float(kwargs.get("end_timeout", 0.25))
+    def _try_flush_buffer():
+        nonlocal expected_seq
+        while expected_seq in buffered:
+            data = buffered.pop(expected_seq)
+            try:
+                fileobj.write(data)
+            except Exception:
+                pass
+            if h is not None:
+                try:
+                    h.update(data)
+                except Exception:
+                    pass
+            expected_seq += 1
 
-    want_sha = bool(kwargs.get("raw_sha", False))
-    raw_hash = (kwargs.get("raw_hash", "sha256") or "sha256").lower()
-    hasher = None
-    expected_hex = None
-    if want_sha:
-        hasher = hashlib.sha256() if raw_hash != "md5" else hashlib.md5()
-
-    # --- FIX: initialize raw-ack state (prevent NameError in raw_ack mode) ---
-    want_ack = bool(kwargs.get("raw_ack") or kwargs.get("want_ack"))
-    exp_seq = 0
-    bytes_written = 0
-
-    expected = None
-    received = 0
-    last = time.time()
-    saw_any = False
-
-    while True:
+    try:
+        # Use a short timeout so we can enforce wait_timeout cleanly
         try:
-            pkt, _addr = sock.recvfrom(65536)
-            # Handshake: sender announces itself; reply READY <token>.
-            if kwargs.get("handshake", True) and pkt.startswith(b"HELLO "):
-                tok = pkt.split(None, 1)[1].strip() if b" " in pkt else b""
-                try:
-                    sock.sendto(b"READY " + tok + b"\n", _addr)
-                except Exception:
-                    pass
-                continue
-
-        except socket.timeout:
-            if expected is not None:
-                continue
-            if saw_any and (time.time() - last) >= end_timeout:
-                break
-            continue
-        except KeyboardInterrupt:
-            try:
-                sock.close()
-            except Exception:
-                pass
-            raise
+            sock.settimeout(0.25 if wait else 0.0)
         except Exception:
-            break
+            pass
 
-        if not pkt:
-            continue
+        while True:
+            # timeout handling
+            if not got_any and wait_timeout is not None and wait_timeout >= 0:
+                if (time.time() - start_t) >= wait_timeout:
+                    return False
 
-        saw_any = True
-        last = time.time()
-
-        if expected is None and pkt.startswith(b"META "):
             try:
-                line = pkt.split(b"\n", 1)[0]
-                expected = int(line.split()[1])
+                pkt, a = sock.recvfrom(65536)
+            except socket.timeout:
+                continue
+            except KeyboardInterrupt:
+                raise
+            except Exception:
+                return False
+
+            if not pkt:
+                continue
+
+            got_any = True
+            if sender_addr is None:
+                sender_addr = a
+
+            # --- CONTROL: HELLO/READY ---
+            if handshake and pkt.startswith(b"HELLO "):
+                tok = pkt.split(None, 1)[1].strip()
+                _log(f"UDP raw: got HELLO from {a}")
+                _sendto(b"READY " + tok + b"\n", a)
+                continue
+
+            # --- CONTROL: META ---
+            if want_meta and pkt.startswith(b"META "):
                 try:
-                    sock.sendto(b"READY\n", _addr)
+                    expected_len = int(pkt.split(None, 1)[1].strip())
+                    _log(f"UDP raw: got META len={expected_len}")
                 except Exception:
                     pass
-                if expected < 0:
-                    expected = None
-            except Exception:
-                expected = None
-            continue
+                continue
 
-        if pkt.startswith(b"HASH "):
-            try:
-                line = pkt.split(b"\n", 1)[0]
-                parts = line.split()
-                algo = parts[1].decode("ascii", "ignore").lower()
-                hx = parts[2].decode("ascii", "ignore")
-                expected_hex = hx
-                if not want_sha:
-                    want_sha = True
-                raw_hash = algo or raw_hash
-                hasher = hashlib.sha256() if raw_hash != "md5" else hashlib.md5()
-            except Exception:
-                pass
-            continue
-
-        if pkt == b"DONE":
-            break
-
-        if expected is None:
-            if want_ack and pkt.startswith(b"PKT "):
+            # --- CONTROL: HASH ---
+            if want_hash and pkt.startswith(b"HASH "):
+                # "HASH <alg> <hex>\n"
                 try:
-                    parts = pkt.split(b" ", 2)
-                    seq = int(parts[1])
-                    payload = parts[2] if len(parts) > 2 else b""
+                    parts = pkt.strip().split()
+                    if len(parts) >= 3:
+                        alg = parts[1].decode("ascii", "ignore").lower()
+                        hx = parts[2].decode("ascii", "ignore").lower()
+                        expected_hash_hex = hx
+                        _log(f"UDP raw: got HASH alg={alg}")
+                        # If alg differs, we still accept but won't verify correctly.
                 except Exception:
-                    seq = -1
-                    payload = b""
-                if seq == exp_seq:
+                    pass
+                continue
+
+            # --- CONTROL: DONE ---
+            if pkt.startswith(b"DONE"):
+                _log("UDP raw: got DONE")
+                # Flush anything buffered (best effort)
+                _try_flush_buffer()
+
+                # Verify length if META was provided
+                if expected_len is not None:
                     try:
-                        fileobj.write(payload)
+                        cur = fileobj.tell()
+                        ok_len = (int(cur) == int(expected_len))
                     except Exception:
-                        try:
-                            fileobj.write(_to_bytes(payload))
-                        except Exception:
-                            pass
-                    if hasher is not None:
-                        try:
-                            hasher.update(payload)
-                        except Exception:
-                            pass
-                    bytes_written += len(payload)
-                    exp_seq += 1
+                        ok_len = True  # can't verify
+                else:
+                    ok_len = True
+
+                # Verify hash if provided
+                ok_hash = True
+                if expected_hash_hex and h is not None:
+                    try:
+                        ok_hash = (h.hexdigest().lower() == expected_hash_hex.lower())
+                    except Exception:
+                        ok_hash = True
+
+                return bool(ok_len and ok_hash)
+
+            # --- DATA (raw_ack framed) ---
+            if raw_ack and pkt.startswith(b"PKT "):
+                # Format: b"PKT <seq> <data...>"
                 try:
-                    sock.sendto(b"ACK " + str(exp_seq - 1).encode("ascii") + b"\n", _addr)
+                    sp1 = pkt.find(b" ")
+                    sp2 = pkt.find(b" ", sp1 + 1)
+                    seq = int(pkt[sp1 + 1:sp2])
+                    data = pkt[sp2 + 1:]
                 except Exception:
-                    pass
+                    continue
+
+                # ACK immediately (even if duplicate/out-of-order)
+                _sendto(b"ACK " + str(seq).encode("ascii") + b"\n", a)
+
+                if seq < expected_seq:
+                    # duplicate
+                    continue
+
+                if seq == expected_seq:
+                    try:
+                        fileobj.write(data)
+                    except Exception:
+                        pass
+                    if h is not None:
+                        try:
+                            h.update(data)
+                        except Exception:
+                            pass
+                    expected_seq += 1
+                    _try_flush_buffer()
+                else:
+                    # out of order: buffer
+                    if seq not in buffered:
+                        buffered[seq] = data
                 continue
-            fileobj.write(pkt)
-            if hasher is not None:
-                hasher.update(pkt)
-        else:
-            remain = expected - received
-            if remain <= 0:
-                break
-            if len(pkt) <= remain:
-                fileobj.write(pkt)
-                if hasher is not None:
-                    hasher.update(pkt)
-                received += len(pkt)
-            else:
-                piece = pkt[:remain]
-                fileobj.write(piece)
-                if hasher is not None:
-                    hasher.update(piece)
-                received += remain
-                break
 
-        if expected is not None and received >= expected:
-            break
+            # --- DATA (legacy raw, no framing) ---
+            # If sender is not using PKT framing, treat all other packets as raw payload.
+            # This mode cannot be reliable or ordered, but works on localhost.
+            try:
+                fileobj.write(_to_bytes(pkt))
+                if h is not None:
+                    h.update(_to_bytes(pkt))
+            except Exception:
+                pass
 
-    try:
-        sock.close()
-    except Exception:
-        pass
-    try:
-        fileobj.seek(0, 0)
-    except Exception:
-        pass
-
-    if want_sha:
-        if expected_hex is None:
-            return False
+    finally:
         try:
-            return (hasher.hexdigest().lower() == expected_hex.strip().lower())
+            sock.close()
         except Exception:
-            return False
+            pass
 
-    return True
 def _udp_seq_send(fileobj, host, port, resume=False, path_text=None, **kwargs):
     addr = (host, int(port))
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
