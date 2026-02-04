@@ -426,8 +426,8 @@ def add_format(reg, key, magic, ext, name=None, ver="001",
         "format_extension": ext,
     }
 
-__upload_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp|data|file|bt|rfcomm|bluetooth)://"
-__download_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp|data|file|bt|rfcomm|bluetooth)://"
+__upload_proto_support__ = "^(http|https|ftp|tftp|ftps|sftp|scp|tcp|udp|data|file|bt|rfcomm|bluetooth)://"
+__download_proto_support__ = "^(http|https|ftp|tftp|ftps|sftp|scp|tcp|udp|data|file|bt|rfcomm|bluetooth)://"
 __use_pysftp__ = False
 if(not havepysftp):
     __use_pysftp__ = False
