@@ -29,6 +29,12 @@ import hmac
 import base64
 import shutil
 import socket
+import ipaddress
+
+try:
+    import socks  # type: ignore
+except Exception:
+    socks = None
 import struct
 import getpass
 import hashlib
@@ -689,7 +695,7 @@ __version_date_info__ = (2026, 2, 3, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: b57e93ea8432b167bfa598f4ffeb5a66df229068 $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -11791,6 +11797,151 @@ def data_url_decode(data_url):
     is_text = str(mime).lower().startswith("text/")
     return MkTempFile(decoded_bytes), mime, is_text
 
+
+from urllib.parse import urlparse, urlunparse, parse_qs, unquote
+from urllib.request import (
+    Request,
+    build_opener,
+    HTTPBasicAuthHandler,
+    HTTPCookieProcessor,
+    HTTPSHandler,
+    HTTPPasswordMgrWithDefaultRealm,
+)
+from urllib.error import URLError, HTTPError
+from http.client import HTTPException
+
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import socketserver as _socketserver
+
+
+
+haverequests = False
+try:
+    import requests
+    haverequests = True
+except Exception:
+    pass
+
+haveurllib3 = False
+try:
+    import urllib3
+    haveurllib3 = True
+except Exception:
+    pass
+
+havehttpx = False
+try:
+    import httpx
+    havehttpx = True
+except Exception:
+    pass
+
+havehttpcore = False
+try:
+    import httpcore
+    havehttpcore = True
+except ImportError:
+    pass
+
+havemechanize = False
+try:
+    import mechanize
+    havemechanize = True
+except Exception:
+    pass
+
+havepycurl = False
+try:
+    import pycurl
+    havepycurl = True
+except ImportError:
+    pass
+
+haveparamiko = False
+try:
+    import paramiko
+    haveparamiko = True
+except Exception:
+    pass
+
+havepysftp = False
+try:
+    import pysftp
+    havepysftp = True
+except Exception:
+    pass
+
+
+ftpssl = True
+try:
+    from ftplib import FTP, FTP_TLS, all_errors
+except Exception:
+    ftpssl = False
+    from ftplib import FTP, all_errors
+
+
+__use_pysftp__ = False
+if(not havepysftp):
+    __use_pysftp__ = False
+__use_http_lib__ = "httpx"
+if(__use_http_lib__ == "httpx" and haverequests and not havehttpx):
+    __use_http_lib__ = "requests"
+if(__use_http_lib__ == "requests" and havehttpx and not haverequests):
+    __use_http_lib__ = "httpx"
+if((__use_http_lib__ == "httpx" or __use_http_lib__ == "requests") and not havehttpx and not haverequests):
+    __use_http_lib__ = "urllib"
+
+__program_name__ = "PyNeoWWW-Get"
+__program_alt_name__ = "PyWWWGet"
+__program_small_name__ = "wwwget"
+__project__ = __program_name__
+__project_url__ = "https://github.com/GameMaker2k/PyNeoWWW-Get"
+__version_info__ = (2, 2, 0, "RC 1", 1)
+__version_date_info__ = (2026, 1, 23, "RC 1", 1)
+__version_date__ = str(__version_date_info__[0])+"."+str(__version_date_info__[
+    1]).zfill(2)+"."+str(__version_date_info__[2]).zfill(2)
+__revision__ = __version_info__[3]
+__revision_id__ = "$Id$"
+if(__version_info__[4] is not None):
+    __version_date_plusrc__ = __version_date__ + \
+        "-"+str(__version_date_info__[4])
+if(__version_info__[4] is None):
+    __version_date_plusrc__ = __version_date__
+if(__version_info__[3] is not None):
+    __version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(
+        __version_info__[2])+" "+str(__version_info__[3])
+if(__version_info__[3] is None):
+    __version__ = str(
+        __version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2])
+
+PyBitness = platform.architecture()
+if(PyBitness == "32bit" or PyBitness == "32"):
+    PyBitness = "32"
+elif(PyBitness == "64bit" or PyBitness == "64"):
+    PyBitness = "64"
+else:
+    PyBitness = "32"
+
+geturls_cj = cookielib.CookieJar()
+geturls_ua_pywwwget_python = "Mozilla/5.0 (compatible; {proname}/{prover}; +{prourl})".format(
+    proname=__project__, prover=__version__, prourl=__project_url__)
+if(platform.python_implementation() != ""):
+    py_implementation = platform.python_implementation()
+if(platform.python_implementation() == ""):
+    py_implementation = "Python"
+geturls_ua_pywwwget_python_alt = "Mozilla/5.0 ({osver}; {archtype}; +{prourl}) {pyimp}/{pyver} (KHTML, like Gecko) {proname}/{prover}".format(osver=platform.system(
+)+" "+platform.release(), archtype=platform.machine(), prourl=__project_url__, pyimp=py_implementation, pyver=platform.python_version(), proname=__project__, prover=__version__)
+geturls_ua_googlebot_google = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+geturls_ua_googlebot_google_old = "Googlebot/2.1 (+http://www.google.com/bot.html)"
+geturls_headers_pywwwget_python = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pywwwget_python, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
+                                    'SEC-CH-UA': "\""+__project__+"\";v=\""+str(__version__)+"\", \"Not;A=Brand\";v=\"8\", \""+py_implementation+"\";v=\""+str(platform.release())+"\"", 'SEC-CH-UA-FULL-VERSION': str(__version__), 'SEC-CH-UA-PLATFORM': ""+py_implementation+"", 'SEC-CH-UA-ARCH': ""+platform.machine()+"", 'SEC-CH-UA-PLATFORM-VERSION': str(__version__), 'SEC-CH-UA-BITNESS': str(PyBitness)}
+geturls_headers_pywwwget_python_alt = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pywwwget_python_alt, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
+                                        'SEC-CH-UA': "\""+__project__+"\";v=\""+str(__version__)+"\", \"Not;A=Brand\";v=\"8\", \""+py_implementation+"\";v=\""+str(platform.release())+"\"", 'SEC-CH-UA-FULL-VERSION': str(__version__), 'SEC-CH-UA-PLATFORM': ""+py_implementation+"", 'SEC-CH-UA-ARCH': ""+platform.machine()+"", 'SEC-CH-UA-PLATFORM-VERSION': str(__version__), 'SEC-CH-UA-BITNESS': str(PyBitness)}
+geturls_headers_googlebot_google = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6",
+                                    'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"}
+geturls_headers_googlebot_google_old = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google_old, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6",
+                                        'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"}
+
 def fix_header_names(header_dict):
     if(sys.version[0] == "2"):
         header_dict = {k.title(): v for k, v in header_dict.items()}
@@ -11906,8 +12057,183 @@ def _logger_from_kwargs(kwargs: Mapping[str, Any]) -> Optional[logging.Logger]:
     except Exception:
         return None
 
+def _strip_ipv6_brackets(host):
+    host = "" if host is None else str(host)
+    host = host.strip()
+    if host.startswith("[") and host.endswith("]") and len(host) >= 2:
+        return host[1:-1]
+    return host
+
+def _is_ipv6_literal(host):
+    host = _strip_ipv6_brackets(host)
+    # allow RFC6874 zone indices (e.g. "fe80::1%en0")
+    base = host.split("%", 1)[0]
+    try:
+        return isinstance(ipaddress.ip_address(base), ipaddress.IPv6Address)
+    except Exception:
+        return False
+
+def _url_host(host):
+    host = _strip_ipv6_brackets(host)
+    if _is_ipv6_literal(host):
+        # RFC6874: zone id must be percent-encoded inside brackets
+        if "%" in host:
+            host = host.replace("%", "%25")
+        return "[" + host + "]"
+    return host
+
+def _set_ipv6_dualstack(sock):
+    # Best-effort dual-stack (IPv4-mapped) support on AF_INET6 sockets.
+    try:
+        sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+    except Exception:
+        pass
+
+def _gai_list(host, port, socktype, flags=0):
+    host = _strip_ipv6_brackets(host) if host else None
+    try:
+        infos = socket.getaddrinfo(host, port, socket.AF_UNSPEC, socktype, 0, flags)
+    except Exception:
+        infos = []
+    # Prefer IPv6 first (helps dual-stack bind & AAAA-first environments)
+    af6 = getattr(socket, "AF_INET6", None)
+    infos.sort(key=lambda it: 0 if it[0] == af6 else 1)
+    return infos
+
+def _tcp_listen_socket(host, port, backlog=1, reuse=True):
+    flags = getattr(socket, "AI_PASSIVE", 0)
+    h = host
+    if h in ("", None, "0.0.0.0", "::"):
+        h = None
+
+    infos = _gai_list(h, int(port), socket.SOCK_STREAM, flags=flags)
+    if not infos:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            if reuse:
+                try:
+                    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                except Exception:
+                    pass
+            s.bind((host or "", int(port)))
+            s.listen(int(backlog))
+            return s
+        except Exception:
+            return None
+
+    for fam, st, pr, _cn, sa in infos:
+        s = None
+        try:
+            s = socket.socket(fam, st, pr)
+            if reuse:
+                try:
+                    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                except Exception:
+                    pass
+            if fam == getattr(socket, "AF_INET6", None):
+                _set_ipv6_dualstack(s)
+            s.bind(sa)
+            s.listen(int(backlog))
+            return s
+        except Exception:
+            try:
+                if s:
+                    s.close()
+            except Exception:
+                pass
+            continue
+    return None
+
+def _tcp_connect_socket(host, port, timeout=None, wait=False, wait_timeout=None, verbose=False, logger=None):
+    # socket.create_connection uses AF_UNSPEC internally (IPv4+IPv6)
+    start_t = time.time()
+    while True:
+        try:
+            to = float(timeout) if timeout is not None else None
+        except Exception:
+            to = None
+        try:
+            s = socket.create_connection((_strip_ipv6_brackets(host), int(port)), timeout=to)
+            return s
+        except Exception:
+            if not wait:
+                return None
+            if wait_timeout is not None:
+                try:
+                    wt = float(wait_timeout)
+                    if wt >= 0 and (time.time() - start_t) >= wt:
+                        return None
+                except Exception:
+                    pass
+            _net_log(verbose, "TCP: waiting for receiver, retrying...", logger=logger)
+            try:
+                time.sleep(0.1)
+            except Exception:
+                pass
+
+def _udp_bind_socket(host, port, reuse=True):
+    flags = getattr(socket, "AI_PASSIVE", 0)
+    h = host
+    if h in ("", None, "0.0.0.0", "::"):
+        h = None
+
+    infos = _gai_list(h, int(port), socket.SOCK_DGRAM, flags=flags)
+    if not infos:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            if reuse:
+                try:
+                    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                except Exception:
+                    pass
+            s.bind((host or "", int(port)))
+            return s
+        except Exception:
+            return None
+
+    for fam, st, pr, _cn, sa in infos:
+        s = None
+        try:
+            s = socket.socket(fam, st, pr)
+            if reuse:
+                try:
+                    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                except Exception:
+                    pass
+            if fam == getattr(socket, "AF_INET6", None):
+                _set_ipv6_dualstack(s)
+            s.bind(sa)
+            return s
+        except Exception:
+            try:
+                if s:
+                    s.close()
+            except Exception:
+                pass
+            continue
+    return None
+
+def _udp_socket_and_addr(host, port):
+    infos = _gai_list(host, int(port), socket.SOCK_DGRAM, flags=0)
+    for fam, st, pr, _cn, sa in infos:
+        s = None
+        try:
+            s = socket.socket(fam, st, pr)
+            if fam == getattr(socket, "AF_INET6", None):
+                _set_ipv6_dualstack(s)
+            return s, sa
+        except Exception:
+            try:
+                if s:
+                    s.close()
+            except Exception:
+                pass
+            continue
+    # fallback (IPv4)
+    return socket.socket(socket.AF_INET, socket.SOCK_DGRAM), (_strip_ipv6_brackets(host), int(port))
+
 def _best_lan_ip():
-    """Attempt to find the best LAN IP address."""
+    """Attempt to find the best LAN IPv4 address."""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         s.connect(("8.8.8.8", 80))
@@ -11918,7 +12244,38 @@ def _best_lan_ip():
         except Exception:
             return "127.0.0.1"
     finally:
-        s.close()
+        try:
+            s.close()
+        except Exception:
+            pass
+
+def _best_lan_ip6():
+    """Attempt to find the best LAN IPv6 address (best-effort)."""
+    try:
+        s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+    except Exception:
+        return "::1"
+    try:
+        # public IPv6 anycast resolver (route selection only; no packets sent)
+        s.connect(("2001:4860:4860::8888", 80, 0, 0))
+        return s.getsockname()[0]
+    except Exception:
+        # fallback: try hostname AAAA
+        try:
+            hn = socket.gethostname()
+            infos = socket.getaddrinfo(hn, None, socket.AF_INET6)
+            for it in infos:
+                ip = it[4][0]
+                if ip:
+                    return ip
+        except Exception:
+            pass
+        return "::1"
+    finally:
+        try:
+            s.close()
+        except Exception:
+            pass
 
 def _listen_urls(scheme, bind_host, port, path, query=""):
     if not path:
@@ -11928,14 +12285,32 @@ def _listen_urls(scheme, bind_host, port, path, query=""):
     q = ""
     if query:
         q = "?" + query.lstrip("?")
+
     urls = []
-    if not bind_host or bind_host == "0.0.0.0":
-        urls.append("%s://127.0.0.1:%d%s%s" % (scheme, port, path, q))
-        ip = _best_lan_ip()
-        if ip and ip != "127.0.0.1":
-            urls.append("%s://%s:%d%s%s" % (scheme, ip, port, path, q))
+
+    def _add(h):
+        h = _strip_ipv6_brackets(h)
+        if not h:
+            return
+        urls.append("%s://%s:%d%s%s" % (scheme, _url_host(h), int(port), path, q))
+
+    bh = _strip_ipv6_brackets(bind_host or "")
+
+    # If binding to "all", show loopback + LAN (v4 + v6).
+    if not bh or bh in ("0.0.0.0", "::"):
+        _add("127.0.0.1")
+        _add("::1")
+
+        ip4 = _best_lan_ip()
+        if ip4 and ip4 not in ("127.0.0.1", "0.0.0.0"):
+            _add(ip4)
+
+        ip6 = _best_lan_ip6()
+        if ip6 and ip6 not in ("::1", "::"):
+            _add(ip6)
     else:
-        urls.append("%s://%s:%d%s%s" % (scheme, bind_host, port, path, q))
+        _add(bh)
+
     return urls
 
 def _parse_kv_headers(qs, prefix="hdr_"):
@@ -11967,6 +12342,113 @@ def _throttle_bps(rate_bps, sent, started):
     should = float(sent) / rate_bps
     if should > elapsed:
         time.sleep(should - elapsed)
+
+
+
+
+
+def MkTempFile(data=None,
+               inmem=__use_inmem__, usememfd=__use_memfd__,
+               isbytes=True,
+               prefix=__program_name__,
+               delete=True,
+               encoding="utf-8",
+               newline=None,
+               text_errors="strict",
+               dir=None,
+               suffix="",
+               use_spool=__use_spoolfile__,
+               autoswitch_spool=False,
+               spool_max=__spoolfile_size__,
+               spool_dir=__use_spooldir__,
+               reset_to_start=True,
+               memfd_name=__program_name__,
+               memfd_allow_sealing=False,
+               memfd_flags_extra=0,
+               on_create=None):
+
+    prefix = prefix or ""
+    suffix = suffix or ""
+    init = None
+    if data is not None:
+        if isbytes:
+            if isinstance(data, binary_types):
+                init = bytes(data) if not isinstance(data, bytes) else data
+            elif isinstance(data, text_type):
+                init = data.encode(encoding)
+            else:
+                raise TypeError("data must be bytes-like for isbytes=True")
+        else:
+            if isinstance(data, binary_types):
+                init = bytes(data).decode(encoding, errors="strict")
+            elif isinstance(data, text_type):
+                init = data
+            else:
+                raise TypeError("data must be text (str/unicode) for isbytes=False")
+
+    init_len = len(init) if (init is not None and isbytes) else None
+
+    def _created(fp, kind):
+        if on_create is not None:
+            on_create(fp, kind)
+
+    def _wrap_text(binary_handle):
+        return io.TextIOWrapper(binary_handle, encoding=encoding,
+                                newline=newline, errors=text_errors)
+
+    if inmem:
+        if autoswitch_spool and use_spool and init_len is not None and init_len > spool_max:
+            pass
+        else:
+            memfd_create = getattr(os, "memfd_create", None)
+            if usememfd and isbytes and callable(memfd_create):
+                name = memfd_name or prefix or "MkTempFile"
+                flags = 0
+                if hasattr(os, "MFD_CLOEXEC"):
+                    flags |= os.MFD_CLOEXEC
+                if memfd_allow_sealing and hasattr(os, "MFD_ALLOW_SEALING"):
+                    flags |= os.MFD_ALLOW_SEALING
+                if memfd_flags_extra:
+                    flags |= int(memfd_flags_extra)
+
+                fd = memfd_create(name, flags)
+                f = os.fdopen(fd, "w+b")
+                if init is not None:
+                    f.write(init)
+                if reset_to_start:
+                    f.seek(0)
+                _created(f, "memfd")
+                return f
+            if isbytes:
+                f = BytesIO(init if init is not None else b"")
+                if reset_to_start:
+                    f.seek(0)
+                _created(f, "bytesio")
+                return f
+            else:
+                f = io.StringIO(init if init is not None else u"")
+                if reset_to_start:
+                    f.seek(0)
+                _created(f, "stringio")
+                return f
+    if use_spool:
+        b = tempfile.SpooledTemporaryFile(max_size=spool_max, mode="w+b", dir=spool_dir)
+        f = b if isbytes else _wrap_text(b)
+        if init is not None:
+            f.write(init)
+        if reset_to_start:
+            f.seek(0)
+        _created(f, "spool")
+        return f
+    b = tempfile.NamedTemporaryFile(mode="w+b", prefix=prefix, suffix=suffix, dir=dir, delete=delete)
+    f = b if isbytes else _wrap_text(b)
+    if init is not None:
+        f.write(init)
+    if reset_to_start:
+        f.seek(0)
+    _created(f, "disk")
+    return f
+
 
 
 def _hs_token():
@@ -12157,13 +12639,29 @@ def _parse_error(pkt):
     raise TFTPError("TFTP ERROR %d: %s" % (errcode, msg))
 
 
-def _mk_sock(proxy, timeout):
+def _mk_sock(proxy, timeout, family=socket.AF_INET):
     """
     proxy: dict or None
       If dict, expected keys:
         host, port, username(optional), password(optional)
+    family: socket.AF_INET or socket.AF_INET6 (best-effort)
     """
-    s = socks.socksocket(socket.AF_INET, socket.SOCK_DGRAM)
+    af6 = getattr(socket, "AF_INET6", None)
+    fam = family if (family in (socket.AF_INET, af6)) else socket.AF_INET
+
+    if socks is None:
+        if proxy:
+            raise RuntimeError("SOCKS proxy requested but the 'socks' (PySocks) module is not installed.")
+        s = socket.socket(fam, socket.SOCK_DGRAM)
+    else:
+        s = socks.socksocket(fam, socket.SOCK_DGRAM)
+
+    try:
+        if fam == af6:
+            _set_ipv6_dualstack(s)
+    except Exception:
+        pass
+
     s.settimeout(timeout)
 
     if proxy:
@@ -12181,7 +12679,14 @@ def _mk_sock(proxy, timeout):
 def tftp_upload(server_host, remote_filename, fileobj,
                 server_port=69, mode="octet",
                 proxy=None, timeout=5.0, retries=5):
-    sock = _mk_sock(proxy, timeout)
+    fam = socket.AF_INET
+    try:
+        infos = _gai_list(server_host, int(server_port), socket.SOCK_DGRAM, flags=0)
+        if infos:
+            fam = infos[0][0]
+    except Exception:
+        pass
+    sock = _mk_sock(proxy, timeout, family=fam)
 
     try:
         wrq = _make_wrq(remote_filename, mode=_to_bytes(mode))
@@ -12248,7 +12753,14 @@ def tftp_upload(server_host, remote_filename, fileobj,
 def tftp_download(server_host, remote_filename,
                   server_port=69, mode="octet",
                   proxy=None, timeout=5.0, retries=5):
-    sock = _mk_sock(proxy, timeout)
+    fam = socket.AF_INET
+    try:
+        infos = _gai_list(server_host, int(server_port), socket.SOCK_DGRAM, flags=0)
+        if infos:
+            fam = infos[0][0]
+    except Exception:
+        pass
+    sock = _mk_sock(proxy, timeout, family=fam)
     out = MkTempFile()
 
     rrq = _make_rrq(remote_filename, mode=_to_bytes(mode))
@@ -14639,18 +15151,14 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
                     except Exception:
                         pass
             else:
-                srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                try:
-                    srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                except Exception:
-                    pass
-                srv.bind((host or "", port))
-                srv.listen(1)
+                srv = _tcp_listen_socket(host, int(port), backlog=1, reuse=True)
+                if srv is None:
+                    return False
 
                 chosen_port = srv.getsockname()[1]
                 if kwargs.get("print_url"):
                     path = path_text or "/"
-                    bind_host = host or "0.0.0.0"
+                    bind_host = host or ("::" if srv.family == getattr(socket, "AF_INET6", None) else "0.0.0.0")
                     for u in _listen_urls("tcp", bind_host, chosen_port, path, ""):
                         _emit("Listening: %s" % u, logger=logger, level=logging.INFO, stream="stdout")
                     try:
@@ -14972,15 +15480,24 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
                 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 connect_target = unix_path
             else:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                # TCP: defer socket creation to _tcp_connect_socket (IPv4/IPv6 via getaddrinfo)
+                sock = None
                 connect_target = (host, int(port))
 
+        # timeout handling
+        to = kwargs.get("timeout", None)
         try:
-            to = kwargs.get("timeout", None)
-            if to is not None and float(to) > 0:
-                sock.settimeout(float(to))
+            to = float(to) if to is not None else None
         except Exception:
-            pass
+            to = None
+        if to is not None and to <= 0:
+            to = None
+
+        if sock is not None and to is not None:
+            try:
+                sock.settimeout(float(to))
+            except Exception:
+                pass
 
         if "wait" not in kwargs and "connect_wait" not in kwargs:
             kwargs["connect_wait"] = True
@@ -14992,31 +15509,39 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
             except Exception:
                 wait_timeout = None
 
-        start_t = time.time()
-        while True:
-            try:
-                sock.connect(connect_target)
-                break
-            except Exception:
-                if not wait:
-                    try:
-                        sock.close()
-                    except Exception:
-                        pass
-                    return False
-                if wait_timeout is not None and wait_timeout >= 0 and (time.time() - start_t) >= wait_timeout:
-                    try:
-                        sock.close()
-                    except Exception:
-                        pass
-                    return False
+        if sock is None:
+            sock = _tcp_connect_socket(host, int(port), timeout=to, wait=wait, wait_timeout=wait_timeout,
+                                       verbose=kwargs.get("verbose"), logger=logger)
+            if sock is None:
+                return False
+        else:
+            start_t = time.time()
+            while True:
                 try:
-                    _net_log(kwargs.get("verbose"), f"{'BT' if is_bt else 'TCP'}: waiting for receiver, retrying...",
-                             logger=logger)
-                    time.sleep(0.1)
+                    sock.connect(connect_target)
+                    break
                 except Exception:
-                    pass
-                continue
+                    if not wait:
+                        try:
+                            sock.close()
+                        except Exception:
+                            pass
+                        return False
+                    if wait_timeout is not None and wait_timeout >= 0 and (time.time() - start_t) >= wait_timeout:
+                        try:
+                            sock.close()
+                        except Exception:
+                            pass
+                        return False
+                    try:
+                        _net_log(kwargs.get("verbose"), f"{'BT' if is_bt else 'TCP'}: waiting for receiver, retrying...",
+                                 logger=logger)
+                        time.sleep(0.1)
+                    except Exception:
+                        pass
+                    continue
+
+
 
         if kwargs.get("verbose"):
             _net_log(True, f"SEND {'BT' if is_bt else 'TCP'} framing={framing} want_sha={bool(kwargs.get('sha256') or kwargs.get('sha') or kwargs.get('want_sha'))}",
@@ -15634,20 +16159,13 @@ def _unix_dgram_raw_recv(fileobj, unix_server_path, **kwargs):
 def _udp_raw_recv(fileobj, host, port, **kwargs):
     logger = _logger_from_kwargs(kwargs)
     addr = (host or "", int(port))
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # Bind to all interfaces unless user explicitly gave a concrete local bind
-        bind_host = host if host not in (None, "", "127.0.0.1") else ""
-        sock.bind((bind_host, int(port)))
-    except Exception:
-        try:
-            sock.close()
-        except Exception:
-            pass
+    # Bind to all interfaces unless user explicitly gave a concrete local bind
+    bind_host = host if host not in (None, "", "127.0.0.1", "::1") else ""
+    sock = _udp_bind_socket(bind_host, int(port))
+    if sock is None:
         return False
 
-    # Waiting behavior
+# Waiting behavior
     wait = bool(kwargs.get("wait", True) or kwargs.get("connect_wait", False))
     wait_timeout = kwargs.get("wait_timeout", None)
     try:
@@ -15849,8 +16367,7 @@ def _udp_raw_recv(fileobj, host, port, **kwargs):
             pass
 
 def _udp_seq_send(fileobj, host, port, resume=False, path_text=None, **kwargs):
-    addr = (host, int(port))
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock, addr = _udp_socket_and_addr(host, port)
 
     base_timeout = float(kwargs.get("timeout", 1.0))
     min_to = float(kwargs.get("min_timeout", 0.05))
@@ -16129,11 +16646,14 @@ def _udp_seq_send(fileobj, host, port, resume=False, path_text=None, **kwargs):
         return (True, stats)
     return True
 def _udp_seq_recv(fileobj, host, port, **kwargs):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((host or "", int(port)))
+    logger = _logger_from_kwargs(kwargs)
+    sock = _udp_bind_socket(host or "", int(port))
+    if sock is None:
+        return False
 
     if kwargs.get("print_url"):
-        _emit("Listening: udp://%s:%d/" % (host or "0.0.0.0", sock.getsockname()[1]), logger=logger, level=logging.INFO, stream="stdout")
+        bh = host or ("::" if sock.family == getattr(socket, "AF_INET6", None) else "0.0.0.0")
+        _emit("Listening: udp://%s:%d/" % (_url_host(bh), sock.getsockname()[1]), logger=logger, level=logging.INFO, stream="stdout")
         try:
             sys.stdout.flush()
         except Exception:
@@ -16445,8 +16965,7 @@ def _cc_on_loss(cc, cwnd, cwnd_f, max_cwnd):
     return cwnd, float(cwnd)
 
 def _udp_quic_send(fileobj, host, port, resume=False, path_text=None, **kwargs):
-    addr = (host, int(port))
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock, addr = _udp_socket_and_addr(host, port)
 
     base_timeout = float(kwargs.get("timeout", 1.0))
     min_to = float(kwargs.get("min_timeout", 0.05))
@@ -16817,11 +17336,14 @@ def _udp_quic_send(fileobj, host, port, resume=False, path_text=None, **kwargs):
     return True
 
 def _udp_quic_recv(fileobj, host, port, **kwargs):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((host or "", int(port)))
+    logger = _logger_from_kwargs(kwargs)
+    sock = _udp_bind_socket(host or "", int(port))
+    if sock is None:
+        return False
 
     if kwargs.get("print_url"):
-        _emit("Listening: udp://%s:%d/" % (host or "0.0.0.0", sock.getsockname()[1]), logger=logger, level=logging.INFO, stream="stdout")
+        bh = host or ("::" if sock.family == getattr(socket, "AF_INET6", None) else "0.0.0.0")
+        _emit("Listening: udp://%s:%d/" % (_url_host(bh), sock.getsockname()[1]), logger=logger, level=logging.INFO, stream="stdout")
         try:
             sys.stdout.flush()
         except Exception:
