@@ -16686,6 +16686,10 @@ def download_file_from_internet_file(url: str, **kwargs: Any):
     if p.scheme in ("tcp", "udp") or p.scheme in _BT_SCHEMES:
         parts, o = _parse_net_url(url)
         path_text = parts.path or "/"
+        if parts.scheme in _BT_SCHEMES and not o.get("framing"):
+            o["framing"] = "len"
+        if parts.scheme in _BT_SCHEMES and o.get("handshake") is None:
+            o["handshake"] = False
         if parts.scheme in _BT_SCHEMES:
             qs = parse_qs(parts.query or "")
             host, port = _bt_host_channel_from_url(parts, qs, o)
@@ -17440,7 +17444,10 @@ def upload_file_to_internet_file(fileobj, url: str, **kwargs: Any):
     if p.scheme in ("tcp", "udp") or p.scheme in _BT_SCHEMES:
         parts, o = _parse_net_url(url)
         path_text = parts.path or "/"
-
+        if parts.scheme in _BT_SCHEMES and not o.get("framing"):
+            o["framing"] = "len"
+        if parts.scheme in _BT_SCHEMES and o.get("handshake") is None:
+            o["handshake"] = False
         if parts.scheme in _BT_SCHEMES:
             qs = parse_qs(parts.query or "")
             o2 = dict(o)
