@@ -15412,7 +15412,10 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
     if proto in _UNIX_DGRAM_SCHEMES:
         unix_path = kwargs.get("unix_path") or host
         mode = (kwargs.get("mode") or "raw").lower()
-        # only raw is implemented for unix dgram here
+        if mode == "seq":
+            return _unix_dgram_seq_recv(fileobj, unix_path, **kwargs)
+        if mode == "quic":
+            return _unix_dgram_quic_recv(fileobj, unix_path, **kwargs)
         return _unix_dgram_raw_recv(fileobj, unix_path, **kwargs)
     elif mode == "raw":
         return _udp_raw_recv(fileobj, host, port, **kwargs)
@@ -15697,7 +15700,10 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
     if proto in _UNIX_DGRAM_SCHEMES:
         unix_path = kwargs.get("unix_path") or host
         mode = (kwargs.get("mode") or "raw").lower()
-        # only raw is implemented for unix dgram here
+        if mode == "seq":
+            return _unix_dgram_seq_send(fileobj, unix_path, **kwargs)
+        if mode == "quic":
+            return _unix_dgram_quic_send(fileobj, unix_path, **kwargs)
         return _unix_dgram_raw_send(fileobj, unix_path, **kwargs)
     elif mode == "raw":
         # your existing raw sender code here (unchanged)
@@ -16155,6 +16161,1292 @@ def _unix_dgram_raw_recv(fileobj, unix_server_path, **kwargs):
         except Exception:
             pass
         _safe_unlink(unix_server_path)
+
+
+
+def _unix_dgram_wait_for_receiver(sock, unix_server_path, wait_timeout=None, interval=0.1, logger=None, verbose=False):
+    """For AF_UNIX datagrams, sendto() typically fails with ENOENT until the server path exists.
+    This helper retries a harmless ping until sendto succeeds (or wait_timeout elapses)."""
+    try:
+        iv = float(interval) if interval is not None else 0.1
+    except Exception:
+        iv = 0.1
+    if iv <= 0:
+        iv = 0.1
+    try:
+        wt = float(wait_timeout) if wait_timeout is not None else None
+    except Exception:
+        wt = None
+
+    start_t = time.time()
+    while True:
+        try:
+            sock.sendto(b"PING", unix_server_path)
+            return True
+        except FileNotFoundError:
+            pass
+        except OSError as e:
+            # ENOENT (2) => receiver socket path not present yet
+            if getattr(e, "errno", None) != 2:
+                pass
+        except Exception:
+            pass
+
+        if wt is not None and wt >= 0 and (time.time() - start_t) >= wt:
+            _net_log(bool(verbose), f"UNIX dgram: wait_timeout reached; receiver not available: {unix_server_path}", logger=logger)
+            return False
+        try:
+            time.sleep(iv)
+        except Exception:
+            time.sleep(0.05)
+
+
+def _unix_dgram_seq_send(fileobj, unix_server_path, resume=False, path_text=None, **kwargs):
+    logger = _logger_from_kwargs(kwargs)
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+
+    client_path = kwargs.get("bind") or kwargs.get("unix_client_path") or _tmp_unix_client_path()
+    _safe_unlink(client_path)
+    try:
+        sock.bind(client_path)
+    except Exception:
+        try:
+            sock.close()
+        except Exception:
+            pass
+        _safe_unlink(client_path)
+        return False
+
+    addr = unix_server_path
+
+    # Optional wait-for-receiver (AF_UNIX datagrams error if server socket doesn't exist)
+    wait = _kw_bool(kwargs.get("wait", False), False) or _kw_bool(kwargs.get("connect_wait", False), False)
+    hello_iv = kwargs.get("hello_interval", 0.1)
+    wait_timeout = kwargs.get("wait_timeout", None)
+    verbose = _kw_bool(kwargs.get("verbose", False), False)
+    if wait:
+        if not _unix_dgram_wait_for_receiver(sock, addr, wait_timeout=wait_timeout, interval=hello_iv, logger=logger, verbose=verbose):
+            try:
+                sock.close()
+            except Exception:
+                pass
+            _safe_unlink(client_path)
+            return False
+
+    try:
+        base_timeout = float(kwargs.get("timeout", 1.0))
+        min_to = float(kwargs.get("min_timeout", 0.05))
+        max_to = float(kwargs.get("max_timeout", 3.0))
+
+        timeout = max(min_to, min(max_to, base_timeout))
+        sock.settimeout(timeout)
+
+        chunk = int(kwargs.get("chunk", 1200))
+        max_window = int(kwargs.get("window", 32))          # cap
+        init_window = int(kwargs.get("init_window", max(1, min(4, max_window))))
+        retries = int(kwargs.get("retries", 20))
+        total_timeout = float(kwargs.get("total_timeout", 0.0))
+
+        enable_fast_retx = bool(kwargs.get("fast_retx", True))
+
+        use_crc = bool(kwargs.get("crc32", False))
+
+        want_sha = bool(kwargs.get("sha256") or kwargs.get("sha") or kwargs.get("want_sha"))
+        _h = hashlib.sha256() if want_sha else None
+
+        tid = int(kwargs.get("tid", 0) or 0)
+        if tid == 0:
+            tid = randbits(64)
+
+        stats = {
+            "tid": tid,
+            "bytes_sent_payload": 0,
+            "pkts_sent": 0,
+            "pkts_retx": 0,
+            "pkts_acked": 0,
+            "pkts_sacked": 0,
+            "loss_events": 0,
+            "duration_s": 0.0,
+            "throughput_Bps": 0.0,
+            "srtt": None,
+            "rttvar": None,
+            "timeout": timeout,
+            "cwnd_start": init_window,
+            "cwnd_end": init_window,
+        }
+
+        total = 0
+        try:
+            start_pos = fileobj.tell()
+            fileobj.seek(0, os.SEEK_END)
+            total = int(fileobj.tell())
+            fileobj.seek(start_pos, os.SEEK_SET)
+        except Exception:
+            total = 0
+
+        start_seq = 0
+        if resume:
+            sock.sendto(_u_pack(_UF_META, 0xFFFFFFFF, total, tid) + b"RESUME", addr)
+            t0 = time.time()
+            while True:
+                if total_timeout and (time.time() - t0) > total_timeout:
+                    break
+                try:
+                    pkt, _peer = sock.recvfrom(2048)
+                except Exception:
+                    break
+                up = _u_unpack(pkt)
+                if not up:
+                    continue
+                flags, _seq, _t, r_tid, payload = up
+                if r_tid != tid:
+                    continue
+                if (flags & _UF_RESUME) and len(payload) >= 4:
+                    resume_seq = struct.unpack("!I", payload[:4])[0]
+                    try:
+                        fileobj.seek(int(resume_seq) * chunk, os.SEEK_SET)
+                        start_seq = int(resume_seq)
+                    except Exception:
+                        start_seq = 0
+                    break
+
+        cwnd = max(1, min(max_window, init_window))
+        cwnd_float = float(cwnd)
+
+        next_seq = start_seq
+        in_flight = {}  # seq -> (wire_payload, ts_sent, tries, data_len)
+
+        srtt = None
+        rttvar = None
+
+        def _update_rtt(sample):
+            nonlocal srtt, rttvar, timeout
+            if sample <= 0:
+                return
+            if srtt is None:
+                srtt = sample
+                rttvar = sample / 2.0
+            else:
+                alpha = 1 / 8
+                beta = 1 / 4
+                rttvar = (1 - beta) * rttvar + beta * abs(srtt - sample)
+                srtt = (1 - alpha) * srtt + alpha * sample
+            timeout = srtt + 4.0 * rttvar
+            timeout = max(min_to, min(max_to, timeout))
+            try:
+                sock.settimeout(timeout)
+            except Exception:
+                pass
+
+        def _loss_event():
+            nonlocal cwnd, cwnd_float
+            stats["loss_events"] += 1
+            cwnd = max(1, cwnd // 2)
+            cwnd_float = float(cwnd)
+
+        def _ai_increase(acked_count):
+            nonlocal cwnd, cwnd_float
+            if acked_count <= 0:
+                return
+            cwnd_float += float(acked_count) / max(1.0, float(cwnd))
+            new_cwnd = int(cwnd_float)
+            if new_cwnd > cwnd:
+                cwnd = min(max_window, new_cwnd)
+                cwnd_float = float(cwnd)
+
+        def _send_pkt(seq, wire_payload, flags):
+            sock.sendto(_u_pack(flags, seq, total, tid) + wire_payload, addr)
+            stats["pkts_sent"] += 1
+
+        t_start = time.time()
+        failed = False
+
+        def _read_chunk():
+            data = fileobj.read(chunk)
+            if not data:
+                return None
+            data = _to_bytes(data)
+            if _h is not None:
+                _h.update(data)
+            return data
+
+        eof = False
+        while not eof and len(in_flight) < cwnd:
+            data = _read_chunk()
+            if data is None:
+                eof = True
+                break
+            flags = _UF_DATA | (_UF_CRC if use_crc else 0)
+            wire = struct.pack("!I", zlib.crc32(data) & 0xFFFFFFFF) + data if use_crc else data
+            _send_pkt(next_seq, wire, flags)
+            in_flight[next_seq] = (wire, time.time(), 0, len(data))
+            stats["bytes_sent_payload"] += len(data)
+            next_seq += 1
+
+        while in_flight or not eof:
+            if total_timeout and (time.time() - t_start) > total_timeout:
+                failed = True
+                break
+
+            try:
+                pkt, _peer = sock.recvfrom(2048)
+                up = _u_unpack(pkt)
+                if up:
+                    flags, _seq, _t, r_tid, payload = up
+                    if r_tid == tid and (flags & _UF_ACK) and len(payload) >= 4:
+                        ack_upto = None
+                        sack_mask = 0
+                        if len(payload) >= 12:
+                            ack_upto, sack_mask = struct.unpack("!IQ", payload[:12])
+                        else:
+                            (ack_upto,) = struct.unpack("!I", payload[:4])
+
+                        newly_acked = 0
+                        now = time.time()
+
+                        # Cumulative ACK: drop all <= ack_upto
+                        for s in [s for s in list(in_flight.keys()) if s <= ack_upto]:
+                            wire, ts, _tries, _dlen = in_flight[s]
+                            sample = now - ts
+                            _update_rtt(sample)
+                            del in_flight[s]
+                            stats["pkts_acked"] += 1
+                            newly_acked += 1
+
+                        if sack_mask:
+                            base = (ack_upto + 1) & 0xFFFFFFFF
+                            for i in range(64):
+                                if (sack_mask >> i) & 1:
+                                    s = (base + i) & 0xFFFFFFFF
+                                    if s in in_flight:
+                                        wire, ts, _tries, _dlen = in_flight[s]
+                                        sample = now - ts
+                                        _update_rtt(sample)
+                                        del in_flight[s]
+                                        stats["pkts_sacked"] += 1
+                                        newly_acked += 1
+
+                            if enable_fast_retx:
+                                missing = base
+                                if missing in in_flight:
+                                    wire, _ts, tries, _dlen = in_flight[missing]
+                                    if tries < retries:
+                                        _send_pkt(missing, wire, _UF_DATA | (_UF_CRC if use_crc else 0))
+                                        in_flight[missing] = (wire, time.time(), tries + 1, _dlen)
+                                        stats["pkts_retx"] += 1
+                                        _loss_event()
+
+                        _ai_increase(newly_acked)
+            except socket.timeout:
+                pass
+            except Exception:
+                pass
+
+            now = time.time()
+            for seq in list(in_flight.keys()):
+                wire, ts, tries, dlen = in_flight[seq]
+                if (now - ts) >= timeout:
+                    if tries >= retries:
+                        failed = True
+                        in_flight.clear()
+                        break
+                    _send_pkt(seq, wire, _UF_DATA | (_UF_CRC if use_crc else 0))
+                    in_flight[seq] = (wire, now, tries + 1, dlen)
+                    stats["pkts_retx"] += 1
+                    _loss_event()
+
+            if failed:
+                break
+
+            while not eof and len(in_flight) < cwnd:
+                data = _read_chunk()
+                if data is None:
+                    eof = True
+                    break
+                flags = _UF_DATA | (_UF_CRC if use_crc else 0)
+                wire = struct.pack("!I", zlib.crc32(data) & 0xFFFFFFFF) + data if use_crc else data
+                _send_pkt(next_seq, wire, flags)
+                in_flight[next_seq] = (wire, time.time(), 0, len(data))
+                stats["bytes_sent_payload"] += len(data)
+                next_seq += 1
+
+        dur = max(1e-9, time.time() - t_start)
+        stats["duration_s"] = dur
+        stats["throughput_Bps"] = float(stats["bytes_sent_payload"]) / dur
+        stats["timeout"] = timeout
+        stats["srtt"] = srtt
+        stats["rttvar"] = rttvar
+        stats["cwnd_end"] = cwnd
+
+        if failed:
+            try:
+                sock.close()
+            except Exception:
+                pass
+            if kwargs.get("return_stats"):
+                return (False, stats)
+            so = kwargs.get("stats_obj")
+            if isinstance(so, dict):
+                so.update(stats)
+            return False
+
+        payload = b"DONE"
+        if _h is not None:
+            payload += _h.digest()
+
+        for _i in range(3):
+            sock.sendto(_u_pack(_UF_DONE, 0xFFFFFFFE, total, tid) + payload, addr)
+            time.sleep(0.02)
+
+        try:
+            sock.close()
+        except Exception:
+            pass
+
+        so = kwargs.get("stats_obj")
+        if isinstance(so, dict):
+            so.update(stats)
+
+        if kwargs.get("return_stats"):
+            return (True, stats)
+        return True
+    finally:
+        try:
+            sock.close()
+        except Exception:
+            pass
+        _safe_unlink(client_path)
+
+
+def _unix_dgram_seq_recv(fileobj, unix_server_path, **kwargs):
+    logger = _logger_from_kwargs(kwargs)
+    scheme = (kwargs.get("_scheme") or "unixdgram")
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    try:
+        _safe_unlink(unix_server_path)
+        sock.bind(unix_server_path)
+    except Exception:
+        try:
+            sock.close()
+        except Exception:
+            pass
+        _safe_unlink(unix_server_path)
+        return False
+
+    if kwargs.get("print_url"):
+        try:
+            _emit("Listening: %s://%s" % (scheme, unix_server_path), logger=logger, level=logging.INFO, stream="stdout")
+            sys.stdout.flush()
+        except Exception:
+            pass
+
+    try:
+        timeout = float(kwargs.get("timeout", 1.0))
+        sock.settimeout(timeout)
+
+        chunk = int(kwargs.get("chunk", 1200))
+        window = int(kwargs.get("window", 32))
+        total_timeout = float(kwargs.get("total_timeout", 0.0))
+
+        framing = (kwargs.get("framing") or "").lower()
+        want_sha = bool(kwargs.get("sha256") or kwargs.get("sha") or kwargs.get("want_sha"))
+        _h = hashlib.sha256() if want_sha else None
+
+        use_crc = bool(kwargs.get("crc32", False))
+
+        total_len = None
+        bytes_written = 0
+        got_digest = None
+
+        resume_off = 0
+        try:
+            resume_off = int(kwargs.get("resume_offset", 0) or 0)
+        except Exception:
+            resume_off = 0
+        resume_seq = int(max(0, resume_off) // chunk)
+        expected = resume_seq
+
+        received = {}
+        done = False
+        complete = False
+        t0 = time.time()
+
+        active_tid = None
+
+        crc_bad = 0
+
+        def _ack(addr):
+            ack_upto = int(expected - 1) & 0xFFFFFFFF
+            sack_mask = 0
+            base = int(expected)
+            for s in received.keys():
+                d = int(s) - base
+                if 0 <= d < 64:
+                    sack_mask |= (1 << d)
+            payload = struct.pack("!IQ", ack_upto, sack_mask)
+            sock.sendto(_u_pack(_UF_ACK, 0, 0, active_tid) + payload, addr)
+
+        def _send_resume(addr):
+            sock.sendto(
+                _u_pack(_UF_RESUME, 0xFFFFFFFE, 0, active_tid)
+                + struct.pack("!I", int(resume_seq) & 0xFFFFFFFF),
+                addr,
+            )
+
+        while True:
+            if total_timeout and (time.time() - t0) > total_timeout:
+                break
+            try:
+                pkt, addr = sock.recvfrom(65536)
+            except socket.timeout:
+                if complete and want_sha:
+                    continue
+                if done and not received:
+                    break
+                continue
+            except Exception:
+                break
+
+            up = _u_unpack(pkt)
+            if not up:
+                continue
+            flags, seq, total, tid, payload = up
+
+            if active_tid is None:
+                active_tid = tid
+            if tid != active_tid:
+                continue
+
+            if total_len is None and total:
+                try:
+                    total_len = int(total)
+                except Exception:
+                    total_len = None
+
+            if flags & _UF_META:
+                try:
+                    _send_resume(addr)
+                except Exception:
+                    pass
+                continue
+
+            if flags & _UF_DONE:
+                done = True
+                if payload.startswith(b"DONE") and len(payload) >= 4 + 32:
+                    got_digest = payload[4:4 + 32]
+                if complete and ((not want_sha) or (got_digest is not None)):
+                    break
+                if not received and not want_sha:
+                    break
+                continue
+
+            if not (flags & _UF_DATA):
+                continue
+
+            if complete:
+                try:
+                    _ack(addr)
+                except Exception:
+                    pass
+                continue
+
+            if seq < expected:
+                try:
+                    _ack(addr)
+                except Exception:
+                    pass
+                continue
+            if seq >= expected + window * 8:
+                continue
+
+            if use_crc and (flags & _UF_CRC):
+                if len(payload) < 4:
+                    crc_bad += 1
+                    try:
+                        _ack(addr)
+                    except Exception:
+                        pass
+                    continue
+                want = struct.unpack("!I", payload[:4])[0]
+                data = payload[4:]
+                got = zlib.crc32(data) & 0xFFFFFFFF
+                if got != want:
+                    crc_bad += 1
+                    try:
+                        _ack(addr)
+                    except Exception:
+                        pass
+                    continue
+                payload = data
+
+            if seq == expected:
+                fileobj.write(payload)
+                bytes_written += len(payload)
+                if _h is not None:
+                    _h.update(_to_bytes(payload))
+                expected += 1
+                while expected in received:
+                    bufp = received.pop(expected)
+                    fileobj.write(bufp)
+                    bytes_written += len(bufp)
+                    if _h is not None:
+                        _h.update(_to_bytes(bufp))
+                    expected += 1
+            else:
+                if seq not in received:
+                    received[seq] = payload
+
+            try:
+                _ack(addr)
+            except Exception:
+                pass
+
+            if (framing == "len") and (total_len is not None) and (bytes_written >= total_len):
+                complete = True
+                if not want_sha:
+                    break
+                if got_digest is not None:
+                    break
+
+            if done and not received:
+                break
+
+        if want_sha:
+            if got_digest is None:
+                try:
+                    sock.close()
+                except Exception:
+                    pass
+                return False
+            if _h is None or _h.digest() != got_digest:
+                try:
+                    sock.close()
+                except Exception:
+                    pass
+                return False
+
+        try:
+            sock.close()
+        except Exception:
+            pass
+        try:
+            fileobj.seek(0, 0)
+        except Exception:
+            pass
+
+        so = kwargs.get("stats_obj")
+        if isinstance(so, dict):
+            so["crc_bad"] = crc_bad
+
+        return True
+
+    finally:
+        try:
+            sock.close()
+        except Exception:
+            pass
+        _safe_unlink(unix_server_path)
+
+
+def _unix_dgram_quic_send(fileobj, unix_server_path, resume=False, path_text=None, **kwargs):
+    logger = _logger_from_kwargs(kwargs)
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+
+    client_path = kwargs.get("bind") or kwargs.get("unix_client_path") or _tmp_unix_client_path()
+    _safe_unlink(client_path)
+    try:
+        sock.bind(client_path)
+    except Exception:
+        try:
+            sock.close()
+        except Exception:
+            pass
+        _safe_unlink(client_path)
+        return False
+
+    addr = unix_server_path
+
+    wait = _kw_bool(kwargs.get("wait", False), False) or _kw_bool(kwargs.get("connect_wait", False), False)
+    hello_iv = kwargs.get("hello_interval", 0.1)
+    wait_timeout = kwargs.get("wait_timeout", None)
+    verbose = _kw_bool(kwargs.get("verbose", False), False)
+    if wait:
+        if not _unix_dgram_wait_for_receiver(sock, addr, wait_timeout=wait_timeout, interval=hello_iv, logger=logger, verbose=verbose):
+            try:
+                sock.close()
+            except Exception:
+                pass
+            _safe_unlink(client_path)
+            return False
+
+    try:
+        base_timeout = float(kwargs.get("timeout", 1.0))
+        min_to = float(kwargs.get("min_timeout", 0.05))
+        max_to = float(kwargs.get("max_timeout", 3.0))
+        timeout = max(min_to, min(max_to, base_timeout))
+        try:
+            sock.settimeout(timeout)
+        except Exception:
+            pass
+
+        chunk = int(kwargs.get("chunk", 1200))
+        max_window = int(kwargs.get("window", 32))
+        init_window = int(kwargs.get("init_window", max(1, min(4, max_window))))
+        retries = int(kwargs.get("retries", 20))
+        total_timeout = float(kwargs.get("total_timeout", 0.0))
+        fast_retx = bool(kwargs.get("fast_retx", True))
+
+        cc = kwargs.get("cc", "reno")
+
+        want_sha = bool(kwargs.get("sha256") or kwargs.get("sha") or kwargs.get("want_sha"))
+        _h = hashlib.sha256() if want_sha else None
+
+        psk = kwargs.get("psk", None)
+        if psk:
+            psk = _to_bytes(psk)
+
+        cid = int(kwargs.get("cid", 0) or 0)
+        if cid == 0:
+            cid = _rand_u64()
+
+        stream_id = int(kwargs.get("stream_id", 0) or 0) & 0xFFFF
+
+        enable_0rtt = bool(kwargs.get("enable_0rtt", True))
+        token = kwargs.get("token", None)
+        if token is not None:
+            token = _to_bytes(token)
+
+        stats = {
+            "cid": cid,
+            "bytes_sent_payload": 0,
+            "pkts_sent": 0,
+            "pkts_retx": 0,
+            "pkts_acked": 0,
+            "pkts_sacked": 0,
+            "loss_events": 0,
+            "duration_s": 0.0,
+            "throughput_Bps": 0.0,
+            "srtt": None,
+            "rttvar": None,
+            "timeout": timeout,
+            "cwnd_start": init_window,
+            "cwnd_end": init_window,
+            "cc": cc,
+            "retry_used": False,
+            "server_token": None,
+            "start_offset": 0,
+        }
+
+        total_len = 0
+        try:
+            cur = fileobj.tell()
+            fileobj.seek(0, os.SEEK_END)
+            total_len = int(fileobj.tell())
+            fileobj.seek(cur, os.SEEK_SET)
+        except Exception:
+            total_len = 0
+
+        rtt = {"srtt": None, "rttvar": None, "timeout": timeout}
+        def _update_rtt(sample):
+            if sample <= 0:
+                return
+            if rtt["srtt"] is None:
+                rtt["srtt"] = sample
+                rtt["rttvar"] = sample / 2.0
+            else:
+                alpha = 1.0 / 8.0
+                beta = 1.0 / 4.0
+                rtt["rttvar"] = (1 - beta) * rtt["rttvar"] + beta * abs(rtt["srtt"] - sample)
+                rtt["srtt"] = (1 - alpha) * rtt["srtt"] + alpha * sample
+            to = rtt["srtt"] + 4.0 * rtt["rttvar"]
+            to = max(min_to, min(max_to, to))
+            rtt["timeout"] = to
+            try:
+                sock.settimeout(to)
+            except Exception:
+                pass
+
+        cc, cwnd, cwnd_f = _cc_init(cc, init_window, max_window)
+
+        pn = 1
+
+        start_offset = 0
+        meta_flags = 0
+        if resume:
+            meta_flags |= _MF_RESUME_REQ
+        if token is not None:
+            meta_flags |= _MF_HAS_TOKEN
+
+        meta_payload = struct.pack("!QB", int(total_len) & 0xFFFFFFFFFFFFFFFF, int(meta_flags) & 0xFF)
+        if path_text:
+            meta_payload += _to_bytes(path_text)[:512]
+        if token is not None:
+            meta_payload += struct.pack("!H", len(token) & 0xFFFF) + token
+
+        body = _pack_frame(_FT_META, meta_payload)
+        sock.sendto(_pack_pkt(_PT_INITIAL, cid, pn, body, psk=psk), addr)
+        stats["pkts_sent"] += 1
+        pn = (pn + 1) & 0xFFFFFFFF
+
+        def _send_stream(pkt_pn, off, data, pt=_PT_1RTT):
+            off32 = int(off) & 0xFFFFFFFF
+            if len(data) > 65535:
+                data = data[:65535]
+            fp = struct.pack("!HIH", int(stream_id) & 0xFFFF, off32, len(data)) + data
+            b = _pack_frame(_FT_STREAM, fp)
+            sock.sendto(_pack_pkt(pt, cid, pkt_pn, b, psk=psk), addr)
+            stats["pkts_sent"] += 1
+
+        t_hand = time.time()
+        server_allows_0rtt = bool(resume and enable_0rtt)
+        pending_retry = False
+
+        while True:
+            if total_timeout and (time.time() - t_hand) > total_timeout:
+                break
+            try:
+                pkt, _ = sock.recvfrom(4096)
+            except socket.timeout:
+                break
+            except Exception:
+                break
+            up = _unpack_pkt(pkt, psk=psk)
+            if not up:
+                continue
+            rpt, _fl, rcid, _rpn, rbody = up
+            if rcid != cid:
+                continue
+
+            if rpt == _PT_RETRY:
+                for ft, fp in _iter_frames(rbody):
+                    if ft == _FT_RETRY and len(fp) >= 2:
+                        (tlen,) = struct.unpack("!H", fp[:2])
+                        tok = fp[2:2 + int(tlen)]
+                        if tok:
+                            stats["retry_used"] = True
+                            stats["server_token"] = tok
+                            token = tok
+                            pending_retry = True
+                break
+
+            for ft, fp in _iter_frames(rbody):
+                if ft == _FT_RESUME and len(fp) >= 8:
+                    (start_offset,) = struct.unpack("!Q", fp[:8])
+                    try:
+                        fileobj.seek(int(start_offset), os.SEEK_SET)
+                    except Exception:
+                        start_offset = 0
+                    break
+            if start_offset:
+                break
+
+        if pending_retry and token is not None:
+            pn_retry = pn
+            pn = (pn + 1) & 0xFFFFFFFF
+
+            meta_flags = 0
+            if resume:
+                meta_flags |= _MF_RESUME_REQ
+            meta_flags |= _MF_HAS_TOKEN
+            meta_payload = struct.pack("!QB", int(total_len) & 0xFFFFFFFFFFFFFFFF, int(meta_flags) & 0xFF)
+            if path_text:
+                meta_payload += _to_bytes(path_text)[:512]
+            meta_payload += struct.pack("!H", len(token) & 0xFFFF) + token
+
+            body = _pack_frame(_FT_META, meta_payload)
+            sock.sendto(_pack_pkt(_PT_INITIAL, cid, pn_retry, body, psk=psk), addr)
+            stats["pkts_sent"] += 1
+
+            # wait a bit for RESUME (optional)
+            t2 = time.time()
+            while True:
+                if total_timeout and (time.time() - t2) > total_timeout:
+                    break
+                try:
+                    pkt, _ = sock.recvfrom(4096)
+                except socket.timeout:
+                    break
+                except Exception:
+                    break
+                up = _unpack_pkt(pkt, psk=psk)
+                if not up:
+                    continue
+                _pt, _fl, rcid, _rpn, rbody = up
+                if rcid != cid:
+                    continue
+                for ft, fp in _iter_frames(rbody):
+                    if ft == _FT_RESUME and len(fp) >= 8:
+                        (start_offset,) = struct.unpack("!Q", fp[:8])
+                        try:
+                            fileobj.seek(int(start_offset), os.SEEK_SET)
+                        except Exception:
+                            start_offset = 0
+                        break
+                if start_offset:
+                    break
+
+        stats["start_offset"] = int(start_offset)
+
+        in_flight = {}
+
+        next_off = int(start_offset)
+        eof = False
+        failed = False
+        t_start = time.time()
+
+        def _read_chunk():
+            data = fileobj.read(chunk)
+            if not data:
+                return None
+            data = _to_bytes(data)
+            if _h is not None:
+                _h.update(data)
+            return data
+
+        largest_acked = 0
+
+        while not eof and len(in_flight) < cwnd:
+            data = _read_chunk()
+            if data is None:
+                eof = True
+                break
+            pt_use = _PT_0RTT if server_allows_0rtt else _PT_1RTT
+            _send_stream(pn, next_off, data, pt=pt_use)
+            in_flight[pn] = (time.time(), 0, next_off, data, pt_use)
+            stats["bytes_sent_payload"] += len(data)
+            next_off += len(data)
+            pn = (pn + 1) & 0xFFFFFFFF
+
+        while in_flight or not eof:
+            if total_timeout and (time.time() - t_start) > total_timeout:
+                failed = True
+                break
+
+            try:
+                pkt, _ = sock.recvfrom(4096)
+                up = _unpack_pkt(pkt, psk=psk)
+                if up:
+                    rpt, _fl, rcid, _rpn, rbody = up
+                    if rcid == cid:
+                        if rpt == _PT_RETRY:
+                            server_allows_0rtt = False
+
+                        for ft, fp in _iter_frames(rbody):
+                            if ft != _FT_ACK:
+                                continue
+                            if len(fp) < 16:
+                                continue
+                            largest, ack_upto, sack_mask = struct.unpack("!IIQ", fp[:16])
+                            largest_acked = max(largest_acked, int(largest))
+                            now = time.time()
+                            newly_acked = 0
+
+                            for p in [p for p in list(in_flight.keys()) if p <= int(ack_upto)]:
+                                ts, _tries, _off, _data, _pt_use = in_flight.pop(p)
+                                _update_rtt(now - ts)
+                                stats["pkts_acked"] += 1
+                                newly_acked += 1
+
+                            base = (int(ack_upto) + 1) & 0xFFFFFFFF
+                            if sack_mask:
+                                for i in range(64):
+                                    if (sack_mask >> i) & 1:
+                                        p = (base + i) & 0xFFFFFFFF
+                                        if p in in_flight:
+                                            ts, _tries, _off, _data, _pt_use = in_flight.pop(p)
+                                            _update_rtt(now - ts)
+                                            stats["pkts_sacked"] += 1
+                                            newly_acked += 1
+
+                                if fast_retx and (base in in_flight):
+                                    ts, tries, off, data, pt_use = in_flight[base]
+                                    if tries < retries:
+                                        _send_stream(base, off, data, pt=pt_use if pt_use != _PT_0RTT else _PT_1RTT)
+                                        in_flight[base] = (time.time(), tries + 1, off, data, _PT_1RTT)
+                                        stats["pkts_retx"] += 1
+                                        stats["loss_events"] += 1
+                                        cwnd, cwnd_f = _cc_on_loss(cc, cwnd, cwnd_f, max_window)
+
+                            cwnd, cwnd_f = _cc_on_ack(cc, cwnd, cwnd_f, newly_acked, max_window)
+
+            except socket.timeout:
+                pass
+            except Exception:
+                pass
+
+            now = time.time()
+            to = float(rtt["timeout"]) if rtt["timeout"] else timeout
+            for p in list(in_flight.keys()):
+                ts, tries, off, data, pt_use = in_flight[p]
+                if (now - ts) >= to:
+                    if tries >= retries:
+                        failed = True
+                        in_flight.clear()
+                        break
+                    _send_stream(p, off, data, pt=_PT_1RTT)
+                    in_flight[p] = (now, tries + 1, off, data, _PT_1RTT)
+                    stats["pkts_retx"] += 1
+                    stats["loss_events"] += 1
+                    cwnd, cwnd_f = _cc_on_loss(cc, cwnd, cwnd_f, max_window)
+
+            if failed:
+                break
+
+            while not eof and len(in_flight) < cwnd:
+                data = _read_chunk()
+                if data is None:
+                    eof = True
+                    break
+                pt_use = _PT_0RTT if server_allows_0rtt else _PT_1RTT
+                _send_stream(pn, next_off, data, pt=pt_use)
+                in_flight[pn] = (time.time(), 0, next_off, data, pt_use)
+                stats["bytes_sent_payload"] += len(data)
+                next_off += len(data)
+                pn = (pn + 1) & 0xFFFFFFFF
+
+        dur = max(1e-9, time.time() - t_start)
+        stats["duration_s"] = dur
+        stats["throughput_Bps"] = float(stats["bytes_sent_payload"]) / dur
+        stats["srtt"] = rtt["srtt"]
+        stats["rttvar"] = rtt["rttvar"]
+        stats["timeout"] = rtt["timeout"]
+        stats["cwnd_end"] = cwnd
+
+        if failed:
+            try:
+                sock.close()
+            except Exception:
+                pass
+            so = kwargs.get("stats_obj")
+            if isinstance(so, dict):
+                so.update(stats)
+            if kwargs.get("return_stats"):
+                return (False, stats)
+            return False
+
+        done_payload = b"DONE"
+        if _h is not None:
+            done_payload += _h.digest()
+        body = _pack_frame(_FT_DONE, done_payload)
+        for _i in range(3):
+            try:
+                sock.sendto(_pack_pkt(_PT_1RTT, cid, pn, body, psk=psk), addr)
+                stats["pkts_sent"] += 1
+            except Exception:
+                pass
+            time.sleep(0.02)
+
+        try:
+            sock.close()
+        except Exception:
+            pass
+
+        so = kwargs.get("stats_obj")
+        if isinstance(so, dict):
+            so.update(stats)
+        if kwargs.get("return_stats"):
+            return (True, stats)
+        return True
+
+    finally:
+        try:
+            sock.close()
+        except Exception:
+            pass
+        _safe_unlink(client_path)
+
+
+def _unix_dgram_quic_recv(fileobj, unix_server_path, **kwargs):
+    logger = _logger_from_kwargs(kwargs)
+    scheme = (kwargs.get("_scheme") or "unixdgram")
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    try:
+        _safe_unlink(unix_server_path)
+        sock.bind(unix_server_path)
+    except Exception:
+        try:
+            sock.close()
+        except Exception:
+            pass
+        _safe_unlink(unix_server_path)
+        return False
+
+    if kwargs.get("print_url"):
+        try:
+            _emit("Listening: %s://%s" % (scheme, unix_server_path), logger=logger, level=logging.INFO, stream="stdout")
+            sys.stdout.flush()
+        except Exception:
+            pass
+
+    try:
+        timeout = float(kwargs.get("timeout", 1.0))
+        try:
+            sock.settimeout(timeout)
+        except Exception:
+            pass
+
+        chunk = int(kwargs.get("chunk", 1200))
+        window = int(kwargs.get("window", 32))
+        total_timeout = float(kwargs.get("total_timeout", 0.0))
+
+        framing = (kwargs.get("framing") or "").lower()
+        want_sha = bool(kwargs.get("sha256") or kwargs.get("sha") or kwargs.get("want_sha"))
+        _h = hashlib.sha256() if want_sha else None
+
+        psk = kwargs.get("psk", None)
+        if psk:
+            psk = _to_bytes(psk)
+
+        stream_map = kwargs.get("stream_map", None)  # {stream_id:int -> fileobj}
+        if not isinstance(stream_map, dict):
+            stream_map = {}
+        if 0 not in stream_map:
+            stream_map[0] = fileobj
+
+        stateless_retry = bool(kwargs.get("stateless_retry", False))
+        retry_secret = kwargs.get("retry_secret", None)
+        if retry_secret is not None:
+            retry_secret = _to_bytes(retry_secret)
+
+        total_len = None
+        bytes_written = {}
+        got_digest = None
+
+        resume_off = 0
+        try:
+            resume_off = int(kwargs.get("resume_offset", 0) or 0)
+        except Exception:
+            resume_off = 0
+
+        active_cid = None
+
+        received = {}
+        expected_off = {}
+        expected_off[0] = int(max(0, resume_off))
+
+        ack_upto = 0
+        seen_pn = set([0])
+        largest_pn = 0
+
+        done = False
+        complete = False
+        t0 = time.time()
+
+        allow_0rtt = not stateless_retry  # if no retry, allow
+
+        def _send_ack(addr, cid):
+            base = (int(ack_upto) + 1) & 0xFFFFFFFF
+            mask = 0
+            for p in seen_pn:
+                d = int(p) - int(base)
+                if 0 <= d < 64:
+                    mask |= (1 << d)
+            payload = struct.pack("!IIQ",
+                                  int(largest_pn) & 0xFFFFFFFF,
+                                  int(ack_upto) & 0xFFFFFFFF,
+                                  int(mask) & 0xFFFFFFFFFFFFFFFF)
+            body = _pack_frame(_FT_ACK, payload)
+            try:
+                sock.sendto(_pack_pkt(_PT_1RTT, cid, 0, body, psk=psk), addr)
+            except Exception:
+                pass
+
+        def _send_retry(addr, cid, token):
+            token = _to_bytes(token)
+            fp = struct.pack("!H", len(token) & 0xFFFF) + token
+            body = _pack_frame(_FT_RETRY, fp)
+            try:
+                sock.sendto(_pack_pkt(_PT_RETRY, cid, 1, body, psk=psk), addr)
+            except Exception:
+                pass
+
+        def _send_resume(addr, cid, stream_id, off):
+            body = _pack_frame(_FT_RESUME, struct.pack("!Q", int(off) & 0xFFFFFFFFFFFFFFFF))
+            try:
+                sock.sendto(_pack_pkt(_PT_HANDSHAKE, cid, 2, body, psk=psk), addr)
+            except Exception:
+                pass
+
+        while True:
+            if total_timeout and (time.time() - t0) > total_timeout:
+                break
+            try:
+                pkt, addr = sock.recvfrom(65536)
+            except socket.timeout:
+                if complete and want_sha:
+                    continue
+                if done:
+                    break
+                continue
+            except Exception:
+                break
+
+            up = _unpack_pkt(pkt, psk=psk)
+            if not up:
+                continue
+            pt, _flags, cid, pn, body = up
+
+            if active_cid is None:
+                active_cid = cid
+            if cid != active_cid:
+                continue
+
+            pn_i = int(pn) & 0xFFFFFFFF
+            largest_pn = max(largest_pn, pn_i)
+            seen_pn.add(pn_i)
+            while ((ack_upto + 1) & 0xFFFFFFFF) in seen_pn:
+                ack_upto = (ack_upto + 1) & 0xFFFFFFFF
+
+            if pt == _PT_INITIAL:
+                for ft, fp in _iter_frames(body):
+                    if ft != _FT_META or len(fp) < 9:
+                        continue
+                    (tlen, mflags) = struct.unpack("!QB", fp[:9])
+                    if tlen:
+                        try:
+                            total_len = int(tlen)
+                        except Exception:
+                            total_len = None
+
+                    token = None
+                    if int(mflags) & _MF_HAS_TOKEN:
+                        if len(fp) >= 9 + 2:
+                            buf = fp[9:]
+                            found = None
+                            scan_max = min(len(buf), 64)
+                            for i in range(max(0, len(buf) - scan_max), len(buf) - 1):
+                                if i + 2 > len(buf):
+                                    continue
+                                (tl,) = struct.unpack("!H", buf[i:i+2])
+                                if tl == (len(buf) - (i + 2)) and tl > 0:
+                                    found = buf[i+2:]
+                                    break
+                            if found is not None:
+                                token = found
+
+                    if stateless_retry and retry_secret:
+                        if (token is None) or (not _token_valid(retry_secret, (addr, 0), cid, token)):
+                            tok = _retry_token(retry_secret, (addr, 0), cid)
+                            allow_0rtt = False
+                            _send_retry(addr, cid, tok)
+
+                            _send_ack(addr, cid)
+                            continue
+                        else:
+                            allow_0rtt = True
+
+                    if int(mflags) & _MF_RESUME_REQ:
+                        off0 = int(expected_off.get(0, 0))
+                        _send_resume(addr, cid, 0, off0)
+
+                _send_ack(addr, cid)
+                continue
+
+            if pt == _PT_0RTT and not allow_0rtt:
+                _send_ack(addr, cid)
+                continue
+
+            for ft, fp in _iter_frames(body):
+                if ft == _FT_DONE:
+                    done = True
+                    if fp.startswith(b"DONE") and len(fp) >= 4 + 32:
+                        got_digest = fp[4:4+32]
+                    continue
+
+                if ft != _FT_STREAM:
+                    continue
+                if len(fp) < 2 + 4 + 2:
+                    continue
+
+                sid, off32, dlen = struct.unpack("!HIH", fp[:8])
+                sid = int(sid) & 0xFFFF
+                data = fp[8:8+int(dlen)]
+
+                out = stream_map.get(sid, None)
+                if out is None:
+                    continue
+
+                if sid not in received:
+                    received[sid] = {}
+                if sid not in expected_off:
+                    expected_off[sid] = 0
+                if sid not in bytes_written:
+                    bytes_written[sid] = 0
+
+                exp = int(expected_off[sid])
+                off = int(off32)
+                if off + len(data) < exp:
+                    continue
+                if off > exp + window * chunk * 8:
+                    continue
+
+                if off == exp:
+                    out.write(data)
+                    bytes_written[sid] += len(data)
+                    if _h is not None and sid == 0:
+                        _h.update(_to_bytes(data))
+                    expected_off[sid] = exp + len(data)
+
+                    while int(expected_off[sid]) in received[sid]:
+                        buf = received[sid].pop(int(expected_off[sid]))
+                        out.write(buf)
+                        bytes_written[sid] += len(buf)
+                        if _h is not None and sid == 0:
+                            _h.update(_to_bytes(buf))
+                        expected_off[sid] = int(expected_off[sid]) + len(buf)
+                else:
+                    if off not in received[sid]:
+                        received[sid][off] = data
+
+            _send_ack(addr, cid)
+
+            bw0 = int(bytes_written.get(0, 0))
+            if (framing == "len") and (total_len is not None) and (bw0 >= int(total_len)):
+                complete = True
+                if not want_sha:
+                    break
+                if got_digest is not None:
+                    break
+
+            if done:
+                if want_sha and got_digest is None:
+                    continue
+                break
+
+        if want_sha:
+            if got_digest is None:
+                try:
+                    sock.close()
+                except Exception:
+                    pass
+                return False
+            if _h is None or _h.digest() != got_digest:
+                try:
+                    sock.close()
+                except Exception:
+                    pass
+                return False
+
+        try:
+            sock.close()
+        except Exception:
+            pass
+
+        try:
+            stream_map.get(0, fileobj).seek(0, 0)
+        except Exception:
+            pass
+
+        return True
+
+
+    finally:
+        try:
+            sock.close()
+        except Exception:
+            pass
+        _safe_unlink(unix_server_path)
+
 
 def _udp_raw_recv(fileobj, host, port, **kwargs):
     logger = _logger_from_kwargs(kwargs)
