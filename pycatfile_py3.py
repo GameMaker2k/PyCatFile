@@ -14,7 +14,7 @@
     Copyright 2018-2026 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2026 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 2/3/2026 Ver. 0.28.0 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 2/4/2026 Ver. 0.28.2 RC 1 - Author: cooldude2k $
 '''
 
 import io
@@ -690,12 +690,12 @@ __project__ = __program_name__
 __program_alt_name__ = __program_name__
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile"
 __project_release_url__ = __project_url__+"/releases/latest"
-__version_info__ = (0, 28, 0, "RC 1", 1)
-__version_date_info__ = (2026, 2, 3, "RC 1", 1)
+__version_info__ = (0, 28, 2, "RC 1", 1)
+__version_date_info__ = (2026, 2, 4, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id: b57e93ea8432b167bfa598f4ffeb5a66df229068 $"
+__revision_id__ = "$Id$"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -11890,29 +11890,6 @@ if(__use_http_lib__ == "requests" and havehttpx and not haverequests):
     __use_http_lib__ = "httpx"
 if((__use_http_lib__ == "httpx" or __use_http_lib__ == "requests") and not havehttpx and not haverequests):
     __use_http_lib__ = "urllib"
-
-__program_name__ = "PyNeoWWW-Get"
-__program_alt_name__ = "PyWWWGet"
-__program_small_name__ = "wwwget"
-__project__ = __program_name__
-__project_url__ = "https://github.com/GameMaker2k/PyNeoWWW-Get"
-__version_info__ = (2, 2, 0, "RC 1", 1)
-__version_date_info__ = (2026, 1, 23, "RC 1", 1)
-__version_date__ = str(__version_date_info__[0])+"."+str(__version_date_info__[
-    1]).zfill(2)+"."+str(__version_date_info__[2]).zfill(2)
-__revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
-if(__version_info__[4] is not None):
-    __version_date_plusrc__ = __version_date__ + \
-        "-"+str(__version_date_info__[4])
-if(__version_info__[4] is None):
-    __version_date_plusrc__ = __version_date__
-if(__version_info__[3] is not None):
-    __version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(
-        __version_info__[2])+" "+str(__version_info__[3])
-if(__version_info__[3] is None):
-    __version__ = str(
-        __version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2])
 
 PyBitness = platform.architecture()
 if(PyBitness == "32bit" or PyBitness == "32"):
