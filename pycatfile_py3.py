@@ -138,7 +138,6 @@ basestring = str
 unicode = str
 long = int
 file = IOBase
-PY2 = False
 
 text_type = str
 bytes_type = bytes
@@ -705,7 +704,7 @@ __version_date_info__ = (2026, 2, 4, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: bb61609918b298a313c64211b6e31f22719f07bc $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -1376,36 +1375,17 @@ def _normalize_initial_data(data, isbytes, encoding, errors=None):
         b = _as_bytes_like(data)
         if b is not None:
             return b
-        if PY2:
-            # Py2: 'unicode' -> encode; 'str' is already bytes
-            if isinstance(data, unicode_type):
-                return data.encode(encoding, errors)
-            if isinstance(data, str):
-                return data
-        else:
-            # Py3: text -> encode
-            if isinstance(data, str):
-                return data.encode(encoding, errors)
+        if isinstance(data, str):
+            return data.encode(encoding, errors)
         raise TypeError("data must be bytes-like or text for isbytes=True (got %r)" % (type(data),))
     else:
         # text mode
-        if PY2:
-            if isinstance(data, unicode_type):
-                return data
-            b = _as_bytes_like(data)
-            if b is not None:
-                return b.decode(encoding, errors)
-            if isinstance(data, str):
-                # Py2 str -> decode
-                return data.decode(encoding, errors)
-            raise TypeError("data must be unicode or bytes-like for text mode (got %r)" % (type(data),))
-        else:
-            if isinstance(data, str):
-                return data
-            b = _as_bytes_like(data)
-            if b is not None:
-                return b.decode(encoding, errors)
-            raise TypeError("data must be str or bytes-like for text mode (got %r)" % (type(data),))
+        if isinstance(data, str):
+            return data
+        b = _as_bytes_like(data)
+        if b is not None:
+            return b.decode(encoding, errors)
+        raise TypeError("data must be str or bytes-like for text mode (got %r)" % (type(data),))
 
 
 def MkTempFile(data=None,
@@ -1887,17 +1867,12 @@ def create_alias_function(prefix, base_name, suffix, target_function, positional
     # Add the new function to the global namespace
     globals()[function_name] = alias_function
 
-if PY2:
-    binary_types = (str, bytearray, buffer)  # noqa: F821 (buffer in Py2)
-else:
-    binary_types = (bytes, bytearray, memoryview)
+binary_types = (bytes, bytearray, memoryview)
 
 
 # ---------- Helpers (same semantics as your snippet) ----------
 def _byte_at(b, i):
     """Return int value of byte at index i for both Py2 and Py3."""
-    if PY2:
-        return ord(b[i:i+1])
     return b[i]
 
 def _is_valid_zlib_header(cmf, flg):
@@ -2070,12 +2045,12 @@ class SharedMemoryFile(object):
                 size = 0
 
         if size == 0:
-            return b'' if not PY2 else ''
+            return b''
 
         start, end_abs = self._region_bounds()
         available = end_abs - (self._base_offset + self._pos)
         if available <= 0:
-            return b'' if not PY2 else ''
+            return b''
 
         size = min(size, available)
 
@@ -2083,10 +2058,7 @@ class SharedMemoryFile(object):
         abs_end = abs_start + size
 
         chunk = self._buf[abs_start:abs_end]
-        if PY2:
-            data = bytes(chunk)  # bytes() -> str in py2
-        else:
-            data = bytes(chunk)
+        data = bytes(chunk)
 
         self._pos += len(data)
         return data
@@ -2104,7 +2076,7 @@ class SharedMemoryFile(object):
         start, end_abs = self._region_bounds()
         remaining = end_abs - (self._base_offset + self._pos)
         if remaining <= 0:
-            return b'' if not PY2 else ''
+            return b''
 
         if size is not None and size >= 0:
             size = int(size)
@@ -2116,10 +2088,7 @@ class SharedMemoryFile(object):
         abs_max = abs_start + max_len
 
         # Work on a local bytes slice for easy .find()
-        if PY2:
-            buf_bytes = bytes(self._buf[abs_start:abs_max])
-        else:
-            buf_bytes = bytes(self._buf[abs_start:abs_max])
+        buf_bytes = bytes(self._buf[abs_start:abs_max])
 
         idx = buf_bytes.find(b'\n')
         if idx == -1:
@@ -2130,8 +2099,6 @@ class SharedMemoryFile(object):
 
         self._pos += len(line_bytes)
 
-        if PY2:
-            return line_bytes  # already str
         return line_bytes
 
     def readinto(self, b):
@@ -2278,9 +2245,6 @@ class SharedMemoryFile(object):
             raise StopIteration
         return line
 
-    if PY2:
-        next = __next__
-
     # ---------- misc helpers ----------
 
     def fileno(self):
@@ -2324,8 +2288,6 @@ class ZlibFile(object):
 
         if 'b' not in mode and 't' not in mode:
             mode += 'b'  # default to binary
-        if 'x' in mode and PY2:
-            raise ValueError("Exclusive creation mode 'x' is not supported on Python 2")
 
         self.file_path = file_path
         self.file = None
@@ -2544,9 +2506,6 @@ class ZlibFile(object):
             raise StopIteration
         return line
 
-    if PY2:
-        next = __next__
-
     def seek(self, offset, whence=0):
         if self.closed:
             raise ValueError("I/O operation on closed file")
@@ -2584,11 +2543,9 @@ class ZlibFile(object):
             if not isinstance(data, binary_types):
                 raise TypeError("write() expects bytes-like in binary mode")
 
-        # Normalize to bytes for Py2/3 edge cases
-        if (not PY2) and isinstance(data, memoryview):
+        # Normalize to bytes
+        if isinstance(data, memoryview):
             data = data.tobytes()
-        elif PY2 and isinstance(data, bytearray):
-            data = bytes(data)
 
         # Buffer and compress in chunks to limit memory
         self._write_buf += data
@@ -2811,8 +2768,6 @@ class GzipFile(object):
 
         if 'b' not in mode and 't' not in mode:
             mode += 'b'
-        if 'x' in mode and PY2:
-            raise ValueError("Exclusive creation mode 'x' not supported on Python 2")
 
         self.file_path = file_path
         self.file = fileobj
@@ -3012,9 +2967,6 @@ class GzipFile(object):
             raise StopIteration
         return line
 
-    if PY2:
-        next = __next__
-
     def seek(self, offset, whence=0):
         if self.closed:
             raise ValueError("I/O operation on closed file")
@@ -3052,11 +3004,9 @@ class GzipFile(object):
             if not isinstance(data, binary_types):
                 raise TypeError("write() expects bytes-like in binary mode")
 
-        # Normalize Py3 memoryview and Py2 bytearray
-        if (not PY2) and isinstance(data, memoryview):
+        # Normalize Py3 memoryview
+        if isinstance(data, memoryview):
             data = data.tobytes()
-        elif PY2 and isinstance(data, bytearray):
-            data = bytes(data)
 
         # Stage and compress in chunks
         self._write_buf += data
@@ -8944,7 +8894,7 @@ class FileLikeAdapter(object):
             n = len(self._mm) - self._pos
         end = min(self._pos + n, len(self._mm))
         if end <= self._pos:
-            return b"" if not PY2 else bytes_type()
+            return b""
         out = bytes(self._mm[self._pos:end])
         self._pos = end
         return out
@@ -9006,9 +8956,6 @@ class FileLikeAdapter(object):
         if not line:
             raise StopIteration
         return line
-
-    if PY2:
-        next = __next__
 
     # ---- writes ----
     def write(self, b):
@@ -9439,7 +9386,7 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None,
 
     fbasename, fextname = os.path.splitext(outfile)
     compressionlevel = 9 if compressionlevel is None else int(compressionlevel)
-    mode = "w" if PY2 else "wb"
+    mode = "wb"
 
     try:
         # Uncompressed branch
@@ -9456,10 +9403,7 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None,
 
         # Compressed branches (unchanged openers; all wrapped)
         elif (fextname == ".gz" and "gzip" in compressionsupport):
-            if PY2:
-                outfp = FileLikeAdapter(GzipFile(outfile, mode=mode, level=compressionlevel), mode="wb")
-            else:
-                outfp = FileLikeAdapter(gzip.open(outfile, mode, compressionlevel), mode="wb")
+            outfp = FileLikeAdapter(gzip.open(outfile, mode, compressionlevel), mode="wb")
 
         elif (fextname == ".bz2" and "bzip2" in compressionsupport):
             outfp = FileLikeAdapter(bz2.open(outfile, mode, compressionlevel), mode="wb")
