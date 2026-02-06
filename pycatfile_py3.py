@@ -441,8 +441,8 @@ def add_format(reg, key, magic, ext, name=None, ver="001",
         "format_extension": ext,
     }
 
-__upload_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp|data|file|bt|rfcomm|bluetooth|unix|unixdgram)://"
-__download_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp|data|file|bt|rfcomm|bluetooth|unix|unixdgram)://"
+__upload_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp|data|file|bt|rfcomm|l2cap|bluetooth|unix|unixdgram)://"
+__download_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp|data|file|bt|rfcomm|l2cap|bluetooth|unix|unixdgram)://"
 __use_pysftp__ = False
 if(not havepysftp):
     __use_pysftp__ = False
@@ -704,7 +704,7 @@ __version_date_info__ = (2026, 2, 4, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id: bb61609918b298a313c64211b6e31f22719f07bc $"
+__revision_id__ = "$Id$"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -11846,33 +11846,6 @@ if(__use_http_lib__ == "requests" and havehttpx and not haverequests):
 if((__use_http_lib__ == "httpx" or __use_http_lib__ == "requests") and not havehttpx and not haverequests):
     __use_http_lib__ = "urllib"
 
-PyBitness = platform.architecture()
-if(PyBitness == "32bit" or PyBitness == "32"):
-    PyBitness = "32"
-elif(PyBitness == "64bit" or PyBitness == "64"):
-    PyBitness = "64"
-else:
-    PyBitness = "32"
-
-geturls_cj = cookielib.CookieJar()
-geturls_ua_pywwwget_python = "Mozilla/5.0 (compatible; {proname}/{prover}; +{prourl})".format(
-    proname=__project__, prover=__version__, prourl=__project_url__)
-if(platform.python_implementation() != ""):
-    py_implementation = platform.python_implementation()
-if(platform.python_implementation() == ""):
-    py_implementation = "Python"
-geturls_ua_pywwwget_python_alt = "Mozilla/5.0 ({osver}; {archtype}; +{prourl}) {pyimp}/{pyver} (KHTML, like Gecko) {proname}/{prover}".format(osver=platform.system(
-)+" "+platform.release(), archtype=platform.machine(), prourl=__project_url__, pyimp=py_implementation, pyver=platform.python_version(), proname=__project__, prover=__version__)
-geturls_ua_googlebot_google = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
-geturls_ua_googlebot_google_old = "Googlebot/2.1 (+http://www.google.com/bot.html)"
-geturls_headers_pywwwget_python = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pywwwget_python, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
-                                    'SEC-CH-UA': "\""+__project__+"\";v=\""+str(__version__)+"\", \"Not;A=Brand\";v=\"8\", \""+py_implementation+"\";v=\""+str(platform.release())+"\"", 'SEC-CH-UA-FULL-VERSION': str(__version__), 'SEC-CH-UA-PLATFORM': ""+py_implementation+"", 'SEC-CH-UA-ARCH': ""+platform.machine()+"", 'SEC-CH-UA-PLATFORM-VERSION': str(__version__), 'SEC-CH-UA-BITNESS': str(PyBitness)}
-geturls_headers_pywwwget_python_alt = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pywwwget_python_alt, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
-                                        'SEC-CH-UA': "\""+__project__+"\";v=\""+str(__version__)+"\", \"Not;A=Brand\";v=\"8\", \""+py_implementation+"\";v=\""+str(platform.release())+"\"", 'SEC-CH-UA-FULL-VERSION': str(__version__), 'SEC-CH-UA-PLATFORM': ""+py_implementation+"", 'SEC-CH-UA-ARCH': ""+platform.machine()+"", 'SEC-CH-UA-PLATFORM-VERSION': str(__version__), 'SEC-CH-UA-BITNESS': str(PyBitness)}
-geturls_headers_googlebot_google = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6",
-                                    'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"}
-geturls_headers_googlebot_google_old = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google_old, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6",
-                                        'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"}
 
 def fix_header_names(header_dict):
     if(sys.version[0] == "2"):
@@ -12407,6 +12380,47 @@ def _to_bytes(x):
     except Exception:
         return bytes(x)
 
+
+
+def _seqpacket_send_chunked(sock, payload, max_chunk=1024, logger=None):
+    """Send bytes over SOCK_SEQPACKET sockets by splitting into <=MTU-sized chunks.
+
+    Linux/BlueZ L2CAP uses SOCK_SEQPACKET with a per-packet MTU limit. If you try to
+    send a larger message, you'll typically get EMSGSIZE ("Message too long").
+    This helper splits payload into chunks and automatically backs off chunk size
+    if EMSGSIZE is encountered.
+
+    Returns the (possibly reduced) chunk size that succeeded, so callers can reuse it.
+    """
+    import errno as _errno
+
+    if payload is None:
+        return int(max_chunk or 1024)
+
+    try:
+        chunk = int(max_chunk or 1024)
+    except Exception:
+        chunk = 1024
+    if chunk <= 0:
+        chunk = 1024
+
+    off = 0
+    n = len(payload)
+    while off < n:
+        part = payload[off:off + chunk]
+        try:
+            sent = sock.send(part)
+            if sent is None:
+                sent = len(part)
+            if sent <= 0:
+                raise OSError("send returned 0 bytes")
+            off += sent
+        except OSError as e:
+            if getattr(e, "errno", None) == getattr(_errno, "EMSGSIZE", 90) and chunk > 64:
+                chunk = max(64, chunk // 2)
+                continue
+            raise
+    return chunk
 def _to_text(x):
     if x is None:
         return u""
@@ -14732,6 +14746,7 @@ def _parse_net_url(url):
 
     is_udpish = (p.scheme == "udp") or (p.scheme in _UNIX_DGRAM_SCHEMES)
     is_tcpish = (p.scheme == "tcp") or (p.scheme in _UNIX_STREAM_SCHEMES)
+    is_btish = (p.scheme in ("bt", "rfcomm", "bluetooth", "l2cap", "btl2cap", "bluetoothl2cap", "bluetooth_l2cap"))
 
     # mode default
     if p.scheme in _UNIX_DGRAM_SCHEMES:
@@ -14757,7 +14772,7 @@ def _parse_net_url(url):
     window = int(_qnum(qs, "window", 32, cast=int))
     retries = int(_qnum(qs, "retries", 20, cast=int))
 
-    chunk_default = 1200 if is_udpish else 65536
+    chunk_default = 1200 if is_udpish else (1024 if is_btish else 65536)
     chunk = int(_qnum(qs, "chunk", chunk_default, cast=int))
 
     print_url = _qflag(qs, "print_url", False)
@@ -14843,14 +14858,20 @@ def _parse_net_url(url):
         "unix_path": unix_path,
     }
 
-# --- Bluetooth RFCOMM helpers -------------------------------------------------
+# --- Bluetooth helpers ---------------------------------------------------------
 # Notes:
-# - URLs use the "bt", "rfcomm", or "bluetooth" schemes.
+# - RFCOMM URLs use the "bt", "rfcomm", or "bluetooth" schemes.
+# - L2CAP URLs use the "l2cap" (or "btl2cap") schemes.
 # - Netloc parsing cannot rely on urlparse.hostname because MAC addresses contain ':'.
-# - Receiver/listener uses recv_to_fileobj(..., proto="bt") which binds and listens on RFCOMM.
-# - Sender uses send_from_fileobj(..., proto="bt") which connects to the receiver.
+# - Receiver/listener uses recv_to_fileobj(..., proto="bt" or proto="l2cap") to bind/listen.
+# - Sender uses send_from_fileobj(..., proto="bt" or proto="l2cap") to connect.
 
-_BT_SCHEMES = ("bt", "rfcomm", "bluetooth")
+_BT_RFCOMM_SCHEMES = ("bt", "rfcomm", "bluetooth")
+_BT_L2CAP_SCHEMES  = ("l2cap", "btl2cap", "bluetoothl2cap", "bluetooth_l2cap")
+_BT_URL_SCHEMES    = _BT_RFCOMM_SCHEMES + _BT_L2CAP_SCHEMES
+
+# "proto" values used internally by recv_to_fileobj/send_from_fileobj
+_BT_PROTOS = set(_BT_RFCOMM_SCHEMES) | {"l2cap"}
 
 def _has_rfcomm() -> bool:
     """Return True if we can create an RFCOMM stream socket (native or PyBluez)."""
@@ -14876,6 +14897,34 @@ def _bt_socket_stream():
     try:
         if _pybluez is not None:
             return _pybluez.BluetoothSocket(_pybluez.RFCOMM)
+    except Exception:
+        pass
+    return None
+
+def _has_l2cap() -> bool:
+    """Return True if we can create an L2CAP socket (native or PyBluez)."""
+    try:
+        if hasattr(socket, "AF_BLUETOOTH") and hasattr(socket, "BTPROTO_L2CAP") and hasattr(socket, "SOCK_SEQPACKET"):
+            return True
+    except Exception:
+        pass
+    try:
+        if _pybluez is not None and hasattr(_pybluez, "BluetoothSocket") and hasattr(_pybluez, "L2CAP"):
+            return True
+    except Exception:
+        pass
+    return False
+
+def _bt_socket_l2cap_seqpacket():
+    """Create an L2CAP SOCK_SEQPACKET socket using stdlib (BlueZ) or PyBluez fallback."""
+    try:
+        if hasattr(socket, "AF_BLUETOOTH") and hasattr(socket, "BTPROTO_L2CAP") and hasattr(socket, "SOCK_SEQPACKET"):
+            return socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
+    except Exception:
+        pass
+    try:
+        if _pybluez is not None and hasattr(_pybluez, "L2CAP"):
+            return _pybluez.BluetoothSocket(_pybluez.L2CAP)
     except Exception:
         pass
     return None
@@ -14917,11 +14966,14 @@ def _split_bt_netloc(netloc: str) -> Tuple[str, Optional[int]]:
     s = s.replace("-", ":")
     parts = s.split(":")
     ch: Optional[int] = None
-    if len(parts) >= 7 and parts[-1].isdigit():
-        try:
-            ch = int(parts[-1], 10)
-        except Exception:
-            ch = None
+    if len(parts) >= 7:
+        last = parts[-1]
+        # Accept decimal or 0x-prefixed hex for channel/psm.
+        if re.fullmatch(r"(?:0x)?[0-9a-fA-F]+", last or ""):
+            try:
+                ch = int(last, 0)
+            except Exception:
+                ch = None
         addr = ":".join(parts[:-1])
         return (_norm_bt_addr(addr), ch)
     return (_norm_bt_addr(s), None)
@@ -14940,6 +14992,26 @@ def _bt_host_channel_from_url(parts, qs: Mapping[str, List[str]], o: Mapping[str
     if ch is None or int(ch) <= 0:
         ch = 1
     return addr, int(ch)
+
+def _bt_host_psm_from_url(parts, qs: Mapping[str, List[str]], o: Mapping[str, Any]) -> Tuple[str, int]:
+    """Resolve bdaddr+psm from urlparse parts and query/bind options (for L2CAP)."""
+    addr, psm = _split_bt_netloc(getattr(parts, "netloc", "") or "")
+    bind = o.get("bind") or _qstr(qs, "bind", None)
+    if bind:
+        addr = _norm_bt_addr(bind)
+
+    def _int0(v):
+        return int(str(v), 0)
+
+    qpsm = _qnum(qs, "psm", None, cast=_int0)
+    if qpsm is None:
+        qpsm = _qnum(qs, "l2cap_psm", None, cast=_int0)
+    if psm is None and qpsm is not None:
+        psm = int(qpsm)
+    if psm is None:
+        # Custom / dynamic PSM start; users should override with ?psm=... when needed.
+        psm = 0x1001
+    return addr, int(psm)
 
 
 def _kw_bool(v, default=False):
@@ -14976,8 +15048,8 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
     if "framing" not in kwargs and "frame" in kwargs:
         kwargs["framing"] = kwargs.get("frame")
 
-    if proto == "tcp" or proto in _BT_SCHEMES or proto in _UNIX_STREAM_SCHEMES:
-        is_bt = proto in _BT_SCHEMES
+    if proto == "tcp" or proto in _BT_PROTOS or proto in _UNIX_STREAM_SCHEMES:
+        is_bt = proto in _BT_PROTOS
 
         # --- Boolean normalization (BT has different safe defaults) ---
         # For BT: handshake default OFF (RFCOMM + MSG_PEEK is unreliable)
@@ -15002,23 +15074,37 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
 
         # --- Set up server socket ---
         if is_bt:
-            if not _has_rfcomm():
-                _emit("Bluetooth RFCOMM is not available (missing AF_BLUETOOTH/BTPROTO_RFCOMM or PyBluez).",
-                      logger=logger, level=logging.ERROR, stream="stderr")
-                return False
-            srv = _bt_socket_stream()
-            if srv is None:
-                _emit("Failed to create Bluetooth RFCOMM socket.", logger=logger, level=logging.ERROR, stream="stderr")
-                return False
+            is_l2cap = (proto == "l2cap")
+            if is_l2cap:
+                if not _has_l2cap():
+                    _emit("Bluetooth L2CAP is not available (missing AF_BLUETOOTH/BTPROTO_L2CAP or PyBluez).",
+                          logger=logger, level=logging.ERROR, stream="stderr")
+                    return False
+                srv = _bt_socket_l2cap_seqpacket()
+                if srv is None:
+                    _emit("Failed to create Bluetooth L2CAP socket.", logger=logger, level=logging.ERROR, stream="stderr")
+                    return False
+            else:
+                if not _has_rfcomm():
+                    _emit("Bluetooth RFCOMM is not available (missing AF_BLUETOOTH/BTPROTO_RFCOMM or PyBluez).",
+                          logger=logger, level=logging.ERROR, stream="stderr")
+                    return False
+                srv = _bt_socket_stream()
+                if srv is None:
+                    _emit("Failed to create Bluetooth RFCOMM socket.", logger=logger, level=logging.ERROR, stream="stderr")
+                    return False
             try:
                 srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             except Exception:
                 pass
 
             bind_addr = _bt_bind_addr(host or "")
-            ch = int(port) if int(port) > 0 else 1
+            bt_port = int(port)
+            if (not is_l2cap) and bt_port <= 0:
+                bt_port = 1
+            # For L2CAP, bt_port is the PSM. A value of 0 can be used to request auto-assignment on bind.
             try:
-                srv.bind((bind_addr, ch))
+                srv.bind((bind_addr, int(bt_port)))
             except Exception:
                 try:
                     srv.close()
@@ -15034,7 +15120,7 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
                     pass
                 return False
 
-            chosen_port = ch
+            chosen_port = bt_port
             try:
                 sn = srv.getsockname()
                 if isinstance(sn, tuple) and len(sn) >= 2:
@@ -15055,7 +15141,8 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
                                 bind_host = _norm_bt_addr(addrs[0])
                     except Exception:
                         pass
-                _emit(f"Listening: bt://{bind_host}:{int(chosen_port)}{path}",
+                scheme_out = "l2cap" if is_l2cap else "bt"
+                _emit(f"Listening: {scheme_out}://{bind_host}:{int(chosen_port)}{path}",
                       logger=logger, level=logging.INFO, stream="stdout")
                 try:
                     sys.stdout.flush()
@@ -15365,8 +15452,8 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
     if "framing" not in kwargs and "frame" in kwargs:
         kwargs["framing"] = kwargs.get("frame")
 
-    if proto == "tcp" or proto in _BT_SCHEMES or proto in _UNIX_STREAM_SCHEMES:
-        is_bt = proto in _BT_SCHEMES
+    if proto == "tcp" or proto in _BT_PROTOS or proto in _UNIX_STREAM_SCHEMES:
+        is_bt = proto in _BT_PROTOS
 
         # --- Boolean normalization (BT has different safe defaults) ---
         hs_default = False if is_bt else True
@@ -15380,25 +15467,38 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
         kwargs["want_sha"] = _kw_bool(kwargs.get("want_sha", False), False)
 
         framing = (kwargs.get("framing") or "").lower()
-
-        # BT quality-of-life: if user didn't choose framing, default to len
-        if is_bt and not framing:
-            framing = "len"
-            kwargs["framing"] = "len"
-
         # BT + len framing: PATH must be disabled (keeps PWG4 header aligned)
         if is_bt and framing == "len":
             kwargs["send_path"] = False
 
         if is_bt:
-            if not _has_rfcomm():
-                _emit("Bluetooth RFCOMM is not available (missing AF_BLUETOOTH/BTPROTO_RFCOMM or PyBluez).",
-                      logger=logger, level=logging.ERROR, stream="stderr")
-                return False
-            sock = _bt_socket_stream()
-            if sock is None:
-                _emit("Failed to create Bluetooth RFCOMM socket.", logger=logger, level=logging.ERROR, stream="stderr")
-                return False
+            is_l2cap = (proto == "l2cap")
+            if is_l2cap:
+                if not _has_l2cap():
+                    _emit("Bluetooth L2CAP is not available (missing AF_BLUETOOTH/BTPROTO_L2CAP or PyBluez).",
+                          logger=logger, level=logging.ERROR, stream="stderr")
+                    return False
+                sock = _bt_socket_l2cap_seqpacket()
+                if sock is None:
+                    _emit("Failed to create Bluetooth L2CAP socket.", logger=logger, level=logging.ERROR, stream="stderr")
+                    return False
+                if int(port) <= 0:
+                    _emit("Bluetooth L2CAP send requires a concrete remote PSM (use :psm in URL or ?psm=...).",
+                          logger=logger, level=logging.ERROR, stream="stderr")
+                    try:
+                        sock.close()
+                    except Exception:
+                        pass
+                    return False
+            else:
+                if not _has_rfcomm():
+                    _emit("Bluetooth RFCOMM is not available (missing AF_BLUETOOTH/BTPROTO_RFCOMM or PyBluez).",
+                          logger=logger, level=logging.ERROR, stream="stderr")
+                    return False
+                sock = _bt_socket_stream()
+                if sock is None:
+                    _emit("Failed to create Bluetooth RFCOMM socket.", logger=logger, level=logging.ERROR, stream="stderr")
+                    return False
             addr = _norm_bt_addr(host)
             if not addr or addr == "00:00:00:00:00:00":
                 _emit("Bluetooth send requires a concrete remote bdaddr (not BDADDR_ANY).",
@@ -15596,12 +15696,26 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
                 return False
 
         try:
+            is_l2cap_seqpacket = bool(is_bt and (proto == "l2cap"))
+            l2cap_chunk = kwargs.get("chunk", None)
+            if is_l2cap_seqpacket:
+                try:
+                    l2cap_chunk = int(l2cap_chunk) if l2cap_chunk is not None else 1024
+                except Exception:
+                    l2cap_chunk = 1024
+                if l2cap_chunk <= 0:
+                    l2cap_chunk = 1024
+
             while True:
                 data = fileobj.read(65536)
                 if not data:
                     break
                 data = _to_bytes(data)
-                sock.sendall(data)
+                if is_l2cap_seqpacket:
+                    # L2CAP SOCK_SEQPACKET has per-packet MTU limits; split + auto-backoff on EMSGSIZE.
+                    l2cap_chunk = _seqpacket_send_chunked(sock, data, l2cap_chunk, logger=logger)
+                else:
+                    sock.sendall(data)
                 if h is not None:
                     h.update(data)
 
@@ -18984,13 +19098,18 @@ def download_file_from_internet_file(url: str, **kwargs: Any):
     if p.scheme in ("file" or ""):
         return io.open(unquote(p.path), "rb")
 
-    if p.scheme in ("tcp", "udp") or p.scheme in _BT_SCHEMES or p.scheme in _UNIX_SCHEMES:
+    if p.scheme in ("tcp", "udp") or p.scheme in _BT_URL_SCHEMES or p.scheme in _UNIX_SCHEMES:
         parts, o = _parse_net_url(url)
         path_text = parts.path or "/"
-        if parts.scheme in _BT_SCHEMES:
+        if parts.scheme in _BT_RFCOMM_SCHEMES:
             qs = parse_qs(parts.query or "")
             host, port = _bt_host_channel_from_url(parts, qs, o)
             proto = "bt"
+
+        elif parts.scheme in _BT_L2CAP_SCHEMES:
+            qs = parse_qs(parts.query or "")
+            host, port = _bt_host_psm_from_url(parts, qs, o)
+            proto = "l2cap"
 
         elif parts.scheme in _UNIX_SCHEMES:
             host = _unix_path_from_parts(parts, o, fallback_port=0)  # store path in host
@@ -19718,6 +19837,7 @@ def upload_file_to_internet_file(fileobj, url: str, **kwargs: Any):
       - tcp://host:port/...
       - udp://host:port/...
       - bt://BDADDR:channel/... (RFCOMM)
+      - l2cap://BDADDR:psm/... (L2CAP)
 
     The caller typically provides a seekable file object.
     """
@@ -19748,11 +19868,11 @@ def upload_file_to_internet_file(fileobj, url: str, **kwargs: Any):
             pass
         return fileobj
 
-    if p.scheme in ("tcp", "udp") or p.scheme in _BT_SCHEMES or p.scheme in _UNIX_SCHEMES:
+    if p.scheme in ("tcp", "udp") or p.scheme in _BT_URL_SCHEMES or p.scheme in _UNIX_SCHEMES:
         parts, o = _parse_net_url(url)
         path_text = parts.path or "/"
 
-        if parts.scheme in _BT_SCHEMES:
+        if parts.scheme in _BT_RFCOMM_SCHEMES:
             qs = parse_qs(parts.query or "")
             o2 = dict(o)
             # For sending (client), never treat bind= as the remote host.
@@ -19760,6 +19880,17 @@ def upload_file_to_internet_file(fileobj, url: str, **kwargs: Any):
             host, port = _bt_host_channel_from_url(parts, qs, o2)
             proto = "bt"
             # bt:// historically used raw streaming; do not send PATH preface unless requested.
+            send_path = _qflag(qs, "send_path", False) or bool(o.get("send_path"))
+            if not send_path:
+                path_text = None
+
+        elif parts.scheme in _BT_L2CAP_SCHEMES:
+            qs = parse_qs(parts.query or "")
+            o2 = dict(o)
+            # For sending (client), never treat bind= as the remote host.
+            o2["bind"] = None
+            host, port = _bt_host_psm_from_url(parts, qs, o2)
+            proto = "l2cap"
             send_path = _qflag(qs, "send_path", False) or bool(o.get("send_path"))
             if not send_path:
                 path_text = None
