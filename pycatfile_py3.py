@@ -441,8 +441,8 @@ def add_format(reg, key, magic, ext, name=None, ver="001",
         "format_extension": ext,
     }
 
-__upload_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp|data|file|bt|rfcomm|l2cap|bluetooth|unix|unixdgram)://"
-__download_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp|data|file|bt|rfcomm|l2cap|bluetooth|unix|unixdgram)://"
+__upload_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp|sctp|data|file|bt|rfcomm|l2cap|bluetooth|unixstream|unixdgram|unixseqpacket)://"
+__download_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp|sctp|data|file|bt|rfcomm|l2cap|bluetooth|unixstream|unixdgram|unixseqpacket)://"
 __use_pysftp__ = False
 if(not havepysftp):
     __use_pysftp__ = False
@@ -11885,6 +11885,56 @@ if(__use_http_lib__ == "requests" and havehttpx and not haverequests):
 if((__use_http_lib__ == "httpx" or __use_http_lib__ == "requests") and not havehttpx and not haverequests):
     __use_http_lib__ = "urllib"
 
+__program_name__ = "PyNeoWWW-Get"
+__program_alt_name__ = "PyWWWGet"
+__program_small_name__ = "wwwget"
+__project__ = __program_name__
+__project_url__ = "https://github.com/GameMaker2k/PyNeoWWW-Get"
+__version_info__ = (2, 2, 0, "RC 1", 1)
+__version_date_info__ = (2026, 1, 23, "RC 1", 1)
+__version_date__ = str(__version_date_info__[0])+"."+str(__version_date_info__[
+    1]).zfill(2)+"."+str(__version_date_info__[2]).zfill(2)
+__revision__ = __version_info__[3]
+__revision_id__ = "$Id$"
+if(__version_info__[4] is not None):
+    __version_date_plusrc__ = __version_date__ + \
+        "-"+str(__version_date_info__[4])
+if(__version_info__[4] is None):
+    __version_date_plusrc__ = __version_date__
+if(__version_info__[3] is not None):
+    __version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(
+        __version_info__[2])+" "+str(__version_info__[3])
+if(__version_info__[3] is None):
+    __version__ = str(
+        __version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2])
+
+PyBitness = platform.architecture()
+if(PyBitness == "32bit" or PyBitness == "32"):
+    PyBitness = "32"
+elif(PyBitness == "64bit" or PyBitness == "64"):
+    PyBitness = "64"
+else:
+    PyBitness = "32"
+
+geturls_cj = cookielib.CookieJar()
+geturls_ua_pywwwget_python = "Mozilla/5.0 (compatible; {proname}/{prover}; +{prourl})".format(
+    proname=__project__, prover=__version__, prourl=__project_url__)
+if(platform.python_implementation() != ""):
+    py_implementation = platform.python_implementation()
+if(platform.python_implementation() == ""):
+    py_implementation = "Python"
+geturls_ua_pywwwget_python_alt = "Mozilla/5.0 ({osver}; {archtype}; +{prourl}) {pyimp}/{pyver} (KHTML, like Gecko) {proname}/{prover}".format(osver=platform.system(
+)+" "+platform.release(), archtype=platform.machine(), prourl=__project_url__, pyimp=py_implementation, pyver=platform.python_version(), proname=__project__, prover=__version__)
+geturls_ua_googlebot_google = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+geturls_ua_googlebot_google_old = "Googlebot/2.1 (+http://www.google.com/bot.html)"
+geturls_headers_pywwwget_python = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pywwwget_python, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
+                                    'SEC-CH-UA': "\""+__project__+"\";v=\""+str(__version__)+"\", \"Not;A=Brand\";v=\"8\", \""+py_implementation+"\";v=\""+str(platform.release())+"\"", 'SEC-CH-UA-FULL-VERSION': str(__version__), 'SEC-CH-UA-PLATFORM': ""+py_implementation+"", 'SEC-CH-UA-ARCH': ""+platform.machine()+"", 'SEC-CH-UA-PLATFORM-VERSION': str(__version__), 'SEC-CH-UA-BITNESS': str(PyBitness)}
+geturls_headers_pywwwget_python_alt = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pywwwget_python_alt, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
+                                        'SEC-CH-UA': "\""+__project__+"\";v=\""+str(__version__)+"\", \"Not;A=Brand\";v=\"8\", \""+py_implementation+"\";v=\""+str(platform.release())+"\"", 'SEC-CH-UA-FULL-VERSION': str(__version__), 'SEC-CH-UA-PLATFORM': ""+py_implementation+"", 'SEC-CH-UA-ARCH': ""+platform.machine()+"", 'SEC-CH-UA-PLATFORM-VERSION': str(__version__), 'SEC-CH-UA-BITNESS': str(PyBitness)}
+geturls_headers_googlebot_google = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6",
+                                    'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"}
+geturls_headers_googlebot_google_old = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google_old, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6",
+                                        'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"}
 
 def fix_header_names(header_dict):
     if(sys.version[0] == "2"):
@@ -12114,6 +12164,180 @@ def _tcp_connect_socket(host, port, timeout=None, wait=False, wait_timeout=None,
                 time.sleep(0.1)
             except Exception:
                 pass
+
+
+def _ipproto_sctp() -> int:
+    """Best-effort IPPROTO_SCTP constant (stdlib may omit it on some builds)."""
+    try:
+        return int(getattr(socket, "IPPROTO_SCTP"))
+    except Exception:
+        # IANA assigned SCTP protocol number
+        return 132
+
+
+def _is_seqpacket_socket(sock) -> bool:
+    try:
+        return getattr(sock, "type", None) == socket.SOCK_SEQPACKET
+    except Exception:
+        return False
+
+
+def _recv_line(sock, max_len: int = 4096) -> bytes:
+    """Read a single \n-terminated control line safely.
+
+    For stream sockets, we use MSG_PEEK to find the newline and then consume exactly
+    that many bytes, so we don't accidentally eat file payload data.
+
+    For SOCK_SEQPACKET sockets (e.g., SCTP SEQPACKET, BT L2CAP), control messages
+    must be sent in a single record; we recv() once.
+
+    Returns raw bytes (may not include trailing \n if sender didn't include one).
+    """
+    try:
+        max_len = int(max_len)
+    except Exception:
+        max_len = 4096
+    if max_len <= 0:
+        max_len = 4096
+
+    if _is_seqpacket_socket(sock):
+        try:
+            b = sock.recv(max_len)
+            return b if isinstance(b, (bytes, bytearray)) else bytes(b)
+        except Exception:
+            return b""
+
+    # stream socket: peek then recv exact up-to-newline
+    try:
+        if hasattr(socket, "MSG_PEEK"):
+            buf = sock.recv(max_len, socket.MSG_PEEK)
+        else:
+            buf = b""
+    except Exception:
+        buf = b""
+
+    if not buf:
+        try:
+            b = sock.recv(max_len)
+            return b if isinstance(b, (bytes, bytearray)) else bytes(b)
+        except Exception:
+            return b""
+
+    nl = buf.find(b"\n")
+    to_read = (nl + 1) if nl >= 0 else len(buf)
+
+    out = bytearray()
+    while len(out) < to_read:
+        try:
+            chunk = sock.recv(to_read - len(out))
+        except Exception:
+            break
+        if not chunk:
+            break
+        out.extend(chunk if isinstance(chunk, (bytes, bytearray)) else bytes(chunk))
+    return bytes(out)
+
+
+def _sctp_listen_socket(host, port, backlog: int = 1, reuse: bool = True):
+    """Create an SCTP SOCK_SEQPACKET listening socket (IPv4/IPv6 via getaddrinfo)."""
+    proto = _ipproto_sctp()
+    flags = getattr(socket, "AI_PASSIVE", 0)
+    h = host
+    if h in ("", None, "0.0.0.0", "::"):
+        h = None
+
+    infos = _gai_list(h, int(port), socket.SOCK_SEQPACKET, flags=flags)
+    if not infos:
+        # fallback (IPv4)
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_SEQPACKET, proto)
+            if reuse:
+                try:
+                    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                except Exception:
+                    pass
+            s.bind((_strip_ipv6_brackets(host or ""), int(port)))
+            s.listen(int(backlog))
+            return s
+        except Exception:
+            return None
+
+    for fam, _st, _pr, _cn, sa in infos:
+        s = None
+        try:
+            s = socket.socket(fam, socket.SOCK_SEQPACKET, proto)
+            if reuse:
+                try:
+                    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                except Exception:
+                    pass
+            if fam == getattr(socket, "AF_INET6", None):
+                _set_ipv6_dualstack(s)
+            s.bind(sa)
+            s.listen(int(backlog))
+            return s
+        except Exception:
+            try:
+                if s:
+                    s.close()
+            except Exception:
+                pass
+            continue
+    return None
+
+
+def _sctp_connect_socket(host, port, timeout=None, wait: bool = False, wait_timeout=None, verbose: bool = False, logger=None):
+    """Connect to an SCTP SOCK_SEQPACKET endpoint (IPv4/IPv6)."""
+    proto = _ipproto_sctp()
+    start_t = time.time()
+
+    while True:
+        try:
+            to = float(timeout) if timeout is not None else None
+        except Exception:
+            to = None
+
+        infos = _gai_list(host, int(port), socket.SOCK_SEQPACKET, flags=0)
+        if not infos:
+            infos = [(socket.AF_INET, socket.SOCK_SEQPACKET, proto, "", (_strip_ipv6_brackets(host), int(port)))]
+
+        last_err = None
+        for fam, _st, _pr, _cn, sa in infos:
+            s = None
+            try:
+                s = socket.socket(fam, socket.SOCK_SEQPACKET, proto)
+                if fam == getattr(socket, "AF_INET6", None):
+                    _set_ipv6_dualstack(s)
+                if to is not None:
+                    s.settimeout(to)
+                s.connect(sa)
+                return s
+            except Exception as e:
+                last_err = e
+                try:
+                    if s:
+                        s.close()
+                except Exception:
+                    pass
+                continue
+
+        if not wait:
+            return None
+
+        if wait_timeout is not None:
+            try:
+                wt = float(wait_timeout)
+                if wt >= 0 and (time.time() - start_t) >= wt:
+                    return None
+            except Exception:
+                pass
+
+        _net_log(verbose, "SCTP: waiting for receiver, retrying...", logger=logger)
+        try:
+            time.sleep(0.1)
+        except Exception:
+            pass
+
 
 def _udp_bind_socket(host, port, reuse=True):
     flags = getattr(socket, "AI_PASSIVE", 0)
@@ -14748,8 +14972,28 @@ def _resolve_wait_timeout(scheme, mode, o):
     return o.get("timeout", None)
 
 _UNIX_STREAM_SCHEMES = {"unix", "unixstream"}
+_UNIX_SEQPACKET_SCHEMES = {"unixstreamsctp", "unixseqpacket", "unix_seqpacket", "unixsp"}
 _UNIX_DGRAM_SCHEMES  = {"unixdgram", "unixgram", "unix_datagram"}
-_UNIX_SCHEMES = _UNIX_STREAM_SCHEMES | _UNIX_DGRAM_SCHEMES
+_UNIX_SCHEMES = _UNIX_STREAM_SCHEMES | _UNIX_SEQPACKET_SCHEMES | _UNIX_DGRAM_SCHEMES
+
+def _unix_sock_is_seqpacket(proto: str, kwargs: dict) -> bool:
+    """Return True if an AF_UNIX socket should be treated as SOCK_SEQPACKET.
+
+    This is True for explicit unix seqpacket schemes (unixstreamsctp, unixseqpacket, ...)
+    and also for unix/unixstream when the URL specifies socktype=seqpacket.
+    """
+    try:
+        if proto in _UNIX_SEQPACKET_SCHEMES:
+            return True
+        if proto in _UNIX_STREAM_SCHEMES:
+            st = (kwargs or {}).get("socktype") or ""
+            st = str(st).strip().lower()
+            return st in ("seqpacket", "seq", "seqpkt", "sp", "sctp", "unixseqpacket", "unix_seqpacket", "unixstreamsctp")
+    except Exception:
+        pass
+    return False
+
+
 
 
 def _safe_unlink(path: str):
@@ -14784,7 +15028,7 @@ def _parse_net_url(url):
     qs = parse_qs(p.query or "")
 
     is_udpish = (p.scheme == "udp") or (p.scheme in _UNIX_DGRAM_SCHEMES)
-    is_tcpish = (p.scheme == "tcp") or (p.scheme in _UNIX_STREAM_SCHEMES)
+    is_tcpish = (p.scheme in ("tcp", "sctp")) or (p.scheme in _UNIX_STREAM_SCHEMES) or (p.scheme in _UNIX_SEQPACKET_SCHEMES)
     is_btish = (p.scheme in ("bt", "rfcomm", "bluetooth", "l2cap", "btl2cap", "bluetoothl2cap", "bluetooth_l2cap"))
 
     # mode default
@@ -14826,7 +15070,7 @@ def _parse_net_url(url):
     else:
         connect_wait = is_tcpish
 
-    handshake_default = True if (p.scheme in ("tcp", "udp") or p.scheme in _UNIX_SCHEMES) else False
+    handshake_default = True if (p.scheme in ("tcp", "udp", "sctp") or p.scheme in _UNIX_SCHEMES) else False
     handshake = _qflag(qs, "handshake", handshake_default)
 
     hello_interval = float(_qnum(qs, "hello_interval", 0.1, cast=float))
@@ -14860,6 +15104,12 @@ def _parse_net_url(url):
     raw_hash = _qstr(qs, "raw_hash", "sha256")
 
     unix_path = _qstr(qs, "unix_path", None) or _qstr(qs, "path", None)
+    socktype = _qstr(qs, "socktype", None) or _qstr(qs, "stype", None)
+    if socktype is not None:
+        try:
+            socktype = str(socktype).strip().lower()
+        except Exception:
+            pass
 
     return p, {
         "mode": mode,
@@ -14895,6 +15145,7 @@ def _parse_net_url(url):
         "raw_sha": raw_sha,
         "raw_hash": raw_hash,
         "unix_path": unix_path,
+        "socktype": socktype,
     }
 
 # --- Bluetooth helpers ---------------------------------------------------------
@@ -15087,8 +15338,11 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
     if "framing" not in kwargs and "frame" in kwargs:
         kwargs["framing"] = kwargs.get("frame")
 
-    if proto == "tcp" or proto in _BT_PROTOS or proto in _UNIX_STREAM_SCHEMES:
+    if proto in ("tcp", "sctp") or proto in _BT_PROTOS or proto in _UNIX_STREAM_SCHEMES or proto in _UNIX_SEQPACKET_SCHEMES:
         is_bt = proto in _BT_PROTOS
+        netlab = ("UNIX-SEQ" if _unix_sock_is_seqpacket(proto, kwargs) else ("UNIX" if proto in _UNIX_STREAM_SCHEMES else ("BT" if is_bt else ("SCTP" if proto == "sctp" else "TCP"))))
+        is_seqpacket = bool((proto == "sctp") or _unix_sock_is_seqpacket(proto, kwargs) or (is_bt and (proto == "l2cap")))
+
 
         # --- Boolean normalization (BT has different safe defaults) ---
         # For BT: handshake default OFF (RFCOMM + MSG_PEEK is unreliable)
@@ -15189,27 +15443,37 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
                     pass
 
         else:
-            if proto in _UNIX_STREAM_SCHEMES:
+            if proto in _UNIX_STREAM_SCHEMES or proto in _UNIX_SEQPACKET_SCHEMES:
                 unix_path = kwargs.get("unix_path") or host
-                srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                try:
-                    srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                except Exception:
-                    pass
+                if _unix_sock_is_seqpacket(proto, kwargs):
+                    srv = socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET)
+                    try:
+                        srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    except Exception:
+                        pass
+                else:
+                    srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 _safe_unlink(unix_path)
                 srv.bind(unix_path)
                 srv.listen(1)
 
                 chosen_port = 0
                 if kwargs.get("print_url"):
-                    _emit(f"Listening: unix://{unix_path}",
+                    scheme_out = "unixstream" if (proto in _UNIX_STREAM_SCHEMES) else proto
+                    extra = ""
+                    if _unix_sock_is_seqpacket(proto, kwargs) and proto in _UNIX_STREAM_SCHEMES:
+                        extra = "?socktype=seqpacket"
+                    _emit(f"Listening: {scheme_out}://{unix_path}{extra}",
                           logger=logger, level=logging.INFO, stream="stdout")
                     try:
                         sys.stdout.flush()
                     except Exception:
                         pass
             else:
-                srv = _tcp_listen_socket(host, int(port), backlog=1, reuse=True)
+                if proto == "sctp":
+                    srv = _sctp_listen_socket(host, int(port), backlog=1, reuse=True)
+                else:
+                    srv = _tcp_listen_socket(host, int(port), backlog=1, reuse=True)
                 if srv is None:
                     return False
 
@@ -15217,7 +15481,8 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
                 if kwargs.get("print_url"):
                     path = path_text or "/"
                     bind_host = host or ("::" if srv.family == getattr(socket, "AF_INET6", None) else "0.0.0.0")
-                    for u in _listen_urls("tcp", bind_host, chosen_port, path, ""):
+                    scheme_out = "sctp" if proto == "sctp" else "tcp"
+                    for u in _listen_urls(scheme_out, bind_host, chosen_port, path, ""):
                         _emit("Listening: %s" % u, logger=logger, level=logging.INFO, stream="stdout")
                     try:
                         sys.stdout.flush()
@@ -15241,7 +15506,7 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
             pass
 
         if kwargs.get("verbose"):
-            _net_log(True, f"{'BT' if is_bt else 'TCP'}: waiting accept on ch={port}", logger=logger)
+            _net_log(True, f"{netlab}: waiting accept on ch={port}", logger=logger)
 
         conn = None
         try:
@@ -15266,7 +15531,7 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
             return False
 
         if kwargs.get("verbose"):
-            _net_log(True, f"{'BT' if is_bt else 'TCP'}: accepted {_addr}", logger=logger)
+            _net_log(True, f"{netlab}: accepted {_addr}", logger=logger)
 
         ok = False
         try:
@@ -15288,14 +15553,7 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
                 except Exception:
                     pass
                 if peekh == b"HELLO ":
-                    line = b""
-                    while True:
-                        b = conn.recv(1)
-                        if not b:
-                            break
-                        line += b
-                        if line.endswith(b"\n") or len(line) > 4096:
-                            break
+                    line = _recv_line(conn, 4096)
                     tok = b""
                     try:
                         parts2 = line.strip().split(None, 1)
@@ -15326,14 +15584,7 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
                 pass
 
             if peek == b"PATH ":
-                line = b""
-                while True:
-                    b = conn.recv(1)
-                    if not b:
-                        break
-                    line += b
-                    if line.endswith(b"\n") or len(line) > 4096:
-                        break
+                line = _recv_line(conn, 4096)
 
             # Resume handshake
             if kwargs.get("resume"):
@@ -15362,7 +15613,7 @@ def recv_to_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs):
                         header += _to_bytes(chunk)
 
                     if kwargs.get("verbose"):
-                        _net_log(True, f"{'BT' if is_bt else 'TCP'} len: header={header[:16]!r} len={len(header)}",
+                        _net_log(True, f"{netlab} len: header={header[:16]!r} len={len(header)}",
                                  logger=logger)
 
                     if len(header) != 16 or not header.startswith(b"PWG4"):
@@ -15491,8 +15742,11 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
     if "framing" not in kwargs and "frame" in kwargs:
         kwargs["framing"] = kwargs.get("frame")
 
-    if proto == "tcp" or proto in _BT_PROTOS or proto in _UNIX_STREAM_SCHEMES:
+    if proto in ("tcp", "sctp") or proto in _BT_PROTOS or proto in _UNIX_STREAM_SCHEMES or proto in _UNIX_SEQPACKET_SCHEMES:
         is_bt = proto in _BT_PROTOS
+        netlab = ("UNIX-SEQ" if _unix_sock_is_seqpacket(proto, kwargs) else ("UNIX" if proto in _UNIX_STREAM_SCHEMES else ("BT" if is_bt else ("SCTP" if proto == "sctp" else "TCP"))))
+        is_seqpacket = bool((proto == "sctp") or _unix_sock_is_seqpacket(proto, kwargs) or (is_bt and (proto == "l2cap")))
+
 
         # --- Boolean normalization (BT has different safe defaults) ---
         hs_default = False if is_bt else True
@@ -15549,9 +15803,12 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
                 return False
             connect_target = (addr, int(port))
         else:
-            if proto in _UNIX_STREAM_SCHEMES:
+            if proto in _UNIX_STREAM_SCHEMES or proto in _UNIX_SEQPACKET_SCHEMES:
                 unix_path = kwargs.get("unix_path") or host
-                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                if _unix_sock_is_seqpacket(proto, kwargs):
+                    sock = socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET)
+                else:
+                    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 connect_target = unix_path
             else:
                 # TCP: defer socket creation to _tcp_connect_socket (IPv4/IPv6 via getaddrinfo)
@@ -15584,8 +15841,12 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
                 wait_timeout = None
 
         if sock is None:
-            sock = _tcp_connect_socket(host, int(port), timeout=to, wait=wait, wait_timeout=wait_timeout,
-                                       verbose=kwargs.get("verbose"), logger=logger)
+            if proto == "sctp":
+                sock = _sctp_connect_socket(host, int(port), timeout=to, wait=wait, wait_timeout=wait_timeout,
+                                            verbose=kwargs.get("verbose"), logger=logger)
+            else:
+                sock = _tcp_connect_socket(host, int(port), timeout=to, wait=wait, wait_timeout=wait_timeout,
+                                           verbose=kwargs.get("verbose"), logger=logger)
             if sock is None:
                 return False
         else:
@@ -15608,7 +15869,7 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
                             pass
                         return False
                     try:
-                        _net_log(kwargs.get("verbose"), f"{'BT' if is_bt else 'TCP'}: waiting for receiver, retrying...",
+                        _net_log(kwargs.get("verbose"), f"{netlab}: waiting for receiver, retrying...",
                                  logger=logger)
                         time.sleep(0.1)
                     except Exception:
@@ -15618,7 +15879,7 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
 
 
         if kwargs.get("verbose"):
-            _net_log(True, f"SEND {'BT' if is_bt else 'TCP'} framing={framing} want_sha={bool(kwargs.get('sha256') or kwargs.get('sha') or kwargs.get('want_sha'))}",
+            _net_log(True, f"SEND {netlab} framing={framing} want_sha={bool(kwargs.get('sha256') or kwargs.get('sha') or kwargs.get('want_sha'))}",
                      logger=logger)
 
         # Handshake (OFF by default for BT; if enabled, keep as-is)
@@ -15689,12 +15950,7 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
         # Resume support (unchanged)
         if kwargs.get("resume"):
             try:
-                buf = b""
-                while not buf.endswith(b"\n") and len(buf) < 128:
-                    b = sock.recv(1)
-                    if not b:
-                        break
-                    buf += b
+                buf = _recv_line(sock, 128)
                 if buf.startswith(b"OFFSET "):
                     off = int(buf.split()[1])
                     try:
@@ -15735,34 +15991,51 @@ def send_from_fileobj(fileobj, host, port, proto="tcp", path_text=None, **kwargs
                 return False
 
         try:
-            is_l2cap_seqpacket = bool(is_bt and (proto == "l2cap"))
-            l2cap_chunk = kwargs.get("chunk", None)
-            if is_l2cap_seqpacket:
+            # For SOCK_SEQPACKET transports (BT L2CAP, SCTP), keep record sizes bounded.
+            seq_chunk = kwargs.get("chunk", None)
+
+            if is_bt and (proto == "l2cap"):
+                # L2CAP MTU is usually small; default to 1024 and auto-backoff on EMSGSIZE.
                 try:
-                    l2cap_chunk = int(l2cap_chunk) if l2cap_chunk is not None else 1024
+                    seq_chunk = int(seq_chunk) if seq_chunk is not None else 1024
                 except Exception:
-                    l2cap_chunk = 1024
-                if l2cap_chunk <= 0:
-                    l2cap_chunk = 1024
+                    seq_chunk = 1024
+                if seq_chunk <= 0:
+                    seq_chunk = 1024
+            elif proto == "sctp":
+                # SCTP can fragment, but keeping message sizes reasonable improves interoperability.
+                try:
+                    seq_chunk = int(seq_chunk) if seq_chunk is not None else 65536
+                except Exception:
+                    seq_chunk = 65536
+                if seq_chunk <= 0:
+                    seq_chunk = 65536
 
             while True:
                 data = fileobj.read(65536)
                 if not data:
                     break
                 data = _to_bytes(data)
-                if is_l2cap_seqpacket:
-                    # L2CAP SOCK_SEQPACKET has per-packet MTU limits; split + auto-backoff on EMSGSIZE.
-                    l2cap_chunk = _seqpacket_send_chunked(sock, data, l2cap_chunk, logger=logger)
+                if is_seqpacket:
+                    seq_chunk = _seqpacket_send_chunked(sock, data, seq_chunk or 65536, logger=logger)
                 else:
                     sock.sendall(data)
                 if h is not None:
                     h.update(data)
 
             if framing == "len" and want_sha:
-                sock.sendall(h.digest())
+                digest = h.digest() if h is not None else b""
+                if is_seqpacket:
+                    _seqpacket_send_chunked(sock, digest, seq_chunk or 65536, logger=logger)
+                else:
+                    sock.sendall(digest)
             elif kwargs.get("done"):
                 tok = kwargs.get("done_token") or "\nDONE\n"
-                sock.sendall(_to_bytes(tok))
+                btok = _to_bytes(tok)
+                if is_seqpacket:
+                    _seqpacket_send_chunked(sock, btok, seq_chunk or 65536, logger=logger)
+                else:
+                    sock.sendall(btok)
         except Exception:
             try:
                 sock.close()
@@ -19137,7 +19410,7 @@ def download_file_from_internet_file(url: str, **kwargs: Any):
     if p.scheme in ("file" or ""):
         return io.open(unquote(p.path), "rb")
 
-    if p.scheme in ("tcp", "udp") or p.scheme in _BT_URL_SCHEMES or p.scheme in _UNIX_SCHEMES:
+    if p.scheme in ("tcp", "udp", "sctp") or p.scheme in _BT_URL_SCHEMES or p.scheme in _UNIX_SCHEMES:
         parts, o = _parse_net_url(url)
         path_text = parts.path or "/"
         if parts.scheme in _BT_RFCOMM_SCHEMES:
@@ -19907,7 +20180,7 @@ def upload_file_to_internet_file(fileobj, url: str, **kwargs: Any):
             pass
         return fileobj
 
-    if p.scheme in ("tcp", "udp") or p.scheme in _BT_URL_SCHEMES or p.scheme in _UNIX_SCHEMES:
+    if p.scheme in ("tcp", "udp", "sctp") or p.scheme in _BT_URL_SCHEMES or p.scheme in _UNIX_SCHEMES:
         parts, o = _parse_net_url(url)
         path_text = parts.path or "/"
 
@@ -19951,7 +20224,7 @@ def upload_file_to_internet_file(fileobj, url: str, **kwargs: Any):
             mode=o.get("mode"),
             timeout=o.get("timeout"), total_timeout=o.get("total_timeout"),
             wait=o.get("wait"), connect_wait=o.get("connect_wait"),
-            wait_timeout=(_resolve_wait_timeout(parts.scheme, o.get("mode"), o) if parts.scheme in ("udp", "tcp") else o.get("timeout")),
+            wait_timeout=(_resolve_wait_timeout(parts.scheme, o.get("mode"), o) if parts.scheme in ("udp", "tcp", "sctp") else o.get("timeout")),
             window=o.get("window"), retries=o.get("retries"), chunk=o.get("chunk"),
             resume=o.get("resume"), path_text=path_text,
             done=o.get("done"), done_token=o.get("done_token"), framing=o.get("framing"), sha256=o.get("sha256"),
