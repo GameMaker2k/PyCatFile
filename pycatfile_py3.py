@@ -11897,57 +11897,6 @@ if(__use_http_lib__ == "requests" and havehttpx and not haverequests):
 if((__use_http_lib__ == "httpx" or __use_http_lib__ == "requests") and not havehttpx and not haverequests):
     __use_http_lib__ = "urllib"
 
-__program_name__ = "PyNeoWWW-Get"
-__program_alt_name__ = "PyWWWGet"
-__program_small_name__ = "wwwget"
-__project__ = __program_name__
-__project_url__ = "https://github.com/GameMaker2k/PyNeoWWW-Get"
-__version_info__ = (2, 2, 0, "RC 1", 1)
-__version_date_info__ = (2026, 1, 23, "RC 1", 1)
-__version_date__ = str(__version_date_info__[0])+"."+str(__version_date_info__[
-    1]).zfill(2)+"."+str(__version_date_info__[2]).zfill(2)
-__revision__ = __version_info__[3]
-__revision_id__ = "$Id: 86db5575fabea76db07bb230f69dc3e8c4505016 $"
-if(__version_info__[4] is not None):
-    __version_date_plusrc__ = __version_date__ + \
-        "-"+str(__version_date_info__[4])
-if(__version_info__[4] is None):
-    __version_date_plusrc__ = __version_date__
-if(__version_info__[3] is not None):
-    __version__ = str(__version_info__[0])+"."+str(__version_info__[1])+"."+str(
-        __version_info__[2])+" "+str(__version_info__[3])
-if(__version_info__[3] is None):
-    __version__ = str(
-        __version_info__[0])+"."+str(__version_info__[1])+"."+str(__version_info__[2])
-
-PyBitness = platform.architecture()
-if(PyBitness == "32bit" or PyBitness == "32"):
-    PyBitness = "32"
-elif(PyBitness == "64bit" or PyBitness == "64"):
-    PyBitness = "64"
-else:
-    PyBitness = "32"
-
-geturls_cj = cookielib.CookieJar()
-geturls_ua_pywwwget_python = "Mozilla/5.0 (compatible; {proname}/{prover}; +{prourl})".format(
-    proname=__project__, prover=__version__, prourl=__project_url__)
-if(platform.python_implementation() != ""):
-    py_implementation = platform.python_implementation()
-if(platform.python_implementation() == ""):
-    py_implementation = "Python"
-geturls_ua_pywwwget_python_alt = "Mozilla/5.0 ({osver}; {archtype}; +{prourl}) {pyimp}/{pyver} (KHTML, like Gecko) {proname}/{prover}".format(osver=platform.system(
-)+" "+platform.release(), archtype=platform.machine(), prourl=__project_url__, pyimp=py_implementation, pyver=platform.python_version(), proname=__project__, prover=__version__)
-geturls_ua_googlebot_google = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
-geturls_ua_googlebot_google_old = "Googlebot/2.1 (+http://www.google.com/bot.html)"
-geturls_headers_pywwwget_python = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pywwwget_python, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
-                                    'SEC-CH-UA': "\""+__project__+"\";v=\""+str(__version__)+"\", \"Not;A=Brand\";v=\"8\", \""+py_implementation+"\";v=\""+str(platform.release())+"\"", 'SEC-CH-UA-FULL-VERSION': str(__version__), 'SEC-CH-UA-PLATFORM': ""+py_implementation+"", 'SEC-CH-UA-ARCH': ""+platform.machine()+"", 'SEC-CH-UA-PLATFORM-VERSION': str(__version__), 'SEC-CH-UA-BITNESS': str(PyBitness)}
-geturls_headers_pywwwget_python_alt = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_pywwwget_python_alt, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6", 'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close",
-                                        'SEC-CH-UA': "\""+__project__+"\";v=\""+str(__version__)+"\", \"Not;A=Brand\";v=\"8\", \""+py_implementation+"\";v=\""+str(platform.release())+"\"", 'SEC-CH-UA-FULL-VERSION': str(__version__), 'SEC-CH-UA-PLATFORM': ""+py_implementation+"", 'SEC-CH-UA-ARCH': ""+platform.machine()+"", 'SEC-CH-UA-PLATFORM-VERSION': str(__version__), 'SEC-CH-UA-BITNESS': str(PyBitness)}
-geturls_headers_googlebot_google = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6",
-                                    'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"}
-geturls_headers_googlebot_google_old = {'Referer': "http://google.com/", 'User-Agent': geturls_ua_googlebot_google_old, 'Accept-Encoding': "none", 'Accept-Language': "en-US,en;q=0.8,en-CA,en-GB;q=0.6",
-                                        'Accept-Charset': "ISO-8859-1,ISO-8859-15,utf-8;q=0.7,*;q=0.7", 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 'Connection': "close"}
-
 def fix_header_names(header_dict):
     if(sys.version[0] == "2"):
         header_dict = {k.title(): v for k, v in header_dict.items()}
