@@ -14,7 +14,7 @@
     Copyright 2018-2026 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2026 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 2/6/2026 Ver. 0.28.4 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 2/6/2026 Ver. 0.28.6 RC 1 - Author: cooldude2k $
 '''
 
 import io
@@ -699,12 +699,12 @@ __project__ = __program_name__
 __program_alt_name__ = __program_name__
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile"
 __project_release_url__ = __project_url__+"/releases/latest"
-__version_info__ = (0, 28, 4, "RC 1", 1)
+__version_info__ = (0, 28, 6, "RC 1", 1)
 __version_date_info__ = (2026, 2, 6, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id: 4b086b80d2e6455232a175c7074886caa6d1dff4 $"
+__revision_id__ = "$Id$"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -11907,7 +11907,7 @@ __version_date_info__ = (2026, 1, 23, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0])+"."+str(__version_date_info__[
     1]).zfill(2)+"."+str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id: 4b086b80d2e6455232a175c7074886caa6d1dff4 $"
+__revision_id__ = "$Id: 86db5575fabea76db07bb230f69dc3e8c4505016 $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-"+str(__version_date_info__[4])

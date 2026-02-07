@@ -21,7 +21,7 @@ $info['program_name'] = "PHPCatFile";
 $info['project'] = $info['program_name'];
 $info['project_url'] = "https://github.com/GameMaker2k/PyCatFile";
 $info['version_info'] = [0, 13, 14, "RC 1", 1];
-$info['version_id'] = "$Id: ac60adbd6f9d287e42963f2e1fd71ac8c55e7c99 $";
+$info['version_id'] = "$Id: 05444a19746aab8d388242884cc96836ad34b8a8 $";
 $info['version_date_info'] = [2024, 7, 10, "RC 1", 1];
 $info['version_date'] = $info['version_date_info'][0].".".str_pad($info['version_date_info'][1], 2, "-=", STR_PAD_LEFT).".".str_pad($info['version_date_info'][2], 2, "-=", STR_PAD_LEFT);
 if ($info['version_info'][4] !== null) {
