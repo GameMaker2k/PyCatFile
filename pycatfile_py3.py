@@ -10689,7 +10689,7 @@ def UnPackCatFile(infile, outdir=None, followlink=False, filestart=0, seekstart=
         listarrayfilespre = ArchiveFileToArray(infile, "auto", filestart, seekstart, seekend, False, True, True, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
     if(not listarrayfilespre):
         return False
-    if(not isinstance(infile, list)):
+    if(not isinstance(listarrayfilespre, list)):
         listarrayfilespre = [listarrayfilespre]
     fplist = []
     if os.path.exists(outdir) and os.path.isdir(outdir):
@@ -10925,8 +10925,9 @@ def UnPackCatFile(infile, outdir=None, followlink=False, filestart=0, seekstart=
             if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 6 and hasattr(os, "mkfifo")):
                 os.mkfifo(PrependPath(
                     outdir, listarrayfiles['ffilelist'][lcfi]['fname']), listarrayfiles['ffilelist'][lcfi]['fchmode'])
+            if(returnfp):
+                fplist.append(listarrayfiles['ffilelist'][lcfi]['fp'])
             lcfi = lcfi + 1
-        fplist.append(listarrayfiles['ffilelist']['fp'])
     if(returnfp):
         return fplist
     else:
