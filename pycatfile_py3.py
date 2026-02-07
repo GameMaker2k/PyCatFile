@@ -704,7 +704,7 @@ __version_date_info__ = (2026, 2, 6, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: 4b086b80d2e6455232a175c7074886caa6d1dff4 $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -10682,242 +10682,253 @@ def UnPackCatFile(infile, outdir=None, followlink=False, filestart=0, seekstart=
     if(outdir is not None):
         outdir = RemoveWindowsPath(outdir)
     if(isinstance(infile, dict)):
-        listarrayfiles = infile
+        listarrayfilespre = infile
     else:
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
             infile = RemoveWindowsPath(infile)
-        listarrayfiles = CatFileToArray(infile, "auto", filestart, seekstart, seekend, False, True, True, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
-    if(not listarrayfiles):
+        listarrayfilespre = ArchiveFileToArray(infile, "auto", filestart, seekstart, seekend, False, True, True, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
+    if(not listarrayfilespre):
         return False
-    lenlist = len(listarrayfiles['ffilelist'])
-    fnumfiles = int(listarrayfiles['fnumfiles'])
-    lcfi = 0
-    lcfx = int(listarrayfiles['fnumfiles'])
-    if(lenlist > listarrayfiles['fnumfiles'] or lenlist < listarrayfiles['fnumfiles']):
-        lcfx = int(lenlist)
-    else:
+    if(not isinstance(infile, list)):
+        listarrayfilespre = [listarrayfilespre]
+    fplist = []
+    if os.path.exists(outdir) and os.path.isdir(outdir):
+        pass
+    elif os.path.exists(outdir) and os.path.isdir(outdir):
+        return False
+    elif not os.path.exists(outdir):
+        os.makedirs(outdir)
+    for listarrayfiles in listarrayfilespre:
+        lenlist = len(listarrayfiles['ffilelist'])
+        fnumfiles = int(listarrayfiles['fnumfiles'])
+        lcfi = 0
         lcfx = int(listarrayfiles['fnumfiles'])
-    while(lcfi < lcfx):
-        funame = ""
-        try:
-            import pwd
-            try:
-                userinfo = pwd.getpwuid(
-                    listarrayfiles['ffilelist'][lcfi]['fuid'])
-                funame = userinfo.pw_name
-            except KeyError:
-                funame = ""
-        except ImportError:
+        if(lenlist > listarrayfiles['fnumfiles'] or lenlist < listarrayfiles['fnumfiles']):
+            lcfx = int(lenlist)
+        else:
+            lcfx = int(listarrayfiles['fnumfiles'])
+        while(lcfi < lcfx):
             funame = ""
-        fgname = ""
-        try:
-            import grp
             try:
-                groupinfo = grp.getgrgid(
-                    listarrayfiles['ffilelist'][lcfi]['fgid'])
-                fgname = groupinfo.gr_name
-            except KeyError:
-                fgname = ""
-        except ImportError:
+                import pwd
+                try:
+                    userinfo = pwd.getpwuid(
+                        listarrayfiles['ffilelist'][lcfi]['fuid'])
+                    funame = userinfo.pw_name
+                except KeyError:
+                    funame = ""
+            except ImportError:
+                funame = ""
             fgname = ""
-        if(verbose):
-            VerbosePrintOut(PrependPath(
-                outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
-        if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 0 or listarrayfiles['ffilelist'][lcfi]['ftype'] == 7):
-            with open(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), "wb") as fpc:
-                if(not listarrayfiles['ffilelist'][lcfi]['fcontentasfile']):
-                    listarrayfiles['ffilelist'][lcfi]['fcontents'] = MkTempFile(
-                        listarrayfiles['ffilelist'][lcfi]['fcontents'])
-                listarrayfiles['ffilelist'][lcfi]['fcontents'].seek(0, 0)
-                shutil.copyfileobj(
-                    listarrayfiles['ffilelist'][lcfi]['fcontents'], fpc, length=__filebuff_size__)
+            try:
+                import grp
                 try:
-                    fpc.flush()
-                    if(hasattr(os, "sync")):
-                        os.fsync(fpc.fileno())
-                except (io.UnsupportedOperation, AttributeError, OSError):
-                    pass
-            if(hasattr(os, "chown") and funame == listarrayfiles['ffilelist'][lcfi]['funame'] and fgname == listarrayfiles['ffilelist'][lcfi]['fgname'] and preservepermissions):
-                os.chown(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']),
-                         listarrayfiles['ffilelist'][lcfi]['fuid'], listarrayfiles['ffilelist'][lcfi]['fgid'])
-            if(preservepermissions):
-                os.chmod(PrependPath(
-                    outdir, listarrayfiles['ffilelist'][lcfi]['fname']), listarrayfiles['ffilelist'][lcfi]['fchmode'])
-            if(preservetime):
-                os.utime(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), (
-                    listarrayfiles['ffilelist'][lcfi]['fatime'], listarrayfiles['ffilelist'][lcfi]['fmtime']))
-        if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 1):
-            if(followlink):
-                getflinkpath = listarrayfiles['ffilelist'][lcfi]['flinkname']
-                flinkid = prelistarrayfiles['filetoid'][getflinkpath]
-                flinkinfo = listarrayfiles['ffilelist'][flinkid]
-                funame = ""
-                try:
-                    import pwd
-                    try:
-                        userinfo = pwd.getpwuid(flinkinfo['fuid'])
-                        funame = userinfo.pw_name
-                    except KeyError:
-                        funame = ""
-                except ImportError:
-                    funame = ""
-                fgname = ""
-                try:
-                    import grp
-                    try:
-                        groupinfo = grp.getgrgid(flinkinfo['fgid'])
-                        fgname = groupinfo.gr_name
-                    except KeyError:
-                        fgname = ""
-                except ImportError:
+                    groupinfo = grp.getgrgid(
+                        listarrayfiles['ffilelist'][lcfi]['fgid'])
+                    fgname = groupinfo.gr_name
+                except KeyError:
                     fgname = ""
-                if(flinkinfo['ftype'] == 0 or flinkinfo['ftype'] == 7):
-                    with open(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), "wb") as fpc:
-                        if(not flinkinfo['fcontentasfile']):
-                            flinkinfo['fcontents'] = MkTempFile(
-                                flinkinfo['fcontents'])
-                        flinkinfo['fcontents'].seek(0, 0)
-                        shutil.copyfileobj(flinkinfo['fcontents'], fpc, length=__filebuff_size__)
-                        try:
-                            fpc.flush()
-                            if(hasattr(os, "sync")):
-                                os.fsync(fpc.fileno())
-                        except (io.UnsupportedOperation, AttributeError, OSError):
-                            pass
-                    if(hasattr(os, "chown") and funame == flinkinfo['funame'] and fgname == flinkinfo['fgname'] and preservepermissions):
-                        os.chown(PrependPath(
-                            outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fuid'], flinkinfo['fgid'])
-                    if(preservepermissions):
-                        os.chmod(PrependPath(
-                            outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode'])
-                    if(preservetime):
-                        os.utime(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), (
-                            flinkinfo['fatime'], flinkinfo['fmtime']))
-                if(flinkinfo['ftype'] == 1):
-                    os.link(flinkinfo['flinkname'], PrependPath(
-                        outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
-                if(flinkinfo['ftype'] == 2):
-                    os.symlink(flinkinfo['flinkname'], PrependPath(
-                        outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
-                if(flinkinfo['ftype'] == 5):
-                    if(preservepermissions):
-                        os.mkdir(PrependPath(
-                            outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode'])
-                    else:
-                        os.mkdir(PrependPath(
-                            outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
-                    if(hasattr(os, "chown") and funame == flinkinfo['funame'] and fgname == flinkinfo['fgname'] and preservepermissions):
-                        os.chown(PrependPath(
-                            outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fuid'], flinkinfo['fgid'])
-                    if(preservepermissions):
-                        os.chmod(PrependPath(
-                            outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode'])
-                    if(preservetime):
-                        os.utime(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), (
-                            flinkinfo['fatime'], flinkinfo['fmtime']))
-                if(flinkinfo['ftype'] == 6 and hasattr(os, "mkfifo")):
-                    os.mkfifo(PrependPath(
-                        outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode'])
-            else:
-                os.link(listarrayfiles['ffilelist'][lcfi]['flinkname'], PrependPath(
-                    outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
-        if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 2):
-            if(followlink):
-                getflinkpath = listarrayfiles['ffilelist'][lcfi]['flinkname']
-                flinkid = prelistarrayfiles['filetoid'][getflinkpath]
-                flinkinfo = listarrayfiles['ffilelist'][flinkid]
-                funame = ""
-                try:
-                    import pwd
-                    try:
-                        userinfo = pwd.getpwuid(flinkinfo['fuid'])
-                        funame = userinfo.pw_name
-                    except KeyError:
-                        funame = ""
-                except ImportError:
-                    funame = ""
+            except ImportError:
                 fgname = ""
-                try:
-                    import grp
+            if(verbose):
+                VerbosePrintOut(PrependPath(
+                    outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
+            if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 0 or listarrayfiles['ffilelist'][lcfi]['ftype'] == 7):
+                with open(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), "wb") as fpc:
+                    if(not listarrayfiles['ffilelist'][lcfi]['fcontentasfile']):
+                        listarrayfiles['ffilelist'][lcfi]['fcontents'] = MkTempFile(
+                            listarrayfiles['ffilelist'][lcfi]['fcontents'])
+                    listarrayfiles['ffilelist'][lcfi]['fcontents'].seek(0, 0)
+                    shutil.copyfileobj(
+                        listarrayfiles['ffilelist'][lcfi]['fcontents'], fpc, length=__filebuff_size__)
                     try:
-                        groupinfo = grp.getgrgid(flinkinfo['fgid'])
-                        fgname = groupinfo.gr_name
-                    except KeyError:
-                        fgname = ""
-                except ImportError:
-                    fgname = ""
-                if(flinkinfo['ftype'] == 0 or flinkinfo['ftype'] == 7):
-                    with open(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), "wb") as fpc:
-                        if(not flinkinfo['fcontentasfile']):
-                            flinkinfo['fcontents'] = MkTempFile(
-                                flinkinfo['fcontents'])
-                        flinkinfo['fcontents'].seek(0, 0)
-                        shutil.copyfileobj(flinkinfo['fcontents'], fpc, length=__filebuff_size__)
+                        fpc.flush()
+                        if(hasattr(os, "sync")):
+                            os.fsync(fpc.fileno())
+                    except (io.UnsupportedOperation, AttributeError, OSError):
+                        pass
+                if(hasattr(os, "chown") and funame == listarrayfiles['ffilelist'][lcfi]['funame'] and fgname == listarrayfiles['ffilelist'][lcfi]['fgname'] and preservepermissions):
+                    os.chown(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']),
+                             listarrayfiles['ffilelist'][lcfi]['fuid'], listarrayfiles['ffilelist'][lcfi]['fgid'])
+                if(preservepermissions):
+                    os.chmod(PrependPath(
+                        outdir, listarrayfiles['ffilelist'][lcfi]['fname']), listarrayfiles['ffilelist'][lcfi]['fchmode'])
+                if(preservetime):
+                    os.utime(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), (
+                        listarrayfiles['ffilelist'][lcfi]['fatime'], listarrayfiles['ffilelist'][lcfi]['fmtime']))
+            if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 1):
+                if(followlink):
+                    getflinkpath = listarrayfiles['ffilelist'][lcfi]['flinkname']
+                    flinkid = prelistarrayfiles['filetoid'][getflinkpath]
+                    flinkinfo = listarrayfiles['ffilelist'][flinkid]
+                    funame = ""
+                    try:
+                        import pwd
                         try:
-                            fpc.flush()
-                            if(hasattr(os, "sync")):
-                                os.fsync(fpc.fileno())
-                        except (io.UnsupportedOperation, AttributeError, OSError):
-                            pass
-                    if(hasattr(os, "chown") and funame == flinkinfo['funame'] and fgname == flinkinfo['fgname'] and preservepermissions):
-                        os.chown(PrependPath(
-                            outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fuid'], flinkinfo['fgid'])
-                    if(preservepermissions):
-                        os.chmod(PrependPath(
-                            outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode'])
-                    if(preservetime):
-                        os.utime(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), (
-                            flinkinfo['fatime'], flinkinfo['fmtime']))
-                if(flinkinfo['ftype'] == 1):
-                    os.link(flinkinfo['flinkname'], PrependPath(
-                        outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
-                if(flinkinfo['ftype'] == 2):
-                    os.symlink(flinkinfo['flinkname'], PrependPath(
-                        outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
-                if(flinkinfo['ftype'] == 5):
-                    if(preservepermissions):
-                        os.mkdir(PrependPath(
-                            outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode'])
-                    else:
-                        os.mkdir(PrependPath(
+                            userinfo = pwd.getpwuid(flinkinfo['fuid'])
+                            funame = userinfo.pw_name
+                        except KeyError:
+                            funame = ""
+                    except ImportError:
+                        funame = ""
+                    fgname = ""
+                    try:
+                        import grp
+                        try:
+                            groupinfo = grp.getgrgid(flinkinfo['fgid'])
+                            fgname = groupinfo.gr_name
+                        except KeyError:
+                            fgname = ""
+                    except ImportError:
+                        fgname = ""
+                    if(flinkinfo['ftype'] == 0 or flinkinfo['ftype'] == 7):
+                        with open(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), "wb") as fpc:
+                            if(not flinkinfo['fcontentasfile']):
+                                flinkinfo['fcontents'] = MkTempFile(
+                                    flinkinfo['fcontents'])
+                            flinkinfo['fcontents'].seek(0, 0)
+                            shutil.copyfileobj(flinkinfo['fcontents'], fpc, length=__filebuff_size__)
+                            try:
+                                fpc.flush()
+                                if(hasattr(os, "sync")):
+                                    os.fsync(fpc.fileno())
+                            except (io.UnsupportedOperation, AttributeError, OSError):
+                                pass
+                        if(hasattr(os, "chown") and funame == flinkinfo['funame'] and fgname == flinkinfo['fgname'] and preservepermissions):
+                            os.chown(PrependPath(
+                                outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fuid'], flinkinfo['fgid'])
+                        if(preservepermissions):
+                            os.chmod(PrependPath(
+                                outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode'])
+                        if(preservetime):
+                            os.utime(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), (
+                                flinkinfo['fatime'], flinkinfo['fmtime']))
+                    if(flinkinfo['ftype'] == 1):
+                        os.link(flinkinfo['flinkname'], PrependPath(
                             outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
-                    if(hasattr(os, "chown") and funame == flinkinfo['funame'] and fgname == flinkinfo['fgname'] and preservepermissions):
-                        os.chown(PrependPath(
-                            outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fuid'], flinkinfo['fgid'])
-                    if(preservepermissions):
-                        os.chmod(PrependPath(
+                    if(flinkinfo['ftype'] == 2):
+                        os.symlink(flinkinfo['flinkname'], PrependPath(
+                            outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
+                    if(flinkinfo['ftype'] == 5):
+                        if(preservepermissions):
+                            os.mkdir(PrependPath(
+                                outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode'])
+                        else:
+                            os.mkdir(PrependPath(
+                                outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
+                        if(hasattr(os, "chown") and funame == flinkinfo['funame'] and fgname == flinkinfo['fgname'] and preservepermissions):
+                            os.chown(PrependPath(
+                                outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fuid'], flinkinfo['fgid'])
+                        if(preservepermissions):
+                            os.chmod(PrependPath(
+                                outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode'])
+                        if(preservetime):
+                            os.utime(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), (
+                                flinkinfo['fatime'], flinkinfo['fmtime']))
+                    if(flinkinfo['ftype'] == 6 and hasattr(os, "mkfifo")):
+                        os.mkfifo(PrependPath(
                             outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode'])
-                    if(preservetime):
-                        os.utime(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), (
-                            flinkinfo['fatime'], flinkinfo['fmtime']))
-                if(flinkinfo['ftype'] == 6 and hasattr(os, "mkfifo")):
-                    os.mkfifo(PrependPath(
-                        outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode'])
-            else:
-                os.symlink(listarrayfiles['ffilelist'][lcfi]['flinkname'], PrependPath(
-                    outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
-        if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 5):
-            if(preservepermissions):
-                os.mkdir(PrependPath(
+                else:
+                    os.link(listarrayfiles['ffilelist'][lcfi]['flinkname'], PrependPath(
+                        outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
+            if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 2):
+                if(followlink):
+                    getflinkpath = listarrayfiles['ffilelist'][lcfi]['flinkname']
+                    flinkid = prelistarrayfiles['filetoid'][getflinkpath]
+                    flinkinfo = listarrayfiles['ffilelist'][flinkid]
+                    funame = ""
+                    try:
+                        import pwd
+                        try:
+                            userinfo = pwd.getpwuid(flinkinfo['fuid'])
+                            funame = userinfo.pw_name
+                        except KeyError:
+                            funame = ""
+                    except ImportError:
+                        funame = ""
+                    fgname = ""
+                    try:
+                        import grp
+                        try:
+                            groupinfo = grp.getgrgid(flinkinfo['fgid'])
+                            fgname = groupinfo.gr_name
+                        except KeyError:
+                            fgname = ""
+                    except ImportError:
+                        fgname = ""
+                    if(flinkinfo['ftype'] == 0 or flinkinfo['ftype'] == 7):
+                        with open(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), "wb") as fpc:
+                            if(not flinkinfo['fcontentasfile']):
+                                flinkinfo['fcontents'] = MkTempFile(
+                                    flinkinfo['fcontents'])
+                            flinkinfo['fcontents'].seek(0, 0)
+                            shutil.copyfileobj(flinkinfo['fcontents'], fpc, length=__filebuff_size__)
+                            try:
+                                fpc.flush()
+                                if(hasattr(os, "sync")):
+                                    os.fsync(fpc.fileno())
+                            except (io.UnsupportedOperation, AttributeError, OSError):
+                                pass
+                        if(hasattr(os, "chown") and funame == flinkinfo['funame'] and fgname == flinkinfo['fgname'] and preservepermissions):
+                            os.chown(PrependPath(
+                                outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fuid'], flinkinfo['fgid'])
+                        if(preservepermissions):
+                            os.chmod(PrependPath(
+                                outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode'])
+                        if(preservetime):
+                            os.utime(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), (
+                                flinkinfo['fatime'], flinkinfo['fmtime']))
+                    if(flinkinfo['ftype'] == 1):
+                        os.link(flinkinfo['flinkname'], PrependPath(
+                            outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
+                    if(flinkinfo['ftype'] == 2):
+                        os.symlink(flinkinfo['flinkname'], PrependPath(
+                            outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
+                    if(flinkinfo['ftype'] == 5):
+                        if(preservepermissions):
+                            os.mkdir(PrependPath(
+                                outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode'])
+                        else:
+                            os.mkdir(PrependPath(
+                                outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
+                        if(hasattr(os, "chown") and funame == flinkinfo['funame'] and fgname == flinkinfo['fgname'] and preservepermissions):
+                            os.chown(PrependPath(
+                                outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fuid'], flinkinfo['fgid'])
+                        if(preservepermissions):
+                            os.chmod(PrependPath(
+                                outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode'])
+                        if(preservetime):
+                            os.utime(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), (
+                                flinkinfo['fatime'], flinkinfo['fmtime']))
+                    if(flinkinfo['ftype'] == 6 and hasattr(os, "mkfifo")):
+                        os.mkfifo(PrependPath(
+                            outdir, listarrayfiles['ffilelist'][lcfi]['fname']), flinkinfo['fchmode'])
+                else:
+                    os.symlink(listarrayfiles['ffilelist'][lcfi]['flinkname'], PrependPath(
+                        outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
+            if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 5):
+                if(preservepermissions):
+                    os.mkdir(PrependPath(
+                        outdir, listarrayfiles['ffilelist'][lcfi]['fname']), listarrayfiles['ffilelist'][lcfi]['fchmode'])
+                else:
+                    os.mkdir(PrependPath(
+                        outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
+                if(hasattr(os, "chown") and funame == listarrayfiles['ffilelist'][lcfi]['funame'] and fgname == listarrayfiles['ffilelist'][lcfi]['fgname'] and preservepermissions):
+                    os.chown(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']),
+                             listarrayfiles['ffilelist'][lcfi]['fuid'], listarrayfiles['ffilelist'][lcfi]['fgid'])
+                if(preservepermissions):
+                    os.chmod(PrependPath(
+                        outdir, listarrayfiles['ffilelist'][lcfi]['fname']), listarrayfiles['ffilelist'][lcfi]['fchmode'])
+                if(preservetime):
+                    os.utime(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), (
+                        listarrayfiles['ffilelist'][lcfi]['fatime'], listarrayfiles['ffilelist'][lcfi]['fmtime']))
+            if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 6 and hasattr(os, "mkfifo")):
+                os.mkfifo(PrependPath(
                     outdir, listarrayfiles['ffilelist'][lcfi]['fname']), listarrayfiles['ffilelist'][lcfi]['fchmode'])
-            else:
-                os.mkdir(PrependPath(
-                    outdir, listarrayfiles['ffilelist'][lcfi]['fname']))
-            if(hasattr(os, "chown") and funame == listarrayfiles['ffilelist'][lcfi]['funame'] and fgname == listarrayfiles['ffilelist'][lcfi]['fgname'] and preservepermissions):
-                os.chown(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']),
-                         listarrayfiles['ffilelist'][lcfi]['fuid'], listarrayfiles['ffilelist'][lcfi]['fgid'])
-            if(preservepermissions):
-                os.chmod(PrependPath(
-                    outdir, listarrayfiles['ffilelist'][lcfi]['fname']), listarrayfiles['ffilelist'][lcfi]['fchmode'])
-            if(preservetime):
-                os.utime(PrependPath(outdir, listarrayfiles['ffilelist'][lcfi]['fname']), (
-                    listarrayfiles['ffilelist'][lcfi]['fatime'], listarrayfiles['ffilelist'][lcfi]['fmtime']))
-        if(listarrayfiles['ffilelist'][lcfi]['ftype'] == 6 and hasattr(os, "mkfifo")):
-            os.mkfifo(PrependPath(
-                outdir, listarrayfiles['ffilelist'][lcfi]['fname']), listarrayfiles['ffilelist'][lcfi]['fchmode'])
-        lcfi = lcfi + 1
+            lcfi = lcfi + 1
+        fplist.append(listarrayfiles['ffilelist']['fp'])
     if(returnfp):
-        return listarrayfiles['ffilelist']['fp']
+        return fplist
     else:
         return True
 
@@ -11895,7 +11906,7 @@ __version_date_info__ = (2026, 1, 23, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0])+"."+str(__version_date_info__[
     1]).zfill(2)+"."+str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id: 44284b419c4591f57c39783a1a35eb5ba671ea1f $"
+__revision_id__ = "$Id: 4b086b80d2e6455232a175c7074886caa6d1dff4 $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-"+str(__version_date_info__[4])

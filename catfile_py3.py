@@ -378,10 +378,11 @@ def main(argv: Optional[list[str]] = None) -> int:
             0,
             getargs.skipchecksum,
             fnamedict,
-            getargs.verbose,
+            getargs.insecretkey,
             getargs.preserve,
             getargs.preserve,
             False,
+            getargs.verbose,
             False,
         )
 
