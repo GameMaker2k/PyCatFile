@@ -5540,8 +5540,12 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
         il = 0
         while(il < seekstart):
             prefhstart = fp.tell()
-            preheaderdata = ReadFileHeaderDataBySize(
-                fp, formatspecs['format_delimiter'])
+            if(__use_new_style__):
+                preheaderdata = ReadFileHeaderDataBySize(
+                    fp, formatspecs['format_delimiter'])
+            else:
+                preheaderdata = ReadFileHeaderDataWoSize(
+                    fp, formatspecs['format_delimiter'])
             if(len(preheaderdata) == 0):
                 break
             prefsize = int(preheaderdata[5], 16)
