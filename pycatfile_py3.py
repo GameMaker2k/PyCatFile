@@ -704,7 +704,7 @@ __version_date_info__ = (2026, 2, 8, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
-__revision_id__ = "$Id$"
+__revision_id__ = "$Id: e5053bbb998bf08c74b4ef8d0b51753e1cc158da $"
 if(__version_info__[4] is not None):
     __version_date_plusrc__ = __version_date__ + \
         "-" + str(__version_date_info__[4])
@@ -3177,29 +3177,40 @@ def gzip_decompress_bytes_all_members(blob):
     return _gzip_decompress_multimember(bytes(blob))
 
 def TarFileCheck(infile):
+    tar = None
+    pos = None
     try:
-        if is_tarfile(infile):
-            return True
+        if hasattr(infile, "read"):
+            # Only do this if the file object is seekable
+            pos = infile.tell()
+            tar = tarfile.open(fileobj=infile, mode="r:")
         else:
-            pass
-    except TypeError:
-        try:
-            # Check if the input is a file object
-            if hasattr(infile, "read"):
-                # Save the current file position
-                current_position = infile.tell()
-                # Attempt to open the file object as a tar file
-                with tarfile.open(fileobj=infile) as tar:
-                    pass
-                # Restore the file position
-                infile.seek(current_position)
-            else:
-                # Assume it's a filename and attempt to open it as a tar file
-                with tarfile.open(name=infile) as tar:
-                    pass
-            return True
-        except (tarfile.TarError, AttributeError, IOError):
+            tar = tarfile.open(infile, mode="r:")
+
+        member = tar.next()
+        if member is None:
             return False
+
+        if not member.name or "\x00" in member.name:
+            return False
+
+        # if not member.name.isprintable():
+        #     return False
+
+        return True
+
+    except (tarfile.TarError, AttributeError, OSError, IOError):
+        return False
+    finally:
+        try:
+            if tar is not None:
+                tar.close()
+        finally:
+            try:
+                if pos is not None and hasattr(infile, "seek"):
+                    infile.seek(pos)
+            except Exception:
+                return False
 
 
 def ZipFileCheck(infile):
@@ -8594,12 +8605,6 @@ def UncompressFileAlt(fp, formatspecs=__file_format_multi_dict__, filestart=0,
         src = getattr(fp, "_fp", fp)
     else:
         src = fp
-
-    # Probe at filestart using RAW handle
-    try:
-        src.seek(filestart, 0)
-    except Exception:
-        pass
 
     kind = CheckCompressionType(src, formatspecs, filestart, False)
     # Optional canonicalization so names match your compressionsupport entries
