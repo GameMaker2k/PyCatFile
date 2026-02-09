@@ -3442,9 +3442,9 @@ def GetHeaderChecksum(inlist=None, checksumtype="md5", encodedata=True, formatsp
     saltkeyval = None
     if(hasattr(saltkey, "read")):
         saltkeyval = skfp.read()
-        if(not isinstance(saltkeyval, bytes) and sys.version_info[0] >= 3):
+        if(not isinstance(saltkeyval, bytes)):
             saltkeyval = saltkeyval.encode("UTF-8")
-    elif(isinstance(saltkey, bytes) and sys.version_info[0] >= 3):
+    elif(isinstance(saltkey, bytes)):
         saltkeyval = saltkey
     elif(saltkey is not None and os.path.exists(saltkey)):
         with open(saltkey, "rb") as skfp:
@@ -3473,9 +3473,9 @@ def GetFileChecksum(inbytes, checksumtype="md5", encodedata=True, formatspecs=__
     saltkeyval = None
     if(hasattr(saltkey, "read")):
         saltkeyval = skfp.read()
-        if(not isinstance(saltkeyval, bytes) and sys.version_info[0] >= 3):
+        if(not isinstance(saltkeyval, bytes)):
             saltkeyval = saltkeyval.encode("UTF-8")
-    elif(isinstance(saltkey, bytes) and sys.version_info[0] >= 3):
+    elif(isinstance(saltkey, bytes)):
         saltkeyval = saltkey
     elif(saltkey is not None and os.path.exists(saltkey)):
         with open(saltkey, "rb") as skfp:
@@ -5182,7 +5182,7 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=
         outfsize = fp.tell()
         fp.seek(filestart, 0)
         currentfilepos = fp.tell()
-    elif(isinstance(infile, bytes) and sys.version_info[0] >= 3):
+    elif(isinstance(infile, bytes)):
         fp = MkTempFile()
         fp.write(infile)
         try:
@@ -5319,7 +5319,7 @@ def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0
         outfsize = fp.tell()
         fp.seek(filestart, 0)
         currentfilepos = fp.tell()
-    elif(isinstance(infile, bytes) and sys.version_info[0] >= 3):
+    elif(isinstance(infile, bytes)):
         fp = MkTempFile()
         fp.write(infile)
         try:
@@ -8499,10 +8499,7 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, file
     else:
         try:
             if(compresscheck == "gzip" and compresscheck in compressionsupport):
-                if sys.version_info[0] == 2:
-                    fp = GzipFile(infile, mode="rb")
-                else:
-                    fp = gzip.GzipFile(infile, "rb")
+                fp = gzip.GzipFile(infile, "rb")
             elif(compresscheck == "bzip2" and compresscheck in compressionsupport):
                 fp = bz2.BZ2File(infile, "rb")
             elif(compresscheck == "lz4" and compresscheck in compressionsupport):
@@ -8683,15 +8680,10 @@ def UncompressFile(infile, formatspecs=__file_format_multi_dict__, mode="rb",
     if IsNestedDict(formatspecs) and compresscheck in formatspecs:
         formatspecs = formatspecs[compresscheck]
 
-    # Python 2 text-mode fixups if needed (though you're bytes-only)
-    if sys.version_info[0] == 2 and compresscheck:
-        if mode == "rt": mode = "r"
-        elif mode == "wt": mode = "w"
-
     try:
         # Compressed branches
         if (compresscheck == "gzip" and "gzip" in compressionsupport):
-            fp = GzipFile(infile, mode=mode) if sys.version_info[0] == 2 else gzip.open(infile, mode)
+            fp = gzip.open(infile, mode)
         elif (compresscheck == "bzip2" and "bzip2" in compressionsupport):
             fp = bz2.open(infile, mode)
         elif (compresscheck == "zstd" and "zstandard" in compressionsupport):
@@ -9692,7 +9684,7 @@ def CatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_form
         if(not fp):
             return False
         fp.seek(filestart, 0)
-    elif(isinstance(infile, bytes) and sys.version_info[0] >= 3):
+    elif(isinstance(infile, bytes)):
         fp = MkTempFile()
         fp.write(infile)
         fp.seek(filestart, 0)
@@ -9827,7 +9819,7 @@ def CatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_form
                 VerbosePrintOut(infile.name)
             except AttributeError:
                 pass
-        elif(sys.version_info[0] >= 3 and isinstance(infile, bytes)):
+        elif(isinstance(infile, bytes)):
             pass
         else:
             VerbosePrintOut(infile)
@@ -10688,7 +10680,7 @@ def UnPackCatFile(infile, outdir=None, followlink=False, filestart=0, seekstart=
     if(isinstance(infile, dict)):
         listarrayfilespre = infile
     else:
-        if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
+        if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not isinstance(infile, bytes)):
             infile = RemoveWindowsPath(infile)
         listarrayfilespre = ArchiveFileToArray(infile, "auto", filestart, seekstart, seekend, False, True, True, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
     if(not listarrayfilespre):
@@ -10964,7 +10956,7 @@ def CatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0
     if(isinstance(infile, list)):
         listarrayfileslist = infile
     else:
-        if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not (sys.version_info[0] >= 3 and isinstance(infile, bytes))):
+        if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not isinstance(infile, bytes)):
             infile = RemoveWindowsPath(infile)
         listarrayfileslist = CatFileToArray(infile, fmttype, filestart, seekstart, seekend, True, False, False, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
     if(not listarrayfileslist):
