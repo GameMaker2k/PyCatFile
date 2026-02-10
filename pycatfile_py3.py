@@ -3210,8 +3210,7 @@ def TarFileCheck(infile):
                 if pos is not None and hasattr(infile, "seek"):
                     infile.seek(pos)
             except Exception:
-                return False
-
+                pass
 
 def ZipFileCheck(infile):
     try:
