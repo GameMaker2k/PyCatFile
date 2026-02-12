@@ -3183,9 +3183,9 @@ def TarFileCheck(infile):
         if hasattr(infile, "read"):
             # Only do this if the file object is seekable
             pos = infile.tell()
-            tar = tarfile.open(fileobj=infile, mode="r:")
+            tar = tarfile.open(fileobj=infile, mode="r")
         else:
-            tar = tarfile.open(infile, mode="r:")
+            tar = tarfile.open(infile, mode="r")
 
         member = tar.next()
         if member is None:
@@ -3199,7 +3199,7 @@ def TarFileCheck(infile):
 
         return True
 
-    except (tarfile.TarError, AttributeError, OSError, IOError):
+    except (tarfile.TarError, tarfile.ReadError, AttributeError, OSError, IOError):
         return False
     finally:
         try:
