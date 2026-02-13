@@ -9479,7 +9479,7 @@ def UncompressString(infile, formatspecs=__file_format_multi_dict__, filestart=0
     elif(compresscheck == "bzip2" and compresscheck in compressionsupport):
         fileuz = BzipDecompressData(infile)
     elif(compresscheck == "zstd" and compresscheck in compressionsupport):
-        decompressor = zstandard.ZstdDecompressor()
+        decompressor = zstd.ZstdDecompressor()
         fileuz = decompressor.decompress(infile)
     elif(compresscheck == "lz4" and compresscheck in compressionsupport):
         fileuz = lz4.frame.decompress(infile)
@@ -9529,7 +9529,7 @@ def UncompressBytes(infile, formatspecs=__file_format_multi_dict__, filestart=0)
     elif(compresscheck == "bzip2" and compresscheck in compressionsupport):
         fileuz = BzipDecompressData(infile)
     elif(compresscheck == "zstd" and compresscheck in compressionsupport):
-        decompressor = zstandard.ZstdDecompressor()
+        decompressor = zstd.ZstdDecompressor()
         fileuz = decompressor.decompress(infile)
     elif(compresscheck == "lz4" and compresscheck in compressionsupport):
         fileuz = lz4.frame.decompress(infile)
@@ -10107,7 +10107,7 @@ def CompressOpenFileAlt(fp, compression="auto", compressionlevel=None,
         elif compression == "zstd" and "zstandard" in compressionsupport:
             bytesfp = MkTempFile()
             level = _lvl(compressionlevel)
-            compressor = zstandard.ZstdCompressor(level, threads=get_default_threads())
+            compressor = zstd.ZstdCompressor(level)
             bytesfp.write(compressor.compress(fp.read()))
         elif compression == "lzma" and "lzma" in compressionsupport:
             bytesfp = MkTempFile()
