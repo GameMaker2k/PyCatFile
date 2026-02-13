@@ -10107,8 +10107,9 @@ def CompressOpenFileAlt(fp, compression="auto", compressionlevel=None,
         elif compression == "zstd" and "zstandard" in compressionsupport:
             bytesfp = MkTempFile()
             level = _lvl(compressionlevel)
-            compressor = zstd.ZstdCompressor(level)
+            compressor = zstd.ZstdCompressor(level=level)
             bytesfp.write(compressor.compress(fp.read()))
+            bytesfp.write(compressor.flush())
         elif compression == "lzma" and "lzma" in compressionsupport:
             bytesfp = MkTempFile()
             level = _lvl(compressionlevel)
