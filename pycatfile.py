@@ -9188,7 +9188,7 @@ def CheckCompressionType(infile, formatspecs=__file_format_multi_dict__, filesta
 def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, filestart=0, closefp=True):
     compresscheck = CheckCompressionType(infile, formatspecs, filestart, False)
     curloc = filestart
-    if(not compresscheck and not hasattr(infile, "read")):
+    if(not compresscheck and isinstance(infile, (str, bytes, os.PathLike))):
         fextname = os.path.splitext(infile)[1]
         if(fextname == ".gz"):
             compresscheck = "gzip"
@@ -9233,34 +9233,52 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, file
         return "rarfile"
     elif(py7zr_support and compresscheck == "7zipfile" and py7zr.is_7zfile(infile)):
         return "7zipfile"
-    if(hasattr(infile, "read") or hasattr(infile, "write")):
-        fp = UncompressFileAlt(infile, formatspecs, filestart)
+    precfp = None
+    if(hasattr(infile, "read") or hasattr(infile, "write") and compresscheck in compressionsupport):
+        fp = UncompressFileAlt(infile, formatspecs, filestart, reuse_adapter=False)
+        curloc = fp.tell()
+    elif(hasattr(infile, "read") or hasattr(infile, "write") and compresscheck not in compressionsupport):
+        fp = infile
     else:
         try:
             if(compresscheck == "gzip" and compresscheck in compressionsupport):
-                if sys.version_info[0] == 2:
-                    fp = GzipFile(infile, mode="rb")
-                else:
-                    fp = gzip.GzipFile(infile, "rb")
+                precfp = open(infile, "rb")
+                precfp.seek(filestart, 0)
+                fp = gzip.GzipFile(fileobj=precfp, mode="rb")
+                curloc = fp.tell()
             elif(compresscheck == "bzip2" and compresscheck in compressionsupport):
-                fp = bz2.BZ2File(infile, "rb")
+                precfp = open(infile, "rb")
+                precfp.seek(filestart, 0)
+                fp = bz2.BZ2File(precfp, "rb")
+                curloc = fp.tell()
             elif(compresscheck == "lz4" and compresscheck in compressionsupport):
-                fp = lz4.frame.open(infile, "rb")
+                precfp = open(infile, "rb")
+                precfp.seek(filestart, 0)
+                fp = lz4.frame.open(precfp, "rb")
+                curloc = fp.tell()
             elif(compresscheck == "zstd" and compresscheck in compressionsupport):
+                precfp = open(infile, "rb")
+                precfp.seek(filestart, 0)
                 if 'zstd' in compressionsupport:
-                    fp = zstd.ZstdFile(infile, mode="rb")
+                    fp = zstd.ZstdFile(precfp, mode="rb")
+                    curloc = fp.tell()
                 else:
                     return Flase
             elif((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
-                fp = lzma.open(infile, "rb")
+                precfp = open(infile, "rb")
+                precfp.seek(filestart, 0)
+                fp = lzma.open(precfp, "rb")
+                curloc = fp.tell()
             elif(compresscheck == "zlib" and compresscheck in compressionsupport):
                 fp = ZlibFile(infile, mode="rb")
+                fp.seek(filestart, 0)
+                curloc = fp.tell()
             else:
                 fp = open(infile, "rb")
         except FileNotFoundError:
             return False
     filetype = False
-    fp.seek(filestart, 0)
+    fp.seek(curloc, 0)
     prefp = fp.read(5)
     if(prefp == binascii.unhexlify("7573746172")):
         filetype = "tarfile"
@@ -9289,9 +9307,9 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, file
             formdelszie = len(formatspecs['format_delimiter'])
             formdel = fp.read(formdelszie).decode("UTF-8")
             if(formstring != inheaderver):
-                return False
+                pass
             if(formdel != formatspecs['format_delimiter']):
-                return False
+                pass
             filetype = formatspecs['format_magic']
     else:
         pass
@@ -9300,6 +9318,8 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, file
     if(prefp == binascii.unhexlify("7061785f676c6f62616c")):
         filetype = "tarfile"
     fp.seek(curloc, 0)
+    if(hasattr(precfp, "read") or hasattr(precfp, "write")):
+        precfp.close()
     if(closefp):
         fp.close()
     return filetype
