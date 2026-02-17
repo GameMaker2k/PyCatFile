@@ -3171,6 +3171,354 @@ def GetTotalSize(file_list):
                 PY_STDERR_TEXT.write("Error accessing file {}: {}\n".format(item, e))
     return total_size
 
+def MajorMinorToDev(major, minor):
+    """
+    Converts major and minor numbers to a device number.
+    Compatible with Python 2 and 3.
+    """
+    return (major << 8) | minor
+
+def DevToMajorMinor(dev):
+    """
+    Extracts major and minor numbers from a device number.
+    Compatible with Python 2 and 3.
+    """
+    major = (dev >> 8) & 0xFF
+    minor = dev & 0xFF
+    return major, minor
+
+
+def GetDataFromArray(data, path, default=None):
+    element = data
+    try:
+        for key in path:
+            element = element[key]
+        return element
+    except (KeyError, TypeError, IndexError):
+        return default
+
+
+def GetDataFromArrayAlt(structure, path, default=None):
+    element = structure
+    for key in path:
+        if isinstance(element, dict) and key in element:
+            element = element[key]
+        elif isinstance(element, list) and isinstance(key, int) and -len(element) <= key < len(element):
+            element = element[key]
+        else:
+            return default
+    return element
+
+# ========= pushback-aware delimiter reader =========
+class _DelimiterReader:
+    """
+    Chunked reader that consumes up to N occurrences of a byte delimiter.
+    - Works with non-seekable streams by stashing over-read bytes on fp._read_until_delim_pushback
+    - For seekable streams, rewinds over-read via seek(-n, SEEK_CUR)
+    """
+    _PB_ATTR = "_read_until_delim_pushback"
+
+    def __init__(self, fp, delimiter, chunk_size=8192, max_read=64 * 1024 * 1024):
+        if not hasattr(fp, "read"):
+            raise ValueError("fp must be a readable file-like object")
+
+        # normalize delimiter -> bytes
+        if delimiter is None:
+            delimiter = "\0"
+        if isinstance(delimiter, str):
+            delimiter_b = delimiter.encode("utf-8")
+        else:
+            delimiter_b = bytes(delimiter)
+        if not delimiter_b:
+            raise ValueError("delimiter must not be empty")
+
+        self.fp = fp
+        self.delim = delimiter_b
+        self.dlen = len(delimiter_b)
+        self.chunk = int(chunk_size)
+        self.max_read = int(max_read)
+
+        self._buf = bytearray()
+        self._total = 0
+
+        # detect seekability (best-effort)
+        seekable = getattr(fp, "seekable", None)
+        if callable(seekable):
+            self._seekable = bool(seekable())
+        else:
+            self._seekable = hasattr(fp, "seek") and hasattr(fp, "tell")
+
+        # Preload any pushback from previous reads on this fp
+        pb = getattr(fp, self._PB_ATTR, None)
+        if pb:
+            self._buf.extend(pb)
+            setattr(fp, self._PB_ATTR, bytearray())  # consume
+
+    def _read_more(self):
+        data = self.fp.read(self.chunk)
+        if not data:
+            return False
+        if not isinstance(data, (bytes, bytearray, memoryview)):
+            raise TypeError("fp.read() must return bytes-like")
+        if isinstance(data, memoryview):
+            data = data.tobytes()
+        self._buf.extend(data)
+        self._total += len(data)
+        if self._total > self.max_read:
+            raise ValueError("Maximum read limit reached without finding the delimiter")
+        return True
+
+    def _pushback(self, over_bytes):
+        """Return extra bytes to the stream (seek back) or stash on the fp."""
+        if not over_bytes:
+            return
+        if self._seekable:
+            try:
+                self.fp.seek(-len(over_bytes), io.SEEK_CUR)
+                return
+            except Exception:
+                pass
+        # Non-seekable: stash for next call on this fp
+        pb = getattr(self.fp, self._PB_ATTR, None)
+        if pb is None:
+            setattr(self.fp, self._PB_ATTR, bytearray(over_bytes))
+        else:
+            pb.extend(over_bytes)
+
+    def read_one_piece(self):
+        """
+        Read bytes up to (but not including) the next delimiter.
+        Returns (piece_bytes, found_delimiter_bool).
+        """
+        out = bytearray()
+        while True:
+            idx = self._buf.find(self.delim)
+            if idx != -1:
+                out.extend(self._buf[:idx])
+                over = self._buf[idx + self.dlen:]
+                self._buf[:] = b""
+                self._pushback(over)
+                return bytes(out), True
+
+            # No delimiter present: emit buffer and read more
+            if self._buf:
+                out.extend(self._buf)
+                self._buf[:] = b""
+
+            if not self._read_more():
+                # EOF: return whatever we have (possibly empty), no delimiter
+                return bytes(out), False
+
+    def read_n_pieces(self, n, pad_to_n=False):
+        """
+        Read up to n pieces (n delimiters). Returns list of bytes; len <= n.
+        If pad_to_n=True, pads with b"" until length == n (avoids downstream IndexError).
+        """
+        n = int(n)
+        parts = []
+        while len(parts) < n:
+            piece, found = self.read_one_piece()
+            if not found and piece == b"":
+                break  # true EOF with nothing more
+            parts.append(piece)
+            if not found:
+                break  # EOF after a final unterminated piece
+        if pad_to_n and len(parts) < n:
+            parts.extend([b""] * (n - len(parts)))
+        return parts
+
+
+# ========= helpers =========
+def _default_delim(delimiter):
+    # Try your global spec if present; else default to NUL
+    try:
+        if delimiter is None:
+            delimiter = __file_format_dict__["format_delimiter"]
+    except Exception:
+        pass
+    return delimiter if delimiter is not None else "\0"
+
+
+def _decode_text(b, errors):
+    return b.decode("utf-8", errors=errors)
+
+
+def _read_exact(fp, n):
+    """Read exactly n bytes or raise EOFError on premature EOF."""
+    want = int(n)
+    out = bytearray()
+    while len(out) < want:
+        chunk = fp.read(want - len(out))
+        if not chunk:
+            raise EOFError("Unexpected EOF: wanted {} more bytes".format(want - len(out)))
+        if isinstance(chunk, memoryview):
+            chunk = chunk.tobytes()
+        out.extend(chunk)
+    return bytes(out)
+
+
+def _expect_delimiter(fp, delimiter):
+    """Read exactly len(delimiter) bytes and require an exact match (no seeking)."""
+    delim = _default_delim(delimiter)
+    if isinstance(delim, str):
+        delim_b = delim.encode("utf-8")
+    else:
+        delim_b = bytes(delim)
+    got = _read_exact(fp, len(delim_b))
+    if got != delim_b:
+        raise ValueError("Delimiter mismatch: expected {!r}, got {!r}".format(delim_b, got))
+
+
+# ========= unified public API (bytes/text control) =========
+def read_until_delimiter(
+    fp,
+    delimiter=b"\0",
+    max_read=None,
+    chunk_size=None,
+    decode=True,
+    errors=None,
+):
+    """
+    Read until the first occurrence of 'delimiter'. Strips the delimiter.
+    - Returns text (UTF-8) when decode=True; bytes when decode=False.
+    - Non-seekable streams are supported via pushback on the file object.
+    """
+    if max_read is None:
+        max_read = 64 * 1024 * 1024
+    if chunk_size is None:
+        chunk_size = 8192
+    if errors is None:
+        errors = "strict"
+
+    r = _DelimiterReader(
+        fp,
+        delimiter=_default_delim(delimiter),
+        chunk_size=chunk_size,
+        max_read=max_read,
+    )
+    piece, _found = r.read_one_piece()
+    return _decode_text(piece, errors) if decode else piece
+
+
+def read_until_n_delimiters(
+    fp,
+    delimiter=b"\0",
+    num_delimiters=1,
+    max_read=None,
+    chunk_size=None,
+    decode=True,
+    errors=None,
+    pad_to_n=False,
+):
+    """
+    Read up to 'num_delimiters' occurrences. Returns list of pieces (len <= N).
+    If pad_to_n=True, pads with empty pieces to length N (useful for rigid parsers).
+    """
+    if max_read is None:
+        max_read = 64 * 1024 * 1024
+    if chunk_size is None:
+        chunk_size = 8192
+    if errors is None:
+        errors = "strict"
+
+    r = _DelimiterReader(
+        fp,
+        delimiter=_default_delim(delimiter),
+        chunk_size=chunk_size,
+        max_read=max_read,
+    )
+    parts = r.read_n_pieces(num_delimiters, pad_to_n=pad_to_n)
+    if decode:
+        return [_decode_text(p, errors) for p in parts]
+    return parts
+
+
+# ========= back-compat wrappers (your original names) =========
+def ReadTillNullByteOld(fp, delimiter=_default_delim(None)):
+    # emulate byte-by-byte via chunk_size=1; decode with 'replace' like your Alt
+    return read_until_delimiter(
+        fp,
+        delimiter,
+        max_read=64 * 1024 * 1024,
+        chunk_size=1,
+        decode=True,
+        errors="replace",
+    )
+
+
+def ReadUntilNullByteOld(fp, delimiter=_default_delim(None)):
+    return ReadTillNullByteOld(fp, delimiter)
+
+
+def ReadTillNullByteAlt(fp, delimiter=_default_delim(None), chunk_size=1024, max_read=64 * 1024 * 1024):
+    return read_until_delimiter(
+        fp,
+        delimiter,
+        max_read=max_read,
+        chunk_size=chunk_size,
+        decode=True,
+        errors="replace",
+    )
+
+
+def ReadUntilNullByteAlt(fp, delimiter=_default_delim(None), chunk_size=1024, max_read=64 * 1024 * 1024):
+    return ReadTillNullByteAlt(fp, delimiter, chunk_size, max_read)
+
+
+def ReadTillNullByte(fp, delimiter=_default_delim(None), max_read=64 * 1024 * 1024):
+    return read_until_delimiter(
+        fp,
+        delimiter,
+        max_read=max_read,
+        chunk_size=8192,
+        decode=True,
+        errors="strict",
+    )
+
+
+def ReadUntilNullByte(fp, delimiter=_default_delim(None), max_read=64 * 1024 * 1024):
+    return ReadTillNullByte(fp, delimiter, max_read)
+
+
+def ReadTillNullByteByNum(
+    fp,
+    delimiter=_default_delim(None),
+    num_delimiters=1,
+    chunk_size=1024,
+    max_read=64 * 1024 * 1024,
+):
+    # Return list of text parts; **pad to N** to avoid IndexError in rigid parsers
+    return read_until_n_delimiters(
+        fp,
+        delimiter,
+        num_delimiters,
+        max_read=max_read,
+        chunk_size=chunk_size,
+        decode=True,
+        errors="replace",
+        pad_to_n=True,
+    )
+
+
+def ReadUntilNullByteByNum(
+    fp,
+    delimiter=_default_delim(None),
+    num_delimiters=1,
+    chunk_size=1024,
+    max_read=64 * 1024 * 1024,
+):
+    return ReadTillNullByteByNum(fp, delimiter, num_delimiters, chunk_size, max_read)
+
+
+def SeekToEndOfFile(fp):
+    lasttell = 0
+    while(True):
+        fp.seek(1, 1)
+        if(lasttell == fp.tell()):
+            break
+        lasttell = fp.tell()
+    return True
+
 def ReadFileHeaderData(fp, skipchecksum=False, formatspecs=None, saltkey=None):
     if(formatspecs is None):
         formatspecs = __file_format_multi_dict__
