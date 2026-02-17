@@ -60,6 +60,35 @@ try:
 except Exception:
     shared_memory = None
 
+def running_interactively():
+    main = sys.modules.get("__main__")
+    no_main_file = not hasattr(main, "__file__")
+    interactive_flag = bool(getattr(sys.flags, "interactive", 0))
+    return no_main_file or interactive_flag
+
+if running_interactively():
+    logging.basicConfig(format="%(message)s", stream=PY_STDOUT_TEXT, level=logging.DEBUG)
+
+# Windows-specific setup
+if os.name == "nt":
+    def _wrap(stream):
+        buf = getattr(stream, "buffer", None)
+        is_tty = getattr(stream, "isatty", lambda: False)()
+        if buf is not None and is_tty:
+            try:
+                return io.TextIOWrapper(buf, encoding="UTF-8", errors="replace", line_buffering=True)
+            except Exception:
+                return stream
+        return stream
+    sys.stdout = _wrap(sys.stdout)
+    sys.stderr = _wrap(sys.stderr)
+
+hashlib_guaranteed = False
+# Environment setup
+os.environ["PYTHONIOENCODING"] = "UTF-8"
+
+from io import UnsupportedOperation
+
 __upload_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp|sctp|data|file|bt|rfcomm|l2cap|bluetooth|unixstream|unixdgram|unixseqpacket)://"
 __download_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp|sctp|data|file|bt|rfcomm|l2cap|bluetooth|unixstream|unixdgram|unixseqpacket)://"
 if(platform.python_implementation() != ""):

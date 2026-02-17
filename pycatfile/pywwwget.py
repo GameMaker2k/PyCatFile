@@ -74,6 +74,18 @@ from io import BytesIO
 from urllib.parse import quote_from_bytes, unquote_to_bytes, urlencode
 from urllib.request import install_opener, build_opener
 
+NOISY_LOGGERS = (
+    "httpx",
+    "httpcore",
+    "h2",
+    "hpack",
+    "urllib3",
+    "requests",
+)
+
+for name in NOISY_LOGGERS:
+    logging.getLogger(name).setLevel(logging.WARNING)
+    logging.getLogger(name).disabled = True
 
 _TEXT_MIME_DEFAULT = 'text/plain; charset=utf-8'
 _BIN_MIME_DEFAULT = 'application/octet-stream'
