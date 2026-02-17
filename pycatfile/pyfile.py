@@ -16,7 +16,7 @@ import binascii
 import hashlib
 import inspect
 import tempfile
-from pywwwget import upload_file_to_internet_file, download_file_from_internet_file
+from .pywwwget import upload_file_to_internet_file, download_file_from_internet_file
 from io import open
 
 # RAR file support
