@@ -8,10 +8,11 @@ import time
 import hmac
 import json
 import stat
-import datetime
 import shutil
 import logging
+import zipfile
 import platform
+import datetime
 import binascii
 import hashlib
 import inspect
@@ -1557,6 +1558,17 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, file
         fp.close()
     return filetype
 
+def _advance(fp, base, n):
+    """
+    Move file position to right after the BOM/signature.
+    If fp is not seekable, this silently does nothing.
+    """
+    try:
+        fp.seek(base + n, 0)
+    except Exception:
+        # Not seekable or error; ignore
+        pass
+
 def GetFileEncoding(infile, filestart=0, closefp=True):
     """
     Detect file/text encoding from BOM (and a few special signatures).
@@ -3085,6 +3097,54 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
         return False
 
     return outfp
+
+def GzipCompressData(data, compresslevel=9):
+    try:
+        # Try using modern gzip.compress if available
+        compressed_data = gzip.compress(data, compresslevel=compresslevel)
+    except AttributeError:
+        # Fallback to older method for Python 2.x and older 3.x versions
+        out = MkTempFile()
+        with gzip.GzipFile(filename=None, fileobj=out, mode="wb", compresslevel=compresslevel) as f:
+            f.write(data)
+        out.seek(0, 0)
+        compressed_data = out.read()
+    return compressed_data
+
+
+def GzipDecompressData(compressed_data):
+    try:
+        # Try using modern gzip.decompress if available
+        decompressed_data = gzip.decompress(compressed_data)
+    except AttributeError:
+        # Fallback to older method for Python 2.x and older 3.x versions
+        inp = MkTempFile(compressed_data)
+        with gzip.GzipFile(filename=None, fileobj=inp, mode="rb") as f:
+            decompressed_data = f.read()
+    return decompressed_data
+
+
+def BzipCompressData(data, compresslevel=9):
+    try:
+        # Try using modern bz2.compress if available
+        compressed_data = bz2.compress(data, compresslevel=compresslevel)
+    except AttributeError:
+        # Fallback to older method for Python 2.x and older 3.x versions
+        compressor = bz2.BZ2Compressor(compresslevel)
+        compressed_data = compressor.compress(data)
+        compressed_data += compressor.flush()
+    return compressed_data
+
+
+def BzipDecompressData(compressed_data):
+    try:
+        # Try using modern bz2.decompress if available
+        decompressed_data = bz2.decompress(compressed_data)
+    except AttributeError:
+        # Fallback to older method for Python 2.x and older 3.x versions
+        decompressor = bz2.BZ2Decompressor()
+        decompressed_data = decompressor.decompress(compressed_data)
+    return decompressed_data
 
 def GetKeyByFormatExtension(format_extension, formatspecs=__file_format_multi_dict__):
     for key, value in formatspecs.items():
@@ -7736,7 +7796,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
     elif isinstance(infile, list):
         listarrayfileslist = infile
     else:
-        if (infile != "-" and not isinstance(infile, bytes_type)  # bytes is str on Py2
+        if (infile != "-" and not isinstance(infile, (bytes, bytearray, memoryview))  # bytes is str on Py2
             and not hasattr(infile, "read") and not hasattr(infile, "write")):
             infile = RemoveWindowsPath(infile)
         listarrayfileslist = CatFileToArray(
@@ -7757,7 +7817,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             formatspecs = formatspecs.get(fmttype, formatspecs)
 
     # ---------- Outfile path normalization (fixed: check outfile, not infile) ----------
-    if (outfile != "-" and not isinstance(outfile, bytes_type)
+    if (outfile != "-" and not isinstance(outfile, (bytes, bytearray, memoryview))
         and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
 
@@ -7775,8 +7835,6 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
     if outfile == "-" or outfile is None:
         verbose = False
         fp = MkTempFile()
-    elif(isinstance(outfile, FileLikeAdapter)):
-        fp = outfile
     elif hasattr(outfile, "read") or hasattr(outfile, "write"):
         fp = outfile
     elif re.findall(__upload_proto_support__, outfile):
