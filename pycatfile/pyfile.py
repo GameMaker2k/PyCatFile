@@ -1,4 +1,21 @@
-#!/bin/python
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+'''
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the Revised BSD License.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    Revised BSD License for more details.
+
+    Copyright 2018-2026 Cool Dude 2k - http://idb.berlios.de/
+    Copyright 2018-2026 Game Maker 2k - http://intdb.sourceforge.net/
+    Copyright 2018-2026 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
+
+    $FileInfo: pyfile.py - Last Update: 2/8/2026 Ver. 0.28.8 RC 1 - Author: cooldude2k $
+'''
 
 import io
 import os
@@ -25,6 +42,21 @@ try:
 except ImportError:
     pywwwget = False
 from io import open
+
+# Text streams (as provided by Python)
+PY_STDIN_TEXT  = sys.stdin
+PY_STDOUT_TEXT = sys.stdout
+PY_STDERR_TEXT = sys.stderr
+
+# Binary-friendly streams
+PY_STDIN_BUF  = sys.stdin.buffer
+PY_STDOUT_BUF = sys.stdout.buffer
+PY_STDERR_BUF = sys.stderr.buffer
+
+# Type tuples for isinstance()
+TEXT_TYPES   = (str,)
+BINARY_TYPES = (bytes, bytearray, memoryview)
+PATH_TYPES   = (str, os.PathLike)
 
 # RAR file support
 rarfile_support = False
@@ -99,6 +131,279 @@ except AttributeError:
 os.environ["PYTHONIOENCODING"] = "UTF-8"
 
 from io import UnsupportedOperation
+
+def ensure_text(s, encoding="utf-8", errors="replace", allow_none=False,
+                normalize=None, prefer_surrogates=False):
+    """
+    Coerce `s` to a Python 3 `str` safely.
+
+    Features (best-of):
+      - None handling: None -> "" (or None if allow_none=True)
+      - Fast path for str
+      - Bytes-like decode (bytes/bytearray/memoryview) with configurable encoding/errors
+      - Optional surrogateescape preference for byte-preserving round-trips (Py3)
+      - PathLike support via os.fspath(), including bytes paths
+      - Defensive fallback to repr() if __str__ is broken
+      - Optional unicode normalization (NFC/NFKC/NFD/NFKD)
+
+    Notes:
+      - Default encoding is UTF-8.
+      - No latin-1 fallback is used; failures fall back to a safer decode attempt
+        using the *same* encoding but with 'replace' to avoid exceptions.
+    """
+    if s is None:
+        return None if allow_none else ""
+
+    # Fast path: already text
+    if isinstance(s, str):
+        out = s
+    else:
+        # PathLike: normalize early (common boundary)
+        try:
+            s = os.fspath(s)
+        except Exception:
+            pass
+
+        # Bytes-like -> decode
+        if isinstance(s, (bytes, bytearray, memoryview)):
+            b = bytes(s)
+
+            eff_errors = errors
+            if prefer_surrogates and errors == "replace":
+                # surrogateescape exists on Py3; keep this guarded in case of odd runtimes
+                try:
+                    "".encode("utf-8", "surrogateescape")
+                    eff_errors = "surrogateescape"
+                except LookupError:
+                    pass
+
+            try:
+                out = b.decode(encoding, eff_errors)
+            except Exception:
+                # No latin-1 fallback: retry with the same encoding, forcing replace
+                try:
+                    out = b.decode(encoding, "replace")
+                except Exception:
+                    # Absolute last resort: decode as UTF-8 with replace
+                    out = b.decode("utf-8", "replace")
+        else:
+            # Non-bytes: stringify
+            try:
+                out = str(s)
+            except Exception:
+                # Fallback if object's __str__ is broken
+                out = repr(s)
+                if not isinstance(out, str):
+                    try:
+                        out = str(out)
+                    except Exception:
+                        out = "<unprintable object>"
+
+    # Optional normalization
+    if normalize:
+        try:
+            import unicodedata
+            out = unicodedata.normalize(normalize, out)
+        except Exception:
+            pass
+
+    return out
+
+def ensure_bytes(data, encoding="utf-8", errors="strict", allow_none=False,
+                 prefer_surrogates=False):
+    """
+    Robustly coerce `data` to `bytes` (Python 3 only).
+
+    - None -> b"" (or None if allow_none=True)
+    - bytes/bytearray/memoryview -> bytes(...)
+    - str -> encode(encoding, errors)
+      * if prefer_surrogates and errors=="strict", uses errors="surrogateescape" (Py3)
+    - os.PathLike -> os.fspath(...) then convert (supports str/bytes paths)
+    - file-like (has .read) -> read once, then convert result
+    - int -> encode decimal string (avoids bytes(int) => NUL padding)
+    - other -> try bytes(obj) (uses buffer protocol / __bytes__ if available),
+              else str(obj).encode(...), falling back to repr(obj) if __str__ is broken
+
+    Notes:
+      - Default encoding is UTF-8.
+      - No latin-1 fallback is used.
+    """
+    if data is None:
+        return None if allow_none else b""
+
+    # Fast path: already bytes-like
+    if isinstance(data, (bytes, bytearray, memoryview)):
+        return bytes(data)
+
+    # PathLike early (common boundary)
+    try:
+        data = os.fspath(data)
+    except Exception:
+        pass
+
+    # str -> encode
+    if isinstance(data, str):
+        eff_errors = errors
+        if prefer_surrogates and errors == "strict":
+            # Keep raw bytes round-trippable for strings containing surrogates
+            try:
+                "".encode("utf-8", "surrogateescape")
+                eff_errors = "surrogateescape"
+            except LookupError:
+                pass
+        return data.encode(encoding, eff_errors)
+
+    # file-like: read its content (single read; caller controls buffering)
+    read = getattr(data, "read", None)
+    if callable(read):
+        try:
+            chunk = read()
+        except Exception:
+            # If read fails, fall back to stringifying the object itself
+            chunk = data
+        return ensure_bytes(chunk, encoding=encoding, errors=errors,
+                           allow_none=allow_none, prefer_surrogates=prefer_surrogates)
+
+    # avoid bytes(int) => NUL padding
+    if isinstance(data, int):
+        return str(data).encode(encoding, errors)
+
+    # Try bytes(obj) first: supports __bytes__ and buffer protocol
+    try:
+        b = bytes(data)
+        # Guard against the common pitfall: bytes(some_int) returns NULs
+        # (we already handled int above, but keep this defensive)
+        if isinstance(data, int):
+            return str(data).encode(encoding, errors)
+        return b
+    except Exception:
+        pass
+
+    # Fallback: stringify (defensive), then encode
+    try:
+        s = str(data)
+    except Exception:
+        s = repr(data)
+        if not isinstance(s, str):
+            try:
+                s = str(s)
+            except Exception:
+                s = "<unprintable object>"
+
+    eff_errors = errors
+    if prefer_surrogates and errors == "strict":
+        try:
+            "".encode("utf-8", "surrogateescape")
+            eff_errors = "surrogateescape"
+        except LookupError:
+            pass
+
+    return s.encode(encoding, eff_errors)
+
+def _split_posix(name):
+    """
+    Return a list of path parts without collapsing '..'.
+    - Normalize backslashes to '/'
+    - Strip leading './' (repeated)
+    - Remove '' and '.' parts; keep '..' for traversal detection
+    """
+    if not name:
+        return []
+
+    n = name.replace("\\", "/")
+
+    while n.startswith("./"):
+        n = n[2:]
+
+    return [p for p in n.split("/") if p not in ("", ".")]
+
+
+def _is_abs_like(name):
+    """Detect absolute-like paths across platforms (/, \\, drive letters, UNC)."""
+    if not name:
+        return False
+
+    n = name.replace("\\", "/")
+
+    # POSIX absolute
+    if n.startswith("/"):
+        return True
+
+    # Windows UNC (\\server\share\...) -> after replace: startswith '//'
+    if n.startswith("//"):
+        return True
+
+    # Windows drive: 'C:/', 'C:\', or bare 'C:'
+    if len(n) >= 2 and n[1] == ":":
+        if len(n) == 2:
+            return True
+        if n[2:3] in ("/", "\\"):
+            return True
+
+    return False
+
+
+def _resolves_outside(parent, target):
+    """
+    Does a symlink from 'parent' to 'target' escape parent?
+    - Absolute-like target => escape.
+    - Compare normalized '/<parent>/<target>' against '/<parent>'.
+    - 'parent' is POSIX-style ('' means archive root).
+    """
+    parent = _ensure_text(parent or "")
+    target = _ensure_text(target or "")
+
+    # Absolute target is unsafe by definition
+    if _is_abs_like(target):
+        return True
+
+    root = "/"
+    base = posixpath.normpath(posixpath.join(root, parent))  # '/dir/sub' or '/'
+    cand = posixpath.normpath(posixpath.join(base, target))  # resolved target under '/'
+
+    # ensure trailing slash on base for the prefix test
+    base_slash = base if base.endswith("/") else base + "/"
+    return not (cand == base or cand.startswith(base_slash))
+
+def _as_bytes_like(data):
+    if isinstance(data, bytes):
+        return data
+    if isinstance(data, bytearray):
+        return bytes(data)
+    if isinstance(data, memoryview):
+        return bytes(data)
+    return None
+
+
+def _normalize_initial_data(data, isbytes, encoding, errors=None):
+    """
+    Return bytes (if isbytes) or str (text in Python 3).
+    """
+    if errors is None:
+        errors = "strict"
+
+    if data is None:
+        return None
+
+    if isbytes:
+        b = _as_bytes_like(data)
+        if b is not None:
+            return b
+        if isinstance(data, str):
+            return data.encode(encoding, errors)
+        raise TypeError(
+            "data must be bytes-like or text for isbytes=True (got %r)" % (type(data),)
+        )
+    else:
+        # text mode
+        if isinstance(data, str):
+            return data
+        b = _as_bytes_like(data)
+        if b is not None:
+            return b.decode(encoding, errors)
+        raise TypeError(
+            "data must be str or bytes-like for text mode (got %r)" % (type(data),)
+        )
 
 __upload_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp|sctp|data|file|bt|rfcomm|l2cap|bluetooth|unixstream|unixdgram|unixseqpacket)://"
 __download_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp|sctp|data|file|bt|rfcomm|l2cap|bluetooth|unixstream|unixdgram|unixseqpacket)://"
@@ -352,14 +657,14 @@ if not __use_ini_file__ and not __include_defaults__:
     __include_defaults__ = True
 if __include_defaults__:
     # Cat / Neko
-    add_format(__file_format_multi_dict__, "CatFile",     "CatFile",     ".cat",     "CatFile")
-    add_format(__file_format_multi_dict__, "NekoFile",    "NekoFile",    ".neko",    "NekoFile")
-    add_format(__file_format_multi_dict__, "ねこファイル", "ねこファイル", ".ねこ",    "NekoFairu")
-    add_format(__file_format_multi_dict__, "ネコファイル", "ネコファイル", ".ネコ",    "NekoFairu")
-    add_format(__file_format_multi_dict__, "네코파일",     "네코파일",     ".네코",    "NekoPa-il")
-    add_format(__file_format_multi_dict__, "고양이파일",   "고양이파일",   ".고양이",  "GoyangiPa-il")
-    add_format(__file_format_multi_dict__, "内酷法伊鲁",   "内酷法伊鲁",   ".内酷",    "NèiKùFǎYīLǔ")
-    add_format(__file_format_multi_dict__, "猫文件",       "猫文件",       ".猫",      "MāoWénjiàn")
+    add_format(__file_format_multi_dict__, "CatFile", "CatFile", ".cat", "CatFile")
+    add_format(__file_format_multi_dict__, "NekoFile", "NekoFile", ".neko", "NekoFile")
+    add_format(__file_format_multi_dict__, "ねこファイル", "ねこファイル", ".ねこ", "NekoFairu")
+    add_format(__file_format_multi_dict__, "ネコファイル", "ネコファイル", ".ネコ", "NekoFairu")
+    add_format(__file_format_multi_dict__, "네코파일", "네코파일", ".네코", "NekoPa-il")
+    add_format(__file_format_multi_dict__, "고양이파일", "고양이파일", ".고양이", "GoyangiPa-il")
+    add_format(__file_format_multi_dict__, "内酷法伊鲁", "内酷法伊鲁", ".内酷", "NèiKùFǎYīLǔ")
+    add_format(__file_format_multi_dict__, "猫文件", "猫文件", ".猫", "MāoWénjiàn")
 
 # Pick a default if current default key is not present
 if __file_format_default__ not in __file_format_multi_dict__:
@@ -392,6 +697,55 @@ if(__version_info__[3] is not None):
         1]) + "." + str(__version_info__[2]) + " " + str(__version_info__[3])
 if(__version_info__[3] is None):
     __version__ = str(__version_info__[0]) + "." + str(__version_info__[1]) + "." + str(__version_info__[2])
+
+# ===== Module-level type code table & helpers (reuse anywhere) =====
+
+FT = {
+    "FILE": 0,
+    "HARDLINK": 1,
+    "SYMLINK": 2,
+    "CHAR": 3,
+    "BLOCK": 4,
+    "DIR": 5,
+    "FIFO": 6,
+    "CONTAGIOUS": 7,   # treated like regular file
+    "SOCK": 8,
+    "DOOR": 9,
+    "PORT": 10,
+    "WHT": 11,
+    "SPARSE": 12,
+    "JUNCTION": 13,
+}
+
+BASE_CATEGORY_BY_CODE = {
+    0:  "files",
+    1:  "hardlinks",
+    2:  "symlinks",
+    3:  "characters",
+    4:  "blocks",
+    5:  "directories",
+    6:  "fifos",
+    7:  "files",         # contagious treated as file
+    8:  "sockets",
+    9:  "doors",
+    10: "ports",
+    11: "whiteouts",
+    12: "sparsefiles",
+    13: "junctions",
+}
+
+# Union categories defined by which base codes should populate them.
+UNION_RULES = [
+    ("links",   set([FT["HARDLINK"], FT["SYMLINK"]])),
+    ("devices", set([FT["CHAR"], FT["BLOCK"]])),
+]
+
+# Deterministic category order (handy for consistent output/printing).
+CATEGORY_ORDER = [
+    "files", "hardlinks", "symlinks", "characters", "blocks",
+    "directories", "fifos", "sockets", "doors", "ports",
+    "whiteouts", "sparsefiles", "junctions", "links", "devices"
+]
 
 compressionsupport = []
 try:
@@ -806,21 +1160,68 @@ def system_and_major():
     else:
         return system
 
-def ReadFileHeaderDataBySize(fp, delimiter="\x00"):
-    bytesize = 0
-    oldseek = fp.tell()
+def _is_printable_byte(b):
+    # Accept common printable ASCII range; tweak if your format allows others.
+    # This avoids decoding per byte.
+    return 32 <= b <= 126  # space..~
+
+
+def _read_exact(fp, n):
+    data = fp.read(n)
+    if len(data) != n:
+        raise EOFError("Unexpected EOF while reading %d bytes" % n)
+    return data
+
+
+def ReadFileHeaderDataBySize(fp, delimiter="\x00", encoding="utf-8", errors="strict"):
+    # Normalize delimiter to bytes for reliable multi-byte/multi-char matching
+    if isinstance(delimiter, str):
+        delimiter_b = delimiter.encode(encoding)
+        delimiter_t = delimiter
+    else:
+        delimiter_b = bytes(delimiter)
+        delimiter_t = delimiter_b.decode(encoding, errors)
+
+    if not delimiter_b:
+        raise ValueError("delimiter must not be empty")
+
+    # Read the initial hex field as printable ASCII-ish bytes (same intent as .isprintable()).
+    # Hex digits are ASCII, so this is appropriate and avoids per-byte decoding.
+    numhex_bytes = bytearray()
     while True:
-        if(not fp.read(1).decode("UTF-8").isprintable()):
-            break;
-        bytesize += 1
-    fp.seek(oldseek, 0)
-    numhex = fp.read(bytesize).decode("UTF-8")
+        b = fp.read(1)
+        if not b:
+            # EOF before terminator
+            break
+        c = b[0]
+        if 32 <= c <= 126:  # printable ASCII range
+            numhex_bytes.append(c)
+            continue
+
+        # Hit the terminator (likely the delimiter); rewind so delimiter read aligns
+        fp.seek(-1, 1)
+        break
+
+    numhex = numhex_bytes.decode(encoding, errors)
     numdec = int(numhex, 16)
-    fp.seek(len(delimiter), 1)
-    headerdata = fp.read(numdec).decode("UTF-8")
-    headerdatasplit = headerdata.split(delimiter)
+
+    # Consume exactly one delimiter (supports multi-byte delimiters)
+    got = fp.read(len(delimiter_b))
+    if got != delimiter_b:
+        raise ValueError("Delimiter mismatch: expected %r, got %r" % (delimiter_b, got))
+
+    # Read header payload by size
+    headerdata = fp.read(numdec).decode(encoding, errors)
+
+    # Split using delimiter as text (matches original behavior)
+    headerdatasplit = headerdata.split(delimiter_t)
     headerdatasplit.insert(0, numhex)
-    fp.seek(len(delimiter), 1)
+
+    # Consume trailing delimiter (like original fp.seek(len(delimiter), 1))
+    got2 = fp.read(len(delimiter_b))
+    if got2 != delimiter_b:
+        raise ValueError("Trailing delimiter mismatch: expected %r, got %r" % (delimiter_b, got2))
+
     return headerdatasplit
 
 def MkTempFile(data=None,
