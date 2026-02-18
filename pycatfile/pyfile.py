@@ -17,6 +17,7 @@ import binascii
 import hashlib
 import inspect
 import tempfile
+import configparser
 pywwwget = False
 try:
     from .pywwwget import upload_file_to_internet_file, download_file_from_internet_file
