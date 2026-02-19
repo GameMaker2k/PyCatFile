@@ -35,10 +35,15 @@ import hashlib
 import inspect
 import tempfile
 import configparser
+__enable_pywwwget__ = True
 pywwwget = False
 try:
-    from .pywwwget import upload_file_to_internet_file, download_file_from_internet_file
-    pywwwget = True
+    if(__enable_pywwwget__):
+        from .pywwwget import upload_file_to_internet_file, download_file_from_internet_file
+        pywwwget = True
+    else:
+        pywwwget = False
+        pass
 except ImportError:
     pywwwget = False
 from io import open
