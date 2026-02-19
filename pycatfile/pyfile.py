@@ -9881,17 +9881,3 @@ def InFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0,
 
 def InFileListFile(infile, verbose=False, formatspecs=__file_format_multi_dict__, seektoend=False, newstyle=False, returnfp=False):
     return InFileListFiles(infile, verbose, formatspecs, seektoend, newstyle, returnfp)
-
-
-def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, seektoend=False, verbose=False, returnfp=False):
-    outarray = MkTempFile()
-    packform = PackCatFile(infiles, outarray, dirlistfromtxt, compression, compresswholefile,
-                              compressionlevel, followlink, checksumtype, formatspecs, False, True)
-    listarrayfiles = CatFileListFiles(
-        outarray, seekstart, seekend, skipchecksum, formatspecs, seektoend, verbose, returnfp)
-    return listarrayfiles
-
-
-def ListDirListFiles(infiles, dirlistfromtxt=False, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, seekstart=0, seekend=0, skipchecksum=False, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, seektoend=False, verbose=False, returnfp=False):
-    return ListDirListFiles(infiles, dirlistfromtxt, compression, compresswholefile, compressionlevel, followlink, seekstart, seekend, skipchecksum, checksumtype, formatspecs, seektoend, verbose, returnfp)
-
