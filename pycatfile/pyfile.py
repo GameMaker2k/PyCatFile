@@ -9860,7 +9860,7 @@ def SevenZipFileListFile(infile, verbose=False, returnfp=False):
     return SevenZipFileListFiles(infile, verbose, returnfp)
 
 
-def InFileListFiles(infile, verbose=False, formatspecs=__file_format_multi_dict__, seektoend=False, newstyle=False, returnfp=False):
+def InFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, newstyle=False, returnfp=False):
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True)
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         formatspecs = formatspecs[checkcompressfile]
@@ -9873,7 +9873,7 @@ def InFileListFiles(infile, verbose=False, formatspecs=__file_format_multi_dict_
     elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
         return SevenZipFileListFiles(infile, verbose, returnfp)
     elif(checkcompressfile == formatspecs['format_magic']):
-        return CatFileListFiles(infile, 0, 0, False, formatspecs, seektoend, verbose, newstyle, returnfp)
+        return ArchiveFileListFiles(infile, fmttype, filestart, seekstart, seekend, skipchecksum, formatspecs, saltkey, seektoend, verbose, newstyle, returnfp)
     else:
         return False
     return False

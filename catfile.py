@@ -408,12 +408,17 @@ def main(argv: Optional[list[str]] = None) -> int:
                     False,
                 )
             else:
-                tmpout = pycatfile.InFileListFiles(
+                tmpout = pyarchivefile.InFileListFiles(
                     input_file,
-                    getargs.verbose,
+                    "auto",
+                    0,
+                    0,
+                    0,
+                    False,
+                    fnamedict,
                     fnamedict,
                     getargs.insecretkey,
-                    False,
+                    getargs.verbose,
                     False,
                     False,
                 )
