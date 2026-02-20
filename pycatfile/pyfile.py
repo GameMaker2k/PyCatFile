@@ -25,6 +25,7 @@ import time
 import hmac
 import json
 import stat
+import atexit
 import shutil
 import base64
 import logging
@@ -445,6 +446,97 @@ def add_format(reg, key, magic, ext, name=None, ver="001",
         "format_extension": ext,
     }
 
+# Process-lifetime extract dir (only used when resources aren't on the filesystem)
+_EXTRACT_DIR = None
+
+def _get_extract_dir():
+    global _EXTRACT_DIR
+    if _EXTRACT_DIR is None:
+        _EXTRACT_DIR = tempfile.mkdtemp(prefix="gm2k-cfg-")
+        atexit.register(lambda: shutil.rmtree(_EXTRACT_DIR, ignore_errors=True))
+    return _EXTRACT_DIR
+
+def _atomic_write(path, data):
+    tmp = path + ".tmp"
+    f = open(tmp, "wb")
+    try:
+        f.write(data)
+    finally:
+        f.close()
+
+    try:
+        # Py3
+        os.replace(tmp, path)
+    except Exception:
+        # Py2 / fallback
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+        except Exception:
+            pass
+        os.rename(tmp, path)
+
+def resource_path(package_name, filename):
+    """
+    Return a REAL filesystem path to a resource inside this package.
+
+    - If package is installed normally on disk: returns the existing path (no copy).
+    - If package is imported from zip/egg: extracts to a temp dir once and returns that path.
+    - Falls back to pkg_resources if needed.
+    """
+    files = None
+    try:
+        try:
+            from importlib.resources import files as _files  # Py3.9+ (and sometimes available)
+            files = _files
+        except Exception:
+            from importlib_resources import files as _files  # backport
+            files = _files
+    except Exception:
+        files = None
+
+    if files is not None:
+        try:
+            ref = files(package_name).joinpath(filename)
+
+            # If backed by filesystem, return that path
+            try:
+                return os.fspath(ref)  # Py3 only
+            except Exception:
+                # zipped/non-path traversable -> extract bytes
+                out = os.path.join(_get_extract_dir(), filename)
+                if not os.path.exists(out):
+                    data = ref.read_bytes()
+                    _atomic_write(out, data)
+                return out
+        except Exception:
+            pass
+
+    # setuptools fallback
+    try:
+        import pkg_resources
+        return pkg_resources.resource_filename(package_name, filename)
+    except Exception:
+        pass
+
+    # last resort: __file__ relative (works only when not zipped)
+    mod = sys.modules.get(package_name)
+    base = os.path.dirname(getattr(mod, "__file__", __file__))
+    return os.path.join(base, filename)
+
+def resource_dir(package_name, filenames):
+    """
+    Ensure a set of resources exist as real files in one directory.
+    Returns that directory path.
+    """
+    paths = [resource_path(package_name, fn) for fn in filenames]
+    return os.path.dirname(paths[0])
+
+filecfgpath = resource_dir(__name__, [
+    "catfile.ini",
+    "catfile.json",
+])
+
 __file_format_multi_dict__ = {}
 __file_format_default__ = "CatFile"
 __include_defaults__ = True
@@ -466,9 +558,9 @@ __filebuff_size__ = DEFAULT_BUFFER_MAX
 __program_name__ = "Py"+__file_format_default__
 __use_env_file__ = True
 __use_ini_file__ = True
-__use_ini_name__ = "catfile.ini"
+__use_ini_name__ = os.path.join(filecfgpath, "catfile.ini")
 __use_json_file__ = False
-__use_json_name__ = "catfile.json"
+__use_json_name__ = os.path.join(filecfgpath, "catfile.json")
 if(__use_ini_file__ and __use_json_file__):
     __use_json_file__ = False
 if('PYARCHIVEFILE_CONFIG_FILE' in os.environ and os.path.exists(os.environ['PYARCHIVEFILE_CONFIG_FILE']) and __use_env_file__):
@@ -3304,45 +3396,34 @@ def UncompressFileAlt(fp, formatspecs=__file_format_multi_dict__, filestart=0):
     if IsNestedDict(formatspecs) and kind in formatspecs:
         formatspecs = formatspecs[kind]
 
-    # Guard against detector side-effects: ensure we're back at filestart
-    try:
-        src.seek(filestart, 0)
-    except Exception:
-        pass
+    src.seek(filestart, 0)
 
     # Build logical stream (or passthrough)
     if   kind == "gzip"   and "gzip"   in compressionsupport:
         wrapped = gzip.GzipFile(fileobj=src, mode="rb")
+        wrapped.seek(0, 0)
     elif kind == "bzip2"  and ("bzip2" in compressionsupport or "bz2" in compressionsupport):
         wrapped = bz2.BZ2File(src)
+        wrapped.seek(0, 0)
     elif kind in ("lzma","xz") and (("lzma" in compressionsupport) or ("xz" in compressionsupport)):
         wrapped = lzma.LZMAFile(src)
+        wrapped.seek(0, 0)
     elif kind == "zstd"   and ("zstd" in compressionsupport or "zstandard" in compressionsupport):
         if 'zstd' in compressionsupport:
             wrapped = zstd.ZstdFile(src, mode="rb")
+            wrapped.seek(0, 0)
         else:
             return False
     elif kind == "lz4"    and "lz4"    in compressionsupport:
         wrapped = lz4.frame.LZ4FrameFile(src, mode="rb")
+        wrapped.seek(0, 0)
     elif kind == "zlib"   and "zlib"   in compressionsupport:
         wrapped = ZlibFile(fileobj=src, mode="rb")
+        wrapped.seek(0, 0)
     else:
         # Passthrough
         wrapped = src
-        try:
-            wrapped.seek(filestart, 0)
-        except Exception:
-            pass
-        kind = ""  # treat as uncompressed for logic below
-
-    # Positioning: start-of-member for compressed; filestart for passthrough
-    try:
-        if kind in compressionsupport:
-            wrapped.seek(0, 0)
-        else:
-            wrapped.seek(filestart, 0)
-    except Exception:
-        pass
+        wrapped.seek(filestart, 0)
 
     return wrapped
 
@@ -3357,32 +3438,33 @@ def UncompressFile(infile, formatspecs=__file_format_multi_dict__, mode="rb",
         # Compressed branches
         if (compresscheck == "gzip" and "gzip" in compressionsupport):
             fp = gzip.open(infile, mode)
+            fp.seek(0, 0)
         elif (compresscheck == "bzip2" and "bzip2" in compressionsupport):
             fp = bz2.open(infile, mode)
+            fp.seek(0, 0)
         elif (compresscheck == "zstd" and "zstandard" in compressionsupport):
             if 'zstd' in compressionsupport:
                 fp = zstd.ZstdFile(infile, mode=mode)
+                fp.seek(0, 0)
             else:
                 return False
         elif (compresscheck == "lz4" and "lz4" in compressionsupport):
             fp = lz4.frame.open(infile, mode)
+            fp.seek(0, 0)
         elif ((compresscheck == "lzma" or compresscheck == "xz") and "xz" in compressionsupport):
             fp = lzma.open(infile, mode)
+            fp.seek(0, 0)
         elif (compresscheck == "zlib" and "zlib" in compressionsupport):
             fp = ZlibFile(infile, mode=mode)
+            fp.seek(0, 0)
 
         # Uncompressed (or unknown): open plain file
         else:
             fp = open(infile, mode)
+            fp.seek(filestart, 0)
 
     except FileNotFoundError:
         return False
-
-    # Position to filestart if caller requested it (mainly for fileobj-based headers)
-    try:
-        fp.seek(0 if compresscheck else filestart, 0)
-    except Exception:
-        pass
 
     return fp
 
@@ -4594,12 +4676,6 @@ def ReadFileDataWithContent(fp, filestart=0, listonly=False, contentasfile=False
         return False
     delimiter = formatspecs['format_delimiter']
     curloc = filestart
-    try:
-        fp.seek(0, 2)
-    except (OSError, ValueError):
-        SeekToEndOfFile(fp)
-    CatSize = fp.tell()
-    CatSizeEnd = CatSize
     fp.seek(curloc, 0)
     inheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
     headeroffset = fp.tell()
@@ -4658,6 +4734,8 @@ def ReadFileDataWithContent(fp, filestart=0, listonly=False, contentasfile=False
             break
         flist.append(HeaderOut)
         countnum = countnum + 1
+    CatSize = fp.tell()
+    CatSizeEnd = CatSize
     return flist
 
 
@@ -4666,12 +4744,6 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
         return False
     delimiter = formatspecs['format_delimiter']
     curloc = filestart
-    try:
-        fp.seek(0, 2)
-    except (OSError, ValueError):
-        SeekToEndOfFile(fp)
-    CatSize = fp.tell()
-    CatSizeEnd = CatSize
     fp.seek(curloc, 0)
     inheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
     headeroffset = fp.tell()
@@ -4833,7 +4905,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
         return False
     formversions = re.search('(.*?)(\\d+)', formstring).groups()
     fcompresstype = ""
-    outlist = {'fnumfiles': fnumfiles, 'ffilestart': filestart, 'fformat': formversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fmtime': fheadmtime, 'fctime': fheadctime, 'fversion': formversions[1], 'fostype': fostype, 'fprojectname': fprojectname, 'fimptype': fpythontype, 'fheadersize': fheadsize, 'fsize': CatSizeEnd, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fseeknextfile': fseeknextfile, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'fjsonchecksumtype': fjsonchecksumtype, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fjstart': fjstart, 'fjend': fjend, 'fjsonchecksum': fjsonchecksum, 'frawheader': [formstring] + inheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextradata': fextrafieldslist, 'fvendorfields': fvendorfields, 'fvendordata': fvendorfieldslist, 'ffilelist': []}
+    outlist = {'fnumfiles': fnumfiles, 'ffilestart': filestart, 'fformat': formversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fmtime': fheadmtime, 'fctime': fheadctime, 'fversion': formversions[1], 'fostype': fostype, 'fprojectname': fprojectname, 'fimptype': fpythontype, 'fheadersize': fheadsize, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fseeknextfile': fseeknextfile, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'fjsonchecksumtype': fjsonchecksumtype, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fjstart': fjstart, 'fjend': fjend, 'fjsonchecksum': fjsonchecksum, 'frawheader': [formstring] + inheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextradata': fextrafieldslist, 'fvendorfields': fvendorfields, 'fvendordata': fvendorfieldslist, 'ffilelist': []}
     if (seekstart < 0) or (seekstart > fnumfiles):
         seekstart = 0
     if (seekend == 0) or (seekend > fnumfiles) or (seekend < seekstart):
@@ -4916,7 +4988,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
             il = il + 1
     realidnum = 0
     countnum = seekstart
-    while (fp.tell() < CatSizeEnd) if seektoend else (countnum < seekend):
+    while (countnum < seekend):
         HeaderOut = ReadFileHeaderDataWithContentToArray(fp, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey)
         if(len(HeaderOut) == 0):
             break
@@ -4924,7 +4996,9 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
         outlist['ffilelist'].append(HeaderOut)
         countnum = countnum + 1
         realidnum = realidnum + 1
-    outlist.update({'fp': fp})
+    CatSize = fp.tell()
+    CatSizeEnd = CatSize
+    outlist.update({'fp': fp, 'fsize': CatSizeEnd})
     return outlist
 
 
@@ -4933,12 +5007,6 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
         return False
     delimiter = formatspecs['format_delimiter']
     curloc = filestart
-    try:
-        fp.seek(0, 2)
-    except (OSError, ValueError):
-        SeekToEndOfFile(fp)
-    CatSize = fp.tell()
-    CatSizeEnd = CatSize
     fp.seek(curloc, 0)
     inheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
     headeroffset = fp.tell()
@@ -5186,13 +5254,15 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
             il = il + 1
     realidnum = 0
     countnum = seekstart
-    while (fp.tell() < CatSizeEnd) if seektoend else (countnum < seekend):
+    while (countnum < seekend):
         HeaderOut = ReadFileHeaderDataWithContentToList(fp, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey)
         if(len(HeaderOut) == 0):
             break
         outlist.append(HeaderOut)
         countnum = countnum + 1
         realidnum = realidnum + 1
+    CatSize = fp.tell()
+    CatSizeEnd = CatSize
     return outlist
 
 def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False):
@@ -5274,17 +5344,11 @@ def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=
             currentfilepos = readfp.tell()
         else:
             infp = UncompressFileAlt(readfp, formatspecs, currentfilepos)
+            if(not infp):
+                break
             infp.seek(0, 0)
             currentinfilepos = infp.tell()
-            try:
-                infp.seek(0, 2)
-            except (OSError, ValueError):
-                SeekToEndOfFile(infp)
-            outinfsize = infp.tell()
-            infp.seek(currentinfilepos, 0)
             while True:
-                if currentinfilepos >= outinfsize:   # stop when function signals False
-                    break
                 oldinfppos = infp.tell()
                 compresscheck = CheckCompressionType(infp, formatspecs, currentinfilepos, False)
                 if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
@@ -5391,17 +5455,11 @@ def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0
             currentfilepos = readfp.tell()
         else:
             infp = UncompressFileAlt(readfp, formatspecs, currentfilepos)
+            if(not infp):
+                break
             infp.seek(0, 0)
             currentinfilepos = infp.tell()
-            try:
-                infp.seek(0, 2)
-            except (OSError, ValueError):
-                SeekToEndOfFile(infp)
-            outinfsize = infp.tell()
-            infp.seek(currentinfilepos, 0)
             while True:
-                if currentinfilepos >= outinfsize:   # stop when function signals False
-                    break
                 oldinfppos = infp.tell()
                 compresscheck = CheckCompressionType(infp, formatspecs, currentinfilepos, False)
                 if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
@@ -8019,14 +8077,6 @@ def CatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_form
             return False
         fp = UncompressFile(infile, formatspecs, "rb", filestart)
 
-    try:
-        fp.seek(0, 2)
-    except (OSError, ValueError):
-        SeekToEndOfFile(fp)
-    CatSize = fp.tell()
-    CatSizeEnd = CatSize
-    fp.seek(0)
-    fp.seek(curloc, 0)
     if(IsNestedDict(formatspecs)):
         compresschecking = CheckCompressionType(fp, formatspecs, filestart, False)
         if(compresschecking not in formatspecs):
@@ -8123,7 +8173,7 @@ def CatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_form
     if(verbose):
         VerbosePrintOut("")
     # Iterate either until EOF (seektoend) or fixed count
-    while (fp.tell() < CatSizeEnd) if seektoend else (il < fnumfiles):
+    while (il < fnumfiles):
         outfhstart = fp.tell()
         if(__use_new_style__):
             inheaderdata = ReadFileHeaderDataBySize(fp, formatspecs['format_delimiter'])
