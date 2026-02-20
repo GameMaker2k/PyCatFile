@@ -36,6 +36,7 @@ import hashlib
 import inspect
 import tempfile
 import configparser
+from io import open, StringIO, BytesIO
 __enable_pywwwget__ = True
 pywwwget = False
 try:
@@ -448,7 +449,7 @@ __file_format_multi_dict__ = {}
 __file_format_default__ = "CatFile"
 __include_defaults__ = True
 __use_inmem__ = True
-__use_memfd__ = True
+__use_memfd__ = False
 __use_spoolfile__ = False
 __use_spooldir__ = tempfile.gettempdir()
 __use_new_style__ = True
