@@ -26,6 +26,7 @@ import hmac
 import json
 import stat
 import shutil
+import base64
 import logging
 import zipfile
 import platform
@@ -83,20 +84,14 @@ except (ImportError, OSError):
 
 # TAR file checking
 try:
-    from xtarfile import is_tarfile
+    from safetar import is_tarfile
 except ImportError:
-    try:
-        from safetar import is_tarfile
-    except ImportError:
-        from tarfile import is_tarfile
+    from tarfile import is_tarfile
 
 # TAR file module
 try:
-    import xtarfile as tarfile
+    import safetar as tarfile
 except ImportError:
-    try:
-        import safetar as tarfile
-    except ImportError:
         import tarfile
 
 try:
@@ -1816,7 +1811,7 @@ def CheckCompressionType(infile, formatspecs=__file_format_multi_dict__, filesta
     if(prefp == binascii.unhexlify("7061785f676c6f62616c")):
         filetype = "tarfile"
     fp.seek(curloc, 0)
-    if(filetype == "gzip" or filetype == "bzip2" or filetype == "lzma" or filetype == "zstd" or filetype == "lz4" or filetype == "zlib"):
+    if(filetype == "gzip" or filetype == "bzip2" or filetype == "lzma" or filetype == "xz" or filetype == "zstd" or filetype == "lz4" or filetype == "zlib"):
         if(TarFileCheck(fp)):
             filetype = "tarfile"
     elif(not filetype):
@@ -1857,7 +1852,7 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, file
             compresscheck = "zlib"
         else:
             return False
-    if(compresscheck == "gzip" or compresscheck == "bzip2" or compresscheck == "lzma" or compresscheck == "zstd" or compresscheck == "lz4" or compresscheck == "zlib"):
+    if(compresscheck == "gzip" or compresscheck == "bzip2" or compresscheck == "lzma" or compresscheck == "xz" or compresscheck == "zstd" or compresscheck == "lz4" or compresscheck == "zlib"):
         if(TarFileCheck(infile)):
             filetype = "tarfile"
     elif(not compresscheck):
@@ -6237,6 +6232,11 @@ def AppendFilesWithContentFromTarFileToList(infile, extradata=[], jsondata={}, c
         fcontents = MkTempFile()
         fcencoding = "UTF-8"
         curcompression = "none"
+        pax_headers = getattr(member, "pax_headers", None)
+        if(not pax_headers):
+            pax_headers = None
+        if(pax_headers is not None):
+            jsondata.update({'pax_headers': pax_headers})
         if ftype in data_types:
             fpc = tarfp.extractfile(member)
             shutil.copyfileobj(fpc, fcontents, length=__filebuff_size__)
