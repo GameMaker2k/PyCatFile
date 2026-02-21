@@ -34,14 +34,8 @@ logging.basicConfig(format="%(message)s", stream=sys.stdout, level=logging.DEBUG
 # Unix SIGPIPE handling (exit cleanly on broken pipe).
 if os.name != "nt":
     import signal
-
     if hasattr(signal, "SIGPIPE"):
-
-        def _sigpipe_handler(signum, frame):  # noqa: ARG001
-            pycatfile.VerbosePrintOut("Received SIGPIPE, exiting gracefully.", "info")
-            raise SystemExit(0)
-
-        signal.signal(signal.SIGPIPE, _sigpipe_handler)
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
 # Feature flags (re-exported from module; kept for CLI parity)
 rarfile_support = pycatfile.rarfile_support
