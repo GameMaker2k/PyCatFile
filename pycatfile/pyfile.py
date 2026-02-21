@@ -7920,9 +7920,20 @@ def PackCatFileFromInFile(infile, outfile, fmttype="auto", compression="auto", c
         return False
     return False
 
-# --- Add this helper (Py2/3 compatible) ---
-def CatFileArrayValidate(listarrayfiles, verbose=False):
-    # Top-level checks
+def CatFileArrayValidate(infile, verbose=False):
+    # ---------- Input handling ----------
+    if isinstance(infile, dict):
+        listarrayfileslist = [infile]
+    elif isinstance(infile, list):
+        listarrayfileslist = infile
+    else:
+        if (infile != "-" and not isinstance(infile, (bytes, bytearray, memoryview))  # bytes is str on Py2
+            and not hasattr(infile, "read") and not hasattr(infile, "write")):
+            infile = RemoveWindowsPath(infile)
+        listarrayfileslist = ArchiveFileToArray(
+            infile, fmttype, filestart, 0, 0,
+            False, True, False, True, formatspecs, saltkey, seektoend, returnfp
+        )
     if not isinstance(listarrayfiles, dict):
         if verbose: logging.warning("listarrayfiles must be a dict, got %r", type(listarrayfiles))
         return False
@@ -7934,53 +7945,53 @@ def CatFileArrayValidate(listarrayfiles, verbose=False):
         if verbose: logging.warning("ffilelist must be a list, got %r", type(listarrayfiles["ffilelist"]))
         return False
 
-    # Per-entry required keys
-    required = [
-        "fname", "fencoding", "fheadersize", "fsize", "flinkname",
-        "fatime", "fmtime", "fctime", "fbtime",
-        "fmode", "fchmode", "fuid", "funame", "fgid", "fgname",
-        "finode", "flinkcount", "fwinattributes",
-        "fcompression", "fcsize",
-        "fdev", "fminor", "fmajor",
-        "fseeknextfile", "fextradata", "fextrafields",
-        "fcontents", "fcontentasfile", "fjsondata", "ftype",
-    ]
-    ok = True
-    for i, ent in enumerate(listarrayfiles["ffilelist"]):
-        if not isinstance(ent, dict):
-            if verbose: logging.warning("ffilelist[%d] must be a dict, got %r", i, type(ent))
-            ok = False
-            continue
-        missing = [k for k in required if k not in ent]
-        if missing:
-            if verbose: logging.warning("ffilelist[%d] missing keys: %s", i, ", ".join(missing))
-            ok = False
-            continue
-        # Light type/convert checks for numeric-ish fields
-        intish = [
-            "fheadersize", "fsize", "fatime", "fmtime", "fctime", "fbtime",
-            "fmode", "fchmode", "fuid", "fgid", "finode",
-            "flinkcount", "fwinattributes", "fcsize",
-            "fdev", "fminor", "fmajor", "ftype",
+    for listarrayfiles in listarrayfileslist:
+        # Per-entry required keys
+        required = [
+            "fname", "fencoding", "fheadersize", "fsize", "flinkname",
+            "fatime", "fmtime", "fctime", "fbtime",
+            "fmode", "fchmode", "fuid", "funame", "fgid", "fgname",
+            "finode", "flinkcount", "fwinattributes",
+            "fcompression", "fcsize", "fdev", "frdev",
+            "fseeknextfile", "fextradata", "fextrafields",
+            "fcontents", "fcontentasfile", "fjsondata", "ftype",
         ]
-        for k in intish:
-            try:
-                int(ent[k])
-            except Exception:
-                if verbose: logging.warning("ffilelist[%d].%s expected int-convertible, got %r", i, k, ent[k])
+        ok = True
+        for i, ent in enumerate(listarrayfiles["ffilelist"]):
+            if not isinstance(ent, dict):
+                if verbose: logging.warning("ffilelist[%d] must be a dict, got %r", i, type(ent))
                 ok = False
-        # Booleans/flags presence
-        if not isinstance(ent["fcontentasfile"], (bool, int)):  # tolerate 0/1
-            if verbose: logging.warning("ffilelist[%d].fcontentasfile should be bool-like, got %r", i, ent["fcontentasfile"])
-            ok = False
-        # Arrays presence
-        for arrk in ("fextradata",):
-            if not isinstance(ent[arrk], list):
-                if verbose: logging.warning("ffilelist[%d].%s should be a list, got %r", i, arrk, type(ent[arrk]))
+                continue
+            missing = [k for k in required if k not in ent]
+            if missing:
+                if verbose: logging.warning("ffilelist[%d] missing keys: %s", i, ", ".join(missing))
                 ok = False
-        if not isinstance(ent.get("fjsondata", {}), dict):
-            if verbose: logging.warning("ffilelist[%d].fjsondata should be a dict, got %r", i, type(ent.get("fjsondata")))
-            ok = False
+                continue
+            # Light type/convert checks for numeric-ish fields
+            intish = [
+                "fheadersize", "fsize", "fatime", "fmtime", "fctime", "fbtime",
+                "fmode", "fchmode", "fuid", "fgid", "finode",
+                "flinkcount", "fwinattributes", "fcsize",
+                "fdev", "frdev", "ftype",
+            ]
+            for k in intish:
+                try:
+                    int(ent[k])
+                except Exception:
+                    if verbose: logging.warning("ffilelist[%d].%s expected int-convertible, got %r", i, k, ent[k])
+                    ok = False
+            # Booleans/flags presence
+            if not isinstance(ent["fcontentasfile"], (bool, int)):  # tolerate 0/1
+                if verbose: logging.warning("ffilelist[%d].fcontentasfile should be bool-like, got %r", i, ent["fcontentasfile"])
+                ok = False
+            # Arrays presence
+            for arrk in ("fextradata",):
+                if not isinstance(ent[arrk], list):
+                    if verbose: logging.warning("ffilelist[%d].%s should be a list, got %r", i, arrk, type(ent[arrk]))
+                    ok = False
+            if not isinstance(ent.get("fjsondata", {}), dict):
+                if verbose: logging.warning("ffilelist[%d].fjsondata should be a dict, got %r", i, type(ent.get("fjsondata")))
+                ok = False
     return ok
 
 def CatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
