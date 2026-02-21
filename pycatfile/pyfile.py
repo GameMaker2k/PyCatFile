@@ -7923,14 +7923,14 @@ def PackCatFileFromInFile(infile, outfile, fmttype="auto", compression="auto", c
 def CatFileArrayValidate(infile, verbose=False):
     # ---------- Input handling ----------
     if isinstance(infile, dict):
-        listarrayfileslist = [infile]
+        listarrayfiles = [infile]
     elif isinstance(infile, list):
-        listarrayfileslist = infile
+        listarrayfiles = infile
     else:
         if (infile != "-" and not isinstance(infile, (bytes, bytearray, memoryview))  # bytes is str on Py2
             and not hasattr(infile, "read") and not hasattr(infile, "write")):
             infile = RemoveWindowsPath(infile)
-        listarrayfileslist = ArchiveFileToArray(
+        listarrayfiles = ArchiveFileToArray(
             infile, fmttype, filestart, 0, 0,
             False, True, False, True, formatspecs, saltkey, seektoend, returnfp
         )
