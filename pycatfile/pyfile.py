@@ -7984,298 +7984,155 @@ def CatFileArrayValidate(listarrayfiles, verbose=False):
     return ok
 
 def CatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
-    if(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype in formatspecs):
-        formatspecs = formatspecs[fmttype]
-    elif(IsNestedDict(formatspecs) and fmttype!="auto" and fmttype not in formatspecs):
-        fmttype = "auto"
-    curloc = filestart
-    if(hasattr(infile, "read") or hasattr(infile, "write")):
-        curloc = infile.tell()
-        fp = infile
-        fp.seek(filestart, 0)
-        fp = UncompressFileAlt(fp, formatspecs, filestart)
-        checkcompressfile = CheckCompressionSubType(fp, formatspecs, filestart, True)
-        if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
-            formatspecs = formatspecs[checkcompressfile]
-        elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
-            return False
-        elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
-            return False
-        if(not fp):
-            return False
-    elif(infile == "-"):
-        fp = MkTempFile()
-        shutil.copyfileobj(PY_STDIN_BUF, fp, length=__filebuff_size__)
-        fp.seek(filestart, 0)
-        fp = UncompressFileAlt(fp, formatspecs, filestart)
-        checkcompressfile = CheckCompressionSubType(fp, formatspecs, filestart, True)
-        if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
-            formatspecs = formatspecs[checkcompressfile]
-        if(not fp):
-            return False
-    elif(isinstance(infile, bytes)):
-        fp = MkTempFile()
-        fp.write(infile)
-        fp.seek(filestart, 0)
-        fp = UncompressFileAlt(fp, formatspecs, filestart)
-        compresscheck = CheckCompressionType(fp, formatspecs, 0, False)
-        if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
-            formatspecs = formatspecs[compresscheck]
-        if(not fp):
-            return False
-    elif(re.findall(__download_proto_support__, infile) and pywwwget):
-        fp = download_file_from_internet_file(infile)
-        fp = UncompressFileAlt(fp, formatspecs, filestart)
-        compresscheck = CheckCompressionType(fp, formatspecs, 0, False)
-        if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
-            formatspecs = formatspecs[compresscheck]
-        if(not fp):
-            return False
+    # ---------- Input handling ----------
+    if isinstance(infile, dict):
+        listarrayfileslist = [infile]
+    elif isinstance(infile, list):
+        listarrayfileslist = infile
     else:
-        infile = RemoveWindowsPath(infile)
-        checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True)
-        if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
-            formatspecs = formatspecs[checkcompressfile]
-        if(checkcompressfile == "tarfile" and TarFileCheck(infile)):
-            return TarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
-        elif(checkcompressfile == "zipfile" and zipfile.is_zipfile(infile)):
-            return ZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
-        elif(rarfile_support and checkcompressfile == "rarfile" and (rarfile.is_rarfile(infile) or rarfile.is_rarfile_sfx(infile))):
-            return RarFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
-        elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
-            return SevenZipFileToArray(infile, 0, 0, listonly, contentasfile, skipchecksum, formatspecs, seektoend, returnfp)
-        elif(IsSingleDict(formatspecs) and checkcompressfile != formatspecs['format_magic']):
-            return False
-        elif(IsNestedDict(formatspecs) and checkcompressfile not in formatspecs):
-            return False
-        compresscheck = CheckCompressionType(infile, formatspecs, filestart, True)
-        if(not compresscheck):
-            fextname = os.path.splitext(infile)[1]
-            if(fextname == ".gz"):
-                compresscheck = "gzip"
-            elif(fextname == ".bz2"):
-                compresscheck = "bzip2"
-            elif(fextname == ".zst"):
-                compresscheck = "zstd"
-            elif(fextname == ".lz4"):
-                compresscheck = "lz4"
-            elif(fextname == ".lzma"):
-                compresscheck = "lzma"
-            elif(fextname == ".xz"):
-                compresscheck = "xz"
-            elif(fextname == ".zz" or fextname == ".zl" or fextname == ".zlib"):
-                compresscheck = "zlib"
-            else:
-                return False
-        if(not compresscheck):
-            return False
-        fp = UncompressFile(infile, formatspecs, "rb", filestart)
-
-    if(IsNestedDict(formatspecs)):
-        compresschecking = CheckCompressionType(fp, formatspecs, filestart, False)
-        if(compresschecking not in formatspecs):
-            return False
-        else:
-            formatspecs = formatspecs[compresschecking]
-    inheaderver = str(int(formatspecs['format_ver'].replace(".", "")))
-    headeroffset = fp.tell()
-    formstring = fp.read(formatspecs['format_len'] + len(inheaderver)).decode("UTF-8")
-    formdelsize = len(formatspecs['format_delimiter'])
-    formdel = fp.read(formdelsize).decode("UTF-8")
-    if(formstring != formatspecs['format_magic'] + inheaderver):
-        return False
-    if(formdel != formatspecs['format_delimiter']):
-        return False
-    if(__use_new_style__):
-        inheader = ReadFileHeaderDataBySize(fp, formatspecs['format_delimiter'])
-    else:
-        inheader = ReadFileHeaderDataWoSize(fp, formatspecs['format_delimiter'])
-    fnumextrafieldsize = int(inheader[15], 16)
-    fnumextrafields = int(inheader[16], 16)
-    extrastart = 17
-    extraend = extrastart + fnumextrafields
-    formversion = re.findall("([\\d]+)", formstring)
-    fheadsize = int(inheader[0], 16)
-    fnumfields = int(inheader[1], 16)
-    fnumfiles = int(inheader[8], 16)
-    fprechecksumtype = inheader[-2]
-    fprechecksum = inheader[-1]
-    outfseeknextfile = inheader[9]
-    fjsonsize = int(inheader[12], 16)
-    fjsonchecksumtype = inheader[13]
-    fjsonchecksum = inheader[14]
-    headerjsonoffset = fp.tell()
-    fprejsoncontent = fp.read(fjsonsize)
-    jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs, saltkey)
-    # Next seek directive
-    if(re.findall(r"^\+([0-9]+)", outfseeknextfile)):
-        fseeknextasnum = int(outfseeknextfile.replace("+", ""))
-        if(abs(fseeknextasnum) == 0):
-            pass
-        fp.seek(fseeknextasnum, 1)
-    elif(re.findall(r"^\-([0-9]+)", outfseeknextfile)):
-        fseeknextasnum = int(outfseeknextfile)
-        if(abs(fseeknextasnum) == 0):
-            pass
-        fp.seek(fseeknextasnum, 1)
-    elif(re.findall(r"^([0-9]+)", outfseeknextfile)):
-        fseeknextasnum = int(outfseeknextfile)
-        if(abs(fseeknextasnum) == 0):
-            pass
-        fp.seek(fseeknextasnum, 0)
-    else:
-        return False
-    il = 0
-    headercheck = ValidateHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, fprechecksum, formatspecs, saltkey)
-    newfcs = GetHeaderChecksum([formstring] + inheader[:-1], fprechecksumtype, True, formatspecs, saltkey)
-    valid_archive = True
-    invalid_archive = False
-    if(verbose):
-        if(hasattr(infile, "read") or hasattr(infile, "write")):
-            try:
-                VerbosePrintOut(infile.name)
-            except AttributeError:
+        if (infile != "-" and not isinstance(infile, (bytes, bytearray, memoryview))  # bytes is str on Py2
+            and not hasattr(infile, "read") and not hasattr(infile, "write")):
+            infile = RemoveWindowsPath(infile)
+        listarrayfileslist = ArchiveFileToArray(
+            infile, fmttype, filestart, 0, 0,
+            False, False, True, True, formatspecs, saltkey, seektoend, returnfp
+        )
+    for listarrayfiles in listarrayfileslist:
+        fp = listarrayfiles['fp']
+        inheader = listarrayfiles['frawheader']
+        fnumfiles = int(inheader[9], 16)
+        fprechecksumtype = inheader[-2]
+        fprechecksum = inheader[-1]
+        fjsonsize = int(inheader[13], 16)
+        fjsonchecksumtype = inheader[14]
+        fjsonchecksum = inheader[15]
+        headeroffset = listarrayfiles['ffilestart']
+        headerjsonoffset = listarrayfiles['fjstart']
+        fprejsoncontent = listarrayfiles['fjsonrawdata']
+        jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs, saltkey)
+        il = 0
+        headercheck = ValidateHeaderChecksum(inheader[:-1], fprechecksumtype, fprechecksum, formatspecs, saltkey)
+        newfcs = GetHeaderChecksum(inheader[:-1], fprechecksumtype, True, formatspecs, saltkey)
+        valid_archive = True
+        invalid_archive = False
+        if(verbose):
+            if(hasattr(infile, "read") or hasattr(infile, "write")):
+                try:
+                    VerbosePrintOut(infile.name)
+                except AttributeError:
+                    pass
+            elif(isinstance(infile, bytes)):
                 pass
-        elif(isinstance(infile, bytes)):
-            pass
-        else:
-            VerbosePrintOut(infile)
-        VerbosePrintOut("Number of Records " + str(fnumfiles))
-    if(headercheck):
-        if(verbose):
-            VerbosePrintOut("File Header Checksum Passed at offset " + str(headeroffset))
-            VerbosePrintOut("'" + fprechecksum + "' == " + "'" + newfcs + "'")
-    else:
-        # always flip flags, even when not verbose
-        valid_archive = False
-        invalid_archive = True
-        if(verbose):
-            VerbosePrintOut("File Header Checksum Failed at offset " + str(headeroffset))
-            VerbosePrintOut("'" + fprechecksum + "' != " + "'" + newfcs + "'")
-    if(fjsonsize > 0):
-        if(CheckChecksums(jsonfcs, fjsonchecksum)):
+            else:
+                VerbosePrintOut(infile)
+            VerbosePrintOut("Number of Records " + str(fnumfiles))
+        if(headercheck):
             if(verbose):
-                VerbosePrintOut("File JSON Data Checksum Passed at offset " + str(headerjsonoffset))
-                VerbosePrintOut("'" + outfjsonchecksum + "' == " + "'" + injsonfcs + "'")
+                VerbosePrintOut("File Header Checksum Passed at offset " + str(headeroffset))
+                VerbosePrintOut("'" + fprechecksum + "' == " + "'" + newfcs + "'")
         else:
+            # always flip flags, even when not verbose
             valid_archive = False
             invalid_archive = True
             if(verbose):
-                VerbosePrintOut("File JSON Data Checksum Error at offset " + str(headerjsonoffset))
-                VerbosePrintOut("'" + outfjsonchecksum + "' != " + "'" + injsonfcs + "'")
-    if(verbose):
-        VerbosePrintOut("")
-    # Iterate either until EOF (seektoend) or fixed count
-    while (il < fnumfiles):
-        outfhstart = fp.tell()
-        if(__use_new_style__):
-            inheaderdata = ReadFileHeaderDataBySize(fp, formatspecs['format_delimiter'])
-        else:
-            inheaderdata = ReadFileHeaderDataWoSize(fp, formatspecs['format_delimiter'])
-
-        if(len(inheaderdata) == 0):
-            break
-        if(re.findall("^[.|/]", inheaderdata[5])):
-            outfname = inheaderdata[5]
-        else:
-            outfname = "./" + inheaderdata[5]
-        outfbasedir = os.path.dirname(outfname)
-        outfsize = int(inheaderdata[7], 16)
-        outfcompression = inheaderdata[17]
-        outfcsize = int(inheaderdata[18], 16)
-        fid = int(inheaderdata[23], 16)
-        finode = int(inheaderdata[24], 16)
-        outfseeknextfile = inheaderdata[28]
-        outfjsonsize = int(inheaderdata[31], 16)
-        outfjsonchecksumtype = inheaderdata[32]
-        outfjsonchecksum = inheaderdata[33]
-        outfhend = fp.tell() - 1  # (kept for parity; not used)
-        outfjstart = fp.tell()
-        # Read JSON bytes; compute checksum on bytes for robustness
-        outfprejsoncontent_bytes = fp.read(outfjsonsize)
-        # Decode for any downstream text needs (not used further here)
-        try:
-            outfprejsoncontent = outfprejsoncontent_bytes.decode("UTF-8")
-        except Exception:
-            outfprejsoncontent = None
-        outfjend = fp.tell()
-        fp.seek(len(formatspecs['format_delimiter']), 1)
-        injsonfcs = GetFileChecksum(outfprejsoncontent_bytes, outfjsonchecksumtype, True, formatspecs, saltkey)
-        outfextrafields = int(inheaderdata[35], 16)
-        extrafieldslist = []
-        extrastart = 36
-        extraend = extrastart + outfextrafields
-        outfcs = inheaderdata[-2].lower()
-        outfccs = inheaderdata[-1].lower()
-        infcs = GetHeaderChecksum(inheaderdata[:-2], inheaderdata[-4].lower(), True, formatspecs, saltkey)
-        if(verbose):
-            VerbosePrintOut(outfname)
-            VerbosePrintOut("Record Number " + str(il) + "; File ID " + str(fid) + "; iNode Number " + str(finode))
-
-        if(CheckChecksums(outfcs, infcs)):
-            if(verbose):
-                VerbosePrintOut("File Header Checksum Passed at offset " + str(outfhstart))
-                VerbosePrintOut("'" + outfcs + "' == " + "'" + infcs + "'")
-        else:
-            valid_archive = False
-            invalid_archive = True
-            if(verbose):
-                VerbosePrintOut("File Header Checksum Failed at offset " + str(outfhstart))
-                VerbosePrintOut("'" + outfcs + "' != " + "'" + infcs + "'")
-        if(outfjsonsize > 0):
-            if(CheckChecksums(injsonfcs, outfjsonchecksum)):
+                VerbosePrintOut("File Header Checksum Failed at offset " + str(headeroffset))
+                VerbosePrintOut("'" + fprechecksum + "' != " + "'" + newfcs + "'")
+        if(fjsonsize > 0):
+            if(CheckChecksums(jsonfcs, fjsonchecksum)):
                 if(verbose):
-                    VerbosePrintOut("File JSON Data Checksum Passed at offset " + str(outfjstart))
+                    VerbosePrintOut("File JSON Data Checksum Passed at offset " + str(headerjsonoffset))
                     VerbosePrintOut("'" + outfjsonchecksum + "' == " + "'" + injsonfcs + "'")
             else:
                 valid_archive = False
                 invalid_archive = True
                 if(verbose):
-                    VerbosePrintOut("File JSON Data Checksum Error at offset " + str(outfjstart))
+                    VerbosePrintOut("File JSON Data Checksum Error at offset " + str(headerjsonoffset))
                     VerbosePrintOut("'" + outfjsonchecksum + "' != " + "'" + injsonfcs + "'")
-        outfcontentstart = fp.tell()
-        outfcontents = b""   # FIX: bytes for Py2/3 consistency
-        pyhascontents = False
-        if(outfsize > 0):
-            if(outfcompression == "none" or outfcompression == "" or outfcompression == "auto"):
-                outfcontents = fp.read(outfsize)
+        if(verbose):
+            VerbosePrintOut("")
+        while (il < fnumfiles):
+            cur_entry = listarrayfiles['ffilelist'][il]
+            outfhstart = cur_entry['fhstart']
+            inheaderdata = cur_entry['frawheader']
+            if(len(inheaderdata) == 0):
+                break
+            if(re.findall("^[.|/]", inheaderdata[5])):
+                outfname = inheaderdata[5]
             else:
-                outfcontents = fp.read(outfcsize)
+                outfname = "./" + inheaderdata[5]
+            outfbasedir = os.path.dirname(outfname)
+            outfsize = int(inheaderdata[7], 16)
+            outfcompression = inheaderdata[17]
+            outfcsize = int(inheaderdata[18], 16)
+            fid = int(inheaderdata[23], 16)
+            finode = int(inheaderdata[24], 16)
+            outfseeknextfile = inheaderdata[28]
+            outfjsonsize = int(inheaderdata[31], 16)
+            outfjsonchecksumtype = inheaderdata[32]
+            outfjsonchecksum = inheaderdata[33]
+            outfhend = cur_entry['fhend']  # (kept for parity; not used)
+            outfjstart = cur_entry['fjstart']
+            # Read JSON bytes; compute checksum on bytes for robustness
+            outfprejsoncontent_bytes = cur_entry['fjsonrawdata']
+            # Decode for any downstream text needs (not used further here)
+            try:
+                outfprejsoncontent = outfprejsoncontent_bytes.decode("UTF-8")
+            except Exception:
+                outfprejsoncontent = None
+            outfjend = cur_entry['fjend']
+            injsonfcs = GetFileChecksum(outfprejsoncontent_bytes, outfjsonchecksumtype, True, formatspecs, saltkey)
+            outfextrafields = int(inheaderdata[35], 16)
+            extrafieldslist = []
+            extrastart = 36
+            extraend = extrastart + outfextrafields
+            outfcs = inheaderdata[-2].lower()
+            outfccs = inheaderdata[-1].lower()
+            infcs = GetHeaderChecksum(inheaderdata[:-2], inheaderdata[-4].lower(), True, formatspecs, saltkey)
+            if(verbose):
+                VerbosePrintOut(outfname)
+                VerbosePrintOut("Record Number " + str(il) + "; File ID " + str(fid) + "; iNode Number " + str(finode))
 
-            infccs = GetFileChecksum(outfcontents, inheaderdata[-3].lower(), False, formatspecs, saltkey)
-            pyhascontents = True
-
-            if(CheckChecksums(outfccs, infccs)):
+            if(CheckChecksums(outfcs, infcs)):
                 if(verbose):
-                    VerbosePrintOut("File Content Checksum Passed at offset " + str(outfcontentstart))
-                    VerbosePrintOut("'" + outfccs + "' == " + "'" + infccs + "'")
+                    VerbosePrintOut("File Header Checksum Passed at offset " + str(outfhstart))
+                    VerbosePrintOut("'" + outfcs + "' == " + "'" + infcs + "'")
             else:
                 valid_archive = False
                 invalid_archive = True
                 if(verbose):
-                    VerbosePrintOut("File Content Checksum Failed at offset " + str(outfcontentstart))
-                    VerbosePrintOut("'" + outfccs + "' != " + "'" + infccs + "'")
-        if(verbose):
-            VerbosePrintOut("")
-        # Next seek directive
-        if(re.findall(r"^\+([0-9]+)", outfseeknextfile)):
-            fseeknextasnum = int(outfseeknextfile.replace("+", ""))
-            if(abs(fseeknextasnum) == 0):
-                pass
-            fp.seek(fseeknextasnum, 1)
-        elif(re.findall(r"^\-([0-9]+)", outfseeknextfile)):
-            fseeknextasnum = int(outfseeknextfile)
-            if(abs(fseeknextasnum) == 0):
-                pass
-            fp.seek(fseeknextasnum, 1)
-        elif(re.findall(r"^([0-9]+)", outfseeknextfile)):
-            fseeknextasnum = int(outfseeknextfile)
-            if(abs(fseeknextasnum) == 0):
-                pass
-            fp.seek(fseeknextasnum, 0)
-        else:
-            return False
-        il = il + 1
+                    VerbosePrintOut("File Header Checksum Failed at offset " + str(outfhstart))
+                    VerbosePrintOut("'" + outfcs + "' != " + "'" + infcs + "'")
+            if(outfjsonsize > 0):
+                if(CheckChecksums(injsonfcs, outfjsonchecksum)):
+                    if(verbose):
+                        VerbosePrintOut("File JSON Data Checksum Passed at offset " + str(outfjstart))
+                        VerbosePrintOut("'" + outfjsonchecksum + "' == " + "'" + injsonfcs + "'")
+                else:
+                    valid_archive = False
+                    invalid_archive = True
+                    if(verbose):
+                        VerbosePrintOut("File JSON Data Checksum Error at offset " + str(outfjstart))
+                        VerbosePrintOut("'" + outfjsonchecksum + "' != " + "'" + injsonfcs + "'")
+            outfcontentstart = cur_entry['fcontentstart']
+            outfcontents = b""   # FIX: bytes for Py2/3 consistency
+            pyhascontents = False
+            if(outfsize > 0):
+                outfcontents = cur_entry['fcontents']
+                infccs = GetFileChecksum(outfcontents, inheaderdata[-3].lower(), False, formatspecs, saltkey)
+                pyhascontents = True
+                if(CheckChecksums(outfccs, infccs)):
+                    if(verbose):
+                        VerbosePrintOut("File Content Checksum Passed at offset " + str(outfcontentstart))
+                        VerbosePrintOut("'" + outfccs + "' == " + "'" + infccs + "'")
+                else:
+                    valid_archive = False
+                    invalid_archive = True
+                    if(verbose):
+                        VerbosePrintOut("File Content Checksum Failed at offset " + str(outfcontentstart))
+                        VerbosePrintOut("'" + outfccs + "' != " + "'" + infccs + "'")
+            if(verbose):
+                VerbosePrintOut("")
+            il = il + 1
     if(valid_archive):
         if(returnfp):
             return fp
@@ -8285,7 +8142,6 @@ def CatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_form
     else:
         fp.close()
         return False
-
 
 def CatFileValidateFile(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
     return CatFileValidate(infile, fmttype, filestart, formatspecs, saltkey, seektoend, verbose, returnfp)
