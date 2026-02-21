@@ -1072,8 +1072,6 @@ def format_ns_utc(ts_ns, fmt='%Y-%m-%d %H:%M:%S'):
     ns_str = "%09d" % ns
     return base + "." + ns_str
 
-hashlib_guaranteed = False
-
 def CheckSumSupport(checkfor, guaranteed=True):
     if(guaranteed):
         try:
