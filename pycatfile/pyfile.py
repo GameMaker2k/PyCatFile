@@ -7920,7 +7920,7 @@ def PackCatFileFromInFile(infile, outfile, fmttype="auto", compression="auto", c
         return False
     return False
 
-def CatFileArrayValidate(infile, verbose=False):
+def CatFileArrayValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
     # ---------- Input handling ----------
     if isinstance(infile, dict):
         listarrayfileslist = [infile]
