@@ -1072,6 +1072,14 @@ def format_ns_utc(ts_ns, fmt='%Y-%m-%d %H:%M:%S'):
     ns_str = "%09d" % ns
     return base + "." + ns_str
 
+def format_ns_local(ts_ns, fmt='%Y-%m-%d %H:%M:%S'):
+    ts_ns = int(ts_ns)
+    sec, ns = divmod(ts_ns, 10**9)
+    dt = datetime.datetime.fromtimestamp(sec).replace(microsecond=ns // 1000)
+    base = dt.strftime(fmt)
+    ns_str = "%09d" % ns
+    return base + "." + ns_str
+
 def CheckSumSupport(checkfor, guaranteed=True):
     if(guaranteed):
         try:
