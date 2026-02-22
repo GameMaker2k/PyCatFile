@@ -100,6 +100,7 @@ def _build_argparser() -> argparse.ArgumentParser:
     )
     p.add_argument("-m", "--formatver", default=__file_format_dict__["format_ver"], help="Specify the format version.")
     p.add_argument("-l", "--list", action="store_true", help="List files included in the archive file.")
+    p.add_argument("-n", "--new", action="store_true", help="Use with list to get alt listing style.")
 
     # Compression options
     p.add_argument("-P", "--compression", default="auto", help="Specify the compression method to use for concatenation.")
@@ -398,11 +399,11 @@ def main(argv: Optional[list[str]] = None) -> int:
                     getargs.insecretkey,
                     False,
                     getargs.verbose,
-                    False,
+                    getargs.new,
                     False,
                 )
             else:
-                tmpout = pyarchivefile.InFileListFiles(
+                tmpout = pycatfile.InFileListFiles(
                     input_file,
                     "auto",
                     0,
@@ -413,7 +414,7 @@ def main(argv: Optional[list[str]] = None) -> int:
                     fnamedict,
                     getargs.insecretkey,
                     getargs.verbose,
-                    False,
+                    getargs.new,
                     False,
                 )
             if not tmpout:
@@ -430,7 +431,7 @@ def main(argv: Optional[list[str]] = None) -> int:
                 getargs.insecretkey,
                 False,
                 getargs.verbose,
-                False,
+                getargs.new,
                 False,
             )
 
