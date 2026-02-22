@@ -28,6 +28,7 @@ import stat
 import atexit
 import shutil
 import base64
+import struct
 import logging
 import zipfile
 import platform
@@ -1079,6 +1080,31 @@ def format_ns_local(ts_ns, fmt='%Y-%m-%d %H:%M:%S'):
     base = dt.strftime(fmt)
     ns_str = "%09d" % ns
     return base + "." + ns_str
+
+def get_unix_timestamp_zip(member):
+    extra = member.extra
+    i = 0
+    
+    # 1. Try to find UTC Extra Fields
+    while i + 4 <= len(extra):
+        tag, length = struct.unpack('<HH', extra[i:i+4])
+        data = extra[i+4 : i+4+length]
+        
+        # 0x5455: Info-ZIP (Unix)
+        if tag == 0x5455 and len(data) >= 5:
+            if data[0] & 1:
+                return struct.unpack('<I', data[1:5])[0]
+
+        # 0x000a: NTFS (Windows)
+        elif tag == 0x000a and len(data) >= 24:
+            ntfs_mtime = struct.unpack('<Q', data[8:16])[0]
+            return int((ntfs_mtime / 1e7) - 11644473600)
+            
+        i += 4 + length
+
+    # 2. Fallback: Convert MS-DOS date_time to Unix integer
+    dt = datetime.datetime(*member.date_time)
+    return int(dt.replace(tzinfo=datetime.timezone.utc).timestamp())
 
 def CheckSumSupport(checkfor, guaranteed=True):
     if(guaranteed):
@@ -6429,13 +6455,13 @@ def AppendFilesWithContentFromZipFileToList(infile, extradata=[], jsondata={}, c
         else:
             fsize = format(int(member.file_size), 'x').lower()
         fatime = format(
-            int(to_ns(time.mktime(member.date_time + (0, 0, -1)))), 'x').lower()
+            int(to_ns(get_unix_timestamp_zip(member))), 'x').lower()
         fmtime = format(
-            int(to_ns(time.mktime(member.date_time + (0, 0, -1)))), 'x').lower()
+            int(to_ns(get_unix_timestamp_zip(member))), 'x').lower()
         fctime = format(
-            int(to_ns(time.mktime(member.date_time + (0, 0, -1)))), 'x').lower()
+            int(to_ns(get_unix_timestamp_zip(member))), 'x').lower()
         fbtime = format(
-            int(to_ns(time.mktime(member.date_time + (0, 0, -1)))), 'x').lower()
+            int(to_ns(get_unix_timestamp_zip(member))), 'x').lower()
         if(zipinfo.create_system == 0 or zipinfo.create_system == 10):
             fwinattributes = format(int(zipinfo.external_attr & 0xFFFF), 'x').lower()
             if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
@@ -9477,7 +9503,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
             if(len(fgprint) <= 0):
                 fgprint = str(fgid)
             VerbosePrintOut(PrintPermissionString(fmode, ftype) + " " + str(fuprint) + "/" + str(fgprint) + " " + str(member.file_size).rjust(
-                15) + " " + datetime.datetime.utcfromtimestamp(int(time.mktime(member.date_time + (0, 0, -1)))).strftime('%Y-%m-%d %H:%M') + " " + printfname)
+                15) + " " + datetime.datetime.utcfromtimestamp(int(get_unix_timestamp_zip(zipinfo))).strftime('%Y-%m-%d %H:%M') + " " + printfname)
         lcfi = lcfi + 1
     if(returnfp):
         return listarrayfiles['fp']
