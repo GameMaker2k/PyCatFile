@@ -9249,7 +9249,7 @@ def CatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0
                 else:
                     ts_ns = listarrayfiles['ffilelist'][lcfi]['fmtime']
                     sec, ns = divmod(int(ts_ns), 10**9)
-                    dt = datetime.datetime.utcfromtimestamp(sec).replace(microsecond=ns // 1000)
+                    dt = datetime.datetime.fromtimestamp(sec).replace(microsecond=ns // 1000)
                     VerbosePrintOut(PrintPermissionString(listarrayfiles['ffilelist'][lcfi]['fmode'], listarrayfiles['ffilelist'][lcfi]['ftype']) + "\t" + str(fuprint) + "/" + str(fgprint) + "\t" + str(
                     listarrayfiles['ffilelist'][lcfi]['fsize']).rjust(15) + "\t" + dt.strftime('%Y-%m-%d %H:%M') + "\t" + printfname)
             lcfi = lcfi + 1
@@ -9427,7 +9427,7 @@ def TarFileListFiles(infile, formatspecs=__file_format_multi_dict__, verbose=Fal
             if(len(fgprint) <= 0):
                 fgprint = member.gid
             VerbosePrintOut(PrintPermissionString(ffullmode, ftype) + "\t" + str(fuprint) + "/" + str(fgprint) + "\t" + str(
-                member.size).rjust(15) + "\t" + datetime.datetime.utcfromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + "\t" + printfname)
+                member.size).rjust(15) + "\t" + datetime.datetime.fromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + "\t" + printfname)
         lcfi = lcfi + 1
     if(returnfp):
         return listarrayfiles['fp']
@@ -9585,7 +9585,7 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
             if(len(fgprint) <= 0):
                 fgprint = str(fgid)
             VerbosePrintOut(PrintPermissionString(fmode, ftype) + "\t" + str(fuprint) + "/" + str(fgprint) + "\t" + str(member.file_size).rjust(
-                15) + "\t" + datetime.datetime.utcfromtimestamp(int(get_unix_timestamp_zip(zipinfo))).strftime('%Y-%m-%d %H:%M') + "\t" + printfname)
+                15) + "\t" + datetime.datetime.fromtimestamp(int(get_unix_timestamp_zip(zipinfo))).strftime('%Y-%m-%d %H:%M') + "\t" + printfname)
         lcfi = lcfi + 1
     if(returnfp):
         return listarrayfiles['fp']
