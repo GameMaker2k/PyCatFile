@@ -9820,5 +9820,5 @@ def InFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0,
     return False
 
 
-def InFileListFile(infile, verbose=False, formatspecs=__file_format_multi_dict__, seektoend=False, newstyle=False, returnfp=False):
-    return InFileListFiles(infile, verbose, formatspecs, seektoend, newstyle, returnfp)
+def InFileListFile(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, newstyle=False, returnfp=False):
+    return InFileListFiles(infile, fmttype, filestart, seekstart, seekend, skipchecksum, formatspecs, saltkey, seektoend, verbose, newstyle, returnfp)
