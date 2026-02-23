@@ -172,7 +172,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     if active_action == "create":
         if getargs.convert:
-            checkcompressfile = pycatfile.CheckCompressionSubType(input_file, fnamedict, 0, True)
+            checkcompressfile = pycatfile.CheckCompressionSubType(input_file, fnamedict, getargs.filestart, True)
             if (
                 (pycatfile.IsNestedDict(fnamedict) and checkcompressfile in fnamedict)
                 or (pycatfile.IsSingleDict(fnamedict) and checkcompressfile == fnamedict["format_magic"])
@@ -241,7 +241,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     elif active_action == "repack":
         if getargs.convert:
-            checkcompressfile = pycatfile.CheckCompressionSubType(input_file, fnamedict, 0, True)
+            checkcompressfile = pycatfile.CheckCompressionSubType(input_file, fnamedict, getargs.filestart, True)
             if (
                 (pycatfile.IsNestedDict(fnamedict) and checkcompressfile in fnamedict)
                 or (pycatfile.IsSingleDict(fnamedict) and checkcompressfile == fnamedict["format_magic"])
@@ -315,7 +315,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     elif active_action == "extract":
         if getargs.convert:
-            checkcompressfile = pycatfile.CheckCompressionSubType(input_file, fnamedict, 0, True)
+            checkcompressfile = pycatfile.CheckCompressionSubType(input_file, fnamedict, getargs.filestart, True)
             tempout = BytesIO()
             if (
                 (pycatfile.IsNestedDict(fnamedict) and checkcompressfile in fnamedict)
@@ -383,7 +383,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     elif active_action == "list":
         if getargs.convert:
-            checkcompressfile = pycatfile.CheckCompressionSubType(input_file, fnamedict, 0, True)
+            checkcompressfile = pycatfile.CheckCompressionSubType(input_file, fnamedict, getargs.filestart, True)
             if (
                 (pycatfile.IsNestedDict(fnamedict) and checkcompressfile in fnamedict)
                 or (pycatfile.IsSingleDict(fnamedict) and checkcompressfile == fnamedict["format_magic"])
@@ -437,7 +437,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     elif active_action == "validate":
         if getargs.convert:
-            checkcompressfile = pycatfile.CheckCompressionSubType(input_file, fnamedict, 0, True)
+            checkcompressfile = pycatfile.CheckCompressionSubType(input_file, fnamedict, getargs.filestart, True)
             tempout = BytesIO()
             if (
                 (pycatfile.IsNestedDict(fnamedict) and checkcompressfile in fnamedict)
