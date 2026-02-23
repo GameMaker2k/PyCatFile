@@ -38,6 +38,7 @@ import hashlib
 import inspect
 import tempfile
 import configparser
+from zoneinfo import ZoneInfo
 from io import open, StringIO, BytesIO
 __enable_pywwwget__ = True
 pywwwget = False
@@ -1081,30 +1082,71 @@ def format_ns_local(ts_ns, fmt='%Y-%m-%d %H:%M:%S'):
     ns_str = "%09d" % ns
     return base + "." + ns_str
 
-def get_unix_timestamp_zip(member):
+WINDOWS_EPOCH_DELTA = 11644473600  # seconds between 1601-01-01 and 1970-01-01
+
+def _filetime_to_unix_seconds(filetime: int) -> int:
+    # FILETIME is 100-ns intervals since 1601-01-01 UTC
+    return int(filetime // 10_000_000 - WINDOWS_EPOCH_DELTA)
+
+def _parse_ext_timestamp_0x5455(extra_data: bytes) -> int | None:
+    # Layout: [flags:1][mtime?:4][atime?:4][ctime?:4] (only if flags bits set)
+    if len(extra_data) < 1:
+        return None
+    flags = extra_data[0]
+    off = 1
+    if flags & 0x01:
+        if off + 4 <= len(extra_data):
+            (mtime,) = struct.unpack_from("<I", extra_data, off)
+            return int(mtime)
+    return None
+
+def _parse_ntfs_0x000a(extra_data: bytes) -> int | None:
+    # Layout: [reserved:4] then attributes:
+    # attr_tag(2), attr_size(2), attr_data(attr_size)
+    if len(extra_data) < 4:
+        return None
+    off = 4
+    while off + 4 <= len(extra_data):
+        attr_tag, attr_size = struct.unpack_from("<HH", extra_data, off)
+        off += 4
+        if off + attr_size > len(extra_data):
+            break
+        attr = extra_data[off:off + attr_size]
+        off += attr_size
+
+        # 0x0001 attribute contains 3 FILETIMEs: mtime, atime, ctime (each 8 bytes)
+        if attr_tag == 0x0001 and len(attr) >= 24:
+            (mtime_filetime,) = struct.unpack_from("<Q", attr, 0)
+            return _filetime_to_unix_seconds(mtime_filetime)
+    return None
+
+def get_unix_timestamp_zip(member, fallback_tz: str = "America/Chicago") -> int:
     extra = member.extra
     i = 0
-    
-    # 1. Try to find UTC Extra Fields
+
+    # 1) Prefer UTC-capable extra fields
     while i + 4 <= len(extra):
-        tag, length = struct.unpack('<HH', extra[i:i+4])
-        data = extra[i+4 : i+4+length]
-        
-        # 0x5455: Info-ZIP (Unix)
-        if tag == 0x5455 and len(data) >= 5:
-            if data[0] & 1:
-                return struct.unpack('<I', data[1:5])[0]
+        tag, length = struct.unpack_from("<HH", extra, i)
+        i += 4
+        data = extra[i:i+length]
+        i += length
 
-        # 0x000a: NTFS (Windows)
-        elif tag == 0x000a and len(data) >= 24:
-            ntfs_mtime = struct.unpack('<Q', data[8:16])[0]
-            return int((ntfs_mtime / 1e7) - 11644473600)
-            
-        i += 4 + length
+        if tag == 0x5455:
+            ts = _parse_ext_timestamp_0x5455(data)
+            if ts is not None:
+                return ts
 
-    # 2. Fallback: Convert MS-DOS date_time to Unix integer
-    dt = datetime.datetime(*member.date_time)
-    return int(dt.replace(tzinfo=datetime.timezone.utc).timestamp())
+        elif tag == 0x000A:
+            ts = _parse_ntfs_0x000a(data)
+            if ts is not None:
+                return ts
+
+    # 2) Fallback: DOS local time -> interpret in fallback_tz -> UTC
+    # ZIP DOS timestamps are "local time" with no TZ info.
+    local_naive = datetime.datetime(*member.date_time)
+    local_dt = local_naive.replace(tzinfo=ZoneInfo(fallback_tz))
+    utc_dt = local_dt.astimezone(datetime.timezone.utc)
+    return int(utc_dt.timestamp())
 
 def CheckSumSupport(checkfor, guaranteed=True):
     if(guaranteed):
