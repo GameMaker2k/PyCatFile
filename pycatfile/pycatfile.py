@@ -2455,6 +2455,121 @@ def GetBinaryFileType(infile, filestart=0, closefp=True):
     # -------------- FALLBACK --------------
     return False
 
+def _get_seek_consts():
+    """Return (SEEK_DATA, SEEK_HOLE) if supported, else (None, None)."""
+    seek_data = getattr(os, "SEEK_DATA", None)
+    seek_hole = getattr(os, "SEEK_HOLE", None)
+    if seek_data is None or seek_hole is None:
+        return None, None
+    return seek_data, seek_hole
+
+def pack_sparse_to_stream(path, out_fp, bufsize=1024*1024):
+    """
+    Write ONLY data extents from sparse file `path` into `out_fp`.
+    Returns: (logical_size, extents, stored_bytes)
+      extents: list of (offset, length) in logical file
+      stored_bytes: total bytes written to out_fp
+    """
+    st = os.stat(path, follow_symlinks=False)
+    logical_size = int(st.st_size)
+    extents = []
+    stored = 0
+
+    SEEK_DATA, SEEK_HOLE = _get_seek_consts()
+
+    with open(path, "rb", buffering=0) as f:
+        if SEEK_DATA is not None and SEEK_HOLE is not None:
+            # Kernel knows where holes are (best, fastest, exact).
+            pos = 0
+            while pos < logical_size:
+                try:
+                    data_off = os.lseek(f.fileno(), pos, SEEK_DATA)
+                except OSError:
+                    break  # no more data
+                try:
+                    hole_off = os.lseek(f.fileno(), data_off, SEEK_HOLE)
+                except OSError:
+                    hole_off = logical_size
+                if hole_off > logical_size:
+                    hole_off = logical_size
+
+                length = hole_off - data_off
+                if length <= 0:
+                    pos = max(pos + 1, hole_off)
+                    continue
+
+                extents.append((data_off, length))
+                # copy that extent’s bytes into out_fp
+                os.lseek(f.fileno(), data_off, os.SEEK_SET)
+                remaining = length
+                while remaining:
+                    chunk = f.read(min(bufsize, remaining))
+                    if not chunk:
+                        break
+                    out_fp.write(chunk)
+                    stored += len(chunk)
+                    remaining -= len(chunk)
+
+                pos = hole_off
+        else:
+            # Portable fallback (no SEEK_HOLE/DATA): scan for non-zero blocks.
+            # Not perfect (won't detect "real zeros" vs "holes"), but works as a fallback.
+            block = 4096
+            pos = 0
+            while pos < logical_size:
+                chunk = f.read(block)
+                if not chunk:
+                    break
+                if any(b != 0 for b in chunk):
+                    off = pos
+                    # extend this run while blocks have any non-zero
+                    run = bytearray(chunk)
+                    while True:
+                        nxt = f.read(block)
+                        if not nxt or not any(b != 0 for b in nxt):
+                            if nxt:
+                                # rewind one block if it was all-zero (we read too far)
+                                f.seek(-len(nxt), os.SEEK_CUR)
+                            break
+                        run.extend(nxt)
+                    extents.append((off, len(run)))
+                    out_fp.write(run)
+                    stored += len(run)
+                    pos = off + len(run)
+                else:
+                    pos += len(chunk)
+
+    out_fp.seek(0, os.SEEK_SET)
+    return logical_size, extents, stored
+
+def write_sparse_to_fileobj(out_fp, logical_size, extents, in_fp, bufsize=1024*1024):
+    """
+    Recreate sparse file layout into an already-open writable file-like object.
+    """
+    out_fp.seek(0)
+    out_fp.truncate(int(logical_size))
+
+    for off, length in extents:
+        out_fp.seek(int(off), os.SEEK_SET)
+        remaining = int(length)
+        while remaining:
+            chunk = in_fp.read(min(bufsize, remaining))
+            if not chunk:
+                raise EOFError("Archive ended while reading sparse extent data")
+            out_fp.write(chunk)
+            remaining -= len(chunk)
+
+def unpack_sparse_to_path(in_fp, out_path, logical_size, extents, bufsize=1024*1024):
+    os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
+
+    with open(out_path, "wb") as f:
+        write_sparse_to_fileobj(f, logical_size, extents, in_fp, bufsize)
+
+        try:
+            f.flush()
+            os.fsync(f.fileno())
+        except Exception:
+            pass
 
 def _is_valid_zlib_header(cmf, flg):
     """
@@ -5995,7 +6110,8 @@ def AppendFilesWithContentToList(infiles, dirlistfromtxt=False, extradata=[], js
         # Types that should be considered zero-length in the archive context:
         zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
         # Types that have actual data to read:
-        data_types = {0, 7, 12}
+        data_types = {0, 7}
+        sparse_types = {12}
         if ftype in zero_length_types:
             fsize = format(int("0"), 'x').lower()
         elif ftype in data_types:
@@ -6312,7 +6428,8 @@ def AppendFilesWithContentFromTarFileToList(infile, extradata=[], jsondata={}, c
         # Types that should be considered zero-length in the archive context:
         zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
         # Types that have actual data to read:
-        data_types = {0, 7, 12}
+        data_types = {0, 7}
+        sparse_types = {12}
         if ftype in zero_length_types:
             fsize = format(int("0"), 'x').lower()
         elif ftype in data_types:
