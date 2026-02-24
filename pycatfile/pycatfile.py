@@ -38,8 +38,8 @@ import hashlib
 import inspect
 import tempfile
 import configparser
-from zoneinfo import ZoneInfo
 from io import open, StringIO, BytesIO
+from decimal import Decimal, ROUND_HALF_UP
 __enable_pywwwget__ = True
 pywwwget = False
 try:
@@ -1051,20 +1051,32 @@ def VerbosePrintOutReturn(dbgtxt, outtype="log", dbgenable=True, dgblevel=20, **
     VerbosePrintOut(dbgtxt, outtype, dbgenable, dgblevel, **kwargs)
     return dbgtxt
 
+NS_PER_SEC = 1_000_000_000
+
 def to_ns(timestamp):
     """
-    Convert a second-resolution timestamp (int or float)
-    into a nanosecond timestamp (int) by zero-padding.
-    Works in Python 3.
-    """
-    try:
-        # Convert incoming timestamp to float so it works for int or float
-        seconds = float(timestamp)
-    except (TypeError, ValueError):
-        raise ValueError("Timestamp must be int or float")
+    Convert a second-resolution timestamp (int, float, str, or Decimal)
+    into an integer nanosecond timestamp safely.
 
-    # Multiply by 1e9 to get nanoseconds, then cast to int
-    return int(seconds * 1000000000)
+    Avoids float precision drift.
+    """
+    if isinstance(timestamp, int):
+        # Already whole seconds
+        return timestamp * NS_PER_SEC
+
+    if isinstance(timestamp, float):
+        # Convert through Decimal via string to preserve exact decimal value
+        seconds = Decimal(str(timestamp))
+        return int((seconds * NS_PER_SEC).to_integral_value(rounding=ROUND_HALF_UP))
+
+    if isinstance(timestamp, Decimal):
+        return int((timestamp * NS_PER_SEC).to_integral_value(rounding=ROUND_HALF_UP))
+
+    if isinstance(timestamp, str):
+        seconds = Decimal(timestamp)
+        return int((seconds * NS_PER_SEC).to_integral_value(rounding=ROUND_HALF_UP))
+
+    raise ValueError("Timestamp must be int, float, Decimal, or str")
 
 def format_ns_utc(ts_ns, fmt='%Y-%m-%d %H:%M:%S'):
     ts_ns = int(ts_ns)
@@ -1084,11 +1096,11 @@ def format_ns_local(ts_ns, fmt='%Y-%m-%d %H:%M:%S'):
 
 WINDOWS_EPOCH_DELTA = 11644473600  # seconds between 1601-01-01 and 1970-01-01
 
-def _filetime_to_unix_seconds(filetime: int) -> int:
+def _filetime_to_unix_seconds(filetime):
     # FILETIME is 100-ns intervals since 1601-01-01 UTC
     return int(filetime // 10_000_000 - WINDOWS_EPOCH_DELTA)
 
-def _parse_ext_timestamp_0x5455(extra_data: bytes) -> int | None:
+def _parse_ext_timestamp_0x5455(extra_data):
     # Layout: [flags:1][mtime?:4][atime?:4][ctime?:4] (only if flags bits set)
     if len(extra_data) < 1:
         return None
@@ -1100,7 +1112,7 @@ def _parse_ext_timestamp_0x5455(extra_data: bytes) -> int | None:
             return int(mtime)
     return None
 
-def _parse_ntfs_0x000a(extra_data: bytes) -> int | None:
+def _parse_ntfs_0x000a(extra_data):
     # Layout: [reserved:4] then attributes:
     # attr_tag(2), attr_size(2), attr_data(attr_size)
     if len(extra_data) < 4:
@@ -1120,7 +1132,9 @@ def _parse_ntfs_0x000a(extra_data: bytes) -> int | None:
             return _filetime_to_unix_seconds(mtime_filetime)
     return None
 
-def get_unix_timestamp_zip(member, fallback_tz: str = "America/Chicago") -> int:
+local_tz = datetime.datetime.now().astimezone().tzinfo
+
+def get_unix_timestamp_zip(member, fallback_tz = local_tz):
     extra = member.extra
     i = 0
 
@@ -1144,7 +1158,7 @@ def get_unix_timestamp_zip(member, fallback_tz: str = "America/Chicago") -> int:
     # 2) Fallback: DOS local time -> interpret in fallback_tz -> UTC
     # ZIP DOS timestamps are "local time" with no TZ info.
     local_naive = datetime.datetime(*member.date_time)
-    local_dt = local_naive.replace(tzinfo=ZoneInfo(fallback_tz))
+    local_dt = local_naive.replace(tzinfo=fallback_tz)
     utc_dt = local_dt.astimezone(datetime.timezone.utc)
     return int(utc_dt.timestamp())
 
