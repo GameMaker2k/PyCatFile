@@ -9760,8 +9760,8 @@ def CatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0
                         compratio = "\t"
                     else:
                         compratio = "\t"+compratio
-                    if(listarrayfiles['ffilelist'][lcfi]['fsize']==0):
-                        compressprint = str("0").rjust(15) + "\t"
+                    if(listarrayfiles['ffilelist'][lcfi]['fcsize']==0):
+                        compressprint = str("").rjust(15) + "\t"
                     else:
                         compressprint = str(listarrayfiles['ffilelist'][lcfi]['fcsize']).rjust(15) + "\t"
                     VerbosePrintOut(ftype_to_str(listarrayfiles['ffilelist'][lcfi]['ftype']) + "\t" + listarrayfiles['ffilelist'][lcfi]['fcompression'] + compratio + "\t" + str(
