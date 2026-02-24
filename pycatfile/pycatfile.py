@@ -37,7 +37,6 @@ import binascii
 import hashlib
 import inspect
 import tempfile
-import libarchive
 import configparser
 from io import open, StringIO, BytesIO
 from decimal import Decimal, ROUND_HALF_UP
@@ -84,6 +83,14 @@ py7zr_support = False
 try:
     import py7zr
     py7zr_support = True
+except (ImportError, OSError):
+    pass
+
+# LibArchive / BSDTar Support
+libarchive_support = False
+try:
+    import libarchive
+    libarchive_support = True
 except (ImportError, OSError):
     pass
 
@@ -6068,6 +6075,8 @@ def AppendFilesWithContentToList(infiles, dirlistfromtxt=False, extradata=[], js
             ftype = 10
         elif(hasattr(stat, "S_ISWHT") and stat.S_ISWHT(fpremode)):
             ftype = 11
+        elif(hasattr(stat, "S_ISSOCK") and stat.S_ISSOCK(fpremode)):
+            ftype = 15
         else:
             ftype = 0
         flinkname = ""
@@ -6542,281 +6551,311 @@ def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, com
             pass
     return fp
 
-def _is_pathlike(x):
-    return isinstance(x, (str, bytes, os.PathLike))
+if(libarchive_support):
+    def _is_pathlike(x):
+        return isinstance(x, (str, bytes, os.PathLike))
+    def _has_archive_class():
+        A = getattr(libarchive, "Archive", None)
+        return A if callable(A) else None
+    def open_archive_reader(infile):
+        """
+        Returns a context manager that yields a libarchive reader (iterable of entries).
 
+        Supports (depending on what this installed 'libarchive' package exposes):
 
-def open_archive_reader(infile):
-    """
-    Returns a context manager that yields a libarchive reader.
+        Preferred (if available):
+          - libarchive.Archive(path_or_fd)
 
-    Supports:
-      - path-like: libarchive.file_reader(path)
-      - file object with fileno(): libarchive.fd_reader(fd)
-      - bytes / bytearray / memoryview / io.BytesIO: libarchive.memory_reader(data)
-        (falls back to a temp file if memory_reader isn't available)
-    """
-    # 1) Path
-    if _is_pathlike(infile):
-        return libarchive.file_reader(infile)
+        Otherwise falls back to libarchive-c style:
+          - path-like: libarchive.file_reader(path)
+          - file object with fileno(): libarchive.fd_reader(fd)
+          - bytes / bytearray / memoryview / io.BytesIO: libarchive.memory_reader(data)
+            (falls back to a temp file if memory_reader isn't available)
+        """
+        Archive = _has_archive_class()
+        # ---- 0) If Archive class exists, prefer it (works for path or fd int) ----
+        if Archive is not None:
+            # Path-like -> Archive(path)
+            if _is_pathlike(infile):
+                return Archive(infile)
+            # FD int -> Archive(fd)
+            if isinstance(infile, int):
+                return Archive(infile)
+            # File object -> Archive(fileno)
+            if hasattr(infile, "read") and hasattr(infile, "fileno"):
+                return Archive(infile)
+            # BytesIO / bytes-like:
+            # Archive usually doesn't accept raw bytes directly; fall through to memory/temp handling.
+        # ---- 1) Path-like fallback ----
+        if _is_pathlike(infile):
+            return libarchive.file_reader(infile)
+        # ---- 2) BytesIO / bytes-like -> memory_reader (or temp file fallback) ----
+        data = None
+        if isinstance(infile, io.BytesIO):
+            data = infile.getvalue()
+        elif isinstance(infile, (bytes, bytearray, memoryview)):
+            data = bytes(infile)
+        if data is not None:
+            mem_reader = getattr(libarchive, "memory_reader", None)
+            if callable(mem_reader):
+                return mem_reader(data)
+            class _TempFileReaderCM:
+                def __init__(self, blob):
+                    self._blob = blob
+                    self._tmp = None
+                    self._cm = None
+                    self._archive = None
+                def __enter__(self):
+                    self._tmp = tempfile.NamedTemporaryFile(delete=False)
+                    try:
+                        self._tmp.write(self._blob)
+                        self._tmp.flush()
+                        self._tmp.close()
+                        # If Archive exists, prefer it even in fallback
+                        Archive2 = _has_archive_class()
+                        if Archive2 is not None:
+                            self._cm = Archive2(self._tmp.name)
+                            self._archive = self._cm.__enter__()
+                        else:
+                            self._cm = libarchive.file_reader(self._tmp.name)
+                            self._archive = self._cm.__enter__()
+                        return self._archive
+                    except Exception:
+                        self.__exit__(None, None, None)
+                        raise
+                def __exit__(self, exc_type, exc, tb):
+                    try:
+                        if self._cm is not None:
+                            self._cm.__exit__(exc_type, exc, tb)
+                    finally:
+                        if self._tmp is not None:
+                            try:
+                                os.unlink(self._tmp.name)
+                            except OSError:
+                                pass
+            return _TempFileReaderCM(data)
+        # ---- 3) FD int fallback (libarchive-c style) ----
+        if isinstance(infile, int):
+            return libarchive.fd_reader(infile)
+        # ---- 4) File object with fileno() fallback ----
+        if hasattr(infile, "read") and hasattr(infile, "fileno"):
+            return libarchive.fd_reader(infile.fileno())
+        raise TypeError(f"Unsupported infile type: {type(infile)!r}")
 
-    # 2) BytesIO or any bytes-like object
-    data = None
-    if isinstance(infile, io.BytesIO):
-        data = infile.getvalue()
-    elif isinstance(infile, (bytes, bytearray, memoryview)):
-        data = bytes(infile)
-
-    if data is not None:
-        # Preferred: in-memory reader (if available)
-        mem_reader = getattr(libarchive, "memory_reader", None)
-        if callable(mem_reader):
-            return mem_reader(data)
-
-        # Fallback: spill to temp file (still works everywhere)
-        # Note: caller doesn't need to manage cleanup; NamedTemporaryFile is a context manager,
-        # but libarchive.file_reader expects a filename. We'll implement a tiny CM wrapper.
-        class _TempFileReaderCM:
-            def __init__(self, blob):
-                self._blob = blob
-                self._tmp = None
-                self._cm = None
-                self._archive = None
-
-            def __enter__(self):
-                self._tmp = tempfile.NamedTemporaryFile(delete=False)
-                try:
-                    self._tmp.write(self._blob)
-                    self._tmp.flush()
-                    self._tmp.close()
-                    self._cm = libarchive.file_reader(self._tmp.name)
-                    self._archive = self._cm.__enter__()
-                    return self._archive
-                except Exception:
-                    self.__exit__(None, None, None)
-                    raise
-
-            def __exit__(self, exc_type, exc, tb):
-                try:
-                    if self._cm is not None:
-                        self._cm.__exit__(exc_type, exc, tb)
-                finally:
-                    if self._tmp is not None:
-                        try:
-                            os.unlink(self._tmp.name)
-                        except OSError:
-                            pass
-
-        return _TempFileReaderCM(data)
-
-    # 3) File object with fileno()
-    if hasattr(infile, "read") and hasattr(infile, "fileno"):
-        return libarchive.fd_reader(infile.fileno())
-
-    raise TypeError(f"Unsupported infile type: {type(infile)!r}")
-
-
-def AppendFilesWithContentFromBSDTarFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-    curinode = 0
-    curfid = 0
-    inodelist = []
-    inodetofile = {}
-    filetoinode = {}
-    inodetoforminode = {}
-    if(isinstance(infile, (list, tuple, ))):
-        infile = infile[0]
-    if(infile == "-"):
-        infile = MkTempFile()
-        shutil.copyfileobj(PY_STDIN_BUF, infile, length=__filebuff_size__)
-        infile.seek(0, 0)
-        if(not infile):
-            return False
-        infile.seek(0, 0)
-    elif(re.findall(__download_proto_support__, infile) and pywwwget):
-        infile = download_file_from_internet_file(infile)
-        infile.seek(0, 0)
-        if(not infile):
-            return False
-        infile.seek(0, 0)
-    elif(hasattr(infile, "read") or hasattr(infile, "write")):
-        try:
-            if(not tarfile.is_tarfile(infile)):
-                return False
-        except AttributeError:
-            if(not TarFileCheck(infile)):
-                return False
-    elif(not os.path.exists(infile) or not os.path.isfile(infile)):
+if(not libarchive_support):
+    def AppendFilesWithContentFromBSDTarFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return False
-    tmpoutlist = []
-    with open_archive_reader(infile) as archive:
-        for member in archive:
-            fencoding = "UTF-8"
-            fname = member.pathname
-            if(verbose):
-                VerbosePrintOut(fname)
-            fpremode = member.mode
-            ffullmode = member.mode
-            flinkcount = 0
-            fblksize = format(int(0), 'x').lower()
-            fblocks = format(int(0), 'x').lower()
-            fflags = format(int(0), 'x').lower()
-            ftype = 0
-            if(member.isreg or member.isfile):
-                ffullmode = member.mode | stat.S_IFREG
-                ftype = 0
-            elif(member.islnk):
-                ffullmode = member.mode | stat.S_IFREG
-                ftype = 1
-            elif(member.issym):
-                ffullmode = member.mode | stat.S_IFLNK
-                ftype = 2
-            elif(member.ischr):
-                ffullmode = member.mode | stat.S_IFCHR
-                ftype = 3
-            elif(member.isblk):
-                ffullmode = member.mode | stat.S_IFBLK
-                ftype = 4
-            elif(member.isdir):
-                ffullmode = member.mode | stat.S_IFDIR
-                ftype = 5
-            elif(member.isfifo):
-                ffullmode = member.mode | stat.S_IFIFO
-                ftype = 6
-            elif(hasattr(member, "issparse") and member.issparse):
-                ffullmode = member.mode | stat.S_IFREG
-                ftype = 12
-            elif(member.isdev()):
+    def AppendFilesWithContentFromBSDTarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+        return False
+else:
+    def AppendFilesWithContentFromBSDTarFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+        curinode = 0
+        curfid = 0
+        inodelist = []
+        inodetofile = {}
+        filetoinode = {}
+        inodetoforminode = {}
+        if(isinstance(infile, (list, tuple, ))):
+            infile = infile[0]
+        if(infile == "-"):
+            infile = MkTempFile()
+            shutil.copyfileobj(PY_STDIN_BUF, infile, length=__filebuff_size__)
+            infile.seek(0, 0)
+            if(not infile):
+                return False
+            infile.seek(0, 0)
+        elif(re.findall(__download_proto_support__, infile) and pywwwget):
+            infile = download_file_from_internet_file(infile)
+            infile.seek(0, 0)
+            if(not infile):
+                return False
+            infile.seek(0, 0)
+        elif(hasattr(infile, "read") or hasattr(infile, "write")):
+            try:
+                if(not tarfile.is_tarfile(infile)):
+                    return False
+            except AttributeError:
+                if(not TarFileCheck(infile)):
+                    return False
+        elif(not os.path.exists(infile) or not os.path.isfile(infile)):
+            return False
+        tmpoutlist = []
+        with open_archive_reader(infile) as archive:
+            for member in archive:
+                fencoding = "UTF-8"
+                fname = member.pathname
+                if(verbose):
+                    VerbosePrintOut(fname)
+                fpremode = member.mode
                 ffullmode = member.mode
-                ftype = 14
-            else:
-                ffullmode = member.mode | stat.S_IFREG
+                flinkcount = 0
+                fblksize = format(int(0), 'x').lower()
+                fblocks = format(int(0), 'x').lower()
+                fflags = format(int(0), 'x').lower()
                 ftype = 0
-            flinkname = ""
-            fcurfid = format(int(curfid), 'x').lower()
-            fcurinode = format(int(curfid), 'x').lower()
-            curfid = curfid + 1
-            if(ftype == 2):
-                flinkname = member.linkname
-            fdev = format(int("0"), 'x').lower()
-            frdev = format(int(member.rdev), 'x').lower()
-            # Types that should be considered zero-length in the archive context:
-            zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
-            # Types that have actual data to read:
-            data_types = {0, 7}
-            sparse_types = {12}
-            if ftype in zero_length_types:
-                fsize = format(int("0"), 'x').lower()
-            elif ftype in data_types:
-                fsize = format(int(member.size), 'x').lower()
-            else:
-                fsize = format(int(member.size), 'x').lower()
-            if(hasattr(member, "atime") and member.atime is not None):
-                fatime = format(int(to_ns(member.atime)), 'x').lower()
-            else:
-                fatime = format(int(to_ns(member.mtime)), 'x').lower()
-            fmtime = format(int(to_ns(member.mtime)), 'x').lower()
-            if(hasattr(member, "ctime") and member.ctime is not None):
-                fctime = format(int(to_ns(member.ctime)), 'x').lower()
-            else:
-                fctime = format(int(to_ns(member.mtime)), 'x').lower()
-            if(hasattr(member, "birthtime") and member.birthtime is not None):
-                fbtime = format(int(to_ns(member.birthtime)), 'x').lower()
-            else:
-                fbtime = format(int(to_ns(member.mtime)), 'x').lower()
-            fmode = format(int(ffullmode), 'x').lower()
-            fchmode = format(int(stat.S_IMODE(ffullmode)), 'x').lower()
-            ftypemod = format(int(stat.S_IFMT(ffullmode)), 'x').lower()
-            fuid = format(int(member.uid), 'x').lower()
-            fgid = format(int(member.gid), 'x').lower()
-            funame = member.uname
-            fgname = member.gname
-            flinkcount = format(int(flinkcount), 'x').lower()
-            fwinattributes = format(int(0), 'x').lower()
-            fcompression = ""
-            fcsize = format(int(0), 'x').lower()
-            fcontents = MkTempFile()
-            fcencoding = "UTF-8"
-            curcompression = "none"
-            if ftype in data_types:
-                for block in member.get_blocks():
-                    fcontents.write(block)
-                typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
-                fcontents.seek(0, 0)
-                if(typechecktest is not False):
-                    typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=False)
-                    fcontents.seek(0, 0)
-                fcencoding = GetFileEncoding(fcontents, 0, False)[0]
-                if(typechecktest is False and not compresswholefile):
-                    fcontents.seek(0, 2)
-                    ucfsize = fcontents.tell()
-                    fcontents.seek(0, 0)
-                    if(compression == "auto"):
-                        ilsize = len(compressionuselist)
-                        ilmin = 0
-                        ilcsize = []
-                        while(ilmin < ilsize):
-                            cfcontents = MkTempFile()
-                            fcontents.seek(0, 0)
-                            shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
-                            fcontents.seek(0, 0)
-                            cfcontents.seek(0, 0)
-                            cfcontents = CompressOpenFileAlt(
-                                cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs)
-                            if(cfcontents):
-                                cfcontents.seek(0, 2)
-                                ilcsize.append(cfcontents.tell())
-                                cfcontents.close()
-                            else:
-                                ilcsize.append(float("inf"))
-                            ilmin = ilmin + 1
-                        ilcmin = ilcsize.index(min(ilcsize))
-                        curcompression = compressionuselist[ilcmin]
-                    fcontents.seek(0, 0)
-                    cfcontents = MkTempFile()
-                    shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
-                    cfcontents.seek(0, 0)
-                    cfcontents = CompressOpenFileAlt(
-                        cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
-                    cfcontents.seek(0, 2)
-                    cfsize = cfcontents.tell()
-                    if(ucfsize > cfsize):
-                        fcsize = format(int(cfsize), 'x').lower()
-                        fcompression = curcompression
-                        fcontents.close()
-                        fcontents = cfcontents
-            if(fcompression == "none"):
+                if(member.isreg or member.isfile):
+                    ffullmode = member.mode | stat.S_IFREG
+                    ftype = 0
+                elif(member.islnk):
+                    ffullmode = member.mode | stat.S_IFREG
+                    ftype = 1
+                elif(member.issym):
+                    ffullmode = member.mode | stat.S_IFLNK
+                    ftype = 2
+                elif(member.ischr):
+                    ffullmode = member.mode | stat.S_IFCHR
+                    ftype = 3
+                elif(member.isblk):
+                    ffullmode = member.mode | stat.S_IFBLK
+                    ftype = 4
+                elif(member.isdir):
+                    ffullmode = member.mode | stat.S_IFDIR
+                    ftype = 5
+                elif(member.isfifo):
+                    ffullmode = member.mode | stat.S_IFIFO
+                    ftype = 6
+                elif(hasattr(member, "issparse") and member.issparse):
+                    ffullmode = member.mode | stat.S_IFREG
+                    ftype = 12
+                elif(member.isdev):
+                    ffullmode = member.mode
+                    ftype = 14
+                elif(member.issock):
+                    ffullmode = member.mode | stat.S_IFSOCK
+                    ftype = 15
+                else:
+                    ffullmode = member.mode | stat.S_IFREG
+                    ftype = 0
+                flinkname = ""
+                fcurfid = format(int(curfid), 'x').lower()
+                fcurinode = format(int(curfid), 'x').lower()
+                curfid = curfid + 1
+                if(ftype == 2):
+                    flinkname = member.linkpath
+                fdev = format(int("0"), 'x').lower()
+                frdev = format(int(member.rdev), 'x').lower()
+                # Types that should be considered zero-length in the archive context:
+                zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
+                # Types that have actual data to read:
+                data_types = {0, 7}
+                sparse_types = {12}
+                if ftype in zero_length_types:
+                    fsize = format(int("0"), 'x').lower()
+                elif ftype in data_types:
+                    fsize = format(int(member.size), 'x').lower()
+                else:
+                    fsize = format(int(member.size), 'x').lower()
+                if(hasattr(member, "atime") and member.atime is not None):
+                    fatime = format(int(to_ns(member.atime)), 'x').lower()
+                else:
+                    fatime = format(int(to_ns(member.mtime)), 'x').lower()
+                fmtime = format(int(to_ns(member.mtime)), 'x').lower()
+                if(hasattr(member, "ctime") and member.ctime is not None):
+                    fctime = format(int(to_ns(member.ctime)), 'x').lower()
+                else:
+                    fctime = format(int(to_ns(member.mtime)), 'x').lower()
+                if(hasattr(member, "birthtime") and member.birthtime is not None):
+                    fbtime = format(int(to_ns(member.birthtime)), 'x').lower()
+                else:
+                    fbtime = format(int(to_ns(member.mtime)), 'x').lower()
+                fmode = format(int(ffullmode), 'x').lower()
+                fchmode = format(int(stat.S_IMODE(ffullmode)), 'x').lower()
+                ftypemod = format(int(stat.S_IFMT(ffullmode)), 'x').lower()
+                fuid = format(int(member.uid), 'x').lower()
+                fgid = format(int(member.gid), 'x').lower()
+                funame = member.uname
+                fgname = member.gname
+                flinkcount = format(int(flinkcount), 'x').lower()
+                fwinattributes = format(int(0), 'x').lower()
                 fcompression = ""
-            fcontents.seek(0, 0)
-            if(not contentasfile):
-                fcontents = fcontents.read()
-            ftypehex = format(ftype, 'x').lower()
-            tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                               fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
-    return tmpoutlist
-
-def AppendFilesWithContentFromBSDTarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-    if(not hasattr(fp, "write")):
-        return False
-    GetDirList = AppendFilesWithContentFromBSDTarFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
-    numfiles = int(len(GetDirList))
-    fnumfiles = format(numfiles, 'x').lower()
-    AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
-    try:
-        fp.flush()
-        if(hasattr(os, "sync")):
-            os.fsync(fp.fileno())
-    except (io.UnsupportedOperation, AttributeError, OSError):
-        pass
-    for curfname in GetDirList:
-        tmpoutlist = curfname['fheaders']
-        AppendFileHeaderWithContent(fp, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
+                fcsize = format(int(0), 'x').lower()
+                fcontents = MkTempFile()
+                fcencoding = "UTF-8"
+                curcompression = "none"
+                if ftype in data_types:
+                    if(hasattr(member, "get_blocks")):
+                        for block in member.get_blocks():
+                            fcontents.write(block)
+                    elif(hasattr(member, "read")):
+                        fcontents.write(member.read())
+                    else:
+                        pass
+                    typechecktest = CheckCompressionType(fcontents, filestart=0, closefp=False)
+                    fcontents.seek(0, 0)
+                    if(typechecktest is not False):
+                        typechecktest = GetBinaryFileType(fcontents, filestart=0, closefp=False)
+                        fcontents.seek(0, 0)
+                    fcencoding = GetFileEncoding(fcontents, 0, False)[0]
+                    if(typechecktest is False and not compresswholefile):
+                        fcontents.seek(0, 2)
+                        ucfsize = fcontents.tell()
+                        fcontents.seek(0, 0)
+                        if(compression == "auto"):
+                            ilsize = len(compressionuselist)
+                            ilmin = 0
+                            ilcsize = []
+                            while(ilmin < ilsize):
+                                cfcontents = MkTempFile()
+                                fcontents.seek(0, 0)
+                                shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
+                                fcontents.seek(0, 0)
+                                cfcontents.seek(0, 0)
+                                cfcontents = CompressOpenFileAlt(
+                                    cfcontents, compressionuselist[ilmin], compressionlevel, compressionuselist, formatspecs)
+                                if(cfcontents):
+                                    cfcontents.seek(0, 2)
+                                    ilcsize.append(cfcontents.tell())
+                                    cfcontents.close()
+                                else:
+                                    ilcsize.append(float("inf"))
+                                ilmin = ilmin + 1
+                            ilcmin = ilcsize.index(min(ilcsize))
+                            curcompression = compressionuselist[ilcmin]
+                        fcontents.seek(0, 0)
+                        cfcontents = MkTempFile()
+                        shutil.copyfileobj(fcontents, cfcontents, length=__filebuff_size__)
+                        cfcontents.seek(0, 0)
+                        cfcontents = CompressOpenFileAlt(
+                            cfcontents, curcompression, compressionlevel, compressionuselist, formatspecs)
+                        cfcontents.seek(0, 2)
+                        cfsize = cfcontents.tell()
+                        if(ucfsize > cfsize):
+                            fcsize = format(int(cfsize), 'x').lower()
+                            fcompression = curcompression
+                            fcontents.close()
+                            fcontents = cfcontents
+                if(fcompression == "none"):
+                    fcompression = ""
+                fcontents.seek(0, 0)
+                if(not contentasfile):
+                    fcontents = fcontents.read()
+                ftypehex = format(ftype, 'x').lower()
+                tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
+                                   fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+        return tmpoutlist
+    def AppendFilesWithContentFromBSDTarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+        if(not hasattr(fp, "write")):
+            return False
+        GetDirList = AppendFilesWithContentFromBSDTarFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+        numfiles = int(len(GetDirList))
+        fnumfiles = format(numfiles, 'x').lower()
+        AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
                 os.fsync(fp.fileno())
         except (io.UnsupportedOperation, AttributeError, OSError):
             pass
-    return fp
+        for curfname in GetDirList:
+            tmpoutlist = curfname['fheaders']
+            AppendFileHeaderWithContent(fp, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
+            try:
+                fp.flush()
+                if(hasattr(os, "sync")):
+                    os.fsync(fp.fileno())
+            except (io.UnsupportedOperation, AttributeError, OSError):
+                pass
+        return fp
 
 def AppendFilesWithContentFromZipFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
     curinode = 0
@@ -7959,6 +7998,97 @@ def AppendFilesWithContentFromTarFileToStackedOutFile(infiles, outfile, fmttype=
     returnout = False
     for infileslist in infiles:
         returnout = AppendFilesWithContentFromTarFileToOutFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, True)
+        if(not returnout):
+            break
+        else:
+            outfile = returnout
+    if(not returnfp and returnout):
+        returnout.close()
+        return True
+    return returnout
+
+if(not libarchive_support):
+    def AppendFilesWithContentFromBSDTarFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
+        return False
+else:
+    def AppendFilesWithContentFromBSDTarFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
+        if(IsNestedDict(formatspecs) and fmttype=="auto" and 
+            (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
+            get_in_ext = os.path.splitext(outfile)
+            tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
+            if(tmpfmt is None and get_in_ext[1]!=""):
+                get_in_ext = os.path.splitext(get_in_ext[0])
+                tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
+            if(tmpfmt is None):
+                fmttype = __file_format_default__
+                formatspecs = formatspecs[fmttype]
+            else:
+                fmttype = tmpfmt
+                formatspecs = formatspecs[tmpfmt]
+        elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
+            formatspecs = formatspecs[fmttype]
+        elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+            fmttype = __file_format_default__
+            formatspecs = formatspecs[fmttype]
+        if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+            outfile = RemoveWindowsPath(outfile)
+            if(os.path.exists(outfile)):
+                try:
+                    os.unlink(outfile)
+                except OSError:
+                    pass
+        if(outfile == "-" or outfile is None):
+            verbose = False
+            fp = MkTempFile()
+        elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
+            fp = outfile
+        elif(re.findall(__upload_proto_support__, outfile) and pywwwget):
+            fp = MkTempFile()
+        else:
+            fbasename = os.path.splitext(outfile)[0]
+            fextname = os.path.splitext(outfile)[1]
+            if(not compresswholefile and fextname in outextlistwd):
+                compresswholefile = True
+            try:
+                fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+            except PermissionError:
+                return False
+        AppendFilesWithContentFromBSDTarFile(infiles, fp, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
+        if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
+            fp = CompressOpenFileAlt(
+                fp, compression, compressionlevel, compressionuselist, formatspecs)
+            try:
+                fp.flush()
+                if(hasattr(os, "sync")):
+                    os.fsync(fp.fileno())
+            except (io.UnsupportedOperation, AttributeError, OSError):
+                pass
+        if(outfile == "-"):
+            fp.seek(0, 0)
+            shutil.copyfileobj(fp, PY_STDOUT_BUF, length=__filebuff_size__)
+        elif(outfile is None):
+            fp.seek(0, 0)
+            outvar = fp.read()
+            fp.close()
+            return outvar
+        elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall(__upload_proto_support__, outfile) and pywwwget):
+            fp = CompressOpenFileAlt(
+                fp, compression, compressionlevel, compressionuselist, formatspecs)
+            fp.seek(0, 0)
+            upload_file_to_internet_file(fp, outfile)
+        if(returnfp):
+            fp.seek(0, 0)
+            return fp
+        else:
+            fp.close()
+            return True
+
+def AppendFilesWithContentFromBSDTarFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
+    if not isinstance(infiles, list):
+        infiles = [infiles]
+    returnout = False
+    for infileslist in infiles:
+        returnout = AppendFilesWithContentFromBSDTarFileToOutFile(infileslist, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, True)
         if(not returnout):
             break
         else:
@@ -9805,6 +9935,109 @@ def TarFileListFiles(infile, formatspecs=__file_format_multi_dict__, verbose=Fal
 
 def TarFileListFile(infile, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
     return TarFileListFiles(infile, formatspecs, verbose, returnfp)
+
+
+if(not libarchive_support):
+    def BSDTarFileListFiles(infile, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+        return False
+else:
+    def BSDTarFileListFiles(infile, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+        if(isinstance(infile, (list, tuple, ))):
+            infile = infile[0]
+        if(infile == "-"):
+            infile = MkTempFile()
+            shutil.copyfileobj(PY_STDIN_BUF, infile, length=__filebuff_size__)
+            infile.seek(0, 0)
+            if(not infile):
+                return False
+            infile.seek(0, 0)
+        elif(re.findall(__download_proto_support__, infile) and pywwwget):
+            infile = download_file_from_internet_file(infile)
+            infile.seek(0, 0)
+            if(not infile):
+                return False
+            infile.seek(0, 0)
+        elif(hasattr(infile, "read") or hasattr(infile, "write")):
+            infile.seek(0, 0)
+        elif(not os.path.exists(infile) or not os.path.isfile(infile)):
+            return False
+        try:
+            if(hasattr(infile, "read") or hasattr(infile, "write")):
+                compresscheck = CheckCompressionType(infile, formatspecs, 0, False)
+                if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
+                    formatspecs = formatspecs[compresscheck]
+            else:
+                compresscheck = CheckCompressionType(infile, formatspecs, 0, True)
+                if(IsNestedDict(formatspecs) and compresscheck in formatspecs):
+                    formatspecs = formatspecs[compresscheck]
+        except FileNotFoundError:
+            return False
+        lcfi = 0
+        returnval = {}
+        with open_archive_reader(infile) as archive:
+            for member in archive:
+                returnval.update({lcfi: member.pathname})
+                fpremode = member.mode
+                ffullmode = member.mode
+                flinkcount = 0
+                ftype = 0
+                if(member.isreg or member.isfile):
+                    ffullmode = member.mode | stat.S_IFREG
+                    ftype = 0
+                elif(member.islnk):
+                    ffullmode = member.mode | stat.S_IFREG
+                    ftype = 1
+                elif(member.issym):
+                    ffullmode = member.mode | stat.S_IFLNK
+                    ftype = 2
+                elif(member.ischr):
+                    ffullmode = member.mode | stat.S_IFCHR
+                    ftype = 3
+                elif(member.isblk):
+                    ffullmode = member.mode | stat.S_IFBLK
+                    ftype = 4
+                elif(member.isdir):
+                    ffullmode = member.mode | stat.S_IFDIR
+                    ftype = 5
+                elif(member.isfifo):
+                    ffullmode = member.mode | stat.S_IFIFO
+                    ftype = 6
+                elif(hasattr(member, "issparse") and member.issparse()):
+                    ffullmode = member.mode | stat.S_IFREG
+                    ftype = 12
+                elif(member.isdev):
+                    ffullmode = member.mode
+                    ftype = 14
+                else:
+                    ffullmode = member.mode | stat.S_IFREG
+                    ftype = 0
+                if(not verbose):
+                    VerbosePrintOut(member.pathname)
+                elif(verbose):
+                    permissions = {'access': {'0': ('---'), '1': ('--x'), '2': ('-w-'), '3': ('-wx'), '4': (
+                        'r--'), '5': ('r-x'), '6': ('rw-'), '7': ('rwx')}, 'roles': {0: 'owner', 1: 'group', 2: 'other'}}
+                    printfname = member.pathname
+                    if(member.islnk):
+                        printfname = member.pathname + " link to " + member.linkpath
+                    elif(member.issym):
+                        printfname = member.pathname + " -> " + member.linkpath
+                    fuprint = member.uname
+                    if(len(fuprint) <= 0):
+                        fuprint = member.uid
+                    fgprint = member.gname
+                    if(len(fgprint) <= 0):
+                        fgprint = member.gid
+                    VerbosePrintOut(PrintPermissionString(ffullmode, ftype) + "\t" + str(fuprint) + "/" + str(fgprint) + "\t" + str(
+                        member.size).rjust(15) + "\t" + datetime.datetime.fromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + "\t" + printfname)
+                lcfi = lcfi + 1
+        if(returnfp):
+            return listarrayfiles['fp']
+        else:
+            return True
+
+
+def BSDTarFileListFile(infile, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
+    return BSDTarFileListFiles(infile, formatspecs, verbose, returnfp)
 
 
 def ZipFileListFiles(infile, verbose=False, returnfp=False):
