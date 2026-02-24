@@ -8302,15 +8302,6 @@ def MultipleCatFilesToArray(infile, fmttype="auto", filestart=0, seekstart=0, se
     return MultipleCatFileToArray(infile, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
 
 
-def CatFileStringToArray(instr, filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, returnfp=False):
-    checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True)
-    if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
-        formatspecs = formatspecs[checkcompressfile]
-    fp = MkTempFile(instr)
-    listarrayfiles = CatFileToArray(fp, "auto", filestart, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
-    return listarrayfiles
-
-
 def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True)
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
@@ -8887,11 +8878,6 @@ def RePackMultipleCatFile(infiles, outfile, fmttype="auto", compression="auto", 
         return True
     return returnout
 
-def RePackCatFileFromString(instr, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=__file_format_multi_dict__, insaltkey=None, outsaltkey=None, seektoend=False, verbose=False, returnfp=False):
-    fp = MkTempFile(instr)
-    listarrayfiles = RePackCatFile(fp, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, filestart, seekstart, seekend, checksumtype, skipchecksum, extradata, jsondata, formatspecs, insaltkey, outsaltkey, seektoend, verbose, returnfp)
-    return listarrayfiles
-
 
 def PackCatFileFromListDir(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, checksumtype=["md5", "md5", "md5", "md5", "md5"], skipchecksum=False, extradata=[], jsondata={}, formatspecs=__file_format_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
     outarray = MkTempFile()
@@ -9155,12 +9141,6 @@ def UnPackCatFile(infile, outdir=None, followlink=False, filestart=0, seekstart=
     else:
         return True
 
-
-def UnPackCatFileString(instr, outdir=None, followlink=False, filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
-    fp = MkTempFile(instr)
-    listarrayfiles = UnPackCatFile(fp, outdir, followlink, filestart, seekstart, seekend, skipchecksum, formatspecs, saltkey, seektoend, verbose, returnfp)
-    return listarrayfiles
-
 def ftype_to_str(ftype):
     mapping = {
         0: "file",   # file
@@ -9323,12 +9303,6 @@ def MultipleStackedCatFileListFiles(infile, fmttype="auto", filestart=0, seeksta
     for curfname in infile:
         outretval[curfname] = StackedFoxFileListFiles(curfname, fmttype, filestart, seekstart, seekend, skipchecksum, formatspecs, saltkey, seektoend, verbose, newstyle, returnfp)
     return outretval
-
-
-def CatFileStringListFiles(instr, filestart=0, seekstart=0, seekend=0, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, newstyle=False, returnfp=False):
-    fp = MkTempFile(instr)
-    listarrayfiles = CatFileListFiles(instr, "auto", filestart, seekstart, seekend, skipchecksum, formatspecs, saltkey, seektoend, verbose, newstyle, returnfp)
-    return listarrayfiles
 
 
 def TarFileListFiles(infile, formatspecs=__file_format_multi_dict__, verbose=False, returnfp=False):
