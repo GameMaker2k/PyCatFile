@@ -4095,31 +4095,17 @@ def SeekToEndOfFile(fp):
         lasttell = fp.tell()
     return True
 
-def ReadFileHeaderData(fp, skipchecksum=False, formatspecs=None, saltkey=None):
-    if(formatspecs is None):
-        formatspecs = __file_format_multi_dict__
-    filespec = None
-    delimiter = None
-    for key, value in formatspecs.items():
-        oldseek = fp.tell()
-        filetype = fp.read(value['format_len'])
-        formatver = str(int(value['format_ver']))
-        filever = fp.read(len(formatver)).decode("UTF-8")
-        if(filetype.hex()==value['format_hex'] and formatver==filever):
-            filespec = formatspecs[key]
-            delimiter = filespec['format_delimiter']
-            filetypefull = filetype.decode("UTF-8")+filever
-            break
-        fp.seek(oldseek, 1)
-    if(filespec is None or delimiter is None):
+def ReadFileHeaderData(fp, rounds=0, delimiter=_default_delim(None)):
+    """Read `rounds` delimited header fields. Returns a list[str]."""
+    if not hasattr(fp, "read"):
         return False
-    fp.seek(len(delimiter), 1)
-    outlist = ReadFileHeaderDataBySize(fp, delimiter)
-    outlist.insert(0, filetypefull)
-    if(not ValidateHeaderChecksum(outlist[:-1], outlist[-2], outlist[-1], filespec, saltkey) and not skipchecksum):
-        return False
-    fp.seek(len(delimiter), 1)
-    return outlist
+    rounds = int(rounds)
+    if rounds <= 0:
+        return []
+    out = []
+    for _ in range(rounds):
+        out.append(read_until_delimiter(fp, delimiter, decode=True, errors="strict"))
+    return out
 
 def ReadFileHeaderDataWithContent(fp, listonly=False, contentasfile=False, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, saltkey=None):
     if(not hasattr(fp, "read")):
