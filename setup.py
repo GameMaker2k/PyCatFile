@@ -22,7 +22,7 @@ import sys
 from setuptools import setup
 
 # Open and read the version info file in a Python 2/3 compatible way
-verinfofilename = os.path.realpath("."+os.path.sep+os.path.sep+"pycatfile.py")
+verinfofilename = os.path.realpath("."+os.path.sep+"pycatfile"+os.path.sep+"pycatfile.py")
 
 # Use `with` to ensure the file is properly closed after reading
 # In Python 2, open defaults to text mode; in Python 3, it’s better to specify encoding
@@ -79,12 +79,8 @@ pymodule[
     'longdescription'] = 'A tar like file format name catfile after unix cat command (concatenate files) .'
 pymodule['platforms'] = 'OS Independent'
 pymodule['zipsafe'] = True
-if(PY2):
-    pymodule['pymodules'] = ['pycatfile']
-    pymodule['scripts'] = ['catfile.py']
-else:
-    pymodule['pymodules'] = ['pycatfile', 'pycatfile_py3']
-    pymodule['scripts'] = ['catfile.py', 'catfile_py3.py']
+pymodule['pymodules'] = ['pycatfile']
+pymodule['scripts'] = []
 pymodule['classifiers'] = [
     'Development Status :: 5 - Production/Stable',
     'Intended Audience :: Developers',
