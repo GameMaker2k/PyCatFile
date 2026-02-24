@@ -6764,7 +6764,11 @@ else:
                 fuid = format(int(member.uid), 'x').lower()
                 fgid = format(int(member.gid), 'x').lower()
                 funame = member.uname
+                if(funame is None):
+                    funame = ""
                 fgname = member.gname
+                if(fgname is None):
+                    fgname = ""
                 flinkcount = format(int(flinkcount), 'x').lower()
                 fwinattributes = format(int(0), 'x').lower()
                 fcompression = ""
@@ -10022,10 +10026,10 @@ else:
                     elif(member.issym):
                         printfname = member.pathname + " -> " + member.linkpath
                     fuprint = member.uname
-                    if(len(fuprint) <= 0):
+                    if(fuprint is None or len(fuprint) <= 0):
                         fuprint = member.uid
                     fgprint = member.gname
-                    if(len(fgprint) <= 0):
+                    if(fgprint is None or len(fgprint) <= 0):
                         fgprint = member.gid
                     VerbosePrintOut(PrintPermissionString(ffullmode, ftype) + "\t" + str(fuprint) + "/" + str(fgprint) + "\t" + str(
                         member.size).rjust(15) + "\t" + datetime.datetime.fromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + "\t" + printfname)
