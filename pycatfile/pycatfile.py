@@ -6773,12 +6773,24 @@ else:
                 fmode = format(int(ffullmode), 'x').lower()
                 fchmode = format(int(stat.S_IMODE(ffullmode)), 'x').lower()
                 ftypemod = format(int(stat.S_IFMT(ffullmode)), 'x').lower()
-                fuid = format(int(member.uid), 'x').lower()
-                fgid = format(int(member.gid), 'x').lower()
-                funame = member.uname
+                if(hasattr(member, "uid")):
+                    fuid = format(int(member.uid), 'x').lower()
+                else:
+                    fuid = format(int(0), 'x').lower()
+                if(hasattr(member, "gid")):
+                    fgid = format(int(member.gid), 'x').lower()
+                else:
+                    fgid = format(int(0), 'x').lower()
+                if(hasattr(member, "uname")):
+                    funame = member.uname
+                else:
+                    funame = ""
                 if(funame is None):
                     funame = ""
-                fgname = member.gname
+                if(hasattr(member, "uid")):
+                    fgname = member.gname
+                else:
+                    fgname = ""
                 if(fgname is None):
                     fgname = ""
                 flinkcount = format(int(flinkcount), 'x').lower()
