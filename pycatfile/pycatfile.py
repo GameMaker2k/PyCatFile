@@ -8500,7 +8500,7 @@ def PackCatFileFromInFile(infile, outfile, fmttype="auto", compression="auto", c
     elif(IsSingleDict(formatspecs) and checkcompressfile == formatspecs['format_magic']):
         return RePackCatFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, False, 0, 0, checksumtype, False, extradata, jsondata, formatspecs, saltkey, verbose, returnfp)
     else:
-        return False
+        return PackCatFileFromBSDTarFile(infile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, extradata, jsondata, formatspecs, saltkey, verbose, returnfp)
     return False
 
 def CatFileArrayValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, verbose=False, returnfp=False):
