@@ -30,7 +30,6 @@ import shutil
 import base64
 import struct
 import logging
-import zipfile
 import platform
 import datetime
 import binascii
@@ -67,6 +66,11 @@ PY_STDERR_BUF = sys.stderr.buffer
 TEXT_TYPES   = (str,)
 BINARY_TYPES = (bytes, bytearray, memoryview)
 PATH_TYPES   = (str, os.PathLike)
+
+try:
+    import zipfile_zstd as zipfile
+except (ImportError, OSError):
+    import zipfile
 
 # RAR file support
 rarfile_support = False
@@ -112,10 +116,13 @@ except Exception:
     shared_memory = None
 
 def running_interactively():
+    import sys
     main = sys.modules.get("__main__")
-    no_main_file = not hasattr(main, "__file__")
-    interactive_flag = bool(getattr(sys.flags, "interactive", 0))
-    return no_main_file or interactive_flag
+    return (
+        hasattr(sys, "ps1") or
+        bool(getattr(sys.flags, "interactive", 0)) or
+        (main is not None and not hasattr(main, "__file__"))
+    )
 
 if running_interactively():
     logging.basicConfig(format="%(message)s", stream=PY_STDOUT_TEXT, level=logging.DEBUG)
