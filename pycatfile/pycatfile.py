@@ -10061,12 +10061,22 @@ else:
                         printfname = member.pathname + " link to " + member.linkpath
                     elif(member.issym):
                         printfname = member.pathname + " -> " + member.linkpath
-                    fuprint = member.uname
+                    fuprint = ""
+                    if(hasattr(member, "uname")):
+                        fuprint = member.uname
                     if(fuprint is None or len(fuprint) <= 0):
-                        fuprint = member.uid
-                    fgprint = member.gname
+                        if(hasattr(member, "uid")):
+                            fuprint = member.uid
+                        else:
+                            fuprint = "0"
+                    fgprint = ""
+                    if(hasattr(member, "gname")):
+                        fgprint = member.gname
                     if(fgprint is None or len(fgprint) <= 0):
-                        fgprint = member.gid
+                        if(hasattr(member, "gid")):
+                            fgprint = member.gid
+                        else:
+                            fgprint = "0"
                     VerbosePrintOut(PrintPermissionString(ffullmode, ftype) + "\t" + str(fuprint) + "/" + str(fgprint) + "\t" + str(
                         member.size).rjust(15) + "\t" + datetime.datetime.fromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + "\t" + printfname)
                 lcfi = lcfi + 1
