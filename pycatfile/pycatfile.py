@@ -6693,49 +6693,45 @@ else:
                 fname = member.pathname
                 if(verbose):
                     VerbosePrintOut(fname)
-                if(hasattr(member, "mode")):
-                    fpremode = member.mode
-                    ffullmode = member.mode
-                elif(hasattr(member, "perm")):
-                    fpremode = member.perm
-                    ffullmode = member.perm
+                fpremode = member.mode
+                ffullmode = member.mode
                 flinkcount = 0
                 fblksize = format(int(0), 'x').lower()
                 fblocks = format(int(0), 'x').lower()
                 fflags = format(int(0), 'x').lower()
                 ftype = 0
                 if((hasattr(member, "isreg") and member.isreg) or member.isfile):
-                    ffullmode = ffullmode | stat.S_IFREG
+                    ffullmode = member.mode | stat.S_IFREG
                     ftype = 0
                 elif(member.islnk):
-                    ffullmode = ffullmode | stat.S_IFREG
+                    ffullmode = member.mode | stat.S_IFREG
                     ftype = 1
                 elif(member.issym):
-                    ffullmode = ffullmode | stat.S_IFLNK
+                    ffullmode = member.mode | stat.S_IFLNK
                     ftype = 2
                 elif(member.ischr):
-                    ffullmode = ffullmode | stat.S_IFCHR
+                    ffullmode = member.mode | stat.S_IFCHR
                     ftype = 3
                 elif(member.isblk):
-                    ffullmode = ffullmode | stat.S_IFBLK
+                    ffullmode = member.mode | stat.S_IFBLK
                     ftype = 4
                 elif(member.isdir):
-                    ffullmode = ffullmode | stat.S_IFDIR
+                    ffullmode = member.mode | stat.S_IFDIR
                     ftype = 5
                 elif(member.isfifo):
-                    ffullmode = ffullmode | stat.S_IFIFO
+                    ffullmode = member.mode | stat.S_IFIFO
                     ftype = 6
                 elif(hasattr(member, "issparse") and member.issparse):
-                    ffullmode = ffullmode | stat.S_IFREG
+                    ffullmode = member.mode | stat.S_IFREG
                     ftype = 12
                 elif(member.isdev):
-                    ffullmode = ffullmode
+                    ffullmode = member.mode
                     ftype = 14
                 elif(member.issock):
-                    ffullmode = ffullmode | stat.S_IFSOCK
+                    ffullmode = member.mode | stat.S_IFSOCK
                     ftype = 15
                 else:
-                    ffullmode = ffullmode | stat.S_IFREG
+                    ffullmode = member.mode | stat.S_IFREG
                     ftype = 0
                 flinkname = ""
                 fcurfid = format(int(curfid), 'x').lower()
@@ -10021,12 +10017,8 @@ else:
         with open_archive_reader(infile) as archive:
             for member in archive:
                 returnval.update({lcfi: member.pathname})
-                if(hasattr(member, "mode")):
-                    fpremode = member.mode
-                    ffullmode = member.mode
-                elif(hasattr(member, "perm")):
-                    fpremode = member.perm
-                    ffullmode = member.perm
+                fpremode = member.mode
+                ffullmode = member.mode
                 flinkcount = 0
                 ftype = 0
                 if((hasattr(member, "isreg") and member.isreg) or member.isfile):
