@@ -1331,21 +1331,14 @@ def AppendNullBytes(indata=None, delimiter=None):
 def system_and_major():
     info = platform.uname()
 
-    # Python 3: info is a namedtuple with .system / .release
-    # Python 2: info is a plain tuple (system, node, release, version, machine, processor)
-    try:
-        system = info.system
-        release = info.release
-    except AttributeError:
-        # Fallback for Python 2
-        system = info[0]
-        release = info[2]
+    system = info.system
+    release = info.release
 
     # Find the first run of digits in the release string
-    m = re.search(r'\d+', release)
+    m = re.search(r"\d+", release)
     if m:
-        major = m.group(0)  # e.g. '11' or '6'
-        return u"%s%s" % (system, major)  # unicode-safe in Py2
+        major = m.group(0)
+        return f"{system}{major}"
     else:
         return system
 
@@ -10048,6 +10041,21 @@ else:
                 else:
                     ffullmode = member.mode | stat.S_IFREG
                     ftype = 0
+                fsize = 0
+                zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
+                if ftype in zero_length_types:
+                    fsize = 0
+                else:
+                    if(member.size is None):
+                        fcontents = MkTempFile()
+                        if(hasattr(member, "get_blocks")):
+                            for block in member.get_blocks():
+                                fcontents.write(block)
+                        elif(hasattr(member, "read")):
+                            fcontents.write(member.read())
+                        fsize = fcontents.tell()
+                    else:
+                        fsize = member.size
                 if(not verbose):
                     VerbosePrintOut(member.pathname)
                 elif(verbose):
@@ -10075,7 +10083,7 @@ else:
                         else:
                             fgprint = "0"
                     VerbosePrintOut(PrintPermissionString(ffullmode, ftype) + "\t" + str(fuprint) + "/" + str(fgprint) + "\t" + str(
-                        member.size).rjust(15) + "\t" + datetime.datetime.fromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + "\t" + printfname)
+                        fsize).rjust(15) + "\t" + datetime.datetime.fromtimestamp(member.mtime).strftime('%Y-%m-%d %H:%M') + "\t" + printfname)
                 lcfi = lcfi + 1
         if(returnfp):
             return listarrayfiles['fp']
