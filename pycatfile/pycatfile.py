@@ -89,7 +89,10 @@ except (ImportError, OSError):
 # LibArchive / BSDTar Support
 libarchive_support = False
 try:
-    import libarchive
+    try:
+        import libarchive.public as libarchive
+    except ImportError:
+        import libarchive
     libarchive_support = True
 except (ImportError, OSError):
     pass
