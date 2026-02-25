@@ -6126,7 +6126,7 @@ def AppendFilesWithContentToList(infiles, dirlistfromtxt=False, extradata=[], js
         data_types = {0, 7}
         sparse_types = {12}
         if ftype in zero_length_types:
-            fsize = format(int("0"), 'x').lower()
+            fsize = format(int(0), 'x').lower()
         elif ftype in data_types:
             fsize = format(int(fstatinfo.st_size), 'x').lower()
         else:
@@ -6435,7 +6435,7 @@ def AppendFilesWithContentFromTarFileToList(infile, extradata=[], jsondata={}, c
         curfid = curfid + 1
         if(ftype == 2):
             flinkname = member.linkname
-        fdev = format(int("0"), 'x').lower()
+        fdev = format(int(0), 'x').lower()
         try:
             frdev = format(int(os.makedev(member.devmajor, member.devminor)), 'x').lower()
         except AttributeError:
@@ -6446,7 +6446,7 @@ def AppendFilesWithContentFromTarFileToList(infile, extradata=[], jsondata={}, c
         data_types = {0, 7}
         sparse_types = {12}
         if ftype in zero_length_types:
-            fsize = format(int("0"), 'x').lower()
+            fsize = format(int(0), 'x').lower()
         elif ftype in data_types:
             fsize = format(int(member.size), 'x').lower()
         else:
@@ -6739,17 +6739,20 @@ else:
                 curfid = curfid + 1
                 if(ftype == 2):
                     flinkname = member.linkpath
-                fdev = format(int("0"), 'x').lower()
-                frdev = format(int(member.rdev), 'x').lower()
+                fdev = format(int(0), 'x').lower()
+                if(hasattr(member, "rdev")):
+                    frdev = format(int(member.rdev), 'x').lower()
+                else:
+                    frdev = format(int(0), 'x').lower()
                 # Types that should be considered zero-length in the archive context:
                 zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
                 # Types that have actual data to read:
                 data_types = {0, 7}
                 sparse_types = {12}
                 if ftype in zero_length_types:
-                    fsize = format(int("0"), 'x').lower()
+                    fsize = format(int(0), 'x').lower()
                 elif member.size is None:
-                    fsize = format(int("0"), 'x').lower()
+                    fsize = format(int(0), 'x').lower()
                 elif ftype in data_types:
                     fsize = format(int(member.size), 'x').lower()
                 else:
@@ -6939,7 +6942,7 @@ def AppendFilesWithContentFromZipFileToList(infile, extradata=[], jsondata={}, c
         fdev = format(int(0), 'x').lower()
         frdev = format(int(0), 'x').lower()
         if(ftype == 5):
-            fsize = format(int("0"), 'x').lower()
+            fsize = format(int(0), 'x').lower()
         elif(ftype == 0):
             fsize = format(int(member.file_size), 'x').lower()
         else:
@@ -7202,7 +7205,7 @@ else:
             fdev = format(int(0), 'x').lower()
             frdev = format(int(0), 'x').lower()
             if(ftype == 5):
-                fsize = format(int("0"), 'x').lower()
+                fsize = format(int(0), 'x').lower()
             elif(ftype == 0):
                 fsize = format(int(member.file_size), 'x').lower()
             else:
@@ -7460,7 +7463,7 @@ else:
             fdev = format(int(0), 'x').lower()
             frdev = format(int(0), 'x').lower()
             if(ftype == 5):
-                fsize = format(int("0"), 'x').lower()
+                fsize = format(int(0), 'x').lower()
             fatime = format(int(to_ns(member.creationtime.timestamp())), 'x').lower()
             fmtime = format(int(to_ns(member.creationtime.timestamp())), 'x').lower()
             fctime = format(int(to_ns(member.creationtime.timestamp())), 'x').lower()
@@ -10408,7 +10411,7 @@ else:
                 for fmodval in str(oct(fmode))[-3:]:
                     permissionstr = permissionstr + \
                         permissions['access'].get(fmodval, '---')
-                fsize = int("0")
+                fsize = int(0)
                 if(not member.is_directory):
                     ftype = 0
                     permissionstr = "-" + permissionstr
