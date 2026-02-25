@@ -10054,6 +10054,7 @@ else:
                         elif(hasattr(member, "read")):
                             fcontents.write(member.read())
                         fsize = fcontents.tell()
+                        fcontents.close()
                     else:
                         fsize = member.size
                 if(not verbose):
