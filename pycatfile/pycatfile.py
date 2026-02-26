@@ -8734,66 +8734,66 @@ def MultipleCatFilesToArray(infile, fmttype="auto", filestart=0, seekstart=0, se
     return MultipleCatFileToArray(infile, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
 
 
-def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
+def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
     checkcompressfile = __file_format_default__
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
-        formatspecs = formatspecs[checkcompressfile]
+        ckformatspecs = formatspecs[checkcompressfile]
     fp = MkTempFile()
-    fp = PackCatFileFromTarFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, formatspecs, None, False, True)
+    fp = PackCatFileFromTarFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, ckformatspecs, None, False, True)
     listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
     return listarrayfiles
 
 
 if(not libarchive_support):
-    def BSDTarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
+    def BSDTarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
         return False
 
 if(libarchive_support):
-    def BSDTarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
+    def BSDTarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
         checkcompressfile = __file_format_default__
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
-            formatspecs = formatspecs[checkcompressfile]
+            ckformatspecs = formatspecs[checkcompressfile]
         fp = MkTempFile()
-        fp = PackCatFileFromBSDTarFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, formatspecs, None, False, True)
+        fp = PackCatFileFromBSDTarFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, ckformatspecs, None, False, True)
         listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
         return listarrayfiles
 
 
-def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
+def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
     checkcompressfile = __file_format_default__
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
-        formatspecs = formatspecs[checkcompressfile]
+        ckformatspecs = formatspecs[checkcompressfile]
     fp = MkTempFile()
-    fp = PackCatFileFromZipFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, formatspecs, None, False, True)
+    fp = PackCatFileFromZipFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, ckformatspecs, None, False, True)
     listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
     return listarrayfiles
 
 
 if(not rarfile_support):
-    def RarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
+    def RarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
         return False
 
 if(rarfile_support):
-    def RarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
+    def RarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
         checkcompressfile = __file_format_default__
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
-            formatspecs = formatspecs[checkcompressfile]
+            ckformatspecs = formatspecs[checkcompressfile]
         fp = MkTempFile()
-        fp = PackCatFileFromRarFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, formatspecs, None, False, True)
+        fp = PackCatFileFromRarFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, ckformatspecs, None, False, True)
         listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
         return listarrayfiles
 
 if(not py7zr_support):
-    def SevenZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
+    def SevenZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
         return False
 
 if(py7zr_support):
-    def SevenZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
+    def SevenZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
         checkcompressfile = __file_format_default__
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
-            formatspecs = formatspecs[checkcompressfile]
+            ckformatspecs = formatspecs[checkcompressfile]
         fp = MkTempFile()
-        fp = PackCatFileFromSevenZipFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, formatspecs, None, False, True)
+        fp = PackCatFileFromSevenZipFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, ckformatspecs, None, False, True)
         listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
         return listarrayfiles
 
