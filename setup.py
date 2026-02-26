@@ -80,6 +80,9 @@ pymodule[
 pymodule['platforms'] = 'OS Independent'
 pymodule['zipsafe'] = True
 pymodule['pymodules'] = ['pycatfile']
+pymodule['packages'] = find_packages()
+pymodule['packagedata'] = {'pycatfile': ['*.ini', '*.json']}
+pymodule['includepackagedata'] = True
 pymodule['scripts'] = []
 pymodule['classifiers'] = [
     'Development Status :: 5 - Production/Stable',
@@ -161,7 +164,9 @@ setup(
     long_description=pymodule['longdescription'],
     platforms=pymodule['platforms'],
     zip_safe=pymodule['zipsafe'],
-    py_modules=pymodule['pymodules'],
+    packages=pymodule['packages'],
+    package_data=pymodule['packagedata'],
+    include_package_data=pymodule['includepackagedata'],
     scripts=pymodule['scripts'],
     classifiers=pymodule['classifiers']
 )
