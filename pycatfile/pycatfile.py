@@ -8735,37 +8735,36 @@ def MultipleCatFilesToArray(infile, fmttype="auto", filestart=0, seekstart=0, se
 
 
 def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
-    checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True)
+    checkcompressfile = __file_format_default__
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         formatspecs = formatspecs[checkcompressfile]
     fp = MkTempFile()
-    fp = PackCatFileFromTarFile(infile, fp, "auto", True, None, compressionlistalt, "md5", [], formatspecs, None, False, True)
+    fp = PackCatFileFromTarFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, formatspecs, None, False, True)
     listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
     return listarrayfiles
 
 
 if(not libarchive_support):
     def BSDTarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
-        checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True):
         return False
 
 if(libarchive_support):
     def BSDTarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
-        checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True):
+        checkcompressfile = __file_format_default__
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         fp = MkTempFile()
-        fp = PackArchiveFileFromBSDTarFile(infile, fp, "auto", True, None, compressionlistalt, "md5", [], formatspecs, None, False, True)
-        listarrayfiles = ArchiveFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
+        fp = PackCatFileFromBSDTarFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, formatspecs, None, False, True)
+        listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
         return listarrayfiles
 
 
 def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
-    checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True)
+    checkcompressfile = __file_format_default__
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         formatspecs = formatspecs[checkcompressfile]
     fp = MkTempFile()
-    fp = PackCatFileFromZipFile(infile, fp, "auto", True, None, compressionlistalt, "md5", [], formatspecs, None, False, True)
+    fp = PackCatFileFromZipFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, formatspecs, None, False, True)
     listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
     return listarrayfiles
 
@@ -8776,11 +8775,11 @@ if(not rarfile_support):
 
 if(rarfile_support):
     def RarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
-        checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True)
+        checkcompressfile = __file_format_default__
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         fp = MkTempFile()
-        fp = PackCatFileFromRarFile(infile, fp, "auto", True, None, compressionlistalt, "md5", [], formatspecs, None, False, True)
+        fp = PackCatFileFromRarFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, formatspecs, None, False, True)
         listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
         return listarrayfiles
 
@@ -8790,11 +8789,11 @@ if(not py7zr_support):
 
 if(py7zr_support):
     def SevenZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
-        checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True)
+        checkcompressfile = __file_format_default__
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             formatspecs = formatspecs[checkcompressfile]
         fp = MkTempFile()
-        fp = PackCatFileFromSevenZipFile(infile, fp, "auto", True, None, compressionlistalt, "md5", [], formatspecs, None, False, True)
+        fp = PackCatFileFromSevenZipFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, formatspecs, None, False, True)
         listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
         return listarrayfiles
 
@@ -9643,7 +9642,7 @@ def CatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0
     else:
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not isinstance(infile, bytes)):
             infile = RemoveWindowsPath(infile)
-        listarrayfileslist = ArchiveFileToArray(infile, fmttype, filestart, seekstart, seekend, True, False, False, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
+        listarrayfileslist = CatFileToArray(infile, fmttype, filestart, seekstart, seekend, True, False, False, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
     if(not listarrayfileslist):
         return False
     for listarrayfiles in listarrayfileslist:
