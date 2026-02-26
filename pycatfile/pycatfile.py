@@ -5736,7 +5736,7 @@ def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile
             fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
         except PermissionError:
             return False
-    AppendFileHeader(fp, 0, "UTF-8", ['hello', 'goodbye'], {}, checksumtype, formatspecs, saltkey)
+    AppendFileHeader(fp, 0, "UTF-8", [], {}, checksumtype, formatspecs, saltkey)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, compressionuselist, formatspecs)
