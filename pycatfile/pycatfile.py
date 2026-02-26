@@ -8744,6 +8744,16 @@ def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile
     return listarrayfiles
 
 
+def BSDTarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
+    checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True)
+    if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
+        formatspecs = formatspecs[checkcompressfile]
+    fp = MkTempFile()
+    fp = PackArchiveFileFromBSDTarFile(infile, fp, "auto", True, None, compressionlistalt, "md5", [], formatspecs, None, False, True)
+    listarrayfiles = ArchiveFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
+    return listarrayfiles
+
+
 def ZipFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_dict__, seektoend=False, returnfp=False):
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True)
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
@@ -10407,7 +10417,7 @@ def InFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0,
     elif(checkcompressfile == formatspecs['format_magic']):
         return CatFileListFiles(infile, fmttype, filestart, seekstart, seekend, skipchecksum, formatspecs, saltkey, seektoend, verbose, newstyle, returnfp)
     else:
-        return False
+        return BSDTarFileListFiles(infile, formatspecs, verbose, returnfp)
     return False
 
 
