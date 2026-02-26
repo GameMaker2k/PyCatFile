@@ -13,7 +13,7 @@
     Copyright 2018-2026 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2026 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: __main__.py - Last Update: 2/24/2026 Ver. 0.30.0 RC 1 - Author: cooldude2k $
+    $FileInfo: __main__.py - Last Update: 2/25/2026 Ver. 0.30.2 RC 1 - Author: cooldude2k $
 '''
 
 from __future__ import annotations
