@@ -19,7 +19,7 @@
 import os
 import re
 import sys
-from setuptools import setup
+from setuptools import setup, find_packages
 
 # Open and read the version info file in a Python 2/3 compatible way
 verinfofilename = os.path.realpath("."+os.path.sep+"pycatfile"+os.path.sep+"pycatfile.py")
