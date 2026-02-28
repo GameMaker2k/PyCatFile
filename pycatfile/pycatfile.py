@@ -5865,6 +5865,8 @@ def AppendFilesWithContentFromInFile(infile, fp, listtype="dir", extradata=[], j
         GetDirList = AppendFilesWithContentFromRarFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
     elif(listtype.lower()=="7zip"):
         GetDirList = AppendFilesWithContentFromSevenZipFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+    elif(listtype.lower()=="infile"):
+        GetDirList = AppendReadInFileWithContentToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
     else:
         GetDirList = AppendFilesWithContentToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
     numfiles = int(len(GetDirList))
