@@ -5850,6 +5850,130 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, fi
         pass
     return fp
 
+def AppendFilesWithContentFromInFile(infile, fp, listtype="dir", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    if(not hasattr(fp, "write")):
+        return False
+    if(listtype.lower()=="dir"):
+        GetDirList = AppendFilesWithContentToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+    elif(listtype.lower()=="tar"):
+        GetDirList = AppendFilesWithContentFromTarFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+    elif(listtype.lower()=="bsd"):
+        GetDirList = AppendFilesWithContentFromBSDTarFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+    elif(listtype.lower()=="zip"):
+        GetDirList = AppendFilesWithContentFromZipFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+    elif(listtype.lower()=="rar"):
+        GetDirList = AppendFilesWithContentFromRarFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+    elif(listtype.lower()=="7zip"):
+        GetDirList = AppendFilesWithContentFromSevenZipFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+    else:
+        GetDirList = AppendFilesWithContentToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+    numfiles = int(len(GetDirList))
+    fnumfiles = format(numfiles, 'x').lower()
+    AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
+    try:
+        fp.flush()
+        if(hasattr(os, "sync")):
+            os.fsync(fp.fileno())
+    except (io.UnsupportedOperation, AttributeError, OSError):
+        pass
+    for curfname in GetDirList:
+        tmpoutlist = curfname['fheaders']
+        AppendFileHeaderWithContent(fp, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
+        try:
+            fp.flush()
+            if(hasattr(os, "sync")):
+                os.fsync(fp.fileno())
+        except (io.UnsupportedOperation, AttributeError, OSError):
+            pass
+    return fp
+
+def AppendFilesWithContentFromInFileToOutFile(infiles, outfile, listtype="dir", fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
+    if(IsNestedDict(formatspecs) and fmttype=="auto" and 
+        (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
+        get_in_ext = os.path.splitext(outfile)
+        tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
+        if(tmpfmt is None and get_in_ext[1]!=""):
+            get_in_ext = os.path.splitext(get_in_ext[0])
+            tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
+        if(tmpfmt is None):
+            fmttype = __file_format_default__
+            formatspecs = formatspecs[fmttype]
+        else:
+            fmttype = tmpfmt
+            formatspecs = formatspecs[tmpfmt]
+    elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
+    if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+        outfile = RemoveWindowsPath(outfile)
+        if(os.path.exists(outfile)):
+            try:
+                os.unlink(outfile)
+            except OSError:
+                pass
+    if(outfile == "-" or outfile is None):
+        verbose = False
+        fp = MkTempFile()
+    elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
+        fp = outfile
+    elif(re.findall(__upload_proto_support__, outfile) and pywwwget):
+        fp = MkTempFile()
+    else:
+        fbasename = os.path.splitext(outfile)[0]
+        fextname = os.path.splitext(outfile)[1]
+        if(not compresswholefile and fextname in outextlistwd):
+            compresswholefile = True
+        try:
+            fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
+        except PermissionError:
+            return False
+    AppendFilesWithContentFromInFile(infiles, fp, listtype, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
+    if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
+        fp = CompressOpenFileAlt(
+            fp, compression, compressionlevel, compressionuselist, formatspecs)
+        try:
+            fp.flush()
+            if(hasattr(os, "sync")):
+                os.fsync(fp.fileno())
+        except (io.UnsupportedOperation, AttributeError, OSError):
+            pass
+    if(outfile == "-"):
+        fp.seek(0, 0)
+        shutil.copyfileobj(fp, PY_STDOUT_BUF, length=__filebuff_size__)
+    elif(outfile is None):
+        fp.seek(0, 0)
+        outvar = fp.read()
+        fp.close()
+        return outvar
+    elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall(__upload_proto_support__, outfile) and pywwwget):
+        fp = CompressOpenFileAlt(
+            fp, compression, compressionlevel, compressionuselist, formatspecs)
+        fp.seek(0, 0)
+        upload_file_to_internet_file(fp, outfile)
+    if(returnfp):
+        fp.seek(0, 0)
+        return fp
+    else:
+        fp.close()
+        return True
+
+def AppendFilesWithContentFromInFileToStackedOutFile(infiles, outfile, listtype="dir", fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
+    if not isinstance(infiles, list):
+        infiles = [infiles]
+    returnout = False
+    for infileslist in infiles:
+        returnout = AppendFilesWithContentFromTarFileToOutFile(infileslist, outfile, listtype, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, True)
+        if(not returnout):
+            break
+        else:
+            outfile = returnout
+    if(not returnfp and returnout):
+        returnout.close()
+        return True
+    return returnout
+
 def AppendFilesWithContentToList(infiles, dirlistfromtxt=False, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
     advancedlist = __use_advanced_list__
     altinode = __use_alt_inode__
@@ -6417,28 +6541,7 @@ def AppendFilesWithContentFromTarFileToList(infile, extradata=[], jsondata={}, c
     return tmpoutlist
 
 def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-    if(not hasattr(fp, "write")):
-        return False
-    GetDirList = AppendFilesWithContentFromTarFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
-    numfiles = int(len(GetDirList))
-    fnumfiles = format(numfiles, 'x').lower()
-    AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
-    try:
-        fp.flush()
-        if(hasattr(os, "sync")):
-            os.fsync(fp.fileno())
-    except (io.UnsupportedOperation, AttributeError, OSError):
-        pass
-    for curfname in GetDirList:
-        tmpoutlist = curfname['fheaders']
-        AppendFileHeaderWithContent(fp, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
-        try:
-            fp.flush()
-            if(hasattr(os, "sync")):
-                os.fsync(fp.fileno())
-        except (io.UnsupportedOperation, AttributeError, OSError):
-            pass
-    return fp
+    return AppendFilesWithContentFromInFile(infile, fp, "tar", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
 
 if(libarchive_support):
     def _is_pathlike(x):
@@ -6746,28 +6849,7 @@ else:
                                    fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
         return tmpoutlist
     def AppendFilesWithContentFromBSDTarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-        if(not hasattr(fp, "write")):
-            return False
-        GetDirList = AppendFilesWithContentFromBSDTarFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
-        numfiles = int(len(GetDirList))
-        fnumfiles = format(numfiles, 'x').lower()
-        AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
-        try:
-            fp.flush()
-            if(hasattr(os, "sync")):
-                os.fsync(fp.fileno())
-        except (io.UnsupportedOperation, AttributeError, OSError):
-            pass
-        for curfname in GetDirList:
-            tmpoutlist = curfname['fheaders']
-            AppendFileHeaderWithContent(fp, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
-            try:
-                fp.flush()
-                if(hasattr(os, "sync")):
-                    os.fsync(fp.fileno())
-            except (io.UnsupportedOperation, AttributeError, OSError):
-                pass
-        return fp
+        return AppendFilesWithContentFromInFile(infile, fp, "bsd", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
 
 def AppendFilesWithContentFromZipFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
     curinode = 0
@@ -6992,28 +7074,7 @@ def AppendFilesWithContentFromZipFileToList(infile, extradata=[], jsondata={}, c
     return tmpoutlist
 
 def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-    if(not hasattr(fp, "write")):
-        return False
-    GetDirList = AppendFilesWithContentFromZipFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
-    numfiles = int(len(GetDirList))
-    fnumfiles = format(numfiles, 'x').lower()
-    AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
-    try:
-        fp.flush()
-        if(hasattr(os, "sync")):
-            os.fsync(fp.fileno())
-    except (io.UnsupportedOperation, AttributeError, OSError):
-        pass
-    for curfname in GetDirList:
-        tmpoutlist = curfname['fheaders']
-        AppendFileHeaderWithContent(fp, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
-        try:
-            fp.flush()
-            if(hasattr(os, "sync")):
-                os.fsync(fp.fileno())
-        except (io.UnsupportedOperation, AttributeError, OSError):
-            pass
-    return fp
+    return AppendFilesWithContentFromInFile(infile, fp, "zip", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
 
 if(not rarfile_support):
     def AppendFilesWithContentFromRarFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
@@ -7232,28 +7293,7 @@ else:
                                fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
         return tmpoutlist
     def AppendFilesWithContentFromRarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-        if(not hasattr(fp, "write")):
-            return False
-        GetDirList = AppendFilesWithContentFromRarFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
-        numfiles = int(len(GetDirList))
-        fnumfiles = format(numfiles, 'x').lower()
-        AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
-        try:
-            fp.flush()
-            if(hasattr(os, "sync")):
-                os.fsync(fp.fileno())
-        except (io.UnsupportedOperation, AttributeError, OSError):
-            pass
-        for curfname in GetDirList:
-            tmpoutlist = curfname['fheaders']
-            AppendFileHeaderWithContent(fp, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
-            try:
-                fp.flush()
-                if(hasattr(os, "sync")):
-                    os.fsync(fp.fileno())
-            except (io.UnsupportedOperation, AttributeError, OSError):
-                pass
-        return fp
+        return AppendFilesWithContentFromInFile(infile, fp, "rar", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
 
 if(not py7zr_support):
     def sevenzip_readall(infile, **kwargs):
@@ -7473,28 +7513,7 @@ else:
                                fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
         return tmpoutlist
     def AppendFilesWithContentFromSevenZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-        if(not hasattr(fp, "write")):
-            return False
-        GetDirList = AppendFilesWithContentFromSevenZipFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
-        numfiles = int(len(GetDirList))
-        fnumfiles = format(numfiles, 'x').lower()
-        AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
-        try:
-            fp.flush()
-            if(hasattr(os, "sync")):
-                os.fsync(fp.fileno())
-        except (io.UnsupportedOperation, AttributeError, OSError):
-            pass
-        for curfname in GetDirList:
-            tmpoutlist = curfname['fheaders']
-            AppendFileHeaderWithContent(fp, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
-            try:
-                fp.flush()
-                if(hasattr(os, "sync")):
-                    os.fsync(fp.fileno())
-            except (io.UnsupportedOperation, AttributeError, OSError):
-                pass
-        return fp
+        return AppendFilesWithContentFromInFile(infile, fp, "7zip", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
 
 def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
     if(not hasattr(fp, "write")):
@@ -7750,76 +7769,7 @@ def AppendReadInFileWithContent(infile, fp, extradata=[], jsondata={}, compressi
     return fp
 
 def AppendReadInFileWithContentToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, insaltkey=None, outsaltkey=None, verbose=False, returnfp=False):
-    if(IsNestedDict(formatspecs) and fmttype=="auto" and 
-        (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
-        get_in_ext = os.path.splitext(outfile)
-        tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
-        if(tmpfmt is None and get_in_ext[1]!=""):
-            get_in_ext = os.path.splitext(get_in_ext[0])
-            tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
-        if(tmpfmt is None):
-            fmttype = __file_format_default__
-            formatspecs = formatspecs[fmttype]
-        else:
-            fmttype = tmpfmt
-            formatspecs = formatspecs[tmpfmt]
-    elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
-        formatspecs = formatspecs[fmttype]
-    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
-        fmttype = __file_format_default__
-        formatspecs = formatspecs[fmttype]
-    if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
-        outfile = RemoveWindowsPath(outfile)
-        if(os.path.exists(outfile)):
-            try:
-                os.unlink(outfile)
-            except OSError:
-                pass
-    if(outfile == "-" or outfile is None):
-        verbose = False
-        fp = MkTempFile()
-    elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
-        fp = outfile
-    elif(re.findall(__upload_proto_support__, outfile) and pywwwget):
-        fp = MkTempFile()
-    else:
-        fbasename = os.path.splitext(outfile)[0]
-        fextname = os.path.splitext(outfile)[1]
-        if(not compresswholefile and fextname in outextlistwd):
-            compresswholefile = True
-        try:
-            fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
-        except PermissionError:
-            return False
-    AppendReadInFileWithContent(infiles, fp, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, insaltkey, outsaltkey, verbose)
-    if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
-        fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, compressionuselist, formatspecs)
-        try:
-            fp.flush()
-            if(hasattr(os, "sync")):
-                os.fsync(fp.fileno())
-        except (io.UnsupportedOperation, AttributeError, OSError):
-            pass
-    if(outfile == "-"):
-        fp.seek(0, 0)
-        shutil.copyfileobj(fp, PY_STDOUT_BUF, length=__filebuff_size__)
-    elif(outfile is None):
-        fp.seek(0, 0)
-        outvar = fp.read()
-        fp.close()
-        return outvar
-    elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall(__upload_proto_support__, outfile) and pywwwget):
-        fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, compressionuselist, formatspecs)
-        fp.seek(0, 0)
-        upload_file_to_internet_file(fp, outfile)
-    if(returnfp):
-        fp.seek(0, 0)
-        return fp
-    else:
-        fp.close()
-        return True
+    return AppendFilesWithContentFromInFileToOutFile(infiles, outfile, "dir", fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, returnfp)
 
 def AppendReadInFileWithContentToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, insaltkey=None, outsaltkey=None, verbose=False, returnfp=False):
     if not isinstance(infiles, list):
@@ -7837,76 +7787,7 @@ def AppendReadInFileWithContentToStackedOutFile(infiles, outfile, fmttype="auto"
     return returnout
 
 def AppendFilesWithContentFromTarFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
-    if(IsNestedDict(formatspecs) and fmttype=="auto" and 
-        (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
-        get_in_ext = os.path.splitext(outfile)
-        tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
-        if(tmpfmt is None and get_in_ext[1]!=""):
-            get_in_ext = os.path.splitext(get_in_ext[0])
-            tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
-        if(tmpfmt is None):
-            fmttype = __file_format_default__
-            formatspecs = formatspecs[fmttype]
-        else:
-            fmttype = tmpfmt
-            formatspecs = formatspecs[tmpfmt]
-    elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
-        formatspecs = formatspecs[fmttype]
-    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
-        fmttype = __file_format_default__
-        formatspecs = formatspecs[fmttype]
-    if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
-        outfile = RemoveWindowsPath(outfile)
-        if(os.path.exists(outfile)):
-            try:
-                os.unlink(outfile)
-            except OSError:
-                pass
-    if(outfile == "-" or outfile is None):
-        verbose = False
-        fp = MkTempFile()
-    elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
-        fp = outfile
-    elif(re.findall(__upload_proto_support__, outfile) and pywwwget):
-        fp = MkTempFile()
-    else:
-        fbasename = os.path.splitext(outfile)[0]
-        fextname = os.path.splitext(outfile)[1]
-        if(not compresswholefile and fextname in outextlistwd):
-            compresswholefile = True
-        try:
-            fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
-        except PermissionError:
-            return False
-    AppendFilesWithContentFromTarFile(infiles, fp, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
-    if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
-        fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, compressionuselist, formatspecs)
-        try:
-            fp.flush()
-            if(hasattr(os, "sync")):
-                os.fsync(fp.fileno())
-        except (io.UnsupportedOperation, AttributeError, OSError):
-            pass
-    if(outfile == "-"):
-        fp.seek(0, 0)
-        shutil.copyfileobj(fp, PY_STDOUT_BUF, length=__filebuff_size__)
-    elif(outfile is None):
-        fp.seek(0, 0)
-        outvar = fp.read()
-        fp.close()
-        return outvar
-    elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall(__upload_proto_support__, outfile) and pywwwget):
-        fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, compressionuselist, formatspecs)
-        fp.seek(0, 0)
-        upload_file_to_internet_file(fp, outfile)
-    if(returnfp):
-        fp.seek(0, 0)
-        return fp
-    else:
-        fp.close()
-        return True
+    return AppendFilesWithContentFromInFileToOutFile(infiles, outfile, "tar", fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, returnfp)
 
 def AppendFilesWithContentFromTarFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
     if not isinstance(infiles, list):
@@ -7928,76 +7809,7 @@ if(not libarchive_support):
         return False
 else:
     def AppendFilesWithContentFromBSDTarFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
-        if(IsNestedDict(formatspecs) and fmttype=="auto" and 
-            (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
-            get_in_ext = os.path.splitext(outfile)
-            tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
-            if(tmpfmt is None and get_in_ext[1]!=""):
-                get_in_ext = os.path.splitext(get_in_ext[0])
-                tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
-            if(tmpfmt is None):
-                fmttype = __file_format_default__
-                formatspecs = formatspecs[fmttype]
-            else:
-                fmttype = tmpfmt
-                formatspecs = formatspecs[tmpfmt]
-        elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
-            formatspecs = formatspecs[fmttype]
-        elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
-            fmttype = __file_format_default__
-            formatspecs = formatspecs[fmttype]
-        if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
-            outfile = RemoveWindowsPath(outfile)
-            if(os.path.exists(outfile)):
-                try:
-                    os.unlink(outfile)
-                except OSError:
-                    pass
-        if(outfile == "-" or outfile is None):
-            verbose = False
-            fp = MkTempFile()
-        elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
-            fp = outfile
-        elif(re.findall(__upload_proto_support__, outfile) and pywwwget):
-            fp = MkTempFile()
-        else:
-            fbasename = os.path.splitext(outfile)[0]
-            fextname = os.path.splitext(outfile)[1]
-            if(not compresswholefile and fextname in outextlistwd):
-                compresswholefile = True
-            try:
-                fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
-            except PermissionError:
-                return False
-        AppendFilesWithContentFromBSDTarFile(infiles, fp, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
-        if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
-            fp = CompressOpenFileAlt(
-                fp, compression, compressionlevel, compressionuselist, formatspecs)
-            try:
-                fp.flush()
-                if(hasattr(os, "sync")):
-                    os.fsync(fp.fileno())
-            except (io.UnsupportedOperation, AttributeError, OSError):
-                pass
-        if(outfile == "-"):
-            fp.seek(0, 0)
-            shutil.copyfileobj(fp, PY_STDOUT_BUF, length=__filebuff_size__)
-        elif(outfile is None):
-            fp.seek(0, 0)
-            outvar = fp.read()
-            fp.close()
-            return outvar
-        elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall(__upload_proto_support__, outfile) and pywwwget):
-            fp = CompressOpenFileAlt(
-                fp, compression, compressionlevel, compressionuselist, formatspecs)
-            fp.seek(0, 0)
-            upload_file_to_internet_file(fp, outfile)
-        if(returnfp):
-            fp.seek(0, 0)
-            return fp
-        else:
-            fp.close()
-            return True
+        return AppendFilesWithContentFromInFileToOutFile(infiles, outfile, "bsd", fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, returnfp)
 
 def AppendFilesWithContentFromBSDTarFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
     if not isinstance(infiles, list):
@@ -8015,76 +7827,7 @@ def AppendFilesWithContentFromBSDTarFileToStackedOutFile(infiles, outfile, fmtty
     return returnout
 
 def AppendFilesWithContentFromZipFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
-    if(IsNestedDict(formatspecs) and fmttype=="auto" and 
-        (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
-        get_in_ext = os.path.splitext(outfile)
-        tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
-        if(tmpfmt is None and get_in_ext[1]!=""):
-            get_in_ext = os.path.splitext(get_in_ext[0])
-            tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
-        if(tmpfmt is None):
-            fmttype = __file_format_default__
-            formatspecs = formatspecs[fmttype]
-        else:
-            fmttype = tmpfmt
-            formatspecs = formatspecs[tmpfmt]
-    elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
-        formatspecs = formatspecs[fmttype]
-    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
-        fmttype = __file_format_default__
-        formatspecs = formatspecs[fmttype]
-    if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
-        outfile = RemoveWindowsPath(outfile)
-        if(os.path.exists(outfile)):
-            try:
-                os.unlink(outfile)
-            except OSError:
-                pass
-    if(outfile == "-" or outfile is None):
-        verbose = False
-        fp = MkTempFile()
-    elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
-        fp = outfile
-    elif(re.findall(__upload_proto_support__, outfile) and pywwwget):
-        fp = MkTempFile()
-    else:
-        fbasename = os.path.splitext(outfile)[0]
-        fextname = os.path.splitext(outfile)[1]
-        if(not compresswholefile and fextname in outextlistwd):
-            compresswholefile = True
-        try:
-            fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
-        except PermissionError:
-            return False
-    AppendFilesWithContentFromZipFile(infiles, fp, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
-    if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
-        fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, compressionuselist, formatspecs)
-        try:
-            fp.flush()
-            if(hasattr(os, "sync")):
-                os.fsync(fp.fileno())
-        except (io.UnsupportedOperation, AttributeError, OSError):
-            pass
-    if(outfile == "-"):
-        fp.seek(0, 0)
-        shutil.copyfileobj(fp, PY_STDOUT_BUF, length=__filebuff_size__)
-    elif(outfile is None):
-        fp.seek(0, 0)
-        outvar = fp.read()
-        fp.close()
-        return outvar
-    elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall(__upload_proto_support__, outfile) and pywwwget):
-        fp = CompressOpenFileAlt(
-            fp, compression, compressionlevel, compressionuselist, formatspecs)
-        fp.seek(0, 0)
-        upload_file_to_internet_file(fp, outfile)
-    if(returnfp):
-        fp.seek(0, 0)
-        return fp
-    else:
-        fp.close()
-        return True
+    return AppendFilesWithContentFromInFileToOutFile(infiles, outfile, "zip", fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, returnfp)
 
 def AppendFilesWithContentFromZipFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
     if not isinstance(infiles, list):
@@ -8106,76 +7849,7 @@ if(not rarfile_support):
         return False
 else:
     def AppendFilesWithContentFromRarFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
-        if(IsNestedDict(formatspecs) and fmttype=="auto" and 
-            (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
-            get_in_ext = os.path.splitext(outfile)
-            tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
-            if(tmpfmt is None and get_in_ext[1]!=""):
-                get_in_ext = os.path.splitext(get_in_ext[0])
-                tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
-            if(tmpfmt is None):
-                fmttype = __file_format_default__
-                formatspecs = formatspecs[fmttype]
-            else:
-                fmttype = tmpfmt
-                formatspecs = formatspecs[tmpfmt]
-        elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
-            formatspecs = formatspecs[fmttype]
-        elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
-            fmttype = __file_format_default__
-            formatspecs = formatspecs[fmttype]
-        if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
-            outfile = RemoveWindowsPath(outfile)
-            if(os.path.exists(outfile)):
-                try:
-                    os.unlink(outfile)
-                except OSError:
-                    pass
-        if(outfile == "-" or outfile is None):
-            verbose = False
-            fp = MkTempFile()
-        elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
-            fp = outfile
-        elif(re.findall(__upload_proto_support__, outfile) and pywwwget):
-            fp = MkTempFile()
-        else:
-            fbasename = os.path.splitext(outfile)[0]
-            fextname = os.path.splitext(outfile)[1]
-            if(not compresswholefile and fextname in outextlistwd):
-                compresswholefile = True
-            try:
-                fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
-            except PermissionError:
-                return False
-        AppendFilesWithContentFromRarFile(infiles, fp, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
-        if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
-            fp = CompressOpenFileAlt(
-                fp, compression, compressionlevel, compressionuselist, formatspecs)
-            try:
-                fp.flush()
-                if(hasattr(os, "sync")):
-                    os.fsync(fp.fileno())
-            except (io.UnsupportedOperation, AttributeError, OSError):
-                pass
-        if(outfile == "-"):
-            fp.seek(0, 0)
-            shutil.copyfileobj(fp, PY_STDOUT_BUF, length=__filebuff_size__)
-        elif(outfile is None):
-            fp.seek(0, 0)
-            outvar = fp.read()
-            fp.close()
-            return outvar
-        elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall(__upload_proto_support__, outfile) and pywwwget):
-            fp = CompressOpenFileAlt(
-                fp, compression, compressionlevel, compressionuselist, formatspecs)
-            fp.seek(0, 0)
-            upload_file_to_internet_file(fp, outfile)
-        if(returnfp):
-            fp.seek(0, 0)
-            return fp
-        else:
-            fp.close()
-            return True
+        return AppendFilesWithContentFromInFileToOutFile(infiles, outfile, "rar", fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, returnfp)
 
 def AppendFilesWithContentFromRarFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
     if not isinstance(infiles, list):
@@ -8197,76 +7871,7 @@ if(not py7zr_support):
         return False
 else:
     def AppendFilesWithContentFromSevenZipFileToOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
-        if(IsNestedDict(formatspecs) and fmttype=="auto" and 
-            (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
-            get_in_ext = os.path.splitext(outfile)
-            tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
-            if(tmpfmt is None and get_in_ext[1]!=""):
-                get_in_ext = os.path.splitext(get_in_ext[0])
-                tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
-            if(tmpfmt is None):
-                fmttype = __file_format_default__
-                formatspecs = formatspecs[fmttype]
-            else:
-                fmttype = tmpfmt
-                formatspecs = formatspecs[tmpfmt]
-        elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
-            formatspecs = formatspecs[fmttype]
-        elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
-            fmttype = __file_format_default__
-            formatspecs = formatspecs[fmttype]
-        if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
-            outfile = RemoveWindowsPath(outfile)
-            if(os.path.exists(outfile)):
-                try:
-                    os.unlink(outfile)
-                except OSError:
-                    pass
-        if(outfile == "-" or outfile is None):
-            verbose = False
-            fp = MkTempFile()
-        elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
-            fp = outfile
-        elif(re.findall(__upload_proto_support__, outfile) and pywwwget):
-            fp = MkTempFile()
-        else:
-            fbasename = os.path.splitext(outfile)[0]
-            fextname = os.path.splitext(outfile)[1]
-            if(not compresswholefile and fextname in outextlistwd):
-                compresswholefile = True
-            try:
-                fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
-            except PermissionError:
-                return False
-        AppendFilesWithContentFromSevenZipFile(infiles, fp, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
-        if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
-            fp = CompressOpenFileAlt(
-                fp, compression, compressionlevel, compressionuselist, formatspecs)
-            try:
-                fp.flush()
-                if(hasattr(os, "sync")):
-                    os.fsync(fp.fileno())
-            except (io.UnsupportedOperation, AttributeError, OSError):
-                pass
-        if(outfile == "-"):
-            fp.seek(0, 0)
-            shutil.copyfileobj(fp, PY_STDOUT_BUF, length=__filebuff_size__)
-        elif(outfile is None):
-            fp.seek(0, 0)
-            outvar = fp.read()
-            fp.close()
-            return outvar
-        elif((not hasattr(outfile, "read") and not hasattr(outfile, "write")) and re.findall(__upload_proto_support__, outfile) and pywwwget):
-            fp = CompressOpenFileAlt(
-                fp, compression, compressionlevel, compressionuselist, formatspecs)
-            fp.seek(0, 0)
-            upload_file_to_internet_file(fp, outfile)
-        if(returnfp):
-            fp.seek(0, 0)
-            return fp
-        else:
-            fp.close()
-            return True
+        return AppendFilesWithContentFromInFileToOutFile(infiles, outfile, "7zip", fmttype, compression, compresswholefile, compressionlevel, compressionuselist, extradata, jsondata, checksumtype, formatspecs, saltkey, verbose, returnfp)
 
 def AppendFilesWithContentFromSevenZipFileToStackedOutFile(infiles, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
     if not isinstance(infiles, list):
