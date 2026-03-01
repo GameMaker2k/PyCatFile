@@ -1332,7 +1332,7 @@ def AppendNullByte(indata, delimiter=None):
 def AppendNullBytes(indata=None, delimiter=None):
     if(delimiter is None):
         return False
-    parts = [x for x in indata]
+    parts = [str(x) for x in indata]
     return (delimiter.join(parts) + delimiter).encode("UTF-8")
 
 def system_and_major():
@@ -5540,13 +5540,13 @@ def ReadInMultipleFileWithContentToList(infile, fmttype="auto", filestart=0, see
         infile = [infile]
     outretval = {}
     for curfname in infile:
-        outretval.append(ReadInFileWithContentToList(curfname, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey, seektoend))
+        outretval.append(ReadInFileWithContentToList(curfname, "auto", filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey, seektoend))
     return outretval
 
 def ReadInMultipleFilesWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False):
     return ReadInMultipleFileWithContentToList(infile, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey, seektoend)
 
-def AppendFileHeader(fp, numfiles, fencoding, extradata=[], jsondata={}, checksumtype=["md5", "md5"], formatspecs=__file_format_dict__, saltkey=None):
+def AppendFileHeader(fp, fmttype="auto", numfiles=0, fencoding="UTF-8", extradata=[], jsondata={}, checksumtype=["md5", "md5"], formatspecs=__file_format_dict__, saltkey=None):
     """
     Build and write the archive file header.
     Returns the same file-like 'fp' on success, or False on failure.
@@ -5555,6 +5555,12 @@ def AppendFileHeader(fp, numfiles, fencoding, extradata=[], jsondata={}, checksu
     # basic capability
     if not hasattr(fp, "write"):
         return False
+
+    if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
 
     # normalize inputs
     delimiter = formatspecs['format_delimiter']
@@ -5686,11 +5692,11 @@ def MakeEmptyFilePointer(fp, fmttype=__file_format_default__, checksumtype=["md5
     elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
         fmttype = __file_format_default__
         formatspecs = formatspecs[fmttype]
-    AppendFileHeader(fp, 0, "UTF-8", [], {}, checksumtype, formatspecs, saltkey)
+    AppendFileHeader(fp, fmttype, 0, "UTF-8", [], {}, checksumtype, formatspecs, saltkey)
     return fp
 
 
-def MakeEmptyCatFilePointer(fp, fmttype=__file_format_default__, checksumtype=["md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None):
+def MakeEmptyArchiveFilePointer(fp, fmttype=__file_format_default__, checksumtype=["md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None):
     return MakeEmptyFilePointer(fp, fmttype, checksumtype, formatspecs, saltkey)
 
 
@@ -5736,7 +5742,7 @@ def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile
             fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
         except PermissionError:
             return False
-    AppendFileHeader(fp, 0, "UTF-8", [], {}, checksumtype, formatspecs, saltkey)
+    AppendFileHeader(fp, fmttype, 0, "UTF-8", [], {}, checksumtype, formatspecs, saltkey)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, compressionuselist, formatspecs)
@@ -5767,13 +5773,18 @@ def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile
         return True
 
 
-def MakeEmptyCatFile(outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, returnfp=False):
+def MakeEmptyArchiveFile(outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, returnfp=False):
     return MakeEmptyFile(outfile, "auto", compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, returnfp)
 
 
-def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, filecontent="", checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None):
+def AppendFileHeaderWithContent(fp, fmttype="auto", filevalues=[], extradata=[], jsondata={}, filecontent="", checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None):
     if(not hasattr(fp, "write")):
         return False
+    if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
     if (isinstance(extradata, dict) or IsNestedDictAlt(extradata)) and len(extradata) > 0:
         extradata = [base64.b64encode(json.dumps(extradata, separators=(',', ':')).encode("UTF-8")).decode("UTF-8")]
     elif (isinstance(extradata, dict) or IsNestedDictAlt(extradata)) and len(extradata) == 0:
@@ -5850,28 +5861,28 @@ def AppendFileHeaderWithContent(fp, filevalues=[], extradata=[], jsondata={}, fi
         pass
     return fp
 
-def AppendFilesWithContentFromInFile(infile, fp, listtype="dir", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+def AppendFilesWithContentFromInFile(infile, fp, fmttype="auto", listtype="dir", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
     if(not hasattr(fp, "write")):
         return False
     if(listtype.lower()=="dir"):
-        GetDirList = AppendFilesWithContentToList(infile, False, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, False, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+        GetDirList = AppendFilesWithContentToList(infile, fmttype, False, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, False, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
     elif(listtype.lower()=="tar"):
-        GetDirList = AppendFilesWithContentFromTarFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+        GetDirList = AppendFilesWithContentFromTarFileToList(infile, fmttype, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
     elif(listtype.lower()=="bsd"):
-        GetDirList = AppendFilesWithContentFromBSDTarFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+        GetDirList = AppendFilesWithContentFromBSDTarFileToList(infile, fmttype, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
     elif(listtype.lower()=="zip"):
-        GetDirList = AppendFilesWithContentFromZipFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+        GetDirList = AppendFilesWithContentFromZipFileToList(infile, fmttype, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
     elif(listtype.lower()=="rar"):
-        GetDirList = AppendFilesWithContentFromRarFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+        GetDirList = AppendFilesWithContentFromRarFileToList(infile, fmttype, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
     elif(listtype.lower()=="7zip"):
-        GetDirList = AppendFilesWithContentFromSevenZipFileToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+        GetDirList = AppendFilesWithContentFromSevenZipFileToList(infile, fmttype, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
     elif(listtype.lower()=="infile"):
-        GetDirList = ReadInFileWithContentToList(infile, "auto", 0, 0, 0, False, False, True, False, formatspecs, saltkey, False)
+        GetDirList = ReadInFileWithContentToList(infile, "auto", 0, 0, 0, False, False, True, False, formatspecs, saltkey, False)[0]
     else:
-        GetDirList = AppendFilesWithContentToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+        GetDirList = AppendFilesWithContentToList(infile, fmttype, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
     numfiles = int(len(GetDirList))
     fnumfiles = format(numfiles, 'x').lower()
-    AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
+    AppendFileHeader(fp, fmttype, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
     try:
         fp.flush()
         if(hasattr(os, "sync")):
@@ -5880,7 +5891,7 @@ def AppendFilesWithContentFromInFile(infile, fp, listtype="dir", extradata=[], j
         pass
     for curfname in GetDirList:
         tmpoutlist = curfname['fheaders']
-        AppendFileHeaderWithContent(fp, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
+        AppendFileHeaderWithContent(fp, fmttype, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
@@ -5899,15 +5910,15 @@ def AppendFilesWithContentFromInFileToOutFile(infiles, outfile, listtype="dir", 
             tmpfmt = GetKeyByFormatExtension(get_in_ext[0], formatspecs=__file_format_multi_dict__)
         if(tmpfmt is None):
             fmttype = __file_format_default__
-            formatspecs = formatspecs[fmttype]
+            ckformatspecs = formatspecs[fmttype]
         else:
             fmttype = tmpfmt
-            formatspecs = formatspecs[tmpfmt]
+            ckformatspecs = formatspecs[tmpfmt]
     elif(IsNestedDict(formatspecs) and fmttype in formatspecs):
-        formatspecs = formatspecs[fmttype]
+        ckformatspecs = formatspecs[fmttype]
     elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
         fmttype = __file_format_default__
-        formatspecs = formatspecs[fmttype]
+        ckformatspecs = formatspecs[fmttype]
     if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
         outfile = RemoveWindowsPath(outfile)
         if(os.path.exists(outfile)):
@@ -5931,7 +5942,7 @@ def AppendFilesWithContentFromInFileToOutFile(infiles, outfile, listtype="dir", 
             fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
         except PermissionError:
             return False
-    AppendFilesWithContentFromInFile(infiles, fp, listtype, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
+    AppendFilesWithContentFromInFile(infiles, fp, fmttype, listtype, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, compressionuselist, formatspecs)
@@ -5976,10 +5987,15 @@ def AppendFilesWithContentFromInFileToStackedOutFile(infiles, outfile, listtype=
         return True
     return returnout
 
-def AppendFilesWithContentToList(infiles, dirlistfromtxt=False, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+def AppendFilesWithContentToList(infiles, fmttype="auto", dirlistfromtxt=False, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
     advancedlist = __use_advanced_list__
     altinode = __use_alt_inode__
     infilelist = []
+    if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
     if(not dirlistfromtxt and not isinstance(infiles, (list, tuple, )) and infiles == "-"):
         for line in PY_STDIN_TEXT:
             infilelist.append(line.strip())
@@ -6309,13 +6325,13 @@ def AppendFilesWithContentToList(infiles, dirlistfromtxt=False, extradata=[], js
                            fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
     return tmpoutlist
 
-def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-    GetDirList = AppendFilesWithContentToList(infiles, dirlistfromtxt, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, followlink, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
+def AppendFilesWithContent(infiles, fp, fmttype="auto", dirlistfromtxt=False, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    GetDirList = AppendFilesWithContentToList(infiles, fmttype, dirlistfromtxt, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, followlink, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, saltkey, verbose)
     if(not hasattr(fp, "write")):
         return False
     numfiles = int(len(GetDirList))
     fnumfiles = format(numfiles, 'x').lower()
-    AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
+    AppendFileHeader(fp, fmttype, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
     try:
         fp.flush()
         if(hasattr(os, "sync")):
@@ -6324,7 +6340,7 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
         pass
     for curfname in GetDirList:
         tmpoutlist = curfname['fheaders']
-        AppendFileHeaderWithContent(fp, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
+        AppendFileHeaderWithContent(fp, fmttype, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, saltkey)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
@@ -6333,7 +6349,12 @@ def AppendFilesWithContent(infiles, fp, dirlistfromtxt=False, extradata=[], json
             pass
     return fp
 
-def AppendFilesWithContentFromTarFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+def AppendFilesWithContentFromTarFileToList(infile, fmttype="auto", extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
     curinode = 0
     curfid = 0
     inodelist = []
@@ -6542,8 +6563,8 @@ def AppendFilesWithContentFromTarFileToList(infile, extradata=[], jsondata={}, c
                            fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
     return tmpoutlist
 
-def AppendFilesWithContentFromTarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-    return AppendFilesWithContentFromInFile(infile, fp, "tar", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
+def AppendFilesWithContentFromTarFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    return AppendFilesWithContentFromInFile(infile, fp, fmttype, "tar", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
 
 if(libarchive_support):
     def _is_pathlike(x):
@@ -6637,12 +6658,17 @@ if(libarchive_support):
         raise TypeError(f"Unsupported infile type: {type(infile)!r}")
 
 if(not libarchive_support):
-    def AppendFilesWithContentFromBSDTarFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    def AppendFilesWithContentFromBSDTarFileToList(infile, fmttype="auto", extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return False
-    def AppendFilesWithContentFromBSDTarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    def AppendFilesWithContentFromBSDTarFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return False
 else:
-    def AppendFilesWithContentFromBSDTarFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    def AppendFilesWithContentFromBSDTarFileToList(infile, fmttype="auto", extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+        if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+            formatspecs = formatspecs[fmttype]
+        elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+            fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
         curinode = 0
         curfid = 0
         inodelist = []
@@ -6850,10 +6876,15 @@ else:
                 tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                                    fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
         return tmpoutlist
-    def AppendFilesWithContentFromBSDTarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-        return AppendFilesWithContentFromInFile(infile, fp, "bsd", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
+    def AppendFilesWithContentFromBSDTarFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+        return AppendFilesWithContentFromInFile(infile, fp, fmttype, "bsd", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
 
-def AppendFilesWithContentFromZipFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+def AppendFilesWithContentFromZipFileToList(infile, fmttype="auto", extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+        formatspecs = formatspecs[fmttype]
+    elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+        fmttype = __file_format_default__
+        formatspecs = formatspecs[fmttype]
     curinode = 0
     curfid = 0
     inodelist = []
@@ -7075,16 +7106,21 @@ def AppendFilesWithContentFromZipFileToList(infile, extradata=[], jsondata={}, c
                            fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
     return tmpoutlist
 
-def AppendFilesWithContentFromZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-    return AppendFilesWithContentFromInFile(infile, fp, "zip", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
+def AppendFilesWithContentFromZipFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    return AppendFilesWithContentFromInFile(infile, fp, fmttype, "zip", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
 
 if(not rarfile_support):
-    def AppendFilesWithContentFromRarFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    def AppendFilesWithContentFromRarFileToList(infile, fmttype="auto", extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return False
-    def AppendFilesWithContentFromRarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    def AppendFilesWithContentFromRarFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return False
 else:
-    def AppendFilesWithContentFromRarFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    def AppendFilesWithContentFromRarFileToList(infile, fmttype="auto", extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+        if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+            formatspecs = formatspecs[fmttype]
+        elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+            fmttype = __file_format_default__
+            formatspecs = formatspecs[fmttype]
         curinode = 0
         curfid = 0
         inodelist = []
@@ -7294,8 +7330,8 @@ else:
             tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                                fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
         return tmpoutlist
-    def AppendFilesWithContentFromRarFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-        return AppendFilesWithContentFromInFile(infile, fp, "rar", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
+    def AppendFilesWithContentFromRarFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+        return AppendFilesWithContentFromInFile(infile, fp, fmttype, "rar", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
 
 if(not py7zr_support):
     def sevenzip_readall(infile, **kwargs):
@@ -7339,12 +7375,17 @@ else:
         return factory.files
 
 if(not py7zr_support):
-    def AppendFilesWithContentFromSevenZipFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    def AppendFilesWithContentFromSevenZipFileToList(infile, fmttype="auto", extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return False
-    def AppendFilesWithContentFromSevenZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    def AppendFilesWithContentFromSevenZipFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return False
 else:
-    def AppendFilesWithContentFromSevenZipFileToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+    def AppendFilesWithContentFromSevenZipFileToList(infile, fmttype="auto", extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+        if(IsNestedDict(formatspecs) and fmttype in formatspecs):
+            formatspecs = formatspecs[fmttype]
+        elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
+            fmttype = __file_format_default__
+            formatspecs = formatspecs[fmttype]
         formver = formatspecs['format_ver']
         fileheaderver = str(int(formver.replace(".", "")))
         curinode = 0
@@ -7514,10 +7555,10 @@ else:
             tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
                                fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
         return tmpoutlist
-    def AppendFilesWithContentFromSevenZipFile(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
-        return AppendFilesWithContentFromInFile(infile, fp, "7zip", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
+    def AppendFilesWithContentFromSevenZipFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+        return AppendFilesWithContentFromInFile(infile, fp, fmttype, "7zip", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
 
-def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
+def AppendListsWithContent(inlist, fp, fmttype="auto", dirlistfromtxt=False, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
     if(not hasattr(fp, "write")):
         return False
     GetDirList = inlist
@@ -7531,7 +7572,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, extradata=[], jsond
     inodetoforminode = {}
     numfiles = int(len(GetDirList))
     fnumfiles = format(numfiles, 'x').lower()
-    AppendFileHeader(fp, numfiles, "UTF-8", [], [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
+    AppendFileHeader(fp, fmttype, numfiles, "UTF-8", [], [checksumtype[0], checksumtype[1]], formatspecs, saltkey)
     for curfname in GetDirList:
         ftype = format(curfname[0], 'x').lower()
         fencoding = curfname[1]
@@ -7571,7 +7612,7 @@ def AppendListsWithContent(inlist, fp, dirlistfromtxt=False, extradata=[], jsond
         tmpoutlist = [ftype, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize,
                       fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, frdev, fseeknextfile]
         fcontents.seek(0, 0)
-        AppendFileHeaderWithContent(fp, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, saltkey)
+        AppendFileHeaderWithContent(fp, fmttype, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, saltkey)
     return fp
 
 
@@ -7622,7 +7663,7 @@ def AppendFilesWithContentToOutFile(infiles, outfile, dirlistfromtxt=False, fmtt
             fp = CompressOpenFile(outfile, compresswholefile, compressionlevel)
         except PermissionError:
             return False
-    AppendFilesWithContent(infiles, fp, dirlistfromtxt, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, formatspecs, saltkey, verbose)
+    AppendFilesWithContent(infiles, fp, fmttype, dirlistfromtxt, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, formatspecs, saltkey, verbose)
     if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, compressionuselist, formatspecs)
@@ -7737,7 +7778,7 @@ def AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt=False, fmtty
         fp.close()
         return True
 
-def AppendReadInFileWithContentToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False):
+def AppendReadInFileWithContentToList(infile, fmttype="auto", extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False):
     return ReadInFileWithContentToList(infile, "auto", 0, 0, 0, False, contentasfile, uncompress, skipchecksum, formatspecs, saltkey, seektoend)
 
 def AppendReadInMultipleFileWithContentToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False):
@@ -7746,13 +7787,13 @@ def AppendReadInMultipleFileWithContentToList(infile, extradata=[], jsondata={},
 def AppendReadInMultipleFilesWithContentToList(infile, extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False):
     return ReadInMultipleFilesWithContentToList(infile, fmttype, 0, 0, 0, False, contentasfile, uncompress, skipchecksum, formatspecs, saltkey, seektoend)
 
-def AppendReadInFileWithContent(infile, fp, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, insaltkey=None, outsaltkey=None, verbose=False):
+def AppendReadInFileWithContent(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, insaltkey=None, outsaltkey=None, verbose=False):
     if(not hasattr(fp, "write")):
         return False
-    GetDirList = AppendReadInFileWithContentToList(infile, extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, insaltkey, verbose)
+    GetDirList = AppendReadInFileWithContentToList(infile, "auto", extradata, jsondata, False, compression, compresswholefile, compressionlevel, compressionuselist, [checksumtype[2], checksumtype[3], checksumtype[3]], formatspecs, insaltkey, verbose)
     numfiles = int(len(GetDirList))
     fnumfiles = format(numfiles, 'x').lower()
-    AppendFileHeader(fp, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, outsaltkey)
+    AppendFileHeader(fp, fmttype, numfiles, "UTF-8", [], {}, [checksumtype[0], checksumtype[1]], formatspecs, outsaltkey)
     try:
         fp.flush()
         if(hasattr(os, "sync")):
@@ -7761,7 +7802,7 @@ def AppendReadInFileWithContent(infile, fp, extradata=[], jsondata={}, compressi
         pass
     for curfname in GetDirList:
         tmpoutlist = curfname['fheaders']
-        AppendFileHeaderWithContent(fp, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, outsaltkey)
+        AppendFileHeaderWithContent(fp, fmttype, tmpoutlist, curfname['fextradata'], curfname['fjsoncontent'], curfname['fcontents'], [curfname['fheaderchecksumtype'], curfname['fcontentchecksumtype'], curfname['fjsonchecksumtype']], formatspecs, outsaltkey)
         try:
             fp.flush()
             if(hasattr(os, "sync")):
@@ -7891,7 +7932,7 @@ def AppendFilesWithContentFromSevenZipFileToStackedOutFile(infiles, outfile, fmt
     return returnout
 
 def AppendInFileWithContentToOutFile(infile, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, extradata=[], jsondata={}, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
-    inlist = ReadInFileWithContentToList(infile, "auto", 0, 0, False, False, True, False, formatspecs, saltkey, False)
+    inlist = ReadInFileWithContentToList(infile, fmttype, 0, 0, False, False, True, False, formatspecs, saltkey, False)
     return AppendListsWithContentToOutFile(inlist, outfile, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, extradata, jsondata, followlink, checksumtype, formatspecs, saltkey, verbose, returnfp)
 
 
