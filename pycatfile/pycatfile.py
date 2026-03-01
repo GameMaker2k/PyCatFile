@@ -4516,7 +4516,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     fcontents.seek(0, 0)
     if(not contentasfile):
         fcontents = fcontents.read()
-    outlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fencoding': fencoding, 'fcencoding': fcencoding, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fblksize': fblksize, 'fblocks': fblocks, 'fflags': fflags, 'fatime': fatime, 'fmtime': fmtime, 'fctime': fctime, 'fbtime': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
+    outlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fencoding': fencoding, 'fcencoding': fcencoding, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fblksize': fblksize, 'fblocks': fblocks, 'fflags': fflags, 'fatime': divmod(int(fatime), 10**9), 'fmtime': divmod(int(fmtime), 10**9), 'fctime': divmod(int(fctime), 10**9), 'fbtime': divmod(int(fbtime), 10**9), 'fatime_ns': fatime, 'fmtime_ns': fmtime, 'fctime_ns': fctime, 'fbtime_ns': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'fstrmode': PrintPermissionString(fchmode, ftype), 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
                'fdev': fdev, 'frdev': frdev, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fjsonchecksumtype': fjsonchecksumtype, 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fvendorfields': fvendorfields, 'fvendordata': fvendorfieldslist, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextradata': fextrafieldslist, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fjstart': fjstart, 'fjend': fjend, 'fheaderchecksum': fcs, 'fjsonchecksum': fjsonchecksum, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
     return outlist
 
@@ -8726,10 +8726,10 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             fblocks       = format(int(cur_entry['fblocks']), 'x').lower()
             fflags       = format(int(cur_entry['fflags']), 'x').lower()
             flinkname   = cur_entry['flinkname']
-            fatime      = format(int(cur_entry['fatime']), 'x').lower()
-            fmtime      = format(int(cur_entry['fmtime']), 'x').lower()
-            fctime      = format(int(cur_entry['fctime']), 'x').lower()
-            fbtime      = format(int(cur_entry['fbtime']), 'x').lower()
+            fatime      = format(int(cur_entry['fatime_ns']), 'x').lower()
+            fmtime      = format(int(cur_entry['fmtime_ns']), 'x').lower()
+            fctime      = format(int(cur_entry['fctime_ns']), 'x').lower()
+            fbtime      = format(int(cur_entry['fbtime_ns']), 'x').lower()
             fmode       = format(int(cur_entry['fmode']), 'x').lower()
             fchmode     = format(int(cur_entry['fchmode']), 'x').lower()
             fuid        = format(int(cur_entry['fuid']), 'x').lower()
@@ -9340,9 +9340,7 @@ def CatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0
                     VerbosePrintOut(ftype_to_str(listarrayfiles['ffilelist'][lcfi]['ftype']) + "\t" + listarrayfiles['ffilelist'][lcfi]['fcompression'] + compratio + "\t" + str(
                     listarrayfiles['ffilelist'][lcfi]['fsize']).rjust(15) + "\t" + compressprint + printfname)
                 else:
-                    ts_ns = listarrayfiles['ffilelist'][lcfi]['fmtime']
-                    sec, ns = divmod(int(ts_ns), 10**9)
-                    dt = datetime.datetime.fromtimestamp(sec).replace(microsecond=ns // 1000)
+                    dt = datetime.datetime.fromtimestamp(listarrayfiles['ffilelist'][lcfi]['fmtime'][0])
                     VerbosePrintOut(PrintPermissionString(listarrayfiles['ffilelist'][lcfi]['fmode'], listarrayfiles['ffilelist'][lcfi]['ftype']) + "\t" + str(fuprint) + "/" + str(fgprint) + "\t" + str(
                     listarrayfiles['ffilelist'][lcfi]['fsize']).rjust(15) + "\t" + dt.strftime('%Y-%m-%d %H:%M') + "\t" + printfname)
             lcfi = lcfi + 1
