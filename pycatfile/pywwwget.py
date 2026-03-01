@@ -14,7 +14,7 @@
     Copyright 2018-2026 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2026 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pywwwget.py - Last Update: 2/27/2026 Ver. 0.30.4 RC 1 - Author: cooldude2k $
+    $FileInfo: pywwwget.py - Last Update: 3/1/2026 Ver. 0.30.6 RC 1 - Author: cooldude2k $
 '''
 
 import os
