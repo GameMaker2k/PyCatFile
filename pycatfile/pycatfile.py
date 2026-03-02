@@ -4816,7 +4816,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
     if(formdel != formatspecs['format_delimiter']):
         return False
     inheader = ReadFileHeaderDataBySize(fp, formatspecs['format_delimiter'])
-    headeroffsetend = fp.tell()
+    headeroffsetend = fp.tell() - len(delimiter)
     fnumextrafieldsize = int(inheader[15], 16)
     fnumextrafields = int(inheader[16], 16)
     fextrafieldslist = []
