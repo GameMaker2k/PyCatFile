@@ -1407,9 +1407,6 @@ def ReadFileHeaderDataBySize(fp, delimiter="\x00", encoding="utf-8", errors="str
     headerdatasplit.insert(0, numhex)
 
     # Consume trailing delimiter (like original fp.seek(len(delimiter), 1))
-    got2 = fp.read(len(delimiter_b))
-    if got2 != delimiter_b:
-        raise ValueError("Trailing delimiter mismatch: expected %r, got %r" % (delimiter_b, got2))
 
     return headerdatasplit
 
@@ -4129,16 +4126,18 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, contentasfile=False, uncom
     fsize = int(HeaderOut[7], 16)
     fcompression = HeaderOut[17]
     fcsize = int(HeaderOut[18], 16)
-    fseeknextfile = HeaderOut[28]
-    fjsontype = HeaderOut[29]
-    fjsonlen = int(HeaderOut[30], 16)
-    fjsonsize = int(HeaderOut[31], 16)
-    fjsonchecksumtype = HeaderOut[32]
-    fjsonchecksum = HeaderOut[33]
-    fextrasize = int(HeaderOut[34], 16)
-    fextrafields = int(HeaderOut[35], 16)
+    fseektojson = HeaderOut[28]
+    fseektocontent = HeaderOut[29]
+    fseeknextfile = HeaderOut[30]
+    fjsontype = HeaderOut[31]
+    fjsonlen = int(HeaderOut[32], 16)
+    fjsonsize = int(HeaderOut[33], 16)
+    fjsonchecksumtype = HeaderOut[34]
+    fjsonchecksum = HeaderOut[35]
+    fextrasize = int(HeaderOut[36], 16)
+    fextrafields = int(HeaderOut[37], 16)
     fextrafieldslist = []
-    extrastart = 36
+    extrastart = 38
     extraend = extrastart + fextrafields
     while(extrastart < extraend):
         fextrafieldslist.append(HeaderOut[extrastart])
@@ -4161,6 +4160,23 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, contentasfile=False, uncom
                 fextrafieldslist = json.loads(fextrafieldslist[0])
             except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                 pass
+    if(re.findall("^\\+([0-9]+)", fseektojson)):
+        fseektojsonasnum = int(fseektojson.replace("+", ""))
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 1)
+    elif(re.findall("^\\-([0-9]+)", fseektojson)):
+        fseektojsonasnum = int(fseektojson)
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 1)
+    elif(re.findall("^([0-9]+)", fseektojson)):
+        fseektojsonasnum = int(fseektojson)
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 0)
+    else:
+        return False
     fjstart = fp.tell()
     if(fjsontype=="json"):
         fjsoncontent = {}
@@ -4227,7 +4243,23 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, contentasfile=False, uncom
                     fjsoncontent = json.loads(fjsoncontent[0])
                 except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                     pass
-    fp.seek(len(delimiter), 1)
+    if(re.findall("^\\+([0-9]+)", fseektocontent)):
+        fseektocontentasnum = int(fseektocontent.replace("+", ""))
+        if(abs(fseektocontentasnum) == 0):
+            pass
+        fp.seek(fseektocontentasnum, 1)
+    elif(re.findall("^\\-([0-9]+)", fseektocontent)):
+        fseektocontentasnum = int(fseektocontent)
+        if(abs(fseektocontentasnum) == 0):
+            pass
+        fp.seek(fseektocontentasnum, 1)
+    elif(re.findall("^([0-9]+)", fseektocontent)):
+        fseektocontentasnum = int(fseektocontent)
+        if(abs(fseektocontentasnum) == 0):
+            pass
+        fp.seek(fseektocontentasnum, 0)
+    else:
+        return False
     fjend = fp.tell() - len(delimiter)
     jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs, saltkey)
     if(not CheckChecksums(fjsonchecksum, jsonfcs) and not skipchecksum):
@@ -4344,16 +4376,18 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     flinkcount = int(HeaderOut[25], 16)
     fdev = int(HeaderOut[26], 16)
     frdev = int(HeaderOut[27], 16)
-    fseeknextfile = HeaderOut[28]
-    fjsontype = HeaderOut[29]
-    fjsonlen = int(HeaderOut[30], 16)
-    fjsonsize = int(HeaderOut[31], 16)
-    fjsonchecksumtype = HeaderOut[32]
-    fjsonchecksum = HeaderOut[33]
-    fextrasize = int(HeaderOut[34], 16)
-    fextrafields = int(HeaderOut[35], 16)
+    fseektojson = HeaderOut[28]
+    fseektocontent = HeaderOut[29]
+    fseeknextfile = HeaderOut[30]
+    fjsontype = HeaderOut[31]
+    fjsonlen = int(HeaderOut[32], 16)
+    fjsonsize = int(HeaderOut[33], 16)
+    fjsonchecksumtype = HeaderOut[34]
+    fjsonchecksum = HeaderOut[35]
+    fextrasize = int(HeaderOut[36], 16)
+    fextrafields = int(HeaderOut[37], 16)
     fextrafieldslist = []
-    extrastart = 36
+    extrastart = 38
     extraend = extrastart + fextrafields
     while(extrastart < extraend):
         fextrafieldslist.append(HeaderOut[extrastart])
@@ -4376,6 +4410,23 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
                 fextrafieldslist = json.loads(fextrafieldslist[0])
             except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                 pass
+    if(re.findall("^\\+([0-9]+)", fseektojson)):
+        fseektojsonasnum = int(fseektojson.replace("+", ""))
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 1)
+    elif(re.findall("^\\-([0-9]+)", fseektojson)):
+        fseektojsonasnum = int(fseektojson)
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 1)
+    elif(re.findall("^([0-9]+)", fseektojson)):
+        fseektojsonasnum = int(fseektojson)
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 0)
+    else:
+        return False
     fjstart = fp.tell()
     if(fjsontype=="json"):
         fjsoncontent = {}
@@ -4442,7 +4493,23 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
                     fjsoncontent = json.loads(fjsoncontent[0])
                 except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                     pass
-    fp.seek(len(delimiter), 1)
+    if(re.findall("^\\+([0-9]+)", fseektocontent)):
+        fseektocontentasnum = int(fseektocontent.replace("+", ""))
+        if(abs(fseektocontentasnum) == 0):
+            pass
+        fp.seek(fseektocontentasnum, 1)
+    elif(re.findall("^\\-([0-9]+)", fseektocontent)):
+        fseektocontentasnum = int(fseektocontent)
+        if(abs(fseektocontentasnum) == 0):
+            pass
+        fp.seek(fseektocontentasnum, 1)
+    elif(re.findall("^([0-9]+)", fseektocontent)):
+        fseektocontentasnum = int(fseektocontent)
+        if(abs(fseektocontentasnum) == 0):
+            pass
+        fp.seek(fseektocontentasnum, 0)
+    else:
+        return False
     fjend = fp.tell() - len(delimiter)
     jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs, saltkey)
     if(not CheckChecksums(fjsonchecksum, jsonfcs) and not skipchecksum):
@@ -4517,7 +4584,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     if(not contentasfile):
         fcontents = fcontents.read()
     outlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fencoding': fencoding, 'fcencoding': fcencoding, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fblksize': fblksize, 'fblocks': fblocks, 'fflags': fflags, 'fatime': divmod(int(fatime), 10**9)[0], 'fmtime': divmod(int(fmtime), 10**9)[0], 'fctime': divmod(int(fctime), 10**9)[0], 'fbtime': divmod(int(fbtime), 10**9)[0], 'fatime_ns': fatime, 'fmtime_ns': fmtime, 'fctime_ns': fctime, 'fbtime_ns': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'fstrmode': PrintPermissionString(fmode, ftype), 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
-               'fdev': fdev, 'frdev': frdev, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fjsonchecksumtype': fjsonchecksumtype, 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fvendorfields': fvendorfields, 'fvendordata': fvendorfieldslist, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextradata': fextrafieldslist, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fjstart': fjstart, 'fjend': fjend, 'fheaderchecksum': fcs, 'fjsonchecksum': fjsonchecksum, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
+               'fdev': fdev, 'frdev': frdev, 'fseektojson': fseektojson, 'fseektocontent': fseektocontent, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fjsonchecksumtype': fjsonchecksumtype, 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fvendorfields': fvendorfields, 'fvendordata': fvendorfieldslist, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextradata': fextrafieldslist, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fjstart': fjstart, 'fjend': fjend, 'fheaderchecksum': fcs, 'fjsonchecksum': fjsonchecksum, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
     return outlist
 
 
@@ -4560,16 +4627,18 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     flinkcount = int(HeaderOut[25], 16)
     fdev = int(HeaderOut[26], 16)
     frdev = int(HeaderOut[27], 16)
-    fseeknextfile = HeaderOut[28]
-    fjsontype = HeaderOut[29]
-    fjsonlen = int(HeaderOut[30], 16)
-    fjsonsize = int(HeaderOut[31], 16)
-    fjsonchecksumtype = HeaderOut[32]
-    fjsonchecksum = HeaderOut[33]
-    fextrasize = int(HeaderOut[34], 16)
-    fextrafields = int(HeaderOut[35], 16)
+    fseektojson = HeaderOut[28]
+    fseektocontent = HeaderOut[29]
+    fseeknextfile = HeaderOut[30]
+    fjsontype = HeaderOut[31]
+    fjsonlen = int(HeaderOut[32], 16)
+    fjsonsize = int(HeaderOut[33], 16)
+    fjsonchecksumtype = HeaderOut[34]
+    fjsonchecksum = HeaderOut[35]
+    fextrasize = int(HeaderOut[36], 16)
+    fextrafields = int(HeaderOut[37], 16)
     fextrafieldslist = []
-    extrastart = 36
+    extrastart = 38
     extraend = extrastart + fextrafields
     while(extrastart < extraend):
         fextrafieldslist.append(HeaderOut[extrastart])
@@ -4592,6 +4661,23 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
                 fextrafieldslist = json.loads(fextrafieldslist[0])
             except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                 pass
+    if(re.findall("^\\+([0-9]+)", fseektojson)):
+        fseektojsonasnum = int(fseektojson.replace("+", ""))
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 1)
+    elif(re.findall("^\\-([0-9]+)", fseektojson)):
+        fseektojsonasnum = int(fseektojson)
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 1)
+    elif(re.findall("^([0-9]+)", fseektojson)):
+        fseektojsonasnum = int(fseektojson)
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 0)
+    else:
+        return False
     fjstart = fp.tell()
     if(fjsontype=="json"):
         fjsoncontent = {}
@@ -4658,7 +4744,23 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
                     fjsoncontent = json.loads(fjsoncontent[0])
                 except (binascii.Error, json.decoder.JSONDecodeError, UnicodeDecodeError):
                     pass
-    fp.seek(len(delimiter), 1)
+    if(re.findall("^\\+([0-9]+)", fseektocontent)):
+        fseektocontentasnum = int(fseektocontent.replace("+", ""))
+        if(abs(fseektocontentasnum) == 0):
+            pass
+        fp.seek(fseektocontentasnum, 1)
+    elif(re.findall("^\\-([0-9]+)", fseektocontent)):
+        fseektocontentasnum = int(fseektocontent)
+        if(abs(fseektocontentasnum) == 0):
+            pass
+        fp.seek(fseektocontentasnum, 1)
+    elif(re.findall("^([0-9]+)", fseektocontent)):
+        fseektocontentasnum = int(fseektocontent)
+        if(abs(fseektocontentasnum) == 0):
+            pass
+        fp.seek(fseektocontentasnum, 0)
+    else:
+        return False
     fjend = fp.tell() - len(delimiter)
     jsonfcs = GetFileChecksum(fprejsoncontent, fjsonchecksumtype, True, formatspecs, saltkey)
     if(not CheckChecksums(fjsonchecksum, jsonfcs) and not skipchecksum):
@@ -4733,7 +4835,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     if(not contentasfile):
         fcontents = fcontents.read()
     outlist = {'fheaders': [ftype, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-               fcsize, fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, frdev, fseeknextfile], 'fextradata': fextrafieldslist, 'fjsoncontent': fjsoncontent, 'fcontents': fcontents, 'fjsonchecksumtype': fjsonchecksumtype, 'fheaderchecksumtype': HeaderOut[-4].lower(), 'fcontentchecksumtype': HeaderOut[-3].lower()}
+               fcsize, fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, frdev, fseektojson, fseektocontent, fseeknextfile], 'fextradata': fextrafieldslist, 'fjsoncontent': fjsoncontent, 'fcontents': fcontents, 'fjsonchecksumtype': fjsonchecksumtype, 'fheaderchecksumtype': HeaderOut[-4].lower(), 'fcontentchecksumtype': HeaderOut[-3].lower()}
     return outlist
 
 
@@ -4764,10 +4866,28 @@ def ReadFileDataWithContent(fp, filestart=0, listonly=False, contentasfile=False
                         "'" + newfcs + "'")
         return False
     fnumfiles = int(inheader[8], 16)
-    outfseeknextfile = inheader[9]
-    fjsonsize = int(inheader[12], 16)
-    fjsonchecksumtype = inheader[13]
-    fjsonchecksum = inheader[14]
+    outfseektojson = inheader[9]
+    outfseeknextfile = inheader[10]
+    fjsonsize = int(inheader[13], 16)
+    fjsonchecksumtype = inheader[14]
+    fjsonchecksum = inheader[15]
+    if(re.findall("^\\+([0-9]+)", outfseektojson)):
+        fseektojsonasnum = int(outfseektojson.replace("+", ""))
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 1)
+    elif(re.findall("^\\-([0-9]+)", outfseektojson)):
+        fseektojsonasnum = int(outfseektojson)
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 1)
+    elif(re.findall("^([0-9]+)", outfseektojson)):
+        fseektojsonasnum = int(outfseektojson)
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 0)
+    else:
+        return False
     fp.read(fjsonsize)
     # Next seek directive
     if(re.findall(r"^\+([0-9]+)", outfseeknextfile)):
@@ -4817,10 +4937,10 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
         return False
     inheader = ReadFileHeaderDataBySize(fp, formatspecs['format_delimiter'])
     headeroffsetend = fp.tell() - len(delimiter)
-    fnumextrafieldsize = int(inheader[15], 16)
-    fnumextrafields = int(inheader[16], 16)
+    fnumextrafieldsize = int(inheader[16], 16)
+    fnumextrafields = int(inheader[17], 16)
     fextrafieldslist = []
-    extrastart = 17
+    extrastart = 18
     extraend = extrastart + fnumextrafields
     while(extrastart < extraend):
         fextrafieldslist.append(inheader[extrastart])
@@ -4853,13 +4973,31 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
     fpythontype = inheader[6]
     fprojectname = inheader[7]
     fnumfiles = int(inheader[8], 16)
-    fseeknextfile = inheader[9]
-    fjsontype = inheader[10]
-    fjsonlen = int(inheader[11], 16)
-    fjsonsize = int(inheader[12], 16)
-    fjsonchecksumtype = inheader[13]
-    fjsonchecksum = inheader[14]
+    fseektojson = inheader[9]
+    fseeknextfile = inheader[10]
+    fjsontype = inheader[11]
+    fjsonlen = int(inheader[12], 16)
+    fjsonsize = int(inheader[13], 16)
+    fjsonchecksumtype = inheader[14]
+    fjsonchecksum = inheader[15]
     fjsoncontent = {}
+    if(re.findall("^\\+([0-9]+)", fseektojson)):
+        fseektojsonasnum = int(fseektojson.replace("+", ""))
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 1)
+    elif(re.findall("^\\-([0-9]+)", fseektojson)):
+        fseektojsonasnum = int(fseektojson)
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 1)
+    elif(re.findall("^([0-9]+)", fseektojson)):
+        fseektojsonasnum = int(fseektojson)
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 0)
+    else:
+        return False
     fjstart = fp.tell()
     if(fjsontype=="json"):
         fjsoncontent = {}
@@ -4962,7 +5100,7 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
         return False
     formversions = re.search('(.*?)(\\d+)', formstring).groups()
     fcompresstype = ""
-    outlist = {'fnumfiles': fnumfiles, 'fhstart': headeroffset, 'fhend': headeroffsetend, 'fformat': formversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fmtime': fheadmtime, 'fctime': fheadctime, 'fversion': formversions[1], 'fostype': fostype, 'fprojectname': fprojectname, 'fimptype': fpythontype, 'fheadersize': fheadsize, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fseeknextfile': fseeknextfile, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'fjsonchecksumtype': fjsonchecksumtype, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fjstart': fjstart, 'fjend': fjend, 'fjsonchecksum': fjsonchecksum, 'frawheader': [formstring] + inheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextradata': fextrafieldslist, 'fvendorfields': fvendorfields, 'fvendordata': fvendorfieldslist, 'ffilelist': []}
+    outlist = {'fnumfiles': fnumfiles, 'fhstart': headeroffset, 'fhend': headeroffsetend, 'fformat': formversions[0], 'fcompression': fcompresstype, 'fencoding': fhencoding, 'fmtime': fheadmtime, 'fctime': fheadctime, 'fversion': formversions[1], 'fostype': fostype, 'fprojectname': fprojectname, 'fimptype': fpythontype, 'fheadersize': fheadsize, 'fnumfields': fnumfields + 2, 'fformatspecs': formatspecs, 'fseektojson': fseektojson, 'fseeknextfile': fseeknextfile, 'fchecksumtype': fprechecksumtype, 'fheaderchecksum': fprechecksum, 'fjsonchecksumtype': fjsonchecksumtype, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fjstart': fjstart, 'fjend': fjend, 'fjsonchecksum': fjsonchecksum, 'frawheader': [formstring] + inheader, 'fextrafields': fnumextrafields, 'fextrafieldsize': fnumextrafieldsize, 'fextradata': fextrafieldslist, 'fvendorfields': fvendorfields, 'fvendordata': fvendorfieldslist, 'ffilelist': []}
     if (seekstart < 0) or (seekstart > fnumfiles):
         seekstart = 0
     if (seekend == 0) or (seekend > fnumfiles) or (seekend < seekstart):
@@ -4978,13 +5116,48 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
                 break
             prefsize = int(preheaderdata[5], 16)
             prefname = preheaderdata[5]
-            prefseeknextfile = preheaderdata[26]
-            prefjsonlen = int(preheaderdata[28], 16)
-            prefjsonsize = int(preheaderdata[29], 16)
-            prefjsonchecksumtype = preheaderdata[30]
-            prefjsonchecksum = preheaderdata[31]
+            prefseektojson = preheaderdata[26]
+            prefseektocontent = preheaderdata[27]
+            prefseeknextfile = preheaderdata[28]
+            prefjsonlen = int(preheaderdata[30], 16)
+            prefjsonsize = int(preheaderdata[31], 16)
+            prefjsonchecksumtype = preheaderdata[32]
+            prefjsonchecksum = preheaderdata[33]
+            if(re.findall("^\\+([0-9]+)", prefseektojson)):
+                fseektojsonasnum = int(prefseektojson.replace("+", ""))
+                if(abs(fseektojsonasnum) == 0):
+                    pass
+                fp.seek(fseektojsonasnum, 1)
+            elif(re.findall("^\\-([0-9]+)", prefseektojson)):
+                fseektojsonasnum = int(prefseektojson)
+                if(abs(fseektojsonasnum) == 0):
+                    pass
+                fp.seek(fseektojsonasnum, 1)
+            elif(re.findall("^([0-9]+)", prefseektojson)):
+                fseektojsonasnum = int(prefseektojson)
+                if(abs(fseektojsonasnum) == 0):
+                    pass
+                fp.seek(fseektojsonasnum, 0)
+            else:
+                return False
             prejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
-            fp.seek(len(delimiter), 1)
+            if(re.findall("^\\+([0-9]+)", prefseektocontent)):
+                fseektocontentasnum = int(prefseektocontent.replace("+", ""))
+                if(abs(fseektocontentasnum) == 0):
+                    pass
+                fp.seek(fseektocontentasnum, 1)
+            elif(re.findall("^\\-([0-9]+)", prefseektocontent)):
+                fseektocontentasnum = int(prefseektocontent)
+                if(abs(fseektocontentasnum) == 0):
+                    pass
+                fp.seek(fseektocontentasnum, 1)
+            elif(re.findall("^([0-9]+)", prefseektocontent)):
+                fseektocontentasnum = int(prefseektocontent)
+                if(abs(fseektocontentasnum) == 0):
+                    pass
+                fp.seek(fseektocontentasnum, 0)
+            else:
+                return False
             prejsonfcs = GetFileChecksum(prejsoncontent, prefjsonchecksumtype, True, formatspecs, saltkey)
             if(not CheckChecksums(prefjsonchecksum, prejsonfcs) and not skipchecksum):
                 VerbosePrintOut("File JSON Data Checksum Error with file " +
@@ -5103,13 +5276,31 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
     fpythontype = inheader[6]
     fprojectname = inheader[7]
     fnumfiles = int(inheader[8], 16)
-    fseeknextfile = inheader[9]
-    fjsontype = inheader[10]
-    fjsonlen = int(inheader[11], 16)
-    fjsonsize = int(inheader[12], 16)
-    fjsonchecksumtype = inheader[13]
-    fjsonchecksum = inheader[14]
+    fseektojson = inheader[9]
+    fseeknextfile = inheader[10]
+    fjsontype = inheader[11]
+    fjsonlen = int(inheader[12], 16)
+    fjsonsize = int(inheader[13], 16)
+    fjsonchecksumtype = inheader[14]
+    fjsonchecksum = inheader[15]
     fjsoncontent = {}
+    if(re.findall("^\\+([0-9]+)", fseektojson)):
+        fseektojsonasnum = int(fseektojson.replace("+", ""))
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 1)
+    elif(re.findall("^\\-([0-9]+)", fseektojson)):
+        fseektojsonasnum = int(fseektojson)
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 1)
+    elif(re.findall("^([0-9]+)", fseektojson)):
+        fseektojsonasnum = int(fseektojson)
+        if(abs(fseektojsonasnum) == 0):
+            pass
+        fp.seek(fseektojsonasnum, 0)
+    else:
+        return False
     fjstart = fp.tell()
     if(fjsontype=="json"):
         fjsoncontent = {}
@@ -5227,16 +5418,49 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
                 break
             prefsize = int(preheaderdata[5], 16)
             prefname = preheaderdata[5]
-            prefcompression = preheaderdata[14]
-            prefcsize = int(preheaderdata[15], 16)
-            prefseeknextfile = preheaderdata[26]
-            prefjsonlen = int(preheaderdata[28], 16)
-            prefjsonsize = int(preheaderdata[29], 16)
-            prefjsonchecksumtype = preheaderdata[30]
-            prefjsonchecksum = preheaderdata[31]
-            prefprejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
-            fp.seek(len(delimiter), 1)
-            prejsonfcs = GetFileChecksum(prefprejsoncontent, prefjsonchecksumtype, True, formatspecs, saltkey)
+            prefseektojson = preheaderdata[26]
+            prefseektocontent = preheaderdata[27]
+            prefseeknextfile = preheaderdata[28]
+            prefjsonlen = int(preheaderdata[30], 16)
+            prefjsonsize = int(preheaderdata[31], 16)
+            prefjsonchecksumtype = preheaderdata[32]
+            prefjsonchecksum = preheaderdata[33]
+            if(re.findall("^\\+([0-9]+)", prefseektojson)):
+                fseektojsonasnum = int(prefseektojson.replace("+", ""))
+                if(abs(fseektojsonasnum) == 0):
+                    pass
+                fp.seek(fseektojsonasnum, 1)
+            elif(re.findall("^\\-([0-9]+)", prefseektojson)):
+                fseektojsonasnum = int(prefseektojson)
+                if(abs(fseektojsonasnum) == 0):
+                    pass
+                fp.seek(fseektojsonasnum, 1)
+            elif(re.findall("^([0-9]+)", prefseektojson)):
+                fseektojsonasnum = int(prefseektojson)
+                if(abs(fseektojsonasnum) == 0):
+                    pass
+                fp.seek(fseektojsonasnum, 0)
+            else:
+                return False
+            prejsoncontent = fp.read(prefjsonsize).decode("UTF-8")
+            if(re.findall("^\\+([0-9]+)", prefseektocontent)):
+                fseektocontentasnum = int(prefseektocontent.replace("+", ""))
+                if(abs(fseektocontentasnum) == 0):
+                    pass
+                fp.seek(fseektocontentasnum, 1)
+            elif(re.findall("^\\-([0-9]+)", prefseektocontent)):
+                fseektocontentasnum = int(prefseektocontent)
+                if(abs(fseektocontentasnum) == 0):
+                    pass
+                fp.seek(fseektocontentasnum, 1)
+            elif(re.findall("^([0-9]+)", prefseektocontent)):
+                fseektocontentasnum = int(prefseektocontent)
+                if(abs(fseektocontentasnum) == 0):
+                    pass
+                fp.seek(fseektocontentasnum, 0)
+            else:
+                return False
+            prejsonfcs = GetFileChecksum(prejsoncontent, prefjsonchecksumtype, True, formatspecs, saltkey)
             if(not CheckChecksums(prefjsonchecksum, prejsonfcs) and not skipchecksum):
                 VerbosePrintOut("File JSON Data Checksum Error with file " +
                                 prefname + " at offset " + str(prefhstart))
@@ -5246,7 +5470,7 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
             prefcs = preheaderdata[-2]
             if(not CheckChecksums(prefcs, prenewfcs) and not skipchecksum):
                 VerbosePrintOut("File Header Checksum Error with file " +
-                                prefname + " at offset " + str(prefhstart))
+                                 prefname + " at offset " + str(prefhstart))
                 VerbosePrintOut("'" + prefcs + "' != " +
                                 "'" + prenewfcs + "'")
                 return False
@@ -5254,13 +5478,11 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
                 invalid_archive = True
             prefhend = fp.tell() - len(delimiter)
             prefcontentstart = fp.tell()
-            prefcontents = ""
+            prefcontents = MkTempFile()
             pyhascontents = False
             if(prefsize > 0):
-                if(prefcompression == "none" or prefcompression == "" or prefcompression == "auto"):
-                    prefcontents = fp.read(prefsize)
-                else:
-                    prefcontents = fp.read(prefcsize)
+                prefcontents.write(fp.read(prefsize))
+                prefcontents.seek(0, 0)
                 prenewfccs = GetFileChecksum(prefcontents, preheaderdata[-3].lower(), False, formatspecs, saltkey)
                 prefccs = preheaderdata[-1]
                 pyhascontents = True
@@ -5300,6 +5522,7 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
     CatSize = fp.tell()
     CatSizeEnd = CatSize
     return outlist
+
 
 def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False):
     if(hasattr(infile, "read") or hasattr(infile, "write")):
@@ -5599,14 +5822,14 @@ def AppendFileHeader(fp, fmttype="auto", numfiles=0, fencoding="UTF-8", extradat
     # Preserve your original "tmpoutlen" computation exactly
     tmpoutlist.append(extrasizelen)
     tmpoutlist.append(extrafields)
-    tmpoutlen = 10 + len(tmpoutlist) + len(xlist)
+    tmpoutlen = 11 + len(tmpoutlist) + len(xlist)
     tmpoutlenhex = format(int(tmpoutlen), 'x').lower()
     if(hasattr(time, "time_ns")):
         fctime = format(int(time.time_ns()), 'x').lower()
     else:
         fctime = format(int(to_ns(time.time())), 'x').lower()
     # Serialize the first group
-    fnumfilesa = AppendNullBytes([tmpoutlenhex, fctime, fctime, fencoding, system_and_major(), py_implementation, __program_name__+str(__version_info__[0]), fnumfiles_hex, "+"+str(len(formatspecs['format_delimiter']))], delimiter)
+    fnumfilesa = AppendNullBytes([tmpoutlenhex, fctime, fctime, fencoding, system_and_major(), py_implementation, __program_name__+str(__version_info__[0]), fnumfiles_hex, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], delimiter)
     # Append tmpoutlist
     fnumfilesa += AppendNullBytes(tmpoutlist, delimiter)
     # Append extradata items if any
@@ -6298,7 +6521,7 @@ def AppendFilesWithContentToList(infiles, fmttype="auto", dirlistfromtxt=False, 
             fcontents = fcontents.read()
         ftypehex = format(ftype, 'x').lower()
         tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
     return tmpoutlist
 
 def AppendFilesWithContent(infiles, fp, fmttype="auto", dirlistfromtxt=False, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
@@ -6536,7 +6759,7 @@ def AppendFilesWithContentFromTarFileToList(infile, fmttype="auto", extradata=[]
             fcontents = fcontents.read()
         ftypehex = format(ftype, 'x').lower()
         tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
     return tmpoutlist
 
 def AppendFilesWithContentFromTarFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
@@ -6850,7 +7073,7 @@ else:
                     fcontents = fcontents.read()
                 ftypehex = format(ftype, 'x').lower()
                 tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                                   fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+                                   fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
         return tmpoutlist
     def AppendFilesWithContentFromBSDTarFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return AppendFilesWithContentFromInFile(infile, fp, fmttype, "bsd", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
@@ -7079,7 +7302,7 @@ def AppendFilesWithContentFromZipFileToList(infile, fmttype="auto", extradata=[]
             fcontents = fcontents.read()
         ftypehex = format(ftype, 'x').lower()
         tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
     return tmpoutlist
 
 def AppendFilesWithContentFromZipFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
@@ -7304,7 +7527,7 @@ else:
                 fcontents = fcontents.read()
             ftypehex = format(ftype, 'x').lower()
             tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                               fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+                               fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
         return tmpoutlist
     def AppendFilesWithContentFromRarFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return AppendFilesWithContentFromInFile(infile, fp, fmttype, "rar", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
@@ -7529,7 +7752,7 @@ else:
                 fcontents = fcontents.read()
             ftypehex = format(ftype, 'x').lower()
             tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                               fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+                               fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
         return tmpoutlist
     def AppendFilesWithContentFromSevenZipFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return AppendFilesWithContentFromInFile(infile, fp, fmttype, "7zip", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
@@ -8180,10 +8403,12 @@ def CatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_form
             outfcsize = int(inheaderdata[18], 16)
             fid = int(inheaderdata[23], 16)
             finode = int(inheaderdata[24], 16)
-            outfseeknextfile = inheaderdata[28]
-            outfjsonsize = int(inheaderdata[31], 16)
-            outfjsonchecksumtype = inheaderdata[32]
-            outfjsonchecksum = inheaderdata[33]
+            outfseektojson = inheaderdata[28]
+            outfseektocontent = inheaderdata[29]
+            outfseeknextfile = inheaderdata[30]
+            outfjsonsize = int(inheaderdata[33], 16)
+            outfjsonchecksumtype = inheaderdata[35]
+            outfjsonchecksum = inheaderdata[36]
             outfhend = cur_entry['fhend']  # (kept for parity; not used)
             outfjstart = cur_entry['fjstart']
             # Read JSON bytes; compute checksum on bytes for robustness
@@ -8195,9 +8420,9 @@ def CatFileValidate(infile, fmttype="auto", filestart=0, formatspecs=__file_form
                 outfprejsoncontent = None
             outfjend = cur_entry['fjend']
             injsonfcs = GetFileChecksum(outfprejsoncontent_bytes, outfjsonchecksumtype, True, formatspecs, saltkey)
-            outfextrafields = int(inheaderdata[35], 16)
+            outfextrafields = int(inheaderdata[37], 16)
             extrafieldslist = []
-            extrastart = 36
+            extrastart = 38
             extraend = extrastart + outfextrafields
             outfcs = inheaderdata[-2].lower()
             outfccs = inheaderdata[-1].lower()
@@ -8720,7 +8945,9 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             fcsize         = format(int(cur_entry['fcsize']), 'x').lower()
             fdev           = format(int(cur_entry['fdev']), 'x').lower()
             frdev           = format(int(cur_entry['frdev']), 'x').lower()
-            fseeknextfile  = cur_entry['fseeknextfile']
+            fseektojson     = cur_entry['fseektojson']
+            fseektocontent  = cur_entry['fseektocontent']
+            fseeknextfile   = cur_entry['fseeknextfile']
 
             # extra fields sizing
             if (len(cur_entry['fextradata']) > cur_entry['fextrafields']
@@ -8845,7 +9072,9 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
                     fcsize         = format(int(flinkinfo['fcsize']), 'x').lower()
                     fdev           = format(int(flinkinfo['fdev']), 'x').lower()
                     frdev           = format(int(flinkinfo['frdev']), 'x').lower()
-                    fseeknextfile  = flinkinfo['fseeknextfile']
+                    fseektojson     = flinkinfo['fseeknextfile']
+                    fseektocontent  = flinkinfo['fseeknextfile']
+                    fseeknextfile   = flinkinfo['fseeknextfile']
                     if (len(flinkinfo['fextradata']) > flinkinfo['fextrafields']
                         and len(flinkinfo['fextradata']) > 0):
                         flinkinfo['fextrafields'] = len(flinkinfo['fextradata'])
@@ -8887,7 +9116,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             tmpoutlist = [
                 ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime,
                 fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame,
-                fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, fseeknextfile
+                fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, fseektojson, fseektocontent, fseeknextfile
             ]
 
             if(fvendorfields>0 and len(ffvendorfieldslist)>0):
