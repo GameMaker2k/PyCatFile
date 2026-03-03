@@ -1876,7 +1876,7 @@ def SevenZipFileCheck(infile):
         return False
 
 def CheckCompressionType(infile, formatspecs=__file_format_multi_dict__, filestart=0, closefp=True):
-    if(hasattr(infile, "read") or hasattr(infile, "write")):
+    if(hasattr(infile, "read")):
         fp = infile
     else:
         try:
@@ -2058,10 +2058,10 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, file
     elif(py7zr_support and compresscheck == "7zipfile" and py7zr.is_7zfile(infile)):
         return "7zipfile"
     precfp = None
-    if(hasattr(infile, "read") or hasattr(infile, "write") and compresscheck in compressionsupport):
+    if(hasattr(infile, "read") and compresscheck in compressionsupport):
         fp = UncompressFileAlt(infile, formatspecs, filestart)
         curloc = fp.tell()
-    elif(hasattr(infile, "read") or hasattr(infile, "write") and compresscheck not in compressionsupport):
+    elif(hasattr(infile, "read") and compresscheck not in compressionsupport):
         fp = infile
     else:
         try:
@@ -2142,7 +2142,7 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, file
     if(prefp == binascii.unhexlify("7061785f676c6f62616c")):
         filetype = "tarfile"
     fp.seek(curloc, 0)
-    if(hasattr(precfp, "read") or hasattr(precfp, "write")):
+    if(hasattr(precfp, "read")):
         precfp.close()
     if(closefp):
         fp.close()
@@ -2193,7 +2193,7 @@ def GetFileEncoding(infile, filestart=0, closefp=True):
     fp = None
 
     # --- Obtain a binary file object ---
-    if hasattr(infile, "read") or hasattr(infile, "write"):
+    if hasattr(infile, "read"):
         fp = infile
     else:
         try:
@@ -2277,7 +2277,7 @@ def GetBinaryFileType(infile, filestart=0, closefp=True):
         data = infile[filestart:filestart+560]
         fp = None
     else:
-        fp = infile if (hasattr(infile, "read") or hasattr(infile, "write")) else None
+        fp = infile if (hasattr(infile, "read")) else None
         if fp is None:
             try:
                 fp = open(infile, "rb")
@@ -5524,7 +5524,7 @@ def ReadFileDataWithContentToList(fp, filestart=0, seekstart=0, seekend=0, listo
 
 
 def ReadInFileWithContentToArray(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False):
-    if(hasattr(infile, "read") or hasattr(infile, "write")):
+    if(hasattr(infile, "read")):
         fp = infile
         try:
             fp.seek(0, 2)
@@ -5635,7 +5635,7 @@ def ReadInMultipleFilesWithContentToArray(infile, fmttype="auto", filestart=0, s
 
 
 def ReadInFileWithContentToList(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False):
-    if(hasattr(infile, "read") or hasattr(infile, "write")):
+    if(hasattr(infile, "read")):
         fp = infile
         try:
             fp.seek(0, 2)
@@ -5900,7 +5900,7 @@ def MakeEmptyCatFilePointer(fp, fmttype=__file_format_default__, checksumtype=["
 
 def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
-        (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
+        (outfile != "-" and outfile is not None and not hasattr(outfile, "read"))):
         get_in_ext = os.path.splitext(outfile)
         tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
         if(tmpfmt is None and get_in_ext[1]!=""):
@@ -5917,7 +5917,7 @@ def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile
     elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
         fmttype = __file_format_default__
         formatspecs = formatspecs[fmttype]
-    if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+    if(outfile != "-" and outfile is not None and not hasattr(outfile, "read")):
         if(os.path.exists(outfile)):
             try:
                 os.unlink(outfile)
@@ -5926,7 +5926,7 @@ def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile
     if(outfile == "-" or outfile is None):
         verbose = False
         fp = MkTempFile()
-    elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
+    elif(hasattr(outfile, "read")):
         fp = outfile
         return MakeEmptyFilePointer(fp, fmttype, checksumtype, formatspecs, saltkey)
     elif(re.findall(__upload_proto_support__, outfile) and pywwwget):
@@ -5941,7 +5941,7 @@ def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile
         except PermissionError:
             return False
     AppendFileHeader(fp, fmttype, 0, "UTF-8", [], {}, checksumtype, formatspecs, saltkey)
-    if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
+    if(outfile == "-" or outfile is None or hasattr(outfile, "read")):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, compressionuselist, formatspecs)
         try:
@@ -6100,7 +6100,7 @@ def AppendFilesWithContentFromInFile(infile, fp, fmttype="auto", listtype="dir",
 
 def AppendFilesWithContentFromInFileToOutFile(infiles, outfile, listtype="dir", fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, extradata=[], jsondata={}, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
     if(IsNestedDict(formatspecs) and fmttype=="auto" and 
-        (outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write"))):
+        (outfile != "-" and outfile is not None and not hasattr(outfile, "read"))):
         get_in_ext = os.path.splitext(outfile)
         tmpfmt = GetKeyByFormatExtension(get_in_ext[1], formatspecs=__file_format_multi_dict__)
         if(tmpfmt is None and get_in_ext[1]!=""):
@@ -6117,7 +6117,7 @@ def AppendFilesWithContentFromInFileToOutFile(infiles, outfile, listtype="dir", 
     elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
         fmttype = __file_format_default__
         ckformatspecs = formatspecs[fmttype]
-    if(outfile != "-" and outfile is not None and not hasattr(outfile, "read") and not hasattr(outfile, "write")):
+    if(outfile != "-" and outfile is not None and not hasattr(outfile, "read")):
         outfile = RemoveWindowsPath(outfile)
         if(os.path.exists(outfile)):
             try:
@@ -6127,7 +6127,7 @@ def AppendFilesWithContentFromInFileToOutFile(infiles, outfile, listtype="dir", 
     if(outfile == "-" or outfile is None):
         verbose = False
         fp = MkTempFile()
-    elif(hasattr(outfile, "read") or hasattr(outfile, "write")):
+    elif(hasattr(outfile, "read")):
         fp = outfile
     elif(re.findall(__upload_proto_support__, outfile) and pywwwget):
         fp = MkTempFile()
@@ -6141,7 +6141,7 @@ def AppendFilesWithContentFromInFileToOutFile(infiles, outfile, listtype="dir", 
         except PermissionError:
             return False
     AppendFilesWithContentFromInFile(infiles, fp, fmttype, listtype, extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
-    if(outfile == "-" or outfile is None or hasattr(outfile, "read") or hasattr(outfile, "write")):
+    if(outfile == "-" or outfile is None or hasattr(outfile, "read")):
         fp = CompressOpenFileAlt(
             fp, compression, compressionlevel, compressionuselist, formatspecs)
         try:
@@ -6866,7 +6866,7 @@ else:
             formatspecs = formatspecs[fmttype]
         elif(IsNestedDict(formatspecs) and fmttype not in formatspecs):
             fmttype = __file_format_default__
-        formatspecs = formatspecs[fmttype]
+            formatspecs = formatspecs[fmttype]
         curinode = 0
         curfid = 0
         inodelist = []
