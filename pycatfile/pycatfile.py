@@ -580,8 +580,8 @@ __use_json_file__ = False
 __use_json_name__ = os.path.join(filecfgpath, "catfile.json")
 if(__use_ini_file__ and __use_json_file__):
     __use_json_file__ = False
-if('PYCATFILE_CONFIG_FILE' in os.environ and os.path.exists(os.environ['PYCATFILE_CONFIG_FILE']) and __use_env_file__):
-    scriptconf = os.environ['PYCATFILE_CONFIG_FILE']
+if('PYARCHIVEFILE_CONFIG_FILE' in os.environ and os.path.exists(os.environ['PYARCHIVEFILE_CONFIG_FILE']) and __use_env_file__):
+    scriptconf = os.environ['PYARCHIVEFILE_CONFIG_FILE']
 else:
     prescriptpath = get_importing_script_path()
     if(prescriptpath is not None):
@@ -769,6 +769,7 @@ if __include_defaults__:
     # Cat / Neko
     add_format(__file_format_multi_dict__, "CatFile", "CatFile", ".cat", "CatFile")
     add_format(__file_format_multi_dict__, "NekoFile", "NekoFile", ".neko", "NekoFile")
+    add_format(__file_format_multi_dict__, "UwUFile", "UwUFile", ".UwU", "UwUFile")
     add_format(__file_format_multi_dict__, "ねこファイル", "ねこファイル", ".ねこ", "NekoFairu")
     add_format(__file_format_multi_dict__, "ネコファイル", "ネコファイル", ".ネコ", "NekoFairu")
     add_format(__file_format_multi_dict__, "네코파일", "네코파일", ".네코", "NekoPa-il")
@@ -1405,8 +1406,6 @@ def ReadFileHeaderDataBySize(fp, delimiter="\x00", encoding="utf-8", errors="str
     # Split using delimiter as text (matches original behavior)
     headerdatasplit = headerdata.split(delimiter_t)
     headerdatasplit.insert(0, numhex)
-
-    # Consume trailing delimiter (like original fp.seek(len(delimiter), 1))
 
     return headerdatasplit
 
@@ -5895,7 +5894,7 @@ def MakeEmptyFilePointer(fp, fmttype=__file_format_default__, checksumtype=["md5
     return fp
 
 
-def MakeEmptyArchiveFilePointer(fp, fmttype=__file_format_default__, checksumtype=["md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None):
+def MakeEmptyCatFilePointer(fp, fmttype=__file_format_default__, checksumtype=["md5", "md5"], formatspecs=__file_format_multi_dict__, saltkey=None):
     return MakeEmptyFilePointer(fp, fmttype, checksumtype, formatspecs, saltkey)
 
 
@@ -5972,7 +5971,7 @@ def MakeEmptyFile(outfile, fmttype="auto", compression="auto", compresswholefile
         return True
 
 
-def MakeEmptyArchiveFile(outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, returnfp=False):
+def MakeEmptyCatFile(outfile, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, returnfp=False):
     return MakeEmptyFile(outfile, "auto", compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, returnfp)
 
 
@@ -8585,7 +8584,7 @@ def MultipleCatFilesToArray(infile, fmttype="auto", filestart=0, seekstart=0, se
     return MultipleCatFileToArray(infile, fmttype, filestart, seekstart, seekend, listonly, contentasfile, uncompress, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
 
 
-def TarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
+def TarFileToArray(infile, fmttype=__file_format_default__, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
     checkcompressfile = fmttype
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         ckformatspecs = formatspecs[checkcompressfile]
@@ -8600,7 +8599,7 @@ if(not libarchive_support):
         return False
 
 if(libarchive_support):
-    def BSDTarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
+    def BSDTarFileToArray(infile, fmttype=__file_format_default__, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
         checkcompressfile = fmttype
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             ckformatspecs = formatspecs[checkcompressfile]
@@ -9603,7 +9602,7 @@ def MultipleStackedCatFileListFiles(infile, fmttype="auto", filestart=0, seeksta
         infile = [infile]
     outretval = {}
     for curfname in infile:
-        outretval[curfname] = StackedFoxFileListFiles(curfname, fmttype, filestart, seekstart, seekend, skipchecksum, formatspecs, saltkey, seektoend, verbose, newstyle, returnfp)
+        outretval[curfname] = StackedCatFileListFiles(curfname, fmttype, filestart, seekstart, seekend, skipchecksum, formatspecs, saltkey, seektoend, verbose, newstyle, returnfp)
     return outretval
 
 
@@ -10277,7 +10276,7 @@ def InFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0,
     elif(py7zr_support and checkcompressfile == "7zipfile" and py7zr.is_7zfile(infile)):
         return SevenZipFileListFiles(infile, verbose, returnfp)
     elif('format_magic' in ckformatspecs and checkcompressfile == ckformatspecs['format_magic']):
-        return ArchiveFileListFiles(infile, fmttype, filestart, seekstart, seekend, skipchecksum, formatspecs, saltkey, seektoend, verbose, newstyle, returnfp)
+        return CatFileListFiles(infile, fmttype, filestart, seekstart, seekend, skipchecksum, formatspecs, saltkey, seektoend, verbose, newstyle, returnfp)
     else:
         return BSDTarFileListFiles(infile, formatspecs, verbose, returnfp)
     return False

@@ -30,6 +30,15 @@
         "delimiter": "\u0000",
         "extension": ".neko"
     },
+    "UwUFile": {
+        "len": 7,
+        "hex": "55775546696c65",
+        "ver": "001",
+        "name": "UwUFile",
+        "magic": "UwUFile",
+        "delimiter": "\u0000",
+        "extension": ".UwU"
+    },
     "ねこファイル": {
         "len": 18,
         "hex": "e381ade38193e38395e382a1e382a4e383ab",
