@@ -4746,19 +4746,23 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     finode = int(HeaderOut[24], 16)
     flinkcount = int(HeaderOut[25], 16)
     fdev = int(HeaderOut[26], 16)
-    frdev = int(HeaderOut[27], 16)
-    fseektojson = HeaderOut[28]
-    fseektocontent = HeaderOut[29]
-    fseeknextfile = HeaderOut[30]
-    fjsontype = HeaderOut[31]
-    fjsonlen = int(HeaderOut[32], 16)
-    fjsonsize = int(HeaderOut[33], 16)
-    fjsonchecksumtype = HeaderOut[34]
-    fjsonchecksum = HeaderOut[35]
-    fextrasize = int(HeaderOut[36], 16)
-    fextrafields = int(HeaderOut[37], 16)
+    fdev_major = int(HeaderOut[27], 16)
+    fdev_minor = int(HeaderOut[28], 16)
+    frdev = int(HeaderOut[29], 16)
+    frdev_major = int(HeaderOut[30], 16)
+    frdev_minor = int(HeaderOut[31], 16)
+    fseektojson = HeaderOut[32]
+    fseektocontent = HeaderOut[33]
+    fseeknextfile = HeaderOut[34]
+    fjsontype = HeaderOut[35]
+    fjsonlen = int(HeaderOut[36], 16)
+    fjsonsize = int(HeaderOut[37], 16)
+    fjsonchecksumtype = HeaderOut[38]
+    fjsonchecksum = HeaderOut[39]
+    fextrasize = int(HeaderOut[40], 16)
+    fextrafields = int(HeaderOut[41], 16)
     fextrafieldslist = []
-    extrastart = 38
+    extrastart = 42
     extraend = extrastart + fextrafields
     while(extrastart < extraend):
         fextrafieldslist.append(HeaderOut[extrastart])
@@ -4958,8 +4962,7 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     sisize = get_readable_size(fsize, unit="SI")
     ieccsize = get_readable_size(fcsize, unit="IEC")
     sicsize = get_readable_size(fcsize, unit="SI")
-    outlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fencoding': fencoding, 'fcencoding': fcencoding, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fsize_si': sisize, 'fsize_iec': iecsize, 'fblksize': fblksize, 'fblocks': fblocks, 'fflags': fflags, 'fatime': divmod(int(fatime), 10**9)[0], 'fmtime': divmod(int(fmtime), 10**9)[0], 'fctime': divmod(int(fctime), 10**9)[0], 'fbtime': divmod(int(fbtime), 10**9)[0], 'fatime_ns': fatime, 'fmtime_ns': fmtime, 'fctime_ns': fctime, 'fbtime_ns': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'fstrmode': PrintPermissionString(fmode, ftype), 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fcsize_si': sicsize, 'fcsize_iec': ieccsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
-               'fdev': fdev, 'frdev': frdev, 'fseektojson': fseektojson, 'fseektocontent': fseektocontent, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fjsonchecksumtype': fjsonchecksumtype, 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fvendorfields': fvendorfields, 'fvendordata': fvendorfieldslist, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextradata': fextrafieldslist, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fjstart': fjstart, 'fjend': fjend, 'fheaderchecksum': fcs, 'fjsonchecksum': fjsonchecksum, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
+    outlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fencoding': fencoding, 'fcencoding': fcencoding, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fsize_si': sisize, 'fsize_iec': iecsize, 'fblksize': fblksize, 'fblocks': fblocks, 'fflags': fflags, 'fatime': divmod(int(fatime), 10**9)[0], 'fmtime': divmod(int(fmtime), 10**9)[0], 'fctime': divmod(int(fctime), 10**9)[0], 'fbtime': divmod(int(fbtime), 10**9)[0], 'fatime_ns': fatime, 'fmtime_ns': fmtime, 'fctime_ns': fctime, 'fbtime_ns': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'fstrmode': PrintPermissionString(fmode, ftype), 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fcsize_si': sicsize, 'fcsize_iec': ieccsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fdev': fdev, 'fdev_major': fdev_major, 'fdev_minor': fdev_minor, 'frdev': frdev, 'frdev_major': frdev_major, 'frdev_minor': frdev_minor, 'fseektojson': fseektojson, 'fseektocontent': fseektocontent, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fjsonchecksumtype': fjsonchecksumtype, 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fvendorfields': fvendorfields, 'fvendordata': fvendorfieldslist, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextradata': fextrafieldslist, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fjstart': fjstart, 'fjend': fjend, 'fheaderchecksum': fcs, 'fjsonchecksum': fjsonchecksum, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
     return outlist
 
 
@@ -5001,19 +5004,23 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     finode = int(HeaderOut[24], 16)
     flinkcount = int(HeaderOut[25], 16)
     fdev = int(HeaderOut[26], 16)
-    frdev = int(HeaderOut[27], 16)
-    fseektojson = HeaderOut[28]
-    fseektocontent = HeaderOut[29]
-    fseeknextfile = HeaderOut[30]
-    fjsontype = HeaderOut[31]
-    fjsonlen = int(HeaderOut[32], 16)
-    fjsonsize = int(HeaderOut[33], 16)
-    fjsonchecksumtype = HeaderOut[34]
-    fjsonchecksum = HeaderOut[35]
-    fextrasize = int(HeaderOut[36], 16)
-    fextrafields = int(HeaderOut[37], 16)
+    fdev_major = int(HeaderOut[27], 16)
+    fdev_minor = int(HeaderOut[28], 16)
+    frdev = int(HeaderOut[29], 16)
+    frdev_major = int(HeaderOut[30], 16)
+    frdev_minor = int(HeaderOut[31], 16)
+    fseektojson = HeaderOut[32]
+    fseektocontent = HeaderOut[33]
+    fseeknextfile = HeaderOut[34]
+    fjsontype = HeaderOut[35]
+    fjsonlen = int(HeaderOut[36], 16)
+    fjsonsize = int(HeaderOut[37], 16)
+    fjsonchecksumtype = HeaderOut[38]
+    fjsonchecksum = HeaderOut[39]
+    fextrasize = int(HeaderOut[40], 16)
+    fextrafields = int(HeaderOut[41], 16)
     fextrafieldslist = []
-    extrastart = 38
+    extrastart = 42
     extraend = extrastart + fextrafields
     while(extrastart < extraend):
         fextrafieldslist.append(HeaderOut[extrastart])
@@ -5210,7 +5217,7 @@ def ReadFileHeaderDataWithContentToList(fp, listonly=False, contentasfile=False,
     if(not contentasfile):
         fcontents = fcontents.read()
     outlist = {'fheaders': [ftype, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-               fcsize, fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, frdev, fseektojson, fseektocontent, fseeknextfile], 'fextradata': fextrafieldslist, 'fjsoncontent': fjsoncontent, 'fcontents': fcontents, 'fjsonchecksumtype': fjsonchecksumtype, 'fheaderchecksumtype': HeaderOut[-4].lower(), 'fcontentchecksumtype': HeaderOut[-3].lower()}
+               fcsize, fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, fdev_major, fdev_minor, frdev, frdev_major, frdev_minor, fseektojson, fseektocontent, fseeknextfile], 'fextradata': fextrafieldslist, 'fjsoncontent': fjsoncontent, 'fcontents': fcontents, 'fjsonchecksumtype': fjsonchecksumtype, 'fheaderchecksumtype': HeaderOut[-4].lower(), 'fcontentchecksumtype': HeaderOut[-3].lower()}
     return outlist
 
 
@@ -6910,7 +6917,7 @@ def AppendFilesWithContentToList(infiles, fmttype="auto", dirlistfromtxt=False, 
             fcontents = fcontents.read()
         ftypehex = format(ftype, 'x').lower()
         tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_major, fdev_minor, frdev, frdev_major, frdev_minor, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
     return tmpoutlist
 
 def AppendFilesWithContent(infiles, fp, fmttype="auto", dirlistfromtxt=False, extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
@@ -7154,7 +7161,7 @@ def AppendFilesWithContentFromTarFileToList(infile, fmttype="auto", extradata=[]
             fcontents = fcontents.read()
         ftypehex = format(ftype, 'x').lower()
         tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_major, fdev_minor, frdev, frdev_major, frdev_minor, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
     return tmpoutlist
 
 def AppendFilesWithContentFromTarFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
@@ -7478,7 +7485,7 @@ else:
                     fcontents = fcontents.read()
                 ftypehex = format(ftype, 'x').lower()
                 tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                                   fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+                                   fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_major, fdev_minor, frdev, frdev_major, frdev_minor, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
         return tmpoutlist
     def AppendFilesWithContentFromBSDTarFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return AppendFilesWithContentFromInFile(infile, fp, fmttype, "bsd", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
@@ -7711,7 +7718,7 @@ def AppendFilesWithContentFromZipFileToList(infile, fmttype="auto", extradata=[]
             fcontents = fcontents.read()
         ftypehex = format(ftype, 'x').lower()
         tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+                           fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_major, fdev_minor, frdev, frdev_major, frdev_minor, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
     return tmpoutlist
 
 def AppendFilesWithContentFromZipFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
@@ -7940,7 +7947,7 @@ else:
                 fcontents = fcontents.read()
             ftypehex = format(ftype, 'x').lower()
             tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                               fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+                               fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_major, fdev_minor, frdev, frdev_major, frdev_minor, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
         return tmpoutlist
     def AppendFilesWithContentFromRarFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return AppendFilesWithContentFromInFile(infile, fp, fmttype, "rar", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
@@ -8169,7 +8176,7 @@ else:
                 fcontents = fcontents.read()
             ftypehex = format(ftype, 'x').lower()
             tmpoutlist.append({'fheaders': [ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression,
-                               fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
+                               fcsize, fuid, funame, fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_major, fdev_minor, frdev, frdev_major, frdev_minor, "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter'])), "+"+str(len(formatspecs['format_delimiter']))], 'fextradata': extradata, 'fjsoncontent': jsondata, 'fcontents': fcontents, 'fjsonchecksumtype': checksumtype[2], 'fheaderchecksumtype': checksumtype[0], 'fcontentchecksumtype': checksumtype[1]})
         return tmpoutlist
     def AppendFilesWithContentFromSevenZipFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return AppendFilesWithContentFromInFile(infile, fp, fmttype, "7zip", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
@@ -8218,15 +8225,21 @@ def AppendListsWithContent(inlist, fp, fmttype="auto", dirlistfromtxt=False, ext
         finode = format(curfname[22], 'x').lower()
         flinkcount = format(curfname[23], 'x').lower()
         fdev = format(curfname[24], 'x').lower()
-        frdev = format(curfname[25], 'x').lower()
-        fseeknextfile = curfname[26]
-        extradata = curfname[27]
-        fheaderchecksumtype = curfname[28]
-        fcontentchecksumtype = curfname[29]
-        fcontents = curfname[30]
+        fdev_major = format(curfname[25], 'x').lower()
+        fdev_minor = format(curfname[26], 'x').lower()
+        frdev = format(curfname[27], 'x').lower()
+        frdev_major = format(curfname[28], 'x').lower()
+        frdev_minor = format(curfname[29], 'x').lower()
+        fseektojson = curfname[30]
+        fseektocontent = curfname[31]
+        fseeknextfile = curfname[32]
+        extradata = curfname[33]
+        fheaderchecksumtype = curfname[32]
+        fcontentchecksumtype = curfname[33]
+        fcontents = curfname[34]
         fencoding = GetFileEncoding(fcontents, 0, False)[0]
         tmpoutlist = [ftype, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime, fctime, fbtime, fmode, fwinattributes, fcompression, fcsize,
-                      fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, frdev, fseeknextfile]
+                      fuid, funame, fgid, fgname, fid, finode, flinkcount, fdev, fdev_major, fdev_minor, frdev, frdev_major, frdev_minor, fseektojson, fseektocontent, fseeknextfile]
         fcontents.seek(0, 0)
         AppendFileHeaderWithContent(fp, fmttype, tmpoutlist, extradata, jsondata, fcontents.read(), [checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, saltkey)
     return fp
@@ -8698,7 +8711,8 @@ def CatFileArrayValidate(infile, fmttype="auto", filestart=0, formatspecs=__file
             "fatime", "fmtime", "fctime", "fbtime",
             "fmode", "fchmode", "fuid", "funame", "fgid", "fgname",
             "finode", "flinkcount", "fwinattributes",
-            "fcompression", "fcsize", "fdev", "frdev",
+            "fcompression", "fcsize", "fdev", "fdev_major", "fdev_minor", 
+            "frdev", "frdev_major", "frdev_minor",
             "fseeknextfile", "fextradata", "fextrafields",
             "fcontents", "fcontentasfile", "fjsondata", "ftype",
         ]
@@ -8718,7 +8732,8 @@ def CatFileArrayValidate(infile, fmttype="auto", filestart=0, formatspecs=__file
                 "fheadersize", "fsize", "fatime", "fmtime", "fctime", "fbtime",
                 "fmode", "fchmode", "fuid", "fgid", "finode",
                 "flinkcount", "fwinattributes", "fcsize",
-                "fdev", "frdev", "ftype",
+                "fdev", "fdev_major", "fdev_minor", 
+                "frdev", "frdev_major", "frdev_minor", "ftype",
             ]
             for k in intish:
                 try:
@@ -9338,30 +9353,34 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
                 VerbosePrintOut(fname)
 
             # fields (hex-encoded where expected)
-            fheadersize = format(int(cur_entry['fheadersize']), 'x').lower()
-            fsize       = format(int(cur_entry['fsize']), 'x').lower()
-            fblksize       = format(int(cur_entry['fblksize']), 'x').lower()
-            fblocks       = format(int(cur_entry['fblocks']), 'x').lower()
-            fflags       = format(int(cur_entry['fflags']), 'x').lower()
-            flinkname   = cur_entry['flinkname']
-            fatime      = format(int(cur_entry['fatime_ns']), 'x').lower()
-            fmtime      = format(int(cur_entry['fmtime_ns']), 'x').lower()
-            fctime      = format(int(cur_entry['fctime_ns']), 'x').lower()
-            fbtime      = format(int(cur_entry['fbtime_ns']), 'x').lower()
-            fmode       = format(int(cur_entry['fmode']), 'x').lower()
-            fchmode     = format(int(cur_entry['fchmode']), 'x').lower()
-            fuid        = format(int(cur_entry['fuid']), 'x').lower()
-            funame      = cur_entry['funame']
-            fgid        = format(int(cur_entry['fgid']), 'x').lower()
-            fgname      = cur_entry['fgname']
-            finode_int  = int(cur_entry['finode'])  # use int for logic
-            finode      = format(finode_int, 'x').lower()
-            flinkcount  = format(int(cur_entry['flinkcount']), 'x').lower()
-            fwinattributes = format(int(cur_entry['fwinattributes']), 'x').lower()
-            fcompression   = cur_entry['fcompression']
-            fcsize         = format(int(cur_entry['fcsize']), 'x').lower()
-            fdev           = format(int(cur_entry['fdev']), 'x').lower()
+            fheadersize     = format(int(cur_entry['fheadersize']), 'x').lower()
+            fsize           = format(int(cur_entry['fsize']), 'x').lower()
+            fblksize        = format(int(cur_entry['fblksize']), 'x').lower()
+            fblocks         = format(int(cur_entry['fblocks']), 'x').lower()
+            fflags          = format(int(cur_entry['fflags']), 'x').lower()
+            flinkname       = cur_entry['flinkname']
+            fatime          = format(int(cur_entry['fatime_ns']), 'x').lower()
+            fmtime          = format(int(cur_entry['fmtime_ns']), 'x').lower()
+            fctime          = format(int(cur_entry['fctime_ns']), 'x').lower()
+            fbtime          = format(int(cur_entry['fbtime_ns']), 'x').lower()
+            fmode           = format(int(cur_entry['fmode']), 'x').lower()
+            fchmode         = format(int(cur_entry['fchmode']), 'x').lower()
+            fuid            = format(int(cur_entry['fuid']), 'x').lower()
+            funame          = cur_entry['funame']
+            fgid            = format(int(cur_entry['fgid']), 'x').lower()
+            fgname          = cur_entry['fgname']
+            finode_int      = int(cur_entry['finode'])  # use int for logic
+            finode          = format(finode_int, 'x').lower()
+            flinkcount      = format(int(cur_entry['flinkcount']), 'x').lower()
+            fwinattributes  = format(int(cur_entry['fwinattributes']), 'x').lower()
+            fcompression    = cur_entry['fcompression']
+            fcsize          = format(int(cur_entry['fcsize']), 'x').lower()
+            fdev            = format(int(cur_entry['fdev']), 'x').lower()
+            fdev_major      = format(int(cur_entry['fdev_major']), 'x').lower()
+            fdev_minor      = format(int(cur_entry['fdev_minor']), 'x').lower()
             frdev           = format(int(cur_entry['frdev']), 'x').lower()
+            frdev_major     = format(int(cur_entry['frdev_major']), 'x').lower()
+            frdev_minor     = format(int(cur_entry['frdev_minor']), 'x').lower()
             fseektojson     = cur_entry['fseektojson']
             fseektocontent  = cur_entry['fseektocontent']
             fseeknextfile   = cur_entry['fseeknextfile']
@@ -9462,35 +9481,39 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             # link following (fixed: use listarrayfiles, not prelistarrayfiles)
             if followlink:
                 if (cur_entry['ftype'] == 1 or cur_entry['ftype'] == 2):
-                    getflinkpath = cur_entry['flinkname']
-                    flinkid = listarrayfiles['filetoid'][getflinkpath]
-                    flinkinfo = listarrayfiles['ffilelist'][flinkid]
-                    fheadersize = format(int(flinkinfo['fheadersize']), 'x').lower()
-                    fsize       = format(int(flinkinfo['fsize']), 'x').lower()
-                    fblksize       = format(int(flinkinfo['fblksize']), 'x').lower()
-                    fblocks       = format(int(flinkinfo['fblocks']), 'x').lower()
-                    fflags       = format(int(flinkinfo['fflags']), 'x').lower()
-                    flinkname   = flinkinfo['flinkname']
-                    fatime      = format(int(flinkinfo['fatime']), 'x').lower()
-                    fmtime      = format(int(flinkinfo['fmtime']), 'x').lower()
-                    fctime      = format(int(flinkinfo['fctime']), 'x').lower()
-                    fbtime      = format(int(flinkinfo['fbtime']), 'x').lower()
-                    fmode       = format(int(flinkinfo['fmode']), 'x').lower()
-                    fchmode     = format(int(flinkinfo['fchmode']), 'x').lower()
-                    fuid        = format(int(flinkinfo['fuid']), 'x').lower()
-                    funame      = flinkinfo['funame']
-                    fgid        = format(int(flinkinfo['fgid']), 'x').lower()
-                    fgname      = flinkinfo['fgname']
-                    finode_int  = int(flinkinfo['finode'])
-                    finode      = format(int(flinkinfo['finode']), 'x').lower()
-                    flinkcount  = format(int(flinkinfo['flinkcount']), 'x').lower()
-                    fwinattributes = format(int(flinkinfo['fwinattributes']), 'x').lower()
-                    fcompression   = flinkinfo['fcompression']
-                    fcsize         = format(int(flinkinfo['fcsize']), 'x').lower()
-                    fdev           = format(int(flinkinfo['fdev']), 'x').lower()
+                    getflinkpath    = cur_entry['flinkname']
+                    flinkid         = listarrayfiles['filetoid'][getflinkpath]
+                    flinkinfo       = listarrayfiles['ffilelist'][flinkid]
+                    fheadersize     = format(int(flinkinfo['fheadersize']), 'x').lower()
+                    fsize           = format(int(flinkinfo['fsize']), 'x').lower()
+                    fblksize        = format(int(flinkinfo['fblksize']), 'x').lower()
+                    fblocks         = format(int(flinkinfo['fblocks']), 'x').lower()
+                    fflags          = format(int(flinkinfo['fflags']), 'x').lower()
+                    flinkname       = flinkinfo['flinkname']
+                    fatime          = format(int(flinkinfo['fatime']), 'x').lower()
+                    fmtime          = format(int(flinkinfo['fmtime']), 'x').lower()
+                    fctime          = format(int(flinkinfo['fctime']), 'x').lower()
+                    fbtime          = format(int(flinkinfo['fbtime']), 'x').lower()
+                    fmode           = format(int(flinkinfo['fmode']), 'x').lower()
+                    fchmode         = format(int(flinkinfo['fchmode']), 'x').lower()
+                    fuid            = format(int(flinkinfo['fuid']), 'x').lower()
+                    funame          = flinkinfo['funame']
+                    fgid            = format(int(flinkinfo['fgid']), 'x').lower()
+                    fgname          = flinkinfo['fgname']
+                    finode_int      = int(flinkinfo['finode'])
+                    finode          = format(int(flinkinfo['finode']), 'x').lower()
+                    flinkcount      = format(int(flinkinfo['flinkcount']), 'x').lower()
+                    fwinattributes  = format(int(flinkinfo['fwinattributes']), 'x').lower()
+                    fcompression    = flinkinfo['fcompression']
+                    fcsize          = format(int(flinkinfo['fcsize']), 'x').lower()
+                    fdev            = format(int(flinkinfo['fdev']), 'x').lower()
+                    fdev_major      = format(int(flinkinfo['fdev_major']), 'x').lower()
+                    fdev_minor      = format(int(flinkinfo['fdev_minor']), 'x').lower()
                     frdev           = format(int(flinkinfo['frdev']), 'x').lower()
-                    fseektojson     = flinkinfo['fseeknextfile']
-                    fseektocontent  = flinkinfo['fseeknextfile']
+                    frdev_major     = format(int(flinkinfo['frdev_major']), 'x').lower()
+                    frdev_minor     = format(int(flinkinfo['frdev_minor']), 'x').lower()
+                    fseektojson     = flinkinfo['fseektojson']
+                    fseektocontent  = flinkinfo['fseektocontent']
                     fseeknextfile   = flinkinfo['fseeknextfile']
                     if (len(flinkinfo['fextradata']) > flinkinfo['fextrafields']
                         and len(flinkinfo['fextradata']) > 0):
@@ -9533,7 +9556,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             tmpoutlist = [
                 ftypehex, fencoding, fcencoding, fname, flinkname, fsize, fblksize, fblocks, fflags, fatime, fmtime,
                 fctime, fbtime, fmode, fwinattributes, fcompression, fcsize, fuid, funame,
-                fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, frdev, fseektojson, fseektocontent, fseeknextfile
+                fgid, fgname, fcurfid, fcurinode, flinkcount, fdev, fdev_major, fdev_minor, frdev, frdev_major, frdev_minor, fseektojson, fseektocontent, fseeknextfile
             ]
 
             if(fvendorfields>0 and len(ffvendorfieldslist)>0):
@@ -9916,7 +9939,7 @@ def CatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0
     else:
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not isinstance(infile, bytes)):
             infile = RemoveWindowsPath(infile)
-        listarrayfileslist = ArchiveFileToArray(infile, fmttype, filestart, seekstart, seekend, True, False, False, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
+        listarrayfileslist = CatFileToArray(infile, fmttype, filestart, seekstart, seekend, True, False, False, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
     if(not listarrayfileslist):
         return False
     for listarrayfiles in listarrayfileslist:
