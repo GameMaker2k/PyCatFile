@@ -6785,6 +6785,7 @@ def AppendFilesWithContentToList(infiles, fmttype="auto", dirlistfromtxt=False, 
             except KeyError:
                 fgname = ""
         except ImportError:
+            fgname = ""
         fdev = format(int(fdev), 'x').lower()
         fdev_major = format(int(fdev_major), 'x').lower()
         fdev_minor = format(int(fdev_minor), 'x').lower()
