@@ -6713,13 +6713,21 @@ def AppendFilesWithContentToList(infiles, fmttype="auto", dirlistfromtxt=False, 
             if(not os.path.exists(fname)):
                 return False
         try:
-            fdev = fstatinfo.st_rdev
+            fdev = fstatinfo.st_dev
+            fdev_major = os.major(fdev)
+            fdev_minor = os.minor(fdev)
         except AttributeError:
-            fdev = format(int(0), 'x').lower()
+            fdev = 0
+            fdev_major = 0
+            fdev_minor = 0
         try:
             frdev = fstatinfo.st_rdev
+            frdev_major = os.major(frdev)
+            frdev_minor = os.minor(frdev)
         except AttributeError:
-            frdev = format(int(0), 'x').lower()
+            frdev = 0
+            frdev_major = 0
+            frdev_minor = 0
         # Types that should be considered zero-length in the archive context:
         zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
         # Types that have actual data to read:
@@ -6777,9 +6785,12 @@ def AppendFilesWithContentToList(infiles, fmttype="auto", dirlistfromtxt=False, 
             except KeyError:
                 fgname = ""
         except ImportError:
-            fgname = ""
         fdev = format(int(fdev), 'x').lower()
+        fdev_major = format(int(fdev_major), 'x').lower()
+        fdev_minor = format(int(fdev_minor), 'x').lower()
         frdev = format(int(frdev), 'x').lower()
+        frdev_major = format(int(frdev_major), 'x').lower()
+        frdev_minor = format(int(frdev_minor), 'x').lower()
         finode = format(int(finode), 'x').lower()
         flinkcount = format(int(flinkcount), 'x').lower()
         if(hasattr(fstatinfo, "st_file_attributes")):
@@ -7041,10 +7052,16 @@ def AppendFilesWithContentFromTarFileToList(infile, fmttype="auto", extradata=[]
         if(ftype == 2):
             flinkname = member.linkname
         fdev = format(int(0), 'x').lower()
+        fdev_major = format(int(0), 'x').lower()
+        fdev_minor = format(int(0), 'x').lower()
         try:
             frdev = format(int(os.makedev(member.devmajor, member.devminor)), 'x').lower()
+            frdev_major = format(int(member.devmajor), 'x').lower()
+            frdev_minor = format(int(member.devminor), 'x').lower()
         except AttributeError:
             frdev = format(int(MakeDevAlt(member.devmajor, member.devminor)), 'x').lower()
+            frdev_major = format(int(member.devmajor), 'x').lower()
+            frdev_minor = format(int(member.devminor), 'x').lower()
         # Types that should be considered zero-length in the archive context:
         zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
         # Types that have actual data to read:
@@ -7329,10 +7346,20 @@ else:
                 if(ftype == 2):
                     flinkname = member.linkpath
                 fdev = format(int(0), 'x').lower()
+                fdev_major = format(int(0), 'x').lower()
+                fdev_minor = format(int(0), 'x').lower()
                 if(hasattr(member, "rdev")):
                     frdev = format(int(member.rdev), 'x').lower()
                 else:
                     frdev = format(int(0), 'x').lower()
+                if(hasattr(member, "rdevmajor")):
+                    frdev_major = format(int(member.rdevmajor), 'x').lower()
+                else:
+                    frdev_major = format(int(0), 'x').lower()
+                if(hasattr(member, "rdevminor")):
+                    frdev_minor = format(int(member.rdevminor), 'x').lower()
+                else:
+                    frdev_minor = format(int(0), 'x').lower()
                 # Types that should be considered zero-length in the archive context:
                 zero_length_types = {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13}
                 # Types that have actual data to read:
@@ -7525,7 +7552,11 @@ def AppendFilesWithContentFromZipFileToList(infile, fmttype="auto", extradata=[]
         curfid = curfid + 1
         flinkcount = format(int(flinkcount), 'x').lower()
         fdev = format(int(0), 'x').lower()
+        fdev_major = format(int(0), 'x').lower()
+        fdev_minor = format(int(0), 'x').lower()
         frdev = format(int(0), 'x').lower()
+        frdev_major = format(int(0), 'x').lower()
+        frdev_minor = format(int(0), 'x').lower()
         if(ftype == 5):
             fsize = format(int(0), 'x').lower()
         elif(ftype == 0):
@@ -7772,7 +7803,11 @@ else:
             curfid = curfid + 1
             flinkcount = format(int(flinkcount), 'x').lower()
             fdev = format(int(0), 'x').lower()
+            fdev_major = format(int(0), 'x').lower()
+            fdev_minor = format(int(0), 'x').lower()
             frdev = format(int(0), 'x').lower()
+            frdev_major = format(int(0), 'x').lower()
+            frdev_minor = format(int(0), 'x').lower()
             if(ftype == 5):
                 fsize = format(int(0), 'x').lower()
             elif(ftype == 0):
@@ -8014,7 +8049,11 @@ else:
             curfid = curfid + 1
             flinkcount = format(int(flinkcount), 'x').lower()
             fdev = format(int(0), 'x').lower()
+            fdev_major = format(int(0), 'x').lower()
+            fdev_minor = format(int(0), 'x').lower()
             frdev = format(int(0), 'x').lower()
+            frdev_major = format(int(0), 'x').lower()
+            frdev_minor = format(int(0), 'x').lower()
             if(ftype == 5):
                 fsize = format(int(0), 'x').lower()
             fatime = format(int(to_ns(member.creationtime.timestamp())), 'x').lower()
