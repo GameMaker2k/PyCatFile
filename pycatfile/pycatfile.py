@@ -8895,7 +8895,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
         if lenlist != fnumfiles:
             fnumfiles = lenlist
 
-        AppendFileHeader(fp, fnumfiles, listarrayfiles.get('fencoding', 'utf-8'), listarrayfiles['fextradata'], listarrayfiles['fjsondata'], [checksumtype[0], checksumtype[1]], formatspecs, outsaltkey)
+        AppendFileHeader(fp, fmttype, fnumfiles, listarrayfiles.get('fencoding', 'utf-8'), listarrayfiles['fextradata'], listarrayfiles['fjsondata'], [checksumtype[0], checksumtype[1]], formatspecs, outsaltkey)
 
         # loop counters
         lcfi = 0
@@ -9121,7 +9121,7 @@ def RePackCatFile(infile, outfile, fmttype="auto", compression="auto", compressw
             if(fvendorfields>0 and len(ffvendorfieldslist)>0):
                 extradata.extend(fvendorfields)
             
-            AppendFileHeaderWithContent(fp, tmpoutlist, extradata, jsondata, fcontents.read(),[checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, outsaltkey)
+            AppendFileHeaderWithContent(fp, fmttype, tmpoutlist, extradata, jsondata, fcontents.read(),[checksumtype[2], checksumtype[3], checksumtype[4]], formatspecs, outsaltkey)
             try:
                 fcontents.close()
             except Exception:
