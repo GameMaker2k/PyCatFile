@@ -2148,6 +2148,113 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, file
         fp.close()
     return filetype
 
+# Precompiled regexes (faster than compiling each call)
+_RE_ZERO_SPACE_UNIT = re.compile(r"([0]+) ([A-Za-z]+)")
+_RE_DOT_SPACE_UNIT = re.compile(r"\. ([A-Za-z]+)")
+
+# Unit tables
+_IEC_UNITS = (" B", " KiB", " MiB", " GiB", " TiB", " PiB", " EiB", " ZiB", " YiB")
+_SI_UNITS  = (" B", " kB",  " MB",  " GB",  " TB",  " PB",  " EB",  " ZB",  " YB")
+
+
+def _format_readable(value, suffix, precision):
+    # Keep behavior close to original: format with width 3 and precision, then clean up
+    s = ("%3." + str(precision) + "f%s") % (value, suffix)
+    s = _RE_ZERO_SPACE_UNIT.sub(r" \2", s)
+    s = _RE_DOT_SPACE_UNIT.sub(r" \1", s)
+    return s
+
+
+def get_readable_size(num_bytes, precision=1, unit="IEC"):
+    unit = (unit or "IEC").upper()
+    if unit == "SI":
+        unitsize = 1000.0
+        units = _SI_UNITS
+    else:
+        unitsize = 1024.0
+        units = _IEC_UNITS
+
+    org = num_bytes
+    value = float(num_bytes)
+
+    # Find the best unit without repeated loop string work
+    last_suffix = units[-1]
+    for suffix in units[:-1]:
+        if abs(value) < unitsize:
+            readable = _format_readable(value, suffix, precision)
+            parts = readable.split()
+            return {
+                "Bytes": org,
+                "ReadableWithSuffix": readable,
+                "ReadableWithoutSuffix": parts[0],
+                "ReadableSuffix": parts[1],
+            }
+        value /= unitsize
+
+    # Fall back to the largest unit (use the right "Y*" suffix for chosen system)
+    readable = _format_readable(value, last_suffix, precision)
+    parts = readable.split()
+    return {
+        "Bytes": org,
+        "ReadableWithSuffix": readable,
+        "ReadableWithoutSuffix": parts[0],
+        "ReadableSuffix": parts[1],
+    }
+
+
+def _normalize_hash_types(usehashtypes):
+    # Returns list like ["md5", "sha1"] with empties removed
+    if not usehashtypes:
+        return []
+    return [h.strip().lower() for h in usehashtypes.split(",") if h.strip()]
+
+
+def get_readable_size_from_file(infile, precision=1, unit="IEC",
+                                usehashes=False, usehashtypes="md5,sha1"):
+    size = os.path.getsize(infile)
+    out = get_readable_size(size, precision, unit)
+
+    if usehashes:
+        hash_types = _normalize_hash_types(usehashtypes)
+        if hash_types:
+            # Stream the file once and update multiple hashers (no full read into memory)
+            hashers = {}
+            for h in hash_types:
+                # hashlib.new expects names like "md5", "sha1", "sha256"...
+                hashers[h.upper()] = hashlib.new(h)
+
+            with open(infile, "rb") as f:
+                for chunk in iter(lambda: f.read(1024 * 1024), b""):
+                    for hasher in hashers.values():
+                        hasher.update(chunk)
+
+            for name, hasher in hashers.items():
+                out[name] = hasher.hexdigest()
+
+    return out
+
+
+def get_readable_size_from_string(instring, precision=1, unit="IEC",
+                                  usehashes=False, usehashtypes="md5,sha1"):
+    # In Py3, len(str) counts characters; len(bytes) counts bytes. Keep original behavior.
+    size = len(instring)
+    out = get_readable_size(size, precision, unit)
+
+    if usehashes:
+        hash_types = _normalize_hash_types(usehashtypes)
+        if hash_types:
+            if isinstance(instring, bytes):
+                data = instring
+            else:
+                data = instring.encode("utf-8")
+
+            for h in hash_types:
+                hasher = hashlib.new(h)
+                hasher.update(data)
+                out[h.upper()] = hasher.hexdigest()
+
+    return out
+
 def _advance(fp, base, n):
     """
     Move file position to right after the BOM/signature.
@@ -4847,7 +4954,9 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     fcontents.seek(0, 0)
     if(not contentasfile):
         fcontents = fcontents.read()
-    outlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fencoding': fencoding, 'fcencoding': fcencoding, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fblksize': fblksize, 'fblocks': fblocks, 'fflags': fflags, 'fatime': divmod(int(fatime), 10**9)[0], 'fmtime': divmod(int(fmtime), 10**9)[0], 'fctime': divmod(int(fctime), 10**9)[0], 'fbtime': divmod(int(fbtime), 10**9)[0], 'fatime_ns': fatime, 'fmtime_ns': fmtime, 'fctime_ns': fctime, 'fbtime_ns': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'fstrmode': PrintPermissionString(fmode, ftype), 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
+    iecsize = get_readable_size(fsize, unit="IEC")
+    sisize = get_readable_size(fsize, unit="SI")
+    outlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fencoding': fencoding, 'fcencoding': fcencoding, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fsize_si': sisize, 'fsize_iec': iecsize, 'fblksize': fblksize, 'fblocks': fblocks, 'fflags': fflags, 'fatime': divmod(int(fatime), 10**9)[0], 'fmtime': divmod(int(fmtime), 10**9)[0], 'fctime': divmod(int(fctime), 10**9)[0], 'fbtime': divmod(int(fbtime), 10**9)[0], 'fatime_ns': fatime, 'fmtime_ns': fmtime, 'fctime_ns': fctime, 'fbtime_ns': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'fstrmode': PrintPermissionString(fmode, ftype), 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount,
                'fdev': fdev, 'frdev': frdev, 'fseektojson': fseektojson, 'fseektocontent': fseektocontent, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fjsonchecksumtype': fjsonchecksumtype, 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fvendorfields': fvendorfields, 'fvendordata': fvendorfieldslist, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextradata': fextrafieldslist, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fjstart': fjstart, 'fjend': fjend, 'fheaderchecksum': fcs, 'fjsonchecksum': fjsonchecksum, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
     return outlist
 
@@ -5484,7 +5593,9 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
         realidnum = realidnum + 1
     CatSize = fp.tell()
     CatSizeEnd = CatSize
-    outlist.update({'fp': fp, 'fsize': CatSizeEnd})
+    iecsize = get_readable_size(CatSizeEnd, unit="IEC")
+    sisize = get_readable_size(CatSizeEnd, unit="SI")
+    outlist.update({'fp': fp, 'fsize': CatSizeEnd, 'fsize_si': sisize, 'fsize_iec': iecsize})
     return outlist
 
 
