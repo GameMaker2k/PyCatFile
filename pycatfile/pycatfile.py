@@ -3789,6 +3789,271 @@ def GetDataFromArrayAlt(structure, path, default=None):
             return default
     return element
 
+class MultiOpen:
+    def __init__(self, *paths, mode="r+b"):
+        self.files = [open(p, mode) for p in paths]
+        self.sizes = [os.path.getsize(p) for p in paths]
+        self.total_size = sum(self.sizes)
+        self.position = 0
+
+    def tell(self):
+        return self.position
+
+    def seek(self, offset, whence=os.SEEK_SET):
+        if whence == os.SEEK_SET:
+            new_pos = offset
+        elif whence == os.SEEK_CUR:
+            new_pos = self.position + offset
+        elif whence == os.SEEK_END:
+            new_pos = self.total_size + offset
+        else:
+            raise ValueError("Invalid whence")
+
+        if not (0 <= new_pos <= self.total_size):
+            raise ValueError("Seek out of range")
+
+        self.position = new_pos
+        return self.position
+
+    def _locate_file(self, position):
+        cumulative = 0
+        for i, size in enumerate(self.sizes):
+            if position < cumulative + size:
+                return i, position - cumulative
+            cumulative += size
+        return len(self.files) - 1, self.sizes[-1]
+
+    def read(self, size=-1):
+        if size < 0:
+            size = self.total_size - self.position
+
+        data = bytearray()
+        remaining = size
+
+        while remaining > 0 and self.position < self.total_size:
+            idx, offset = self._locate_file(self.position)
+            f = self.files[idx]
+            f.seek(offset)
+
+            to_read = min(remaining, self.sizes[idx] - offset)
+            chunk = f.read(to_read)
+
+            if not chunk:
+                break
+
+            data.extend(chunk)
+            read_len = len(chunk)
+            self.position += read_len
+            remaining -= read_len
+
+        return bytes(data)
+
+    def write(self, data):
+        remaining = len(data)
+        written = 0
+
+        while remaining > 0 and self.position < self.total_size:
+            idx, offset = self._locate_file(self.position)
+            f = self.files[idx]
+            f.seek(offset)
+
+            to_write = min(remaining, self.sizes[idx] - offset)
+            chunk = data[written:written + to_write]
+            f.write(chunk)
+            f.flush()
+
+            self.position += to_write
+            written += to_write
+            remaining -= to_write
+
+        return written
+
+    def close(self):
+        for f in self.files:
+            f.close()
+
+class MultiFileRaw(io.RawIOBase):
+    """
+    Treat multiple underlying files as one continuous binary stream.
+    Works best when all component files already exist and have fixed sizes.
+
+    - Supports readinto(), read(), write(), seek(), tell()
+    - Intended for binary modes: 'rb', 'r+b', 'wb', etc.
+    """
+    def __init__(self, paths, mode="r+b"):
+        super().__init__()
+        if isinstance(paths, (str, bytes, os.PathLike)):
+            paths = [paths]
+        self._paths = list(paths)
+        self._mode = mode
+        self._files = [open(p, mode) for p in self._paths]
+        self._sizes = [os.path.getsize(p) for p in self._paths]
+        self._total = sum(self._sizes)
+        self._pos = 0
+        self._closed = False
+
+    # --- Helpers ---
+    def _check_open(self):
+        if self._closed:
+            raise ValueError("I/O operation on closed MultiFileRaw")
+
+    def _locate(self, pos: int):
+        """Return (file_index, offset_in_that_file) for absolute stream position."""
+        # pos in [0, total]
+        acc = 0
+        for i, sz in enumerate(self._sizes):
+            nxt = acc + sz
+            if pos < nxt:
+                return i, pos - acc
+            acc = nxt
+        # pos == total -> point at end of last file
+        return len(self._files) - 1, self._sizes[-1]
+
+    # --- io.RawIOBase API ---
+    def readable(self):
+        return "r" in self._mode or "+" in self._mode
+
+    def writable(self):
+        return any(ch in self._mode for ch in ("w", "a", "+"))
+
+    def seekable(self):
+        return True
+
+    def tell(self):
+        self._check_open()
+        return self._pos
+
+    def seek(self, offset, whence=os.SEEK_SET):
+        self._check_open()
+        if whence == os.SEEK_SET:
+            new = int(offset)
+        elif whence == os.SEEK_CUR:
+            new = self._pos + int(offset)
+        elif whence == os.SEEK_END:
+            new = self._total + int(offset)
+        else:
+            raise ValueError("Invalid whence")
+
+        if new < 0 or new > self._total:
+            raise ValueError("Seek out of range")
+
+        self._pos = new
+        return self._pos
+
+    def readinto(self, b):
+        """
+        Read bytes into a pre-allocated, writable bytes-like object b.
+        Returns number of bytes read (0 at EOF).
+        """
+        self._check_open()
+        if not self.readable():
+            raise io.UnsupportedOperation("not readable")
+
+        mv = memoryview(b).cast("B")
+        if len(mv) == 0:
+            return 0
+        if self._pos >= self._total:
+            return 0
+
+        remaining = len(mv)
+        out_off = 0
+
+        while remaining > 0 and self._pos < self._total:
+            idx, off = self._locate(self._pos)
+            f = self._files[idx]
+            f.seek(off, os.SEEK_SET)
+
+            can = min(remaining, self._sizes[idx] - off)
+            n = f.readinto(mv[out_off:out_off + can])
+            if not n:
+                break
+
+            self._pos += n
+            out_off += n
+            remaining -= n
+
+        return out_off
+
+    def read(self, size=-1):
+        self._check_open()
+        if size is None or size < 0:
+            size = self._total - self._pos
+        if size == 0 or self._pos >= self._total:
+            return b""
+
+        buf = bytearray(size)
+        n = self.readinto(buf)
+        return bytes(buf[:n])
+
+    def write(self, b):
+        self._check_open()
+        if not self.writable():
+            raise io.UnsupportedOperation("not writable")
+
+        mv = memoryview(b).cast("B")
+        total_to_write = len(mv)
+        if total_to_write == 0:
+            return 0
+
+        remaining = total_to_write
+        in_off = 0
+
+        # This implementation writes *within existing file extents*.
+        # If you want auto-growing into the last file, say so and I’ll adjust.
+        while remaining > 0 and self._pos < self._total:
+            idx, off = self._locate(self._pos)
+            f = self._files[idx]
+            f.seek(off, os.SEEK_SET)
+
+            can = min(remaining, self._sizes[idx] - off)
+            n = f.write(mv[in_off:in_off + can])
+            if n is None:
+                n = can  # some file objects may return None; assume full write
+            if n <= 0:
+                break
+
+            self._pos += n
+            in_off += n
+            remaining -= n
+
+        return total_to_write - remaining
+
+    def flush(self):
+        self._check_open()
+        for f in self._files:
+            f.flush()
+
+    def close(self):
+        if not self._closed:
+            try:
+                for f in self._files:
+                    try:
+                        f.close()
+                    except Exception:
+                        pass
+            finally:
+                self._closed = True
+        super().close()
+
+
+def multiopen(paths, mode="r+b", buffering=io.DEFAULT_BUFFER_SIZE):
+    """
+    Return a buffered, seekable file-like object over multiple files.
+
+    Examples:
+      f = multiopen(["a.bin","b.bin"], "rb")
+      f = multiopen(["a.bin","b.bin"], "r+b")  # read/write
+    """
+    raw = MultiFileRaw(paths, mode=mode)
+
+    # Choose an appropriate buffered wrapper
+    if "r" in mode and "+" not in mode and "w" not in mode and "a" not in mode:
+        return io.BufferedReader(raw, buffer_size=buffering)
+    if any(ch in mode for ch in ("w", "a")) and "+" not in mode and "r" not in mode:
+        return io.BufferedWriter(raw, buffer_size=buffering)
+    # default for random read/write
+    return io.BufferedRandom(raw, buffer_size=buffering)
+
 # ========= pushback-aware delimiter reader =========
 class _DelimiterReader:
     """
