@@ -1989,7 +1989,7 @@ def CheckCompressionType(infile, formatspecs=__file_format_multi_dict__, filesta
     if(prefp == binascii.unhexlify("7061785f676c6f62616c")):
         filetype = "tarfile"
     fp.seek(curloc, 0)
-    if(filetype == "gzip" or filetype == "bzip2" or filetype == "lzma" or filetype == "xz" or filetype == "zstd" or filetype == "lz4" or filetype == "zlib"):
+    if(filetype in compressionlistalt):
         if(TarFileCheck(fp)):
             filetype = "tarfile"
     elif(not filetype):
@@ -2030,7 +2030,7 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, file
             compresscheck = "zlib"
         else:
             return False
-    if(compresscheck == "gzip" or compresscheck == "bzip2" or compresscheck == "lzma" or compresscheck == "xz" or compresscheck == "zstd" or compresscheck == "lz4" or compresscheck == "zlib"):
+    if(compresscheck in compressionlistalt):
         if(TarFileCheck(infile)):
             filetype = "tarfile"
     elif(not compresscheck):
