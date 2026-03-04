@@ -30,11 +30,12 @@ import shutil
 import base64
 import struct
 import logging
+import hashlib
+import inspect
 import platform
 import datetime
 import binascii
-import hashlib
-import inspect
+import resource
 import tempfile
 import configparser
 from io import open, StringIO, BytesIO
@@ -4736,6 +4737,8 @@ def ReadFileHeaderDataWithContent(fp, listonly=False, contentasfile=False, uncom
 def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, saltkey=None):
     if(not hasattr(fp, "read")):
         return False
+    start_real = time.perf_counter()
+    start_usage = resource.getrusage(resource.RUSAGE_SELF)
     delimiter = formatspecs['format_delimiter']
     fheaderstart = fp.tell()
     HeaderOut = ReadFileHeaderDataBySize(fp, delimiter)
@@ -4983,11 +4986,16 @@ def ReadFileHeaderDataWithContentToArray(fp, listonly=False, contentasfile=True,
     fcontents.seek(0, 0)
     if(not contentasfile):
         fcontents = fcontents.read()
+    end_real = time.perf_counter()
+    end_usage = resource.getrusage(resource.RUSAGE_SELF)
     iecsize = get_readable_size(fsize, unit="IEC")
     sisize = get_readable_size(fsize, unit="SI")
     ieccsize = get_readable_size(fcsize, unit="IEC")
     sicsize = get_readable_size(fcsize, unit="SI")
-    outlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fencoding': fencoding, 'fcencoding': fcencoding, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fsize_si': sisize, 'fsize_iec': iecsize, 'fblksize': fblksize, 'fblocks': fblocks, 'fflags': fflags, 'fatime': divmod(int(fatime), 10**9)[0], 'fmtime': divmod(int(fmtime), 10**9)[0], 'fctime': divmod(int(fctime), 10**9)[0], 'fbtime': divmod(int(fbtime), 10**9)[0], 'fatime_ns': fatime, 'fmtime_ns': fmtime, 'fctime_ns': fctime, 'fbtime_ns': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'fstrmode': PrintPermissionString(fmode, ftype), 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fcsize_si': sicsize, 'fcsize_iec': ieccsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fdev': fdev, 'fdev_major': fdev_major, 'fdev_minor': fdev_minor, 'frdev': frdev, 'frdev_major': frdev_major, 'frdev_minor': frdev_minor, 'fseektojson': fseektojson, 'fseektocontent': fseektocontent, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fjsonchecksumtype': fjsonchecksumtype, 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fvendorfields': fvendorfields, 'fvendordata': fvendorfieldslist, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextradata': fextrafieldslist, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fjstart': fjstart, 'fjend': fjend, 'fheaderchecksum': fcs, 'fjsonchecksum': fjsonchecksum, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents}
+    real_time = end_real - start_real
+    user_time = end_usage.ru_utime - start_usage.ru_utime
+    sys_time = end_usage.ru_stime - start_usage.ru_stime
+    outlist = {'fheadersize': fheadsize, 'fhstart': fheaderstart, 'fhend': fhend, 'ftype': ftype, 'fencoding': fencoding, 'fcencoding': fcencoding, 'fname': fname, 'fbasedir': fbasedir, 'flinkname': flinkname, 'fsize': fsize, 'fsize_si': sisize, 'fsize_iec': iecsize, 'fblksize': fblksize, 'fblocks': fblocks, 'fflags': fflags, 'fatime': divmod(int(fatime), 10**9)[0], 'fmtime': divmod(int(fmtime), 10**9)[0], 'fctime': divmod(int(fctime), 10**9)[0], 'fbtime': divmod(int(fbtime), 10**9)[0], 'fatime_ns': fatime, 'fmtime_ns': fmtime, 'fctime_ns': fctime, 'fbtime_ns': fbtime, 'fmode': fmode, 'fchmode': fchmode, 'fstrmode': PrintPermissionString(fmode, ftype), 'ftypemod': ftypemod, 'fwinattributes': fwinattributes, 'fcompression': fcompression, 'fcsize': fcsize, 'fcsize_si': sicsize, 'fcsize_iec': ieccsize, 'fuid': fuid, 'funame': funame, 'fgid': fgid, 'fgname': fgname, 'finode': finode, 'flinkcount': flinkcount, 'fdev': fdev, 'fdev_major': fdev_major, 'fdev_minor': fdev_minor, 'frdev': frdev, 'frdev_major': frdev_major, 'frdev_minor': frdev_minor, 'fseektojson': fseektojson, 'fseektocontent': fseektocontent, 'fseeknextfile': fseeknextfile, 'fheaderchecksumtype': HeaderOut[-4], 'fjsonchecksumtype': fjsonchecksumtype, 'fcontentchecksumtype': HeaderOut[-3], 'fnumfields': fnumfields + 2, 'frawheader': HeaderOut, 'fvendorfields': fvendorfields, 'fvendordata': fvendorfieldslist, 'fextrafields': fextrafields, 'fextrafieldsize': fextrasize, 'fextradata': fextrafieldslist, 'fjsontype': fjsontype, 'fjsonlen': fjsonlen, 'fjsonsize': fjsonsize, 'fjsonrawdata': fjsonrawcontent, 'fjsondata': fjsoncontent, 'fjstart': fjstart, 'fjend': fjend, 'fheaderchecksum': fcs, 'fjsonchecksum': fjsonchecksum, 'fcontentchecksum': fccs, 'fhascontents': pyhascontents, 'fcontentstart': fcontentstart, 'fcontentend': fcontentend, 'fcontentasfile': contentasfile, 'fcontents': fcontents, 'optime': {'real': "{:.6f}".format(real_time), 'user': "{:.6f}".format(user_time), 'sys': "{:.6f}".format(sys_time)}}
     return outlist
 
 
@@ -5330,6 +5338,8 @@ def ReadFileDataWithContent(fp, filestart=0, listonly=False, contentasfile=False
 def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, uncompress=True, skipchecksum=False, formatspecs=__file_format_dict__, saltkey=None, seektoend=False):
     if(not hasattr(fp, "read")):
         return False
+    start_real = time.perf_counter()
+    start_usage = resource.getrusage(resource.RUSAGE_SELF)
     delimiter = formatspecs['format_delimiter']
     curloc = filestart
     fp.seek(curloc, 0)
@@ -5625,11 +5635,16 @@ def ReadFileDataWithContentToArray(fp, filestart=0, seekstart=0, seekend=0, list
         outlist['ffilelist'].append(HeaderOut)
         countnum = countnum + 1
         realidnum = realidnum + 1
+    end_real = time.perf_counter()
+    end_usage = resource.getrusage(resource.RUSAGE_SELF)
     CatSize = fp.tell()
     CatSizeEnd = CatSize
     iecsize = get_readable_size(CatSizeEnd, unit="IEC")
     sisize = get_readable_size(CatSizeEnd, unit="SI")
-    outlist.update({'fp': fp, 'fsize': CatSizeEnd, 'fsize_si': sisize, 'fsize_iec': iecsize})
+    real_time = end_real - start_real
+    user_time = end_usage.ru_utime - start_usage.ru_utime
+    sys_time = end_usage.ru_stime - start_usage.ru_stime
+    outlist.update({'fp': fp, 'fsize': CatSizeEnd, 'fsize_si': sisize, 'fsize_iec': iecsize, 'optime': {'real': "{:.6f}".format(real_time), 'user': "{:.6f}".format(user_time), 'sys': "{:.6f}".format(sys_time)}})
     return outlist
 
 
