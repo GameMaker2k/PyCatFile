@@ -9939,7 +9939,7 @@ def CatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0
     else:
         if(infile != "-" and not hasattr(infile, "read") and not hasattr(infile, "write") and not isinstance(infile, bytes)):
             infile = RemoveWindowsPath(infile)
-        listarrayfileslist = CatFileToArray(infile, fmttype, filestart, seekstart, seekend, True, False, False, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
+        listarrayfileslist = ArchiveFileToArray(infile, fmttype, filestart, seekstart, seekend, True, False, False, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
     if(not listarrayfileslist):
         return False
     for listarrayfiles in listarrayfileslist:
@@ -9973,16 +9973,24 @@ def CatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0
                 if(len(fgprint) <= 0):
                     fgprint = listarrayfiles['ffilelist'][lcfi]['fgid']
                 if(newstyle):
-                    compratio = calc_compression(listarrayfiles['ffilelist'][lcfi]['fsize'], listarrayfiles['ffilelist'][lcfi]['fcsize'], "percent")
-                    if(compratio=="-"):
+                    compressiontype = listarrayfiles['ffilelist'][lcfi]['fcompression']
+                    if(compressiontype == ""):
                         compratio = ""
+                        compressprint = " "
+                        compressiontype = "none"
                     else:
-                        compratio = str(""+compratio)
-                    if(listarrayfiles['ffilelist'][lcfi]['fcsize']==0):
-                        compressprint = str("") + " "
-                    else:
-                        compressprint = str(listarrayfiles['ffilelist'][lcfi]['fcsize']) + " "
-                    VerbosePrintOut(ftype_to_str(listarrayfiles['ffilelist'][lcfi]['ftype']).rjust(5) + " " + listarrayfiles['ffilelist'][lcfi]['fcompression'].rjust(5) + " " + compratio.rjust(5) + " " + str(
+                        compratio = calc_compression(listarrayfiles['ffilelist'][lcfi]['fsize'], listarrayfiles['ffilelist'][lcfi]['fcsize'], "percent")
+                        if(compratio=="-"):
+                            compratio = ""
+                            compressiontype = "none"
+                        else:
+                            compratio = str(""+compratio)
+                        if(listarrayfiles['ffilelist'][lcfi]['fcsize']==0):
+                            compressprint = " "
+                            compressiontype = "none"
+                        else:
+                            compressprint = str(listarrayfiles['ffilelist'][lcfi]['fcsize']) + " "
+                    VerbosePrintOut(ftype_to_str(listarrayfiles['ffilelist'][lcfi]['ftype']).rjust(5) + " " + compressiontype.rjust(5) + " " + compratio.rjust(5) + " " + str(
                     listarrayfiles['ffilelist'][lcfi]['fsize']).rjust(15) + " " + compressprint.rjust(15) + printfname)
                 else:
                     dt = datetime.datetime.fromtimestamp(listarrayfiles['ffilelist'][lcfi]['fmtime'])
