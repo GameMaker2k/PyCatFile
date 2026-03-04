@@ -9975,14 +9975,14 @@ def CatFileListFiles(infile, fmttype="auto", filestart=0, seekstart=0, seekend=0
                 if(newstyle):
                     compratio = calc_compression(listarrayfiles['ffilelist'][lcfi]['fsize'], listarrayfiles['ffilelist'][lcfi]['fcsize'], "percent")
                     if(compratio=="-"):
-                        compratio = " "
+                        compratio = ""
                     else:
-                        compratio = str(" "+compratio)
+                        compratio = str(""+compratio)
                     if(listarrayfiles['ffilelist'][lcfi]['fcsize']==0):
                         compressprint = str("") + " "
                     else:
                         compressprint = str(listarrayfiles['ffilelist'][lcfi]['fcsize']) + " "
-                    VerbosePrintOut(ftype_to_str(listarrayfiles['ffilelist'][lcfi]['ftype']).rjust(5) + " " + listarrayfiles['ffilelist'][lcfi]['fcompression'].rjust(5) + compratio.rjust(5) + " " + str(
+                    VerbosePrintOut(ftype_to_str(listarrayfiles['ffilelist'][lcfi]['ftype']).rjust(5) + " " + listarrayfiles['ffilelist'][lcfi]['fcompression'].rjust(5) + " " + compratio.rjust(5) + " " + str(
                     listarrayfiles['ffilelist'][lcfi]['fsize']).rjust(15) + " " + compressprint.rjust(15) + printfname)
                 else:
                     dt = datetime.datetime.fromtimestamp(listarrayfiles['ffilelist'][lcfi]['fmtime'])
