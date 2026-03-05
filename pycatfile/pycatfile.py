@@ -9188,7 +9188,7 @@ def ListDirToArray(infiles, dirlistfromtxt=False, fmttype=__file_format_default_
     listarrayfiles = ArchiveFileToArray(outarray, "auto", filestart, seekstart, seekend, listonly, True, True, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
     return listarrayfiles
 
-def PackArchiveFileAlt(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
+def PackCatFromDirListAlt(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
     inarrayfile = ListDirToArray(infiles, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, 0, 0, 0, False, None, False, checksumtype, extradata, jsondata, formatspecs, False, False, False)
     return RePackArchiveFile(inarrayfile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, False, 0, 0, 0, checksumtype, False, extradata, jsondata, formatspecs, None, saltkey, False, verbose, returnfp)
 
