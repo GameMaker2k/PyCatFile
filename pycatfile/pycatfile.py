@@ -7530,6 +7530,64 @@ else:
     def AppendFilesWithContentFromBSDTarFile(infile, fp, fmttype="auto", extradata=[], jsondata={}, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
         return AppendFilesWithContentFromInFile(infile, fp, fmttype, "bsd", extradata, jsondata, compression, compresswholefile, compressionlevel, compressionuselist, checksumtype, formatspecs, saltkey, verbose)
 
+DOS_DIR = 0x10  # MS-DOS directory attribute
+
+def zipinfo_attrs(zipinfo, member=None):
+    """
+    Returns:
+      win_attr (int): lower 16 bits (DOS attributes / host-dependent)
+      mode (int): POSIX st_mode-like (file type + permissions)
+      chmode (int): stat.S_IMODE(mode)
+      typemod (int): stat.S_IFMT(mode)
+    """
+    ext = zipinfo.external_attr
+    win_attr = ext & 0xFFFF
+
+    name = getattr(zipinfo, "filename", "") or ""
+    # Directory detection: name convention OR DOS attribute bit.
+    is_dir = name.endswith("/") or bool(win_attr & DOS_DIR)
+    # Zipfile doesn't have a standard "symlink()" API; if you have one, honor it.
+    is_symlink = bool(getattr(member, "symlink", lambda: False)())
+
+    def default_mode():
+        if is_dir:
+            return stat.S_IFDIR | 0o777
+        if is_symlink:
+            # Many tools store symlink as S_IFLNK with 777 perms, but extraction behavior varies.
+            return stat.S_IFLNK | 0o777
+        return stat.S_IFREG | 0o666
+
+    cs = zipinfo.create_system
+
+    if cs == 3:  # UNIX: upper 16 bits are the Unix mode in common practice/spec usage
+        mode16 = (ext >> 16) & 0xFFFF
+        mode = mode16 if mode16 else default_mode()
+
+        # Validate: must have a known file type and some perms, else fallback
+        ftype = mode & 0xF000
+        if ftype not in (stat.S_IFREG, stat.S_IFDIR, stat.S_IFLNK) or (mode & 0o777) == 0:
+            mode = default_mode()
+
+    elif cs in (0, 10):  # MS-DOS / Windows NTFS: DOS attrs are meaningful; Unix mode may or may not be
+        # Try an upper-mode if present (especially for NTFS), but be strict about validity
+        mode16 = (ext >> 16) & 0xFFFF
+        if mode16:
+            ftype = mode16 & 0xF000
+            if ftype in (stat.S_IFREG, stat.S_IFDIR, stat.S_IFLNK) and (mode16 & 0o777) != 0:
+                mode = mode16
+            else:
+                mode = default_mode()
+        else:
+            mode = default_mode()
+
+    else:
+        # Unknown host system: best-effort fallback
+        mode = default_mode()
+
+    chmode = stat.S_IMODE(mode)
+    typemod = stat.S_IFMT(mode)
+    return win_attr, mode, chmode, typemod
+
 def AppendFilesWithContentFromZipFileToList(infile, fmttype="auto", extradata=[], jsondata={}, contentasfile=False, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], formatspecs=__file_format_dict__, saltkey=None, verbose=False):
     if(IsNestedDict(formatspecs) and fmttype in formatspecs):
         formatspecs = formatspecs[fmttype]
@@ -7619,61 +7677,11 @@ def AppendFilesWithContentFromZipFileToList(infile, fmttype="auto", extradata=[]
             int(to_ns(get_unix_timestamp_zip(member))), 'x').lower()
         fbtime = format(
             int(to_ns(get_unix_timestamp_zip(member))), 'x').lower()
-        if(zipinfo.create_system == 0 or zipinfo.create_system == 10):
-            fwinattributes = format(int(zipinfo.external_attr & 0xFFFF), 'x').lower()
-            if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
-                fmode = format(int(stat.S_IFDIR | 0x1ff), 'x').lower()
-                fchmode = stat.S_IMODE(int(stat.S_IFDIR | 0x1ff))
-                ftypemod = stat.S_IFMT(int(stat.S_IFDIR | 0x1ff))
-            elif ((hasattr(member, "symlink") and member.symlink()) or member.filename.endswith('/')):
-                fmode = format(int(stat.S_IFREG | 0x1b6), 'x').lower()
-                fchmode = stat.S_IMODE(int(stat.S_IFREG | 0x1b6))
-                ftypemod = stat.S_IFMT(int(stat.S_IFREG | 0x1b6))
-            else:
-                fmode = format(int(stat.S_IFREG | 0x1b6), 'x').lower()
-                fchmode = stat.S_IMODE(int(stat.S_IFREG | 0x1b6))
-                ftypemod = stat.S_IFMT(int(stat.S_IFREG | 0x1b6))
-        elif(zipinfo.create_system == 3):
-            fwinattributes = format(int(zipinfo.external_attr & 0xFFFF), 'x').lower()
-            fmode = format(int((zipinfo.external_attr >> 16) & 0xFFFF), 'x').lower()
-            mode = int(zipinfo.external_attr >> 16)
-            prefmode = int((zipinfo.external_attr >> 16) & 0xFFFF)
-            if(prefmode==0):
-                fmode = 0
-                prefmode = 0
-            else:
-                file_type = prefmode & 0xF000
-                if(file_type not in (stat.S_IFREG, stat.S_IFDIR, stat.S_IFLNK)):
-                    fmode = 0
-                    prefmode = 0
-                if((mode & 0x1FF) == 0):
-                    fmode = 0
-                    prefmode = 0
-            if (prefmode == 0):
-                if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
-                    fmode = format(int(stat.S_IFDIR | 0x1ff), 'x').lower()
-                    prefmode = int(stat.S_IFDIR | 0x1ff)
-                    fchmode = stat.S_IMODE(prefmode)
-                    ftypemod = stat.S_IFMT(prefmode)
-                else:
-                    fmode = format(int(stat.S_IFREG | 0x1b6), 'x').lower()
-                    prefmode = int(stat.S_IFREG | 0x1b6)
-                    fchmode = stat.S_IMODE(prefmode)
-                    ftypemod = stat.S_IFMT(prefmode)
-            fchmode = stat.S_IMODE(prefmode)
-            ftypemod = stat.S_IFMT(prefmode)
-        else:
-            fwinattributes = format(int(zipinfo.external_attr & 0xFFFF), 'x').lower()
-            if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
-                fmode = format(int(stat.S_IFDIR | 0x1ff), 'x').lower()
-                prefmode = int(stat.S_IFDIR | 0x1ff)
-                fchmode = stat.S_IMODE(prefmode)
-                ftypemod = stat.S_IFMT(prefmode)
-            else:
-                fmode = format(int(stat.S_IFREG | 0x1b6), 'x').lower()
-                prefmode = int(stat.S_IFREG | 0x1b6)
-                fchmode = stat.S_IMODE(prefmode)
-                ftypemod = stat.S_IFMT(prefmode)
+        win_attr, mode, chmode, typemod = zipinfo_attrs(zipinfo, member)
+        fwinattributes = format(win_attr, "x")
+        fmode = format(mode, "x")
+        fchmode = chmode
+        ftypemod = typemod
         fcompression = ""
         fcsize = format(int(0), 'x').lower()
         try:
@@ -9062,23 +9070,22 @@ def TarFileToArray(infile, fmttype=__file_format_default__, seekstart=0, seekend
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         ckformatspecs = formatspecs[checkcompressfile]
     fp = MkTempFile()
-    fp = PackCatFileFromTarFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, ckformatspecs, None, False, True)
-    listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
+    fp = PackArchiveFileFromTarFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, ckformatspecs, None, False, True)
+    listarrayfiles = ArchiveFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
     return listarrayfiles
 
 
 if(not libarchive_support):
     def BSDTarFileToArray(infile, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
         return False
-
-if(libarchive_support):
+else:
     def BSDTarFileToArray(infile, fmttype=__file_format_default__, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
         checkcompressfile = fmttype
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             ckformatspecs = formatspecs[checkcompressfile]
         fp = MkTempFile()
-        fp = PackCatFileFromBSDTarFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, ckformatspecs, None, False, True)
-        listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
+        fp = PackArchiveFileFromBSDTarFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, ckformatspecs, None, False, True)
+        listarrayfiles = ArchiveFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
         return listarrayfiles
 
 
@@ -9087,39 +9094,72 @@ def ZipFileToArray(infile, fmttype=__file_format_default__, seekstart=0, seekend
     if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
         ckformatspecs = formatspecs[checkcompressfile]
     fp = MkTempFile()
-    fp = PackCatFileFromZipFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, ckformatspecs, None, False, True)
-    listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
+    fp = PackArchiveFileFromZipFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, ckformatspecs, None, False, True)
+    listarrayfiles = ArchiveFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
     return listarrayfiles
 
 
 if(not rarfile_support):
     def RarFileToArray(infile, fmttype=__file_format_default__, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
         return False
-
-if(rarfile_support):
+else:
     def RarFileToArray(infile, fmttype=__file_format_default__, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
         checkcompressfile = fmttype
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             ckformatspecs = formatspecs[checkcompressfile]
         fp = MkTempFile()
-        fp = PackCatFileFromRarFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, ckformatspecs, None, False, True)
-        listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
+        fp = PackArchiveFileFromRarFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, ckformatspecs, None, False, True)
+        listarrayfiles = ArchiveFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
         return listarrayfiles
 
 if(not py7zr_support):
     def SevenZipFileToArray(infile, fmttype=__file_format_default__, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
         return False
-
-if(py7zr_support):
+else:
     def SevenZipFileToArray(infile, fmttype=__file_format_default__, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, seektoend=False, returnfp=False):
         checkcompressfile = fmttype
         if(IsNestedDict(formatspecs) and checkcompressfile in formatspecs):
             ckformatspecs = formatspecs[checkcompressfile]
         fp = MkTempFile()
-        fp = PackCatFileFromSevenZipFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, ckformatspecs, None, False, True)
-        listarrayfiles = CatFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
+        fp = PackArchiveFileFromSevenZipFile(infile, fp, "auto", "auto", True, None, compressionlistalt, ["md5", "md5", "md5", "md5", "md5"], [], {}, ckformatspecs, None, False, True)
+        listarrayfiles = ArchiveFileToArray(fp, "auto", 0, seekstart, seekend, listonly, contentasfile, True, skipchecksum, formatspecs, None, seektoend, returnfp)
         return listarrayfiles
 
+def PackArchiveFileFromTarFileAlt(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
+    inarrayfile = TarFileToArray(infile, fmttype, 0, 0, False, True, False, formatspecs, False, False)
+    return RePackArchiveFile(inarrayfile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, False, 0, 0, 0, checksumtype, False, extradata, jsondata, formatspecs, None, saltkey, False, verbose, returnfp)
+
+if(not libarchive_support):
+    def PackArchiveFileFromBSDTarFileAlt(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
+        return False
+else:
+    def PackArchiveFileFromBSDTarFileAlt(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
+        inarrayfile = BSDTarFileToArray(infile, fmttype, 0, 0, False, True, False, formatspecs, False, False)
+        return RePackArchiveFile(inarrayfile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, False, 0, 0, 0, checksumtype, False, extradata, jsondata, formatspecs, None, saltkey, False, verbose, returnfp)
+
+def PackArchiveFileFromZipFileAlt(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
+    inarrayfile = ZipFileToArray(infile, fmttype, 0, 0, False, True, False, formatspecs, False, False)
+    return RePackArchiveFile(inarrayfile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, False, 0, 0, 0, checksumtype, False, extradata, jsondata, formatspecs, None, saltkey, False, verbose, returnfp)
+
+if(not rarfile_support):
+    def PackArchiveFileFromRarFileAlt(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
+        return False
+else:
+    def PackArchiveFileFromRarFileAlt(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
+        inarrayfile = RarFileToArray(infile, fmttype, 0, 0, False, True, False, formatspecs, False, False)
+        return RePackArchiveFile(inarrayfile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, False, 0, 0, 0, checksumtype, False, extradata, jsondata, formatspecs, None, saltkey, False, verbose, returnfp)
+
+if(not py7zr_support):
+    def PackArchiveFileFromSevenZipFileAlt(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
+        return False
+else:
+    def PackArchiveFileFromSevenZipFileAlt(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
+        inarrayfile = SevenZipFileToArray(infile, fmttype, 0, 0, False, True, False, formatspecs, False, False)
+        return RePackArchiveFile(inarrayfile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, False, 0, 0, 0, checksumtype, False, extradata, jsondata, formatspecs, None, saltkey, False, verbose, returnfp)
+
+def PackArchiveFileFromInFileAlt(infile, outfile, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, saltkey=None, verbose=False, returnfp=False):
+    inarrayfile = InFileToArray(infile, fmttype, 0, 0, False, True, False, formatspecs, False, False)
+    return RePackArchiveFile(inarrayfile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, False, 0, 0, 0, checksumtype, False, extradata, jsondata, formatspecs, None, saltkey, False, verbose, returnfp)
 
 def InFileToArray(infile, fmttype=__file_format_default__, filestart=0, seekstart=0, seekend=0, listonly=False, contentasfile=True, skipchecksum=False, formatspecs=__file_format_multi_dict__, saltkey=None, seektoend=False, returnfp=False):
     checkcompressfile = CheckCompressionSubType(infile, formatspecs, filestart, True)
@@ -9142,12 +9182,15 @@ def InFileToArray(infile, fmttype=__file_format_default__, filestart=0, seekstar
     return False
 
 
-def ListDirToArray(infiles, dirlistfromtxt=False, fmttype=__file_format_default__, compression="auto", compresswholefile=True, compressionlevel=None, followlink=False, filestart=0, seekstart=0, seekend=0, listonly=False, saltkey=None, skipchecksum=False, checksumtype=["md5", "md5", "md5"], extradata=[], formatspecs=__file_format_dict__, verbose=False, seektoend=False, returnfp=False):
+def ListDirToArray(infiles, dirlistfromtxt=False, fmttype=__file_format_default__, compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, filestart=0, seekstart=0, seekend=0, listonly=False, saltkey=None, skipchecksum=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_dict__, verbose=False, seektoend=False, returnfp=False):
     outarray = MkTempFile()
-    packform = PackCatFile(infiles, outarray, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, followlink, checksumtype, extradata, formatspecs, saltkey, verbose, True)
-    listarrayfiles = CatFileToArray(outarray, "auto", filestart, seekstart, seekend, listonly, True, True, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
+    packform = PackArchiveFile(infiles, outarray, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, checksumtype, extradata, jsondata, formatspecs, saltkey, verbose, True)
+    listarrayfiles = ArchiveFileToArray(outarray, "auto", filestart, seekstart, seekend, listonly, True, True, skipchecksum, formatspecs, saltkey, seektoend, returnfp)
     return listarrayfiles
 
+def PackArchiveFileAlt(infiles, outfile, dirlistfromtxt=False, fmttype="auto", compression="auto", compresswholefile=True, compressionlevel=None, compressionuselist=compressionlistalt, followlink=False, checksumtype=["md5", "md5", "md5", "md5", "md5"], extradata=[], jsondata={}, formatspecs=__file_format_multi_dict__, saltkey=None, verbose=False, returnfp=False):
+    inarrayfile = ListDirToArray(infiles, dirlistfromtxt, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, followlink, 0, 0, 0, False, None, False, checksumtype, extradata, jsondata, formatspecs, False, False, False)
+    return RePackArchiveFile(inarrayfile, outfile, fmttype, compression, compresswholefile, compressionlevel, compressionuselist, False, 0, 0, 0, checksumtype, False, extradata, jsondata, formatspecs, None, saltkey, False, verbose, returnfp)
 
 # ===== Function (keeps inarray schema; returns entries + indexes) =====
 
@@ -10379,61 +10422,11 @@ def ZipFileListFiles(infile, verbose=False, returnfp=False):
         VerbosePrintOut("Bad file found!")
     for member in sorted(zipfp.infolist(), key=lambda x: x.filename):
         zipinfo = zipfp.getinfo(member.filename)
-        if(zipinfo.create_system == 0 or zipinfo.create_system == 10):
-            fwinattributes = int(zipinfo.external_attr & 0xFFFF)
-            if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
-                fmode = int(stat.S_IFDIR | 0x1ff)
-                fchmode = stat.S_IMODE(int(stat.S_IFDIR | 0x1ff))
-                ftypemod = stat.S_IFMT(int(stat.S_IFDIR | 0x1ff))
-            elif ((hasattr(member, "symlink") and member.symlink()) or member.filename.endswith('/')):
-                fmode = int(stat.S_IFREG | 0x1b6)
-                fchmode = stat.S_IMODE(int(stat.S_IFREG | 0x1b6))
-                ftypemod = stat.S_IFMT(int(stat.S_IFREG | 0x1b6))
-            else:
-                fmode = int(stat.S_IFREG | 0x1b6)
-                fchmode = stat.S_IMODE(int(stat.S_IFREG | 0x1b6))
-                ftypemod = stat.S_IFMT(int(stat.S_IFREG | 0x1b6))
-        elif(zipinfo.create_system == 3):
-            fwinattributes = int(zipinfo.external_attr & 0xFFFF)
-            fmode = int((zipinfo.external_attr >> 16) & 0xFFFF)
-            mode = int(zipinfo.external_attr >> 16)
-            prefmode = int((zipinfo.external_attr >> 16) & 0xFFFF)
-            if(prefmode==0):
-                fmode = 0
-                prefmode = 0
-            else:
-                file_type = prefmode & 0xF000
-                if(file_type not in (stat.S_IFREG, stat.S_IFDIR, stat.S_IFLNK)):
-                    fmode = 0
-                    prefmode = 0
-                if((mode & 0x1FF) == 0):
-                    fmode = 0
-                    prefmode = 0
-            if (prefmode == 0):
-                if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
-                    fmode = int(stat.S_IFDIR | 0x1ff)
-                    prefmode = int(stat.S_IFDIR | 0x1ff)
-                    fchmode = stat.S_IMODE(prefmode)
-                    ftypemod = stat.S_IFMT(prefmode)
-                else:
-                    fmode = int(stat.S_IFREG | 0x1b6)
-                    prefmode = int(stat.S_IFREG | 0x1b6)
-                    fchmode = stat.S_IMODE(prefmode)
-                    ftypemod = stat.S_IFMT(prefmode)
-            fchmode = stat.S_IMODE(prefmode)
-            ftypemod = stat.S_IFMT(prefmode)
-        else:
-            fwinattributes = int(zipinfo.external_attr & 0xFFFF)
-            if ((hasattr(member, "is_dir") and member.is_dir()) or member.filename.endswith('/')):
-                fmode = int(stat.S_IFDIR | 0x1ff)
-                prefmode = int(stat.S_IFDIR | 0x1ff)
-                fchmode = stat.S_IMODE(prefmode)
-                ftypemod = stat.S_IFMT(prefmode)
-            else:
-                fmode = int(stat.S_IFREG | 0x1b6)
-                prefmode = int(stat.S_IFREG | 0x1b6)
-                fchmode = stat.S_IMODE(prefmode)
-                ftypemod = stat.S_IFMT(prefmode)
+        win_attr, mode, chmode, typemod = zipinfo_attrs(zipinfo, member)
+        fwinattributes = win_attr
+        fmode = mode
+        fchmode = chmode
+        ftypemod = typemod
         returnval.update({lcfi: member.filename})
         if(not verbose):
             VerbosePrintOut(member.filename)
