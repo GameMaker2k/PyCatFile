@@ -14,7 +14,7 @@
     Copyright 2018-2026 Game Maker 2k - http://intdb.sourceforge.net/
     Copyright 2018-2026 Kazuki Przyborowski - https://github.com/KazukiPrzyborowski
 
-    $FileInfo: pycatfile.py - Last Update: 3/7/2026 Ver. 0.30.10 RC 1 - Author: cooldude2k $
+    $FileInfo: pycatfile.py - Last Update: 3/14/2026 Ver. 0.30.14 RC 1 - Author: cooldude2k $
 '''
 
 import io
@@ -800,8 +800,8 @@ __project__ = __program_name__
 __program_alt_name__ = __program_name__
 __project_url__ = "https://github.com/GameMaker2k/PyCatFile"
 __project_release_url__ = __project_url__+"/releases/latest"
-__version_info__ = (0, 30, 10, "RC 1", 1)
-__version_date_info__ = (2026, 3, 7, "RC 1", 1)
+__version_info__ = (0, 30, 14, "RC 1", 1)
+__version_date_info__ = (2026, 3, 14, "RC 1", 1)
 __version_date__ = str(__version_date_info__[0]) + "." + str(
     __version_date_info__[1]).zfill(2) + "." + str(__version_date_info__[2]).zfill(2)
 __revision__ = __version_info__[3]
