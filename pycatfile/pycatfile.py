@@ -68,6 +68,13 @@ TEXT_TYPES   = (str,)
 BINARY_TYPES = (bytes, bytearray, memoryview)
 PATH_TYPES   = (str, os.PathLike)
 
+testyaml = False
+try:
+    import yaml
+    testyaml = True
+except (ImportError, OSError):
+    pass
+
 try:
     import zipfile_zstd as zipfile
 except (ImportError, OSError):
@@ -2088,7 +2095,7 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, file
                     fp = zstd.ZstdFile(precfp, mode="rb")
                     curloc = fp.tell()
                 else:
-                    return Flase
+                    return False
             elif((compresscheck == "lzma" or compresscheck == "xz") and compresscheck in compressionsupport):
                 precfp = open(infile, "rb")
                 precfp.seek(filestart, 0)
@@ -3755,7 +3762,7 @@ def CompressOpenFile(outfile, compressionenable=True, compressionlevel=None):
             if 'zstd' in compressionsupport:
                 outfp = zstd.ZstdFile(outfile, mode=mode, level=compressionlevel)
             else:
-                return False  # fix: 'Flase' -> False
+                return False  # fix: 'False' -> False
 
         elif (fextname == ".xz" and "xz" in compressionsupport):
             try:
