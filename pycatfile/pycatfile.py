@@ -437,10 +437,7 @@ def _normalize_initial_data(data, isbytes, encoding, errors=None):
 
 __upload_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp|sctp|data|file|bt|rfcomm|l2cap|bluetooth|unixstream|unixdgram|unixseqpacket)://"
 __download_proto_support__ = "^(http|https|ftp|ftps|sftp|scp|tcp|udp|sctp|data|file|bt|rfcomm|l2cap|bluetooth|unixstream|unixdgram|unixseqpacket)://"
-if(platform.python_implementation() != ""):
-    py_implementation = platform.python_implementation()
-if(platform.python_implementation() == ""):
-    py_implementation = "Python"
+py_implementation = platform.python_implementation() or "Python"
 
 def get_importing_script_path():
     """Best-effort path of the importing (caller) script, or None."""
