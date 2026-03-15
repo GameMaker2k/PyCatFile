@@ -68,6 +68,9 @@ TEXT_TYPES   = (str,)
 BINARY_TYPES = (bytes, bytearray, memoryview)
 PATH_TYPES   = (str, os.PathLike)
 
+from urllib.parse import urlparse
+from urllib.request import url2pathname
+
 testyaml = False
 try:
     import yaml
