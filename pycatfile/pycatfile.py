@@ -2150,8 +2150,11 @@ def CheckCompressionSubType(infile, formatspecs=__file_format_multi_dict__, file
     if(prefp == binascii.unhexlify("7061785f676c6f62616c")):
         filetype = "tarfile"
     fp.seek(curloc, 0)
-    if(hasattr(precfp, "read")):
-        precfp.close()
+    try:
+        if(hasattr(precfp, "read")):
+            precfp.close()
+    except NameError:
+        pass
     if(closefp):
         fp.close()
     return filetype
